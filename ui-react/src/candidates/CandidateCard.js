@@ -105,15 +105,16 @@ GraphGistCandidateCard.fragments = {
         uuid
         status
       }
-      image(first: 1) {
+      image(first: 1, filter: {source: "file_upload"}) {
         source_url
+        source
       }
       categories(first: 3) {
         __typename
         uuid
         slug
         name
-        image(first: 1) {
+        image {
           source_url
         }
       }

@@ -49,11 +49,12 @@ const GET_GRAPHGIST = gql`
       created_at {
         formatted
       }
-      images: image {
+      images: image(filter: {source: "file_upload"}) {
         uuid
         title
         description
         source_url
+        source
       }
       industries {
         uuid
@@ -239,7 +240,6 @@ function GraphGistEditByOwner() {
             e.target.value = value;
             handleChange(e);
           };
-
           return (
             <Form className={classes.form}>
               <div className={classes.imagesContainer}>
