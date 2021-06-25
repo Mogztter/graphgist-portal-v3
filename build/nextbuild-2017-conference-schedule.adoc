@@ -1,0 +1,126 @@
+= The NextBuild 2017 Schedule Graph
+
+:author: Rik Van Bruggen
+:twitter: @rvanbruggen
+:style: red:Person(name), silver:Time(time), yellow:Track(name), green:Session(title),
+
+Tomorrow I am presenting at the NextBuild conference in Eindhoven - you can see more info http://nextbuild.nl/[over here]. Of course I am going to be talking a lot about http://www.neo4j.com[Neo4j] and just for fun, I decided to put the conference schedule in this graph.
+
+= A Google Sheet as the main repository
+I had to of course start from the schedule on the http://nextbuild.nl/agenda/[NextBuild website], and convert that into a https://docs.google.com/spreadsheets/d/1BF0ooMliDvhGFSD1ixkpcGCcIMO6yy1DvgBHHyoe_sU/edit?usp=sharing[google sheet with all the data]. Once I had that, I could add the data pretty easily.
+
+image::http://nextbuild.nl/wordpress/wp-content/uploads/2015/10/nextbuild-final-vector.jpg[]
+
+Let's load that data into this graphgist.
+
+//setup
+//hide
+[source,cypher]
+----
+//add the speakers and companies
+load csv with headers from
+"https://docs.google.com/a/neotechnology.com/spreadsheets/d/1BF0ooMliDvhGFSD1ixkpcGCcIMO6yy1DvgBHHyoe_sU/export?format=csv&id=1BF0ooMliDvhGFSD1ixkpcGCcIMO6yy1DvgBHHyoe_sU&gid=1504480307 " as csv
+merge (p:Person {name: csv.name, bio: csv.bio})
+merge (c:Company {name: csv.company})
+with csv
+match (p:Person {name: csv.name, bio: csv.bio}), (c:Company {name: csv.company})
+merge (p)-[:WORKS_FOR]->(c);
+
+//add the rooms, tracks
+load csv with headers from "https://docs.google.com/a/neotechnology.com/spreadsheets/d/1BF0ooMliDvhGFSD1ixkpcGCcIMO6yy1DvgBHHyoe_sU/export?format=csv&id=1BF0ooMliDvhGFSD1ixkpcGCcIMO6yy1DvgBHHyoe_sU&gid=284108" as csv
+merge (r:Room {name: csv.room})
+merge (t:Track {name: csv.track});
+
+
+//add the timeslots to each day
+load csv with headers from "https://docs.google.com/a/neotechnology.com/spreadsheets/d/1BF0ooMliDvhGFSD1ixkpcGCcIMO6yy1DvgBHHyoe_sU/export?format=csv&id=1BF0ooMliDvhGFSD1ixkpcGCcIMO6yy1DvgBHHyoe_sU&gid=284108" as csv
+merge (t1:Time {time: toInt(csv.start)})
+merge (t2:Time {time: toInt(csv.end)});
+
+//Connecting the timeslots
+match (t:Time)
+with t
+order by t.time ASC
+with collect(t) as times
+  foreach (i in range(0,length(times)-2) |
+    foreach (t1 in [times[i]] |
+      foreach (t2 in [times[i+1]] |
+        merge (t1)-[:FOLLOWED_BY]->(t2))));
+
+//add the sessions and connect them up
+load csv with headers from "https://docs.google.com/a/neotechnology.com/spreadsheets/d/1BF0ooMliDvhGFSD1ixkpcGCcIMO6yy1DvgBHHyoe_sU/export?format=csv&id=1BF0ooMliDvhGFSD1ixkpcGCcIMO6yy1DvgBHHyoe_sU&gid=284108" as csv
+match (t2:Time {time: toInt(csv.end)}),
+(t1:Time {time: toInt(csv.start)}),
+(r:Room {name: csv.room}),
+(t:Track {name: csv.track}),
+(p:Person {name: csv.speaker})
+merge (s:Session {title: csv.title})
+set s.tags = csv.tags
+merge (s)<-[:SPEAKS_IN]-(p)
+merge (s)-[:IN_ROOM]->(r)
+merge (s)-[:STARTS_AT]->(t1)
+merge (s)-[:ENDS_AT]->(t2)
+merge (s)-[:IN_TRACK]->(t);
+
+//extract the tags
+match (s:Session)
+with s, [t in split(s.tags,",") | trim(t)] as tags
+unwind tags as tag
+merge (t:Tag {name: tag})
+merge (s)-[:TAGGED_AS]->(t)
+remove s.tags;
+----
+
+Let's take a look at what we have now:
+
+//graph
+
+Ok - so that looks like a big fat hairball. Not very useful. So let's try to zoom in a bit, and run a simple query over our graph: let's find a couple of sessions in Day 1:
+
+[source,cypher]
+----
+match (t:Time)<--(s:Session)--(connections)
+return t,s,connections
+limit 50
+----
+
+and here's a sample of the graph:
+
+//graph_result
+
+Let's do another query:
+
+[source,cypher]
+----
+match path = allshortestpaths( (p1:Person)-[*]-(p2:Person) )
+where p1.name contains "Rik"
+and p2.name contains "Bas"
+return path
+----
+
+and display the result
+
+//graph_result
+
+Last one for fun: let's look at the sessions that have more than one speaker:
+[source,cypher]
+----
+match (s:Session)-[r:SPEAKS_IN]-(p:Person)
+with s, collect(p) as person, count(p) as count
+where count > 1
+return s,person
+----
+and display it:
+//graph_result
+
+= Just a start...
+
+I hope this gist was interesting for you, and that we will see each other soon.
+
+This gist was created by link:mailto:rik@neotechnology.com[Rik Van Bruggen]
+
+* link:http://blog.bruggen.com[My Blog]
+* link:http://blog.bruggen.com/p/podcast_13.html[the Graphistania Neo4j Graph Database Podcast]
+* link:http://learningneo4j.net[My Book]
+* link:http://twitter.com/rvanbruggen[On Twitter]
+* link:http://be.linkedin.com/in/rikvanbruggen/[On LinkedIn]

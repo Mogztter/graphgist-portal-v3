@@ -1,0 +1,32 @@
+== Example Graph Gist
+:author: Michael Hunger
+:twitter: mesirii
+
+=== Set Up a Graph to Show You and Your Likes
+
+//setup
+[source,cypher]
+----
+CREATE (you:Person {name:"You"})-[like:LIKE]->(us:Database:NoSql:Graph {name:"Neo4j" })
+RETURN you, like, us
+----
+
+Render results as a graph with: `//graph_result` like this:
+
+//graph_result
+
+Or the full graph with `//graph`
+
+=== Query the Graph to Show All the Things You Like
+
+[source,cypher]
+----
+MATCH (you:Person {name:"You"})-[like:LIKE]->(liked)
+RETURN you.name AS who, type(like) AS how, liked.name AS what
+----
+
+Render the results as a table with: `//table` like this:
+
+//table
+
+NOTE: This document is a GraphGist itself, so you can use the green https://github.com/neo4j-contrib/gists/blob/master/meta/Home.adoc[Page Source,role=label] button on top of the page to see the original AsciiDoc document.

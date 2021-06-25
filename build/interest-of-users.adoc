@@ -1,0 +1,174 @@
+= Interest of users
+
+link:./?6762555[Portuguese version]
+
+= Motivation
+
+For companies that work with online advertising, more precisely DSPs and their Real-time Bidding platforms is very important to consider collecting information about the behavior and interests of users while they surfing on the internet.
+Therefore, in this graph gist, I describe a basic approach that can be used to analyze such data, considering a certain period of time and the products visualized by each user.
+Let's consider some characters from Breaking Bad surfed on the internet a few days ago and found some products interesting, chemical elements, and they are thinking about buying them. Such information is extremely important when making a bid at auction advertising, knowing the profile and interests of a given user.
+Then we store these users, products and dates of views so we can extract this information in the future.
+
+
+= Graph
+//console
+
+[source, cypher]
+----
+
+CREATE 
+(Walter { name:'Walter White' }),
+(Skyler { name: 'Skyler White' }),
+(Jesse { name: 'Jesse Pinkman' }),
+(Hank { name:'Hank Schrader' }),
+(Saul { name: 'Saul Goodman' }),
+(Gus { name: 'Gustavo Fring' }),
+(Br { name: 'Brom' }),
+(K { name: 'Kalium' }),
+(Ba { name: 'Barium' }),
+(Zr { name: 'Zirkonium' }),
+(Fe { name: 'Eisen' }),
+(Al { name: 'Aluminium' }),
+(Li { name: 'Lithium' }),
+(Mn { name: 'Mangan' }),
+(P { name: 'Phosphor' }),
+Walter-[:INTERESTED_IN {day:1379732400000}]->Br, 
+Walter-[:INTERESTED_IN {day:1379732400000}]->Ba,
+Walter-[:INTERESTED_IN {day:1380510000000}]->Fe, 
+Walter-[:INTERESTED_IN {day:1380510000000}]->Li, 
+Walter-[:INTERESTED_IN {day:1380510000000}]->P, 
+Skyler-[:INTERESTED_IN {day:1379732400000}]->Br, 
+Skyler-[:INTERESTED_IN {day:1379732400000}]->Ba,
+Jesse-[:INTERESTED_IN {day:1379732400000}]->Br, 
+Jesse-[:INTERESTED_IN {day:1379732400000}]->Ba,
+Jesse-[:INTERESTED_IN {day:1380078000000}]->K, 
+Jesse-[:INTERESTED_IN {day:1380337200000}]->Zr, 
+Hank-[:INTERESTED_IN {day:1380250800000}]->Fe, 
+Hank-[:INTERESTED_IN {day:1380337200000}]->Al,
+Saul-[:INTERESTED_IN {day:1380423600000}]->Mn,
+Gus-[:INTERESTED_IN {day:1380078000000}]->Br, 
+Gus-[:INTERESTED_IN {day:1380423600000}]->Ba,
+Gus-[:INTERESTED_IN {day:1380337200000}]->Li,
+Gus-[:INTERESTED_IN {day:1380250800000}]->P
+
+----
+
+//table
+
+//graph
+
+
+= Use Cases
+
+==== Users interested in some products after the day Tue Sep 17 2013.
+Cypher, give me all users that are interessed in some products after the day 1379451489693 (Tue Sep 17 2013 17:58:09 GMT-0300 (BRT)).
+
+-> Here we should see all the users :)
+
+[source, cypher]
+----
+
+START 
+u = node(*)
+MATCH u-[r:INTERESTED_IN]->p
+WHERE r.day >= 1379451489693
+RETURN u.name as user, type(r) as relationship, p.name as product, r.day as day
+
+----
+
+
+//table
+
+==== Users interested in some products between dates (Tue Sep 25 2013) and (Tue Sep 27 2013)
+Cypher, who are the users that are interested in some products between dates 1380078000000 and 1380250800000?
+
+-> Here we should see the users: Jesse, Gus and Hank
+[source, cypher]
+----
+
+START 
+u = node(*)
+MATCH u-[r:INTERESTED_IN]->p
+WHERE r.day >= 1380078000000 AND r.day <= 1380250800000
+RETURN u.name as user, type(r) as relationship, p.name as product, r.day as day
+
+----
+
+//table
+
+==== Users interested at least in 3 products
+Cypher, which users are interested at least in 3 products?
+
+-> Here we should see the users: Walter, Jesse and Gus
+[source, cypher]
+----
+
+START 
+u = node(*)
+MATCH (u)-[:INTERESTED_IN]->(p)
+WITH u as user, count(p) as products
+WHERE products >= 3
+RETURN user.name as Users
+
+----
+
+//table
+
+==== Users interested at least in 1 product after (Tue Sep 27 2013)
+Cypher, which users are interested at least in 1 product and saw it after (Tue Sep 27 2013)?
+
+-> Here we should see the users: Walter, Hank, Gus, Jesse and Saul
+[source, cypher]
+----
+
+START 
+u = node(*)
+MATCH (u)-[r:INTERESTED_IN]->(p)
+WHERE r.day >= 1380250800000
+WITH u as user, count(p) as products
+WHERE products >= 1
+RETURN user.name as Users
+
+----
+
+//table
+
+==== Top products
+Cypher, what are the top 2 interesting products?
+
+-> Here we should see the products: Br and Ba
+[source, cypher]
+----
+
+START 
+u = node(*)
+MATCH u-[r:INTERESTED_IN]->(p)
+WITH p, count(r) as interested_users
+RETURN p.name as Products, interested_users as Interested_Users
+ORDER BY interested_users DESC
+LIMIT 2
+
+----
+
+//table
+
+==== The user Walter has interest in product Fe today
+Cypher, has Walter White interest in product Eisen today (Tue Sep 30 2013)?
+
+-> Here we should that Walter is interested
+[source, cypher]
+----
+
+START 
+u = node(*)
+MATCH u-[r:INTERESTED_IN]->(p)
+WHERE u.name = 'Walter White' AND r.day = 1380510000000 AND p.name = 'Eisen' 
+WITH count(p) as products
+RETURN products > 0 as Has_interest_in_Eisen
+
+----
+
+
+= Conclusion
+
+Thus we can extract interesting data about the behavior and interests of a user group or a single individual. This information can be taken into consideration when making a bid at auction. eg.: we know that Walter White has interest in Eisen product, so if there is one advertising space on a website related to this product, we can increase the amount of bid at the auction, because he is important to me, as we know that there are more chances of Walter White buy the product than someone who does not have seen it before.

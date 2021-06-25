@@ -1,0 +1,243 @@
+= Christmas drinks
+
+A reference to mixing christmas drinks
+
+== Domain
+A drink is composed of ingredients and their quantities. Drinks in this example are divided into alcoholic, non-alcoholic, hot and cold. Ingredients can be added to drinks in various forms such as powdered, whole, crushed etc.
+
+
+== Model
+image::https://dl.dropboxusercontent.com/u/15330610/drinks.png[]
+
+=== Entities
+
+Drink with attribute name and url.
+
+Ingredient with attribute name
+
+=== Relationships
+A drink contains one or more ingredients. The quantity of the ingredient to add and the form is modeled as a property on the relation from the drink to the ingredient. An ingredient can be a spice- a Spice label indicates this. 
+
+== Setup
+
+//hide
+
+//setup
+
+[source,cypher]
+----
+CREATE (chocPepper:Cold:Alcoholic { name: "Chocolate Peppermint Stick", url:"http://www.drinksmixer.com/drink5824.html"})
+CREATE (chrisCookie:Cold:Alcoholic { name: "Christmas Cookie",url:"http://mixthatdrink.com/christmas-cookie/"})
+CREATE (grinch:Cold:Alcoholic { name: "Grinch", url:"http://mixthatdrink.com/grinch/"})
+CREATE (santa:Cold:Alcoholic { name: "Santa Shot", url:"http://mixthatdrink.com/santa-shot/"})
+CREATE (chocRasp:Cold:Alcoholic { name: "Chocolate Raspberry Martini", url:"http://mixthatdrink.com/chocolate-raspberry-martini/" })
+CREATE (redhot:Cold:Alcoholic { name: "Red Hot Santa Tini", url:"http://mixthatdrink.com/the-red-hot-santa-tini/" })
+CREATE (snowball:Cold:Alcoholic { name: "Snowball", url:"http://mixthatdrink.com/snowball/"})
+CREATE (redRudolph:Hot:Alcoholic { name: "Red Rudolph", url:"http://www.drinksmixer.com/drink6348.html" })
+CREATE (eggnog:Cold:Alcoholic { name: "Eggnog", url:"http://www.jamieoliver.com/news-and-features/features/best-eggnog-recipe/" })
+CREATE (hotrum:Cold:Alcoholic { name: "Hot Buttered Rum", url:"http://cocktails.about.com/od/atozcocktailrecipes/r/ht_btrd_rum_ckt.htm"})
+CREATE (mulledWine:Hot:Alcoholic { name: "Mulled Wine", url:"http://www.jamieoliver.com/recipes/recipe/jamie-s-mulled-wine/" })
+CREATE (gingerSnap:Cold:Alcoholic {name: "Ginger Snap", url:"http://www.foodnetwork.com/recipes/ginger-snap-recipe.html"})
+CREATE (hotchoc:Hot:Alcoholic {name:"Hot Chocolate with Peppermint Schnapps", url:"http://christmas.food.com/recipe/hot-chocolate-with-peppermint-schnapps-199719"})
+CREATE (mistle:Cold:Alcoholic {name:"Mistletoe Martini", url:"http://cocktails.about.com/od/vodkadrinkrecipes/r/mistletoe_tini.htm"})
+
+CREATE (darkrum:Ingredient {name: "Dark Rum"})
+CREATE (cinnamon:Ingredient:Spice {name: "Cinnamon"})
+CREATE (butter:Ingredient {name: "Butter"})
+CREATE (lemon:Ingredient {name: "Lemon"})
+CREATE (water:Ingredient {name: "Water"})
+CREATE (egg:Ingredient {name: "Egg"})
+CREATE (sugar:Ingredient {name: "Sugar"})
+CREATE (brandy:Ingredient {name: "Brandy"})
+CREATE (vanilla:Ingredient {name: "Vanilla Extract"})
+CREATE (nutmeg:Ingredient:Spice {name: "Nutmeg"})
+CREATE (whipcream:Ingredient {name: "Whipping Cream"})
+CREATE (milk:Ingredient {name: "Milk"})
+CREATE (curacao:Ingredient {name: "Orange Curacao"})
+CREATE (cinSchnapps:Ingredient {name: "Cinnamon Schnapps"})
+CREATE (vodka:Ingredient {name: "Vodka"})
+CREATE (cranberry:Ingredient {name: "Cranberry Juice"})
+CREATE (cranberryTea:Ingredient {name: "Cranberry Tea"})
+CREATE (tequilaCream:Ingredient {name: "1921 Tequila Cream Liqueur"})
+CREATE (kahlua:Ingredient {name: "Kahlua"})
+CREATE (chianti:Ingredient {name: "Chianti"})
+CREATE (cognac:Ingredient {name: "Cognac"})
+CREATE (clove:Ingredient:Spice {name: "Clove"})
+CREATE (starAnise:Ingredient:Spice {name: "Star Anise"})
+CREATE (chiliVodka:Ingredient {name: "Chili Infused Vodka"})
+CREATE (chocLiqueur:Ingredient {name: "Chocolate Liqueur"})
+CREATE (cocoa:Ingredient {name: "Cocoa"})
+CREATE (orange:Ingredient {name: "Orange"})
+CREATE (cayenne:Ingredient:Spice {name: "Cayenne"})
+CREATE (chili:Ingredient {name: "Thai chili pepper"})
+CREATE (grenadine:Ingredient {name: "Grenadine Syrup"})
+CREATE (cremedementhe:Ingredient {name: "Green Creme de menthe"})
+CREATE (peppermint:Ingredient {name: "Peppermint Schnapps"})
+CREATE (raspberryVodka:Ingredient {name: "Raspberry Vodka"})
+CREATE (cremedecacao:Ingredient {name: "White Creme de Cacao"})
+CREATE (midori:Ingredient {name: "Midori"})
+CREATE (baileys:Ingredient {name: "Baileys"})
+CREATE (ice:Ingredient {name: "Ice"})
+CREATE (gingerBeer:Ingredient {name:"Ginger Beer"})
+CREATE (gingerJuice:Ingredient {name:"Ginger Juice"})
+CREATE (cryGinger:Ingredient {name:"Crystallized Ginger"})
+CREATE (gingerCookie:Ingredient {name:"Gingerbread Cookie"})
+CREATE (choc:Ingredient {name:"Bittersweet Chocolate"})
+CREATE (pepperSticks:Ingredient {name: "Peppermint Sticks"})
+CREATE (lime:Ingredient {name: "Lime"})
+CREATE (bay:Ingredient:Spice {name: "Bay Leaf"})
+CREATE (cream:Ingredient {name: "Double Cream"})
+
+CREATE (hotrum)-[:COMPOSED_OF{quantity:"2 oz"}]->(darkrum)
+CREATE (hotrum)-[:COMPOSED_OF{quantity:"Pinch",form: "ground"}]->(cinnamon)
+CREATE (hotrum)-[:COMPOSED_OF{quantity:"1 small slice"}]->(butter)
+CREATE (hotrum)-[:COMPOSED_OF{quantity:"1 tsp", form:"brown"}]->(sugar)
+CREATE (hotrum)-[:COMPOSED_OF{quantity:"to taste"}]->(vanilla)
+CREATE (hotrum)-[:COMPOSED_OF{quantity:"top up",form:"boiled"}]->(water)
+
+CREATE (eggnog)-[:COMPOSED_OF{quantity:"5",form:"separated"}]->(egg)
+CREATE (eggnog)-[:COMPOSED_OF{quantity:"2/3 cup",form:"granulated"}]->(sugar)
+CREATE (eggnog)-[:COMPOSED_OF{quantity:"3", form:"stick"}]->(cinnamon)
+CREATE (eggnog)-[:COMPOSED_OF{quantity:"3/4 cup"}]->(darkrum)
+CREATE (eggnog)-[:COMPOSED_OF{quantity:"1", form:"bean"}]->(vanilla)
+CREATE (eggnog)-[:COMPOSED_OF{quantity:"1 tsp", form:"grated"}]->(nutmeg)
+CREATE (eggnog)-[:COMPOSED_OF{quantity:"1 cup"}]->(cream)
+CREATE (eggnog)-[:COMPOSED_OF{quantity:"3 cups"}]->(milk)
+
+CREATE (redRudolph)-[:COMPOSED_OF{quantity:"1/2 oz"}]->(curacao)
+CREATE (redRudolph)-[:COMPOSED_OF{quantity:"1/2 oz"}]->(cinnSchnapps)
+CREATE (redRudolph)-[:COMPOSED_OF{quantity:"3/4 oz"}]->(vodka)
+CREATE (redRudolph)-[:COMPOSED_OF{quantity:"6 oz"}]->(cranberry)
+
+CREATE (snowball)-[:COMPOSED_OF{quantity:"3 oz"}]->(tequilaCream)
+CREATE (snowball)-[:COMPOSED_OF{quantity:"3 drops"}]->(vanilla)
+CREATE (snowball)-[:COMPOSED_OF{quantity:"5 cubes",form:"crushed"}]->(ice)
+CREATE (snowball)-[:COMPOSED_OF{quantity:"1 oz",form:"evaporated skim"}]->(milk)
+CREATE (snowball)-[:COMPOSED_OF{quantity:"1/2 oz",form:"powdered"}]->(kahlua)
+CREATE (snowball)-[:COMPOSED_OF{quantity:"1",form:"stick"}]->(cinnamon)
+
+CREATE (mulledWine)-[:COMPOSED_OF{quantity:"2 bottles"}]->(chianti)
+CREATE (mulledWine)-[:COMPOSED_OF{quantity:"200g",form:"powdered"}]->(sugar)
+CREATE (mulledWine)-[:COMPOSED_OF{quantity:"1",form:"stick"}]->(cinnamon)
+CREATE (mulledWine)-[:COMPOSED_OF{quantity:"6",form:"whole"}]->(clove)
+CREATE (mulledWine)-[:COMPOSED_OF{quantity:"1",form:"grated"}]->(nutmeg)
+CREATE (mulledWine)-[:COMPOSED_OF{quantity:"1",form:"bean"}]->(vanilla)
+CREATE (mulledWine)-[:COMPOSED_OF{quantity:"2",form:"whole"}]->(starAnise)
+CREATE (mulledWine)-[:COMPOSED_OF{quantity:"2",form:"peel and juice"}]->(orange)
+CREATE (mulledWine)-[:COMPOSED_OF{quantity:"1",form:"peel and juice"}]->(lemon)
+CREATE (mulledWine)-[:COMPOSED_OF{quantity:"1",form:"peel and juice"}]->(lime)
+CREATE (mulledWine)-[:COMPOSED_OF{quantity:"3",form:"fresh"}]->(bay)
+
+CREATE (redhot)-[:COMPOSED_OF{quantity:"2 oz"}]->(chiliVodka)
+CREATE (redhot)-[:COMPOSED_OF{quantity:"2 oz"}]->(chocLiqueur)
+CREATE (redhot)-[:COMPOSED_OF{quantity:"Pinch",form:"powder"}]->(cocoa)
+CREATE (redhot)-[:COMPOSED_OF{quantity:"Pinch",form:"powder"}]->(cayenne)
+CREATE (redhot)-[:COMPOSED_OF{quantity:"1 spoon",form:"sweetened"}]->(whipcream)
+CREATE (redhot)-[:COMPOSED_OF{quantity:"1",form:"whole"}]->(chili)
+
+CREATE (santa)-[:COMPOSED_OF{quantity:"1 part"}]->(grenadine)
+CREATE (santa)-[:COMPOSED_OF{quantity:"1 part"}]->(cremedementhe)
+CREATE (santa)-[:COMPOSED_OF{quantity:"1 part"}]->(peppermint)
+
+CREATE (chocRasp)-[:COMPOSED_OF{quantity:"1.5 oz"}]->(raspberryVodka)
+CREATE (chocRasp)-[:COMPOSED_OF{quantity:"1 oz"}]->(cremedecacao)
+
+CREATE (grinch)-[:COMPOSED_OF{quantity:"2 oz"}]->(midori)
+CREATE (grinch)-[:COMPOSED_OF{quantity:"1/2 oz", form:"syrup"}]->(lemon)
+CREATE (grinch)-[:COMPOSED_OF{quantity:"1 tsp", form:"syrup"}]->(sugar)
+
+CREATE (chrisCookie)-[:COMPOSED_OF{quantity:"1 oz"}]->(peppermint)
+CREATE (chrisCookie)-[:COMPOSED_OF{quantity:"1 oz"}]->(kahlua)
+CREATE (chrisCookie)-[:COMPOSED_OF{quantity:"1 oz"}]->(baileys)
+
+CREATE (chocPepper)-[:COMPOSED_OF{quantity:"1.5 oz"}]->(cremedecacao)
+CREATE (chocPepper)-[:COMPOSED_OF{quantity:"1 oz"}]->(cream)
+CREATE (chocPepper)-[:COMPOSED_OF{quantity:"1 oz"}]->(peppermint)
+
+CREATE (mistle)-[:COMPOSED_OF {quantity:"2 oz"}]->(vodka)
+CREATE (mistle)-[:COMPOSED_OF {quantity:"2 oz", form:"juice"}]->(orange)
+CREATE (mistle)-[:COMPOSED_OF {quantity:"3 oz"}]->(cranberryTea)
+CREATE (mistle)-[:COMPOSED_OF{quantity:"3/4 oz", form:"juice"}]->(lemon)
+CREATE (mistle)-[:COMPOSED_OF{quantity:"3 tsp", form:"granulated"}]->(sugar)
+
+CREATE (hotchoc)-[:COMPOSED_OF{quantity:"1 quart"}]->(milk)
+CREATE (hotchoc)-[:COMPOSED_OF{quantity:"6 oz", form:"chopped"}]->(choc)
+CREATE (hotchoc)-[:COMPOSED_OF{quantity:"6 oz"}]->(peppermint)
+CREATE (hotchoc)-[:COMPOSED_OF{quantity:"6"}]->(pepperSticks)
+
+CREATE (gingerSnap)-[:COMPOSED_OF{quantity:"1 oz"}]->(gingerBeer)
+CREATE (gingerSnap)-[:COMPOSED_OF{quantity:"1 oz"}]->(gingerJuice)
+CREATE (gingerSnap)-[:COMPOSED_OF{quantity:"1.5 oz"}]->(darkrum)
+CREATE (gingerSnap)-[:COMPOSED_OF{quantity:"1 tsp"}]->(cinSchnapps)
+CREATE (gingerSnap)-[:COMPOSED_OF{quantity:"1", form:"white"}]->(egg)
+CREATE (gingerSnap)-[:COMPOSED_OF{quantity:"1"}]->(cryGinger)
+CREATE (gingerSnap)-[:COMPOSED_OF{quantity:"1"}]->(gingerCookie)
+CREATE (gingerSnap)-[:COMPOSED_OF{quantity:"1", form:"powder"}]->(clove)
+CREATE (gingerSnap)-[:COMPOSED_OF{quantity:"1", form:"stick"}]->(cinnamon)
+
+
+----
+
+== The graph
+[source,cypher]
+----
+match n return n
+----
+//graph
+
+== Queries:
+
+=== List all drinks in this graph
+[source,cypher]
+----
+MATCH (d)-[r:COMPOSED_OF]->(ingred)
+RETURN d.name as drink, LABELS(d) as type, d.url as link, collect(ingred.name) as ingredients
+----
+//table
+
+=== Show me the ingredients for a Red Hot Santa Tini
+[source,cypher]
+----
+MATCH (d:Alcoholic {name: "Red Hot Santa Tini"})-[r:COMPOSED_OF]->(ingred)
+RETURN ingred.name as ingredient, r.quantity as quantity, coalesce(r.form,"-") as form
+----
+//table
+
+=== Find me a nice, warming drink that contains spices
+[source,cypher]
+----
+MATCH (d:Hot)-[r:COMPOSED_OF]->(ingred)
+WITH d,collect(ingred) as ingredients
+WHERE ANY (i in ingredients where i:Spice)
+WITH  d.name as drink, d.url as link, FILTER(x in ingredients WHERE x:Spice) as spices
+RETURN drink,link, EXTRACT (s in spices | s.name)
+----
+//table
+
+=== Find me drinks that contain kahlua
+[source,cypher]
+----
+MATCH (i:Ingredient {name: "Kahlua"})<-[:COMPOSED_OF]-(drink)-[:COMPOSED_OF]->(otherIngred)
+return drink.name as drink, drink.url as link, collect(otherIngred.name) as otherIngredients
+----
+//table
+
+=== Find me drinks that do not contain sugar
+[source,cypher]
+----
+MATCH (d)-[r:COMPOSED_OF]->(ingred)
+WITH d,collect(ingred) as ingredients
+WHERE NONE (i in ingredients where i.name="Sugar")
+RETURN d.name as drink, d.url as link,ingredients
+----
+//table
+
+Created by Luanne Misquitta:
+
+- link:https://twitter.com/luannem[Twitter]
+
+- link:http://thought-bytes.blogspot.in/[Blog]
+
+- link:https://in.linkedin.com/in/luannemisquitta/[LinkedIn]
+
+

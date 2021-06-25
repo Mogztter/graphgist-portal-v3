@@ -1,0 +1,187 @@
+:neo4j-version: 3.5
+:author: Robin Bramley
+
+Version 0.1, 13th January 2016
+
+The training squad for the 6 Nations campaign was announced at 2pm on the 13th January, this graph shows the players who were picked for the squad, their domestic club and includes injury replacements.
+
+== Setup
+
+//hide
+//setup
+[source,cypher]
+----
+CREATE
+(england:NationalSide { name : 'England Rugby' } ),
+(sixnations2016:Squad {name : '6 Nations 2016'}),
+(england)-[:ANNOUNCED]->(sixnations2016),
+(forwards:Line {name : 'Forwards'}),
+(backs:Line {name : 'Backs'}),
+(sixnations2016)-[:FEATURES]->(forwards),
+(sixnations2016)-[:FEATURES]->(backs),
+(bath:Club { name : 'Bath Rugby', founded : 1865}),
+(exeter:Club { name : 'Exeter Chiefs'}),
+(gloucester:Club { name : 'Gloucester Rugby'}),
+(quins:Club { name : 'Harlequins'}),
+(leicester:Club { name : 'Leicester Tigers'}),
+(newcastle:Club { name : 'Newcastle Falcons'}),
+(saints:Club { name : 'Northampton Saints'}),
+(sale:Club { name : 'Sale Sharks'}),
+(sarries:Club { name : 'Saracens'}),
+(wasps:Club { name : 'Wasps'}),
+(beaumont: Player { name : 'Josh Beaumont', caps : 0 } ),
+(beaumont)-[:PLAYS_FOR]->(sale),
+(beaumont)-[:IN]->(forwards),
+(cole:Player { name : 'Dan Cole' } ),
+(cole)-[:PLAYS_FOR]->(leicester),
+(cole)-[:IN]->(forwards),
+(cowandickie:Player { name : 'Luke Cowan-Dickie' } ),
+(cowandickie)-[:PLAYS_FOR]->(exeter),
+(cowandickie)-[:IN]->(forwards),
+(clifford:Player { name : 'Jack Clifford', caps : 0 } ),
+(clifford)-[:PLAYS_FOR]->(quins),
+(clifford)-[:IN]->(forwards),
+(george:Player { name : 'Jamie George' } ),
+(george)-[:PLAYS_FOR]->(sarries),
+(george)-[:IN]->(forwards),
+(hartley:Player { name : 'Dylan Hartley' } ),
+(hartley)-[:PLAYS_FOR]->(saints),
+(hartley)-[:IN]->(forwards),
+(haskell:Player { name : 'James Haskell' } ),
+(haskell)-[:PLAYS_FOR]->(wasps),
+(haskell)-[:IN]->(forwards),
+(phill:Player { name : 'Paul Hill', caps : 0 } ),
+(phill)-[:PLAYS_FOR]->(saints),
+(phill)-[:IN]->(forwards),
+(itoje:Player { name : 'Maro Itoje', caps : 0 } ),
+(itoje)-[:PLAYS_FOR]->(sarries),
+(itoje)-[:IN]->(forwards),
+(kruis:Player { name : 'George Kruis' } ),
+(kruis)-[:PLAYS_FOR]->(sarries),
+(kruis)-[:IN]->(forwards),
+(kvesic:Player { name : 'Matt Kvesic' } ),
+(kvesic)-[:PLAYS_FOR]->(gloucester),
+(kvesic)-[:IN]->(forwards),
+(launchbury:Player { name : 'Joe Launchbury' } ),
+(launchbury)-[:PLAYS_FOR]->(wasps),
+(launchbury)-[:IN]->(forwards),
+(lawes:Player { name : 'Courtney Lawes' } ),
+(lawes)-[:PLAYS_FOR]->(saints),
+(lawes)-[:IN]->(forwards),
+(marler:Player { name : 'Joe Marler' } ),
+(marler)-[:PLAYS_FOR]->(quins),
+(marler)-[:IN]->(forwards),
+(mullan:Player { name : 'Matt Mullan' } ),
+(mullan)-[:PLAYS_FOR]->(wasps),
+(mullan)-[:IN]->(forwards),
+(robshaw:Player { name : 'Chris Robshaw' } ),
+(robshaw)-[:PLAYS_FOR]->(quins),
+(robshaw)-[:IN]->(forwards),
+(thomas:Player {  name: 'Henry Thomas' } ),
+(thomas)-[:PLAYS_FOR]->(bath),
+(thomas)-[:IN]->(forwards),
+(bvunipola:Player { name : 'Billy Vunipola' } ),
+(bvunipola)-[:PLAYS_FOR]->(sarries),
+(bvunipola)-[:IN]->(forwards),
+(mvunipola:Player { name : 'Mako Vunipola' } ),
+(mvunipola)-[:PLAYS_FOR]->(sarries),
+(mvunipola)-[:IN]->(forwards),
+(ashton:Player { name : 'Chris Ashton'} ),
+(ashton)-[:PLAYS_FOR]->(sarries),
+(ashton)-[:IN]->(backs),
+(brown:Player { name : 'Mike Brown' } ),
+(brown)-[:PLAYS_FOR]->(quins),
+(brown)-[:IN]->(backs),
+(care:Player { name : 'Danny Care' } ),
+(care)-[:PLAYS_FOR]->(quins),
+(care)-[:IN]->(backs),
+(daly:Player { name : 'Elliot Daly', caps : 0 } ),
+(daly)-[:PLAYS_FOR]->(wasps),
+(daly)-[:IN]->(backs),
+(devoto:Player { name : 'Ollie Devoto', caps : 0 } ),
+(devoto)-[:PLAYS_FOR]->(bath),
+(devoto)-[:IN]->(backs),
+(farrell:Player { name : 'Owen Farrell' } ),
+(farrell)-[:PLAYS_FOR]->(sarries),
+(farrell)-[:IN]->(backs),
+(ford:Player { name : 'George Ford' } ),
+(ford)-[:PLAYS_FOR]->(bath),
+(ford)-[:IN]->(backs),
+(goode:Player { name : 'Alex Goode' } ),
+(goode)-[:PLAYS_FOR]->(sarries),
+(goode)-[:IN]->(backs),
+(shill:Player { name : 'Sam Hill', caps : 0 } ),
+(shill)-[:PLAYS_FOR]->(exeter),
+(shill)-[:IN]->(backs),
+(joseph:Player { name : 'Jonathan Joseph' } ),
+(joseph)-[:PLAYS_FOR]->(bath),
+(joseph)-[:IN]->(backs),
+(nowell:Player { name : 'Jack Nowell' } ),
+(nowell)-[:PLAYS_FOR]->(exeter),
+(nowell)-[:IN]->(backs),
+(watson:Player { name : 'Anthony Watson' } ),
+(watson)-[:PLAYS_FOR]->(bath),
+(watson)-[:IN]->(backs),
+(yarde:Player { name : 'Marland Yarde' } ),
+(yarde)-[:PLAYS_FOR]->(quins),
+(yarde)-[:IN]->(backs),
+(byoungs:Player { name : 'Ben Youngs' } ),
+(byoungs)-[:PLAYS_FOR]->(leicester),
+(byoungs)-[:IN]->(backs),
+(ewers:Player { name : 'Dave Ewers' } ),
+(ewers)-[:PLAYS_FOR]->(exeter),
+(ewers)<-[:INJURY_REPLACEMENT_FOR]-(kvesic),
+(slade:Player { name : 'Henry Slade' } ),
+(slade)-[:PLAYS_FOR]->(exeter),
+(slade)<-[:INJURY_REPLACEMENT_FOR]-(shill),
+(tuilagi:Player { name : 'Manu Tuilagi' } ),
+(tuilagi)-[:PLAYS_FOR]->(leicester),
+(tuilagi)<-[:INJURY_REPLACEMENT_FOR]-(devoto),
+(brookes:Player { name : 'Kieran Brookes' } ),
+(brookes)-[:PLAYS_FOR]->(saints),
+(brookes)<-[:INJURY_REPLACEMENT_FOR]-(thomas);
+----
+
+== The graph
+[source,cypher]
+----
+MATCH (n) RETURN n
+----
+//graph
+
+=== How many players in the squad?
+[source,cypher]
+----
+match (c:Club)<-[r:PLAYS_FOR]-(p:Player)-[*2..2]-(s:Squad)
+where s.name = '6 Nations 2016'
+return count(r) as players;
+----
+//table
+
+=== Which premiership team has had the most players selected?
+[source,cypher]
+----
+match (c:Club)<-[r:PLAYS_FOR]-(p:Player)-[*2..2]-(s:Squad)
+where s.name = '6 Nations 2016'
+return c.name as club, count(r) as players
+order by players desc, club asc;
+----
+//table
+
+=== Who are the uncapped players?
+[source,cypher]
+----
+match (p:Player)-[*2..2]-(s:Squad)
+where s.name = '6 Nations 2016'
+and p.caps = 0
+return p.name as uncapped;
+----
+//table
+
+=== Who are the injury replacements?
+[source,cypher]
+----
+match (m)-[:INJURY_REPLACEMENT_FOR]->(n)
+return m.name as substitutes, n.name as injured;
+----
+//table

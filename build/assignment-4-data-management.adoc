@@ -1,0 +1,118 @@
+= Auto Makers and their Owners
+:author: Pennati Lucas
+:style: red:Person(name)
+
+== Introduction
+
+The data modelled down here represents two of the biggest automotive groups in the world, Volkswagen and FCA. This way, it is simple to see which company owns what auto maker and with which maker they compete.
+
+image::http://i.imgur.com/u4G5Al3.png[width=600]
+
+== Setup
+//setup
+//hide
+[source,cypher]
+----
+CREATE (Volkswagen: AutoMaker {name: "Volkswagen", founded:1937, headquarters:'Wolfsburg', nation:'Germany'})
+CREATE (Audi: AutoMaker {name: "Audi", founded:1909, headquarters:'Ingolstadt', nation:'Germany'})
+CREATE (Bentley: AutoMaker {name: "Bentley Motors Limited", founded:1919, headquarters:'Crewe', nation:'England'})
+CREATE (Bugatti: AutoMaker {name: "Bugatti", founded:1909, headquarters:'Molsheim', nation:'France'})
+CREATE (Skoda: AutoMaker {name: "Skoda Auto", founded:1895, headquarters:'Mada Boleslav', nation:'Czech Republic'})
+CREATE (Lamborghini: AutoMaker {name: "Lamborghini", founded:1963, headquarters:'Santa Agata Bolognese', nation:'Italy'})
+CREATE (Seat: AutoMaker {name: "Seat", founded:1950, headquarters:'Barcelona', nation:'Spain'})
+CREATE (MAN: AutoMaker {name: "MAN SE", founded:1758, headquarters:'Munich', nation:'Germany'})
+CREATE (Porsche: AutoMaker {name: "Porsche", founded:1931, headquarters:'Stuttgart', nation:'Germany'})
+CREATE (Scania: AutoMaker {name: "Scania AB", founded:1891, headquarters:'Södertälje', nation:'Sweden'})
+
+CREATE (Abarth: AutoMaker {name: "Abarth", founded:1949, headquarters:'Turin', nation:'Italy'})
+CREATE (AlfaRomeo: AutoMaker {name: "Alfa Romeo", founded:1910, headquarters:'Turin', nation:'Italy'})
+CREATE (Chrysler: AutoMaker {name: "Chrysler", founded:1925, headquarters:'Auburn Hills', nation:'United States'})
+CREATE (Dodge: AutoMaker {name: "Dodge", founded:1900, headquarters:'Auburn Hills', nation:'United States'})
+CREATE (Fiat: AutoMaker {name: "Fabbrica Italiana Automobili Torino", founded:1899, headquarters:'Turin', nation:'Italy'})
+CREATE (Lancia: AutoMaker {name: "Lancia", founded:1906, headquarters:'Turin', nation:'Italy'})
+CREATE (Ram: AutoMaker {name: "Ram Trucks", founded:2009, headquarters:'Auburn Hills', nation:'United States'})
+CREATE (Maserati: AutoMaker {name: "Maserati S.p.A.", founded:1914, headquarters:'Modena', nation:'Italy'})
+
+CREATE (VW: Group {name:"Volkswagen Group", founded:1937, headquarters: 'Wolfsburg', nation: 'Germany'})
+
+CREATE (FCA: Group {name:"Fiat Chrysler Automobiles", founded:2014, headquarters: 'London', nation: 'United Kingdom'})
+
+CREATE
+    (VW)-[:OWNS]->(Volkswagen),
+    (VW)-[:OWNS]->(Audi),
+    (VW)-[:OWNS]->(Bentley),
+    (VW)-[:OWNS]->(Bugatti),
+    (VW)-[:OWNS]->(Skoda),
+    (VW)-[:OWNS]->(Lamborghini),
+    (VW)-[:OWNS]->(Seat),
+    (VW)-[:OWNS]->(MAN),
+    (VW)-[:OWNS]->(Porsche),
+    (VW)-[:OWNS]->(Scania)
+
+CREATE
+    (FCA)-[:OWNS]->(Abarth),
+    (FCA)-[:OWNS]->(AlfaRomeo),
+    (FCA)-[:OWNS]->(Chrysler),
+    (FCA)-[:OWNS]->(Dodge),
+    (FCA)-[:OWNS]->(Fiat),
+    (FCA)-[:OWNS]->(Lancia),
+    (FCA)-[:OWNS]->(Ram),
+    (FCA)-[:OWNS]->(Maserati)
+
+CREATE
+    (Volkswagen)-[:COMPETES_WITH]->(AlfaRomeo),
+    (Skoda)-[:COMPETES_WITH]->(AlfaRomeo),
+    (Seat)-[:COMPETES_WITH]->(AlfaRomeo),
+    (Audi)-[:COMPETES_WITH]->(Maserati),
+    (Volkswagen)-[:COMPETES_WITH]->(Chrysler),
+    (Skoda)-[:COMPETES_WITH]->(Chrysler),
+    (Seat)-[:COMPETES_WITH]->(Chrysler),
+    (Volkswagen)-[:COMPETES_WITH]->(Skoda),
+    (Skoda)-[:COMPETES_WITH]->(Seat),
+    (Seat)-[:COMPETES_WITH]->(Volkswagen),
+    (AlfaRomeo)-[:COMPETES_WITH]->(Chrysler),
+    (Abarth)-[:COMPETES_WITH]->(Fiat),
+    (Dodge)-[:COMPETES_WITH]->(Ram),
+    (Lamborghini)-[:COMPETES_WITH]->(Porsche),
+    (Porsche)-[:COMPETES_WITH]->(Audi),
+    (Audi)-[:COMPETES_WITH]->(Lamborghini),
+    (Lancia)-[:COMPETES_WITH]->(Fiat),
+    (MAN)-[:COMPETES_WITH]->(Scania)
+----
+
+//graph
+
+== Competitors by Nation
+
+Finds all the automakers from Italy, and lists its competitors
+
+[source,cypher]
+----
+MATCH (maker:AutoMaker {nation:"Italy"})-[:COMPETES_WITH]-(comp: AutoMaker)
+RETURN maker.name AS Name, comp.name AS CompetitorsName, comp.nation AS CompetitorsNation
+----
+
+//table
+
+== Find all subsidiaries
+
+Finds all automakers owned by the Volkswagen Group
+
+[source,cypher]
+----
+MATCH (owner:Group {name:"Volkswagen Group"})-[:OWNS]-(subsid: AutoMaker)
+RETURN subsid.name AS SubsidiaryName, owner.name AS OwnerName
+----
+
+//table
+
+== Auto Makers before date
+
+Finds all automakers founded before 1950
+
+[source,cypher]
+----
+MATCH (maker: AutoMaker) WHERE maker.founded < 1950
+return maker.name as Name, maker.nation as Nation
+----
+//table

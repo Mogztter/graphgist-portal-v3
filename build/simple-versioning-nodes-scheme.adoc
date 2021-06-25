@@ -1,0 +1,28 @@
+= Simple versioning nodes scheme
+
+Given a chain of node versions, we want to find the most recent one and serve it to the user.
+
+//console
+
+
+//setup
+//hide
+[source,cypher]
+----
+create (_9:Person {name:"Adam"})
+create (_10:Person {name:"Eve"})
+create (_11:Person {name:"Dave"})
+create (_12:Person {name:"Eve",city:"NYC"})
+create (_10)-[:UPDATED_PERSON]->(_12)
+----
+
+== Find the current version of all Persons
+
+[source,cypher]
+----
+MATCH (p:Person)-[:UPDATED_PERSON*0..]->(currentVersion:Person) 
+WHERE NOT ((currentVersion)-[:UPDATED_PERSON]->()) 
+RETURN DISTINCT currentVersion AS person
+----
+
+//table

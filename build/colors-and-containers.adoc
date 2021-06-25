@@ -1,0 +1,164 @@
+= Introduction to Graphdatabases
+:author: Karthik Srinivasan
+:twitter: @karthikarizona
+:style: red:Person(name)
+
+// Please use the style & syntax-help outlined here: https://github.com/neo4j-contrib/graphgist/blob/master/gists/syntax.adoc
+// This is also a good example for a GraphGist: https://gist.github.com/jexp/2014efa6448b307c65e9
+
+== Introduction
+
+MIS 587 Fun activities
+
+This is not part of your coursework. NO ASSIGNMENTS OR QUIZZES on this one. This one is only a fun activity!  
+
+Many of us are aware of graph databases, many of us are new not only to graph data, but also networks. Networks play an important role in our lives. They are also an important source of revenue for biggies like google and facebook who thrive on networked thinking. 
+
+For the DBMS folks, this is not very different actually (just a mesh of too many joins, if I may!). It also liberates our imagination, in terms of data modeling and querying.
+
+Graphgist is provided by neo4j with the assistance of github. You can fork this page or any other page and make your own graphs. 
+
+Have fun!
+
+////
+Provide an introduction to your domain and what you are trying to accomplish, link to http://a.source.com[sources] as needed.
+
+Provide a domain model image - using something like http://www.apcjones.com/arrows/# or https://www.gliffy.com/ or a readable screenshot from Neo4j-Browser.
+
+You can run this query to get an overview of entities and how they are related:
+MATCH (a)-[r]->(b) WHERE labels(a) <> [] AND labels(b) <> []
+RETURN DISTINCT head(labels(a)) AS This, type(r) as To, head(labels(b)) AS That LIMIT 10
+////
+
+////
+image::https://scontent.xx.fbcdn.net/hphotos-xft1/v/t1.0-9/12821544_10154053423477376_3114644538661238060_n.jpg?oh=e6f20aed03474ca1d38de0d47d5b6607&oe=57AC91B8[width=50]
+////
+
+== Create some data
+
+Here, we just create some sample nodes and relationships. 
+Lets assume that we are all going to a shop that sells lunch boxes. Lunch boxes there are available in different container shapes (round, square, oval) and colors (red, blue, green, orange, yellow). Each of us have our preferences for color and containers. Let model this small world phenomenon using graph data.
+
+For details, you can visit graphgist main website or learn more about cypher query language in http://neo4j.com. 
+
+////
+A Cypher query to setup the database
+Please use a small sample of your domain, at most 150 nodes and 200 relationships are enough for the pedagocial example.
+You can link to the setup of a larger dataset or LOAD CSV queries in a second file of your GitHub Gist at the end.
+In your setup query you can also use LOAD CSV loading CSV files from your GitHub Gist, like here: https://gist.github.com/jexp/f78df7b232d0faa171ff
+////
+
+//hide
+//setup
+[source,cypher]
+----
+CREATE
+  (Chris:Person {name: 'Chris'}),
+  (Dawei:Person {name: 'Dawei'}),
+  (Sina:Person {name: 'Sina'}),
+  (Ernest:Person {name: 'Ernest'}),
+  (Don:Person {name: 'Don'}),
+  (Jason:Person {name: 'Jason'}),
+  (Sam:Person {name: 'Sam'}),
+  (Steve:Person {name: 'Steve'}),
+  (Ben:Person {name: 'Ben'}),
+  (Chad:Person {name: 'Chad'}),
+  (Alex:Person {name: 'Alex'}),
+  (Peter:Person {name: 'Peter'}),
+  (Jon:Person {name: 'Jon'}),
+  (Justin:Person {name: 'Justin'}),
+  (Karthik:Person {name: 'Karthik'}),
+  (blue:Color{name: 'blue'}),
+  (red:Color{name: 'red'}),
+  (green:Color{name: 'green'}),
+  (orange:Color{name: 'orange'}),
+  (yellow:Color{name: 'yellow'}),
+  (square:container{name: 'square'}),
+  (round:container{name: 'round'}),
+  (oval:container{name: 'oval'}),
+  
+  (Sina)-[:LIKES]->(blue),
+  (Justin)-[:LIKES]->(red),
+  (Jon)-[:LIKES]->(green),
+  (Ernest)-[:LIKES]->(green),
+  (Chad)-[:LIKES]->(red),
+  (Chris)-[:LIKES]->(yellow),
+  (Dawei)-[:LIKES]->(blue),
+  (Justin)-[:LIKES]->(red),
+  (Sam)-[:LIKES]->(orange),
+  (Steve)-[:LIKES]->(blue),
+  (Ben)-[:LIKES]->(orange),
+  (Alex)-[:LIKES]->(green),
+  (Peter)-[:LIKES]->(red),
+  (Jason)-[:LIKES]->(orange),
+  (Karthik)-[:LIKES]->(orange),
+  (Don)-[:LIKES]->(red),
+  
+  (square)-[:IS_AVAILABLE_IN]->(green),
+  (round)-[:IS_AVAILABLE_IN]->(red),
+  (oval)-[:IS_AVAILABLE_IN]->(blue),
+  
+  (Chad)-[:PREFERS]->(round),
+  (Chris)-[:PREFERS]->(round),
+  (Dawei)-[:PREFERS]->(square),
+  (Justin)-[:PREFERS]->(square),
+  (Sam)-[:PREFERS]->(oval),
+  (Steve)-[:PREFERS]->(oval),
+  (Don)-[:PREFERS]->(round),
+  (Karthik)-[:PREFERS]->(oval)
+----
+//graph 
+
+== Graph database - Simple query
+
+Joining is quicker and easier in graphs 
+
+[source,cypher]
+----
+MATCH (a:Person)-[:LIKES]->(color{name: 'orange'})
+RETURN a.name as `People who like orange`
+----
+//table
+
+== Visualizing outputs
+
+We can directly visualize output (and some of the graph databases offer interactive visualizations)
+[source,cypher]
+----
+MATCH (a:Person)-[:LIKES]->(color{name: 'green'})
+RETURN a.name as `People who like green`
+----
+//table
+//graph
+
+== Some more queries
+
+[source,cypher]
+----
+MATCH (per)-[:LIKES]->(col)<-[:IS_AVAILABLE_IN]-(con)
+MATCH (per)-[:PREFERS]->(con2)
+RETURN per.name as `Person`, col.name as `Color`, con.name as `Container type available`, con2.name AS `Container type preferred`
+----
+//table
+
+The strength of graph databases in using queries with multiple joins (or multi-link queries)
+
+[source,cypher]
+----
+MATCH (per:Person)-[:LIKES]->(col:Color{name:'blue'})
+MATCH (col)<-[:IS_AVAILABLE_IN]-(con)
+RETURN per.name as `Person`, col.name as `Color`, con.name as `Container type`
+----
+
+//table
+
+
+== That was fun!
+
+This is just a short tutorial I created, as this week we have no assignment (only one quiz). In the past, there were some of us who expressed interest in databases as well as noSQL. Well, this is not quite the same, but just thought of sharing it. If you are interested, go ahead and create your own graphgists, and share it on MIS587 facebook group. 
+
+For more, please visit the main graphgist portal here: http://portal.graphgist.org/about
+
+Cheers!
+
+

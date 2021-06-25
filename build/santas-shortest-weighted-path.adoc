@@ -1,0 +1,340 @@
+= Santa\'s shortest weighted path
+:neo4j-version: 2.3.1
+:author: Alessio De Angelis
+:twitter: @alexotter89
+
+== Introduction: Santa's shortest weighted path
+
+HO! HO! HO! Tonight it's Christmas Eve and Santa Claus is riding his sleigh around the world. He loves delivering the best gifts
+to every kid, making them happy. They are waiting for him since it gets dark. They stay by the fireplace or near the window,
+looking up to the night sky trying to catch with their wide open eyes even the smallest sign of a flying reindeer. And one by one
+each of them listens to a bell noise close to her house and a new gift for them appears suddenly beneath the Christmas
+tree, as a magic has just being summoned. When Santa Claus is not in a hurry can even manage to knock at the door of their house,
+meeting the excited kids face to face before giving them the present.
+
+Santa Claus is now upon the skies of Rome. He is so cheerful since he has just delivered all the gifts in the town, heading to the next one.
+But, wait! Nooo, he just realized that he has forgotten three children, Alessio, Daniela and Domenico! How can he fix this missing? Hurry up, Santa! Hurry up!
+Let's give them their present before they go to bed, fall asleep and it's too late!!!
+But how? Rack up your brain, Santa! Yeah, Eureka!!! He got it!!!
+In less than no time he modeled the map of Rome as a graph: he thought that the nodes could be the junctions between two or more streets, while
+the roads the edges connecting each intersection. The relationships can carry the time distance he needs to travel that street segment
+from node to node as an attribute.
+Store this model in a graph db as Neo4j, find the shortest weighted route to reach each child before she is going to sleep
+and the success is guaranteed without a shadow of a doubt!
+
+image::http://www.christmas-clipart.com/free_christmas_clip_art_images/reindeers_pulling_santas_sled_or_sleigh_0521-1009-1013-0121_SMU.jpg[]
+
+== Maps graph model
+
+Representing a street map as a graph is a common use case scenario. This can be achieved in several ways. For example I can see three topologies.
+
+You could model the street blocks as nodes and draw a relationship between adjacent blocks.
+
+Or the vertexes could represent the ways and every pair of streets that lies across is a single edge.
+
+A third model considers the road junctions as nodes. An edge is then created when two or more of them are directly connected by a segment
+of a lane with no other intersection taking place. And so on.
+All of these three examples are correct: you should just choose the one that best fits your purposes.
+
+Tonight Santa is going to use the third representation.
+There are two labels of nodes: *Kid* and *RoadJunction*. The former characterizes a kid waiting for the gift delivered by Santa, together with his name and the bedtime. For sake of simplicity the bedtime represents the number of minutes from the time Santa became fully aware of his missing and starts his new city traversal to when the child falls asleep.
+The latter is the intersection between two or more streets, uniquely defined by its id.
+A node can have both labels at the same time.
+There is indeed only one type of relationship: *CONNECTED_TO*. It carries the attribute distance, that shows how much time Santa's sleigh needs to pass through that street segment. Although it is a directed edge, it will be traversed both ways, assuming that the time to go from one side to another and vice versa is exactly the same.
+
+// To understand better the scenario consider the following figure.
+// image::http://s12.postimg.org/kl2g8b8rh/santa_claus_map.png[]
+
+It sketches the street map where Santa should find the fastest route. Each intersection is identified by an id and each street segment
+has a distance value. The three kids are living in the road junctions whose ids are 1,2,3. Santa starts the traverse from node 0.
+
+== Model setup in Neo4j
+
+Let's see how can you convert this use case scenario in a graph on Neo4j. There is a total of 22 RoadJunction nodes. Three of them represent the kids as well.
+Their names are Alessio, Daniela and Domenico and their bedtimes are, respectively, 100, 50 and 30 minutes.
+
+//setup
+//hide
+[source,cypher]
+----
+CREATE
+  (a:Kid:RoadJunction {id: 1, name: 'Alessio',  bedtime: 100}),
+  (b:Kid:RoadJunction {id: 2, name: 'Daniela',  bedtime: 50}),
+  (c:Kid:RoadJunction {id: 3, name: 'Domenico', bedtime: 30}),
+  (n0	:RoadJunction	{id:	0	}),
+  (n4	:RoadJunction	{id:	4	}),
+  (n5	:RoadJunction	{id:	5	}),
+  (n6	:RoadJunction	{id:	6	}),
+  (n7	:RoadJunction	{id:	7	}),
+  (n8	:RoadJunction	{id:	8	}),
+  (n9	:RoadJunction	{id:	9	}),
+  (n10	:RoadJunction	{id:	10	}),
+  (n11	:RoadJunction	{id:	11	}),
+  (n12	:RoadJunction	{id:	12	}),
+  (n13	:RoadJunction	{id:	13	}),
+  (n14	:RoadJunction	{id:	14	}),
+  (n15	:RoadJunction	{id:	15	}),
+  (n16	:RoadJunction	{id:	16	}),
+  (n17	:RoadJunction	{id:	17	}),
+  (n18	:RoadJunction	{id:	18	}),
+  (n19	:RoadJunction	{id:	19	}),
+  (n20	:RoadJunction	{id:	20	}),
+  (n21	:RoadJunction	{id:	21	}),
+  (a)-[:CONNECTED_TO {distance : 4 }]->(n21),
+  (a)-[:CONNECTED_TO {distance : 4 }]->(n7),
+  (a)-[:CONNECTED_TO {distance : 4 }]->(n4),
+  (b)-[:CONNECTED_TO {distance : 2 }]->(n10),
+  (b)-[:CONNECTED_TO {distance : 8 }]->(n17),
+  (b)-[:CONNECTED_TO {distance : 1 }]->(n11),
+  (b)-[:CONNECTED_TO {distance : 4}]->(n12),
+  (c)-[:CONNECTED_TO {distance : 2.5 }]->(n13),
+  (c)-[:CONNECTED_TO {distance : 2 }]->(n15),
+  (c)-[:CONNECTED_TO {distance : 6 }]->(n17),
+  (c)-[:CONNECTED_TO {distance : 5 }]->(n19),
+  (n16)-[:CONNECTED_TO {distance : 4 }]->(n21),
+  (n16)-[:CONNECTED_TO {distance : 8 }]->(n14),
+  (n4)-[:CONNECTED_TO {distance : 4 }]->(n14),
+  (n0)-[:CONNECTED_TO {distance : 8 }]->(n21),
+  (n0)-[:CONNECTED_TO {distance : 5.5 }]->(n7),
+  (n0)-[:CONNECTED_TO {distance : 4 }]->(n8),
+  (n7)-[:CONNECTED_TO {distance : 4 }]->(n6),
+  (n7)-[:CONNECTED_TO {distance : 4 }]->(n8),
+  (n9)-[:CONNECTED_TO {distance : 4 }]->(n8),
+  (n9)-[:CONNECTED_TO {distance : 4 }]->(n6),
+  (n9)-[:CONNECTED_TO {distance : 9 }]->(n10),
+  (n5)-[:CONNECTED_TO {distance : 1 }]->(n6),
+  (n5)-[:CONNECTED_TO {distance : 3 }]->(n4),
+  (n1)-[:CONNECTED_TO {distance : 6 }]->(n12),
+  (n14)-[:CONNECTED_TO {distance : 7.5 }]->(n20),
+  (n13)-[:CONNECTED_TO {distance : 5 }]->(n20),
+  (n13)-[:CONNECTED_TO {distance : 3 }]->(n15),
+  (n12)-[:CONNECTED_TO {distance : 2 }]->(n13),
+  (n12)-[:CONNECTED_TO {distance : 3.5 }]->(n11),
+  (n15)-[:CONNECTED_TO {distance : 1.5 }]->(n11),
+  (n20)-[:CONNECTED_TO {distance : 2.5 }]->(n19),
+  (n18)-[:CONNECTED_TO {distance : 6 }]->(n19),
+  (n18)-[:CONNECTED_TO {distance : 5 }]->(n17);
+----
+
+To speed up the query when looking for a particular RoadJunction id, Santa decides
+to create an index on that node attribute. In this little graph you cannot really appreciate it,
+but in a bigger one it is fundamental.
+
+[source,cypher]
+----
+CREATE INDEX ON :RoadJunction(id)
+----
+
+Here you can see the graph just modeled.
+
+[source,cypher]
+----
+MATCH (s)-[p]->(o) RETURN s,p,o;
+----
+//graph
+
+== Santa's Algorithm
+
+Santa is on RoadJunction {id:0} vertex when he realizes of his missing. This will be the starting
+point of his route. He wants to look for the best path that meets the following requirements:
+
+* the gifts are delivered to each kid *before they fall asleep*
+* the travel time to traverse the map from the starting point (node with id 0) to the last
+visited kid must be *minimized*. Christmas Eve is not over yet, there are still plenty of children
+waiting for their gifts in other towns! You don't want them to miss their present, do you?
+
+At a first glance Santa Claus may think that using the already implemented _allShortestPaths_ could be a cleaver idea.
+However, this function doesn't take into account the weight of each relationship, characterized by the distance property:
+in fact, a shorter path, meant as the one with the least number of relationships, may have an higher total distance than a longer but lighter one.
+Santa needs to develop a new query from scratch.
+The Santa's shortest weighted path algorithm is the following:
+
+[source]
+----
+MATCH (kid:Kid)
+WITH count(kid) as numberOfKids
+MATCH path = ((startingRoadJunction)-[:CONNECTED_TO*1..20]-(lastKid:Kid))
+WHERE startingRoadJunction.id = 0 and  size(filter(x in nodes(path) WHERE (x:Kid))) >= numberOfKids
+WITH  path, [x IN nodes(path) WHERE (x:Kid) | x] as kidsList, numberOfKids
+UNWIND kidsList as kidInPath
+WITH path, collect(distinct kidInPath) as kidsInPath, numberOfKids
+WHERE  size(kidsInPath) = numberOfKids
+WITH path,  REDUCE(dist = 0, rel in rels(path) | dist + rel.distance) AS pathLength, kidsInPath,
+ [i in range(0,size(nodes(path))) where (nodes(path)[i]):Kid | i] as kidPositions, numberOfKids
+ WHERE
+  ALL (i in range (0,size(kidPositions)-1) WHERE
+ reduce(dist = 0, rel in rels(path)[0..kidPositions[i]] | dist + rel.distance) < (kidsInPath[i]).bedtime)
+RETURN path, pathLength
+ORDER BY pathLength ASC
+LIMIT 1
+----
+
+Here the algorithm explanation line by line. Note that you may need to create the dataset in a your own Neo4j graph instance
+to avoid `org.neo4j.kernel.guard.GuardOperationsCountException` exception that unfortunately may occur on the graphgist
+platform.
+
+*1,2)* Santa would firstly like to know how many kids he should deliver gifts.
+The query is trivial and could be executed alone in this way
+
+[source,cypher]
+----
+MATCH (kid:Kid)
+RETURN count(kid) as numberOfKids
+----
+//table
+
+The result (3 in this case) is then passed to the other parts of the final query thanks
+to the _WITH_ clause (instead of _RETURN_).
+
+*3)* You are looking for a subgraph that matches this pattern:
+
+* the node _lastKid_ is a Kid
+* there is at least 1 and a max of 20 hops to connect the nodes _startingRoadJunction_ and _lastKid_. The type of this relationships is _CONNECTEDTO_ . It is always a clever idea to set a lower and upper bound to the paths, especially if your hardware resources are limited and the graph is big. In this case 20 hops are enough for finding the route.
+
+* the pattern is undirected, as long as the last node of the path is lastKid. Therefore the relationships are navigated both ways.
+
+Every path that matches this pattern is stored into the variable _path_.
+
+*4)* In the _WHERE_ condition the constraint that the first node of the path must have the id equal to 0 is set.
+Furthermore
+----
+size(filter(x in nodes(path) WHERE (x:Kid))) >= numberOfKids
+----
+means that the number of the kids in the path must be equal or greater than the value of the variable numberOfKids, previously obtained.
+This condition will help the search of the optimal solution, removing already from the further query steps and calculations
+those paths that don't include every kid for sure. The filter function iterates all the nodes of path, returning an array
+comprising only those labeled by _Kid_.
+
+*5)* The WITH clause permits to pass to the next algorithm steps the variable _path_, the numberOfKids variable
+and an array containing all the Kid nodes found in the corresponding path (thanks to a filter-extract function).
+
+*6,7)* A path may traverse a kid node more than once. The aim of those two lines is to unwind the kidsList array of each path and collecting it again
+in order to remove the duplicates from it. Therefore the resulting collection is the set of kids contained in the path.
+
+*8)* An extra where condition to apply on the kids sets. It removes from the result those path that don't pass through all
+the kids. The one you can find at line 4 is not enough to assure this requirement, due to the existence of the duplicates.
+For instance a path with the kidsList [1,2,2] is excluding the kid with id 3, even if the size is actually three, and should be consequently  pruned.
+
+*9,10)* At this point the algorithm is making two important calculations, stored in the variables _pathLength_ and _kidPositions_.
+The former is the total time distance Santa needs to go from the start node to the end one. It is obtained thanks to the
+_reduce_ collection function.
+
+----
+REDUCE(dist = 0, rel in rels(path) | dist + rel.distance)
+----
+
+It iterates the relationships in the path, accumulating the total distance inside the dist variable, initialized to 0.
+
+The latter, instead, leverages the collection function that combines extract and filter. It returns the array consisting of
+the position of the kids among all the nodes of the path.
+For example, let [1,4,3,4,6,2] be the array resulting from nodes(path) and 1,2,3 the kids. This function
+will return [0,2,4], id est the indexes of the kids within the array.
+The range function generates an array that goes from 0 to the total number of nodes in the path.
+
+----
+[i in range(0,size(nodes(path))) where (nodes(path)[i]):Kid | i]
+----
+Writing this Cypher snippet as an imperative programming pseudocode it would sounds like this:
+
+----
+result = [];
+for(int i = 0; i < nodes(path).length; i++){
+  if(nodes(path)[i] is a kid)
+  then result = result + i;
+}
+return result;
+----
+
+*11,12,13)* This where condition exploits the _ALL_ collection predicate: all the elements
+must be true to the condition. It could be the trickiest step of all the algorithm.
+Santa spent so much time thinking about it!
+
+----
+ALL (i in range (0,size(kidPositions)-1) WHERE
+reduce(dist = 0, rel in rels(path)[0..kidPositions[i]] | dist + rel.distance) < (kidsInPath[i]).bedtime)
+----
+
+It iterates the array containing the kids position. At each step, it checks if the distance to reach the i-th Kid from the
+beginning of the path is less than the bedtime of the i-th kid. If a path doesn't meet this requirement, it will be
+discarded by the query. The distance of each subpath is determined by a reduce function similar to the previous line. The
+difference is that it is not considered all the path relationships collection but only its slice _0..i_
+
+Writing this Cypher snippet as an imperative programming pseudocode it would sounds like this:
+
+----
+result = true;
+for(int i = 0; i < size(kidPositions); i++){
+    distance = 0;
+    for(int j = 0; j < kidPositions[i]; j++){
+        distance += rels(path)[j];
+    }
+    if(distance >= kidsInPath[i].bedtime){
+        result = false;
+    }
+}
+----
+
+The constraint made by this ALL predicate condition is strong and Santa should take it into account while
+selecting his route.
+
+For instance let's consider the following path whose nodes id are [0, 7, *1*, 4, 5, 6, 9, 10, *2*, 11, 15, *3*],
+in bold the kids. Its distance amounts to 37 minutes and it reaches all the three kids during the graph traversal.
+However the gift is being delivered to Domenico {id: 3, bedtime : 30} after has fallen asleep, not satisfying
+all the problem requirements.
+
+The best path returned by the algorithm is [0, 8, 9, 10, *2*, 11, 15, *3*, 19, 20, 14, 4, *1*]. Its total distance is 46.5,
+greater than the previous path and requiring more connections; however the kids nodes are traversed in an order that
+permits all the children to be fully awaken while receiving their Christmas presents. And you should note that Alessio, the kid closest to
+the starting point, is actually the last one to meet Santa.
+
+== Conclusion and future works
+In this _GraphGist_ a use case scenario for modeling a street map as a graph has been developed on Neo4j.
+On top of it has been built in Cypher a *shortest weighted path search algorithm with constraints on nodes*; it
+leverages most of the built-in collection functions (_extract_, _filter_ and _reduce_), as well as _UNWIND_, _range_ and _ALL_ collection predicate.
+The sample has been kept simple, in order to help the readers to understand better how the query works.
+However the principles exposed here can be easily scaled to larger scenarios.
+
+While testing it in bigger graphs, I realized that some tweaks may be useful for increasing the performances, especially when not having proper hardware resources.
+For instance you may create both directions relationships between each couple of nodes, changing therefore the MATCH pattern
+statement in (startingRoadJunction)-[:CONNECTED_TO*1..20]->(lastKid:Kid). From one hand, this will extend the physical size of the db;
+from the other it may improve the overall performances while executing the query.
+Using allShortestPath((startingRoadJunction)-[:CONNECTED_TO*1..20]->(lastKid:Kid)) can definitely speed up the algorithm but it may
+prune some optimal solutions, especially in case of a long but light path.
+Moreover the hardcoded upper limit of 20 hops should be surely modified when traversing larger datasets.
+In conclusion, even if the algorithm result is encouraging and Santa as well as the kids are happy thanks to it,
+there is always room for enhancements, especially in a production environment where the performances play a key role.
+
+I will leave you with two last code snippets to generate your random datasets and play with the query.
+
+The nodes can be randomly created with the two following queries.
+
+[source]
+----
+WITH ['Alessio', 'Daniela', 'Domenico', 'Elsa', 'Antonella', 'Alessandro',
+ 'Luciano', 'Susanna', 'Federica', 'Valerio', 'Fabio', 'Marta', 'Mario', 'Giustino'] as names
+FOREACH (i IN range(0,100) | CREATE (kid:Kid:StreetNode {id: i, name:names[i % size(names)] + " " + i, bedtime:round(rand()*1000)}));
+
+FOREACH (i IN range(100,1000000) | CREATE (streetNode:StreetNode {id: i}));
+----
+
+The edges, instead, with this one.
+Note that in this query every RoadJunction will connect a maximum of four street
+segments. This assumption it is very likely to happen in real maps as well.
+
+[source,cypher]
+----
+WITH range(0, 1000000) as streetNodeIds
+unwind streetNodeIds as streetNodeId
+with streetNodeId, extract(x in range(0, toInt(round(rand()*3))) | round(rand()*10000)) as coll
+unwind coll as nearStreetNodeId
+match (streetNode:StreetNode {id:streetNodeId}), (nearStreetNode:StreetNode {id: nearStreetNodeId})
+where streetNodeId <> nearStreetNodeId
+merge (streetNode)-[r:CONNECTED_TO {distance: round(rand()*100+1)}]-(nearStreetNode)
+return streetNode, nearStreetNode
+----
+
+Thank you for reading up to here! Hope you enjoyed it!
+
+All the best,
+
+Alessio and Santa Claus

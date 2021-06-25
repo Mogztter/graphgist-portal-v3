@@ -1,0 +1,155 @@
+= Graph de la Brousse En Folie, tome 5 "Roussettes de cuisine"
+Adrien Sales <Adrien.Sales@gmail.com> 
+
+:neo4j-version: 3.3.1
+:author: Adrien Sales <Adrien.Sales@gmail.com>
+:twitter: rastadidi
+
+image::https://github.com/adriens/brousse-en-folie-network/raw/master/cover.png[height=300,width=600]
+
+== Introduction
+
+Ce GraphGist a été créé afin de :
+
+- faire un premier test de graphgist avec neo4j
+- mettre en évidence de manière interactive les relations entre les personnages de cette BD
+
+Un article LinkedIn a été rédigé, il est consultable ici : https://goo.gl/dvnL3Z
+
+
+image::https://www.bedetheque.com/media/Couvertures/brousse5_28022003.gif[height=300,width=600]
+
+== Le modèle de données
+
+Le modèle de données est très simple, il est entièrement tourné vers la mesure des interactions entre les personnages : un personnage *PARLE_A* un autre personnage.
+
+
+*Les noeuds*
+
+* Héro 
+
+*Les relations*
+
+Le modèle des relations est très simple, "un héro parle à un autre" :
+
+* Hero *PARLE_A* Hero
+
+== Chargement des données
+
+On construit le graphe à partir du dataset (en csv) préparé sur Github (https://github.com/adriens/brousse-en-folie-network)
+
+D'abord les noeuds (les héros) :
+
+//setup
+//output
+[source,cypher]
+----
+LOAD CSV WITH HEADERS FROM "https://raw.githubusercontent.com/adriens/brousse-en-folie-network/master/nodes.csv" AS csvLine
+CREATE (p:Hero {id: csvLine.id, name: csvLine.label});
+----
+
+, puis les relations :
+
+//setup
+//output
+[source,cypher]
+----
+LOAD CSV WITH HEADERS FROM "https://raw.githubusercontent.com/adriens/brousse-en-folie-network/master/edges.csv" AS edges
+MATCH (a:Hero { id: edges.source })
+MATCH (b:Hero { id: edges.target })
+MERGE (a)-[r:PARLE_A]->(b)
+// la partie magique, on somme les poids en chargeant
+ON MATCH SET r.weight = r.weight + 1 ON CREATE SET r.weight = 1;
+----
+
+On pose la contrainte d'unicité sur les héros :
+
+//setup
+[source,cypher]
+----
+CREATE CONSTRAINT ON (hero:Hero) ASSERT hero.id IS UNIQUE;
+----
+
+Finalement, nous avons le graphe suivant :
+
+//graph
+
+
+= Exploitation des données
+
+== Nombre de personnages
+
+[source,cypher]
+----
+MATCH (h:Hero) RETURN count(h) as Nb_heros
+----
+
+//table
+
+== Satistiques des interactions entre personnages
+
+[source,cypher]
+----
+MATCH (h:Hero)-[:PARLE_A]->()
+WITH h, count(*) AS num
+RETURN min(num) AS min, max(num) AS max, avg(num) AS avg_characters, stdev(num) AS stdev
+----
+
+//table
+
+== Diamètre du graphe
+
+Le diamètre du grpahe, soit le plus long des plus courts chemins du graphe :
+
+[source,cypher]
+----
+MATCH (a:Hero), (b:Hero) WHERE id(a) > id(b)
+MATCH p=shortestPath((a)-[:PARLE_A*]-(b))
+RETURN length(p) AS length, extract(x IN nodes(p) | x.name) AS path
+ORDER BY length DESC LIMIT 5
+----
+
+//table
+
+
+== Chemin le plus court
+
+Quel est le chemin le plus court entre Dédé et le chef coutumier ?
+
+[source,cypher]
+----
+MATCH (chef:Hero {name: "Le chef coutumier"}), (dede:Hero {name: "Dédé"})
+MATCH p=shortestPath((chef)-[PARLE_A*]-(dede))
+RETURN p
+----
+
+//table
+
+== Degree centrality
+
+Degree centrality : le nombre de connexions qu'un noeud a au sein du réseau. Dans notre contexte, c'est le nombre de personnages avec lequel chacun interagit. On peut le calculer en pure cypher comme ci-dessous :
+
+[source,cypher]
+----
+MATCH (c:Hero)
+RETURN c.name AS Personnage, size( (c)-[:PARLE_A]-() ) AS degree
+ORDER BY degree DESC
+----
+
+//table
+
+== Weighted Degree Centrality
+
+On stocke le nombre d'interactions entre deux personnages afin de mettre du poids dans les relations : plus le poinds est important plus les échanges sont importants...et plus la relation est privilégiée.
+Dans notre cas, les aggrégats ont déja été calculés lors du chargement du csv des relations.
+
+En cypher cela donne :
+
+[source,cypher]
+----
+MATCH (h:Hero)-[t:PARLE_A]-()
+RETURN h.name as hero,sum(t.weight) as weighted_degree
+ORDER BY weighted_degree DESC LIMIT 10
+----
+
+//table

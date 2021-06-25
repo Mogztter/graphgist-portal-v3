@@ -1,0 +1,146 @@
+//= Analysis over Finance and Portfolio Management
+
+:author: Rushabh
+:twitter: @rushugroup
+
+Most Finance portfolio management's would be using RDBMS. But the same could be built with *neo4j* in a much succint manner.
+The analysis that can be done over it is interesting too. Consider the system has the data for x members, we can get analysis as follows:
+
+* How much percentage people spend money on a particular liability, say loans.
+* How much percentage does a particular asset contribute to average earnings.
+* How much percentage does a particular libaility eat away from total assets.
+
+If we capture data per timeline, the graph of expenses on liability or income from assets can be plotted. That opens a different arena of analysis reports that can be done.
+
+* When does the expenses over a particular liability increase?
+* What source of income is active during which periods?
+* Which is best time to invest in particular asset, based on #2?
+* Which expense has put largest hole overtime? If expense is something like loan (which can be shifted to different banks), can it be transferred to other bank and can the expenses incurred be reduced using it?
+* and the list can continue......
+
+TIP:
+To above, consider exposing simple RESTful services and you can come up with a finance portfolio in no time.
+It can cater to wide range of assets and liabilities, can be enhanced to pull data from resources (REST apis of banks, Finance Brokerages etc.).
+
+*NOTE*
+For the current version, the target is to achieve asset management, namely MFs and Bank deposits.
+
+*Domain elements and their attributes:*
+
+* Assets: Sources of income that add to wealth of the pereson
+- Mutual Funds (MFs) [ LNT Mutual Fund, ICICI Mutual Fund, HDFC Black Rock]
+- Bank deposits: Can be recurring and fixed deposits
+* Liabilities (Not Implemented): The expenses of the person which lead to reduction in wealth.
+- Loans
+- Credit cards
+
+//*Model diagram using neo4j/browser*
+//[[model]]
+//image:https://dl.dropboxusercontent.com/u/133440194/Portfolio_Management.JPG[link="https://dl.dropboxusercontent.com/u/133440194/Portfolio_Management.JPG"]
+
+
+*Setup Queries:*
+~~~~~~~~~~~~~~~~
+Creating members
+^^^^^^^^^^^^^^^^
+//hide
+
+//setup
+[source,cypher]
+----
+create (rs:Member { firstname: "Rushabh", lastname: "Shah", age: 25, city: "Mumbai", state: "Maharashtra" })
+create (sw:Member { firstname: "Shantaram", lastname: "Waingankar", age: 27, city: "Mumbai", state: "Maharashtra" })
+create (lm:Member { firstname: "Luanne", lastname: "Misquitta", age: 34, city: "Mumbai", state: "Maharashtra" })
+create (sd:Member { firstname: "Sonal", lastname: "Dedhia", age: 35, city: "Pune", state: "Maharashtra" })
+
+MERGE (rs)-[:HAS_PORTFOLIO]->(p1:Portfolio { id:"p1", created_on: "15/01/2012", amount : 4500 })
+MERGE (sw)-[:HAS_PORTFOLIO]->(p2:Portfolio { id:"p2", created_on: "25/02/2012", amount : 50000 })
+MERGE (lm)-[:HAS_PORTFOLIO]->(p3:Portfolio { id:"p3", created_on: "30/03/2012", amount : 450000 })
+MERGE (sd)-[:HAS_PORTFOLIO]->(p4:Portfolio { id:"p4", created_on: "01/04/2012", amount : 900000 })
+
+create (lntmf:MF { name: "LNT Mutual Fund", type:"mf", id:"lntmf" })
+create (icicimf:MF { name: "ICICI Mutual Fund", type:"mf", id:"icicimf" })
+create (hdfcmf:MF { name: "HDFC Black Rock", type:"mf", id:"hdfcmf" })
+
+create (hdfc:BANK { name: "HDFC Bank", branch: "Mumbai", id:"hdfcmum"})
+create (icici:BANK { name: "ICICI Bank", branch: "Pune", id:"icicipune"})
+create (yes:BANK { name: "YES Bank", branch : "Mumbai", id:"yesmum"})
+
+MERGE (p1)-[:HAS_MF { amount: 45000}]->(lntmf)
+MERGE (p1)-[:HAS_MF { amount: 23500}]->(icicimf)
+
+MERGE (p2)-[:HAS_MF { amount: 500000 }]->(hdfcmf)
+MERGE (p2)-[:HAS_MF { amount: 35000 }]->(icicimf)
+
+MERGE (p3)-[:HAS_MF { amount: 500000 }]->(hdfcmf)
+MERGE (p3)-[:HAS_MF { amount: 200500 }]->(lntmf)
+
+MERGE (p4)-[:HAS_MF { amount: 500000 }]->(hdfcmf)
+MERGE (p4)-[:HAS_MF { amount: 200500 }]->(lntmf)
+MERGE (p4)-[:HAS_MF { amount: 345450 }]->(icicimf)
+
+MERGE (p1)-[:HAS_BANK_DEPOSIT { amount: 200000 }]->(hdfc)
+MERGE (p1)-[:HAS_BANK_DEPOSIT { amount: 250000 }]->(icici)
+MERGE (p1)-[:HAS_BANK_DEPOSIT { amount: 50000 }]->(yes)
+
+MERGE (p2)-[:HAS_BANK_DEPOSIT { amount: 200000 }]->(hdfc)
+MERGE (p2)-[:HAS_BANK_DEPOSIT { amount: 50000 }]->(yes)
+
+MERGE (p3)-[:HAS_BANK_DEPOSIT { amount: 250000 }]->(icici)
+MERGE (p3)-[:HAS_BANK_DEPOSIT { amount: 50000 }]->(yes)
+----
+
+Usecase with queries:
+=====================
+Usecase: Find the investment split-up in MF/Bank for member with firstname
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[source,cypher]
+----
+match (member:Member)-[:HAS_PORTFOLIO]->(portfolio:Portfolio)-[mf:HAS_MF]->(m:MF),       
+      (p:Portfolio)-[bd:HAS_BANK_DEPOSIT]->(bank:BANK) 
+where member.firstname="Rushabh" 
+return  1.00*sum(mf.amount)/sum(mf.amount+bd.amount)*100 as PERCENT_IN_MF, 
+        1.00*sum(bd.amount)/sum(mf.amount+bd.amount)*100 as PERCENT_IN_BANK, 
+        member.firstname as MemberName
+----
+//table
+
+Usecase: Investment drill down to particular mf and bank
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[source,cypher]
+----
+match (p1:Portfolio)-[r:HAS_MF]->(mf:MF) 
+return  mf.name as MutualFund, 
+        sum(r.amount) as INVESTED_AMOUNT
+----
+//table
+
+[source,cypher]
+----
+match (p1:Portfolio)-[r:HAS_BANK_DEPOSIT]->(bk:BANK) 
+return  bk.name as BankName, 
+        sum(r.amount) as INVESTED_AMOUNT
+----
+//table
+
+Usecase: Finding highest invested MF or highest invested bank
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[source,cypher]
+----
+match (p1:Portfolio)-[r:HAS_MF]->(mf) 
+return  mf.name as MutualFund, 
+        sum(r.amount) as INVESTED_AMOUNT 
+order by sum(r.amount) desc 
+limit 1
+----
+//table
+
+[source,cypher]
+----
+match (p1:Portfolio)-[r:HAS_BANK_DEPOSIT]->(bank:BANK) 
+return  bank.name as BankName, 
+        sum(r.amount) as INVESTED_AMOUNT 
+order by sum(r.amount) desc 
+limit 1
+----
+//table

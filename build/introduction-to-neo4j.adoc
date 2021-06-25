@@ -1,0 +1,96 @@
+= REPLACEME: TITLE OF YOUR GRAPHGIST
+:neo4j-version: 3.5.0
+:author: Antonio Feregrino Bolaños
+:twitter: @io_exception
+:style: #F5A623:Player(name)
+:style: #88B7EE:Team(name)
+
+== Introduction to Neo4j
+
+Let's create our first basic graph! we'll create something similar to what you saw in the video (or similar to what you see in this image).
+
+image::https://i.imgur.com/3JiWZht.png[width=600]  
+
+Of course, if you are not a Barcelona supporter you can change it to be whatever you want.
+
+[source,cypher]
+----
+CREATE  (m:Player{name:"Lionel Messi"}),	   	    (b:Team{name:"Barcelona"})
+WITH m, b
+CREATE (m)-[p:PlaysFor]->(b)
+SET p.since=2001
+//SET p.since=date("2001-02-01") // For some reason the GraphGists don't support dates
+RETURN m, p, b
+----
+
+//graph
+
+== A network of friends    
+
+But the previous one was a rather simple example, how about we create a network of friends to see what else we can do...
+
+// setup
+[source,cypher]
+----
+// Create nodes
+CREATE (rob:Person{name:'Roberto'}), (isidro:Person{name:'Isidro'}), 
+      (tony:Person{name:'Antonio'}), (nora:Person{name:'Nora'}), 
+      (lily:Person{name:'Lilian'}), (freddy:Person{name:'Alfredo'}), 
+      (lucas:Person{name:'Lucas'}), (mau:Person{name:'Mauricio'}), 
+      (alb:Person{name:'Albina'}), (reg:Person{name:'Regina'}), 
+      (j:Person{name:'Joaquín'}), (julian:Person{name:'Julián'})
+// Create relationships
+CREATE 
+  (rob)-[:FriendsWith]->(isidro), (rob)-[:FriendsWith]->(tony), (rob)-[:FriendsWith]->(reg),
+  (rob)-[:FriendsWith]->(mau), (rob)-[:FriendsWith]->(julian),
+  (tony)-[:FriendsWith]->(reg), (tony)-[:FriendsWith]->(j),
+  (alb)-[:FriendsWith]->(reg), (lily)-[:FriendsWith]->(isidro), (lily)-[:FriendsWith]->(j),
+  (mau)-[:FriendsWith]->(lucas), (lucas)-[:FriendsWith]->(nora), (freddy)-[:FriendsWith]->(nora);
+
+// Query the relationships 
+MATCH friendships=()-[:FriendsWith]-()
+RETURN friendships
+----
+
+//graph_result
+
+---
+
+== 🤔 
+
+Let's find who are friends with _Lucas_ (note that we don't care about the direction of the relationship, we are not using an arrow `->` in the relationship):
+
+[source,cypher]
+----
+MATCH friends=(a:Person{name:'Lucas'})-[:FriendsWith]-(friend)
+RETURN friends
+----
+
+//graph_result
+
+What about the friends of friends of friends of _Lucas_? imagine doing someting like this in SQL...
+
+[source,cypher]
+----
+MATCH friends=(a:Person{name:'Lucas'})-[:FriendsWith*3]-(friend)
+RETURN friend.name
+----
+
+//table
+
+Or something more _advanced_, which one is the shortest path between _Joaquín_ and _Lucas_:
+
+[source,cypher]
+----
+MATCH (lucas:Person{name:'Lucas'}), (joaquin:Person{name:'Joaquín'}), 
+  p = shortestPath((lucas)-[*]-(joaquin))
+RETURN p
+----
+
+//graph_result
+
+== Now is your turn, go crazy with the graph above or create your own:
+
+//console
+
+Created by {author} - https://twitter.com/{twitter}[Twitter] | https://www.youtube.com/c/thatcsharpguy[YouTube] | https://www.linkedin.com/in/antonioferegrino/[LinkedIn]

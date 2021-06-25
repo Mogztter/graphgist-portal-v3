@@ -1,0 +1,172 @@
+= Issue Tracking with Graphs
+ 
+:author: Kevin Greene
+:twitter: @SurrealAnalysis
+
+== Motivation
+
+As with most tech companies, we at http://spantree.net/[Spantree Technology Group, LLC] strive to be as efficient as possible. One aspect of this is efficiently tracking issues and ownership across several projects. While there are many solutions out there, e.g. Pivotal Tracker, JIRA, etc., there is always room for improvement. This GraphGist represents a possible backend solution to the issue, using Neo4j.
+
+Though this isn't quite similar to the other entries for telecommunication, it's all about communicating effectively with others located in physicially different places, so I feel it qualified.
+
+== Model
+
+There are three main types of nodes - Users, Projects, and Issues. Users work on projects, and get assigned issues. Furthermore, issues may have a variety of activities associated with them, such as commits or comments.
+
+Further explorations of the model could suggest additional attributes for issues (e.g. Bug, Feature, Chore), more types to associate with issues (e.g. Screenshots), and other ways to connect users to specific acitivity (e.g. mentioning another user in a comment).
+
+Below is a high level graph of what is in the current model:
+
+image::http://i.imgur.com/lI2Uktr.png[]
+
+== Setup
+
+//hide
+
+//setup
+
+[source, cypher]
+----
+// Users
+
+CREATE (kevin:User {name: "Kevin Greene", github_id: "https://github.com/KevinGreene"})
+CREATE (allie:User {name: "Allie Curry", github_id: "https://github.com/acurry"})
+CREATE (gary:User {name: "Gary Turovsky", github_id: "https://github.com/flyhighpotato"})
+CREATE (cedric:User {name: "Cedric Hurst", github_id: "https://github.com/divideby0"})
+CREATE (roberto:User {name: "Roberto Guerra", github_id: "https://github.com/uris77"})
+
+// Projects
+
+CREATE (gorm_jodatime: Project {name: "Grails Mongo Jodatime", url: "https://github.com/Spantree/grails-mongo-jodatime"})
+CREATE (cordova_search_bar: Project {name: "Cordova Search Bar", url: "https://github.com/Spantree/cordova-search-bar"})
+CREATE (name_genius: Project {name: "Name Genius", url: "https://github.com/Spantree/name-genius"})
+CREATE (grails_marionetteJS: Project {name: "Grails MarionetteJS plugin", url: "https://github.com/Spantree/marionettejs-grails-plugin"})
+
+
+// Assign Users to Projects
+
+CREATE (kevin)-[:WORKS_ON]->(gorm_jodatime)
+CREATE (cedric)-[:WORKS_ON]->(gorm_jodatime)
+CREATE (gary)-[:WORKS_ON]->(gorm_jodatime)
+CREATE (kevin)-[:WORKS_ON]->(name_genius)
+CREATE (cedric)-[:WORKS_ON]->(name_genius)
+CREATE (allie)-[:WORKS_ON]->(cordova_search_bar)
+CREATE (roberto)-[:WORKS_ON]->(grails_marionetteJS)
+
+// Create issues for various projects
+CREATE (localtime:Issue {name: "Add LocalTime support", points: 2, finished : true, requested_on:1388624638, finished_on: 1390624638})
+CREATE (yearmonth:Issue {name: "Add YearMonth support", points: 1, finished : false, requested_on:1389624638})
+
+// Assign issues to projects
+
+CREATE (yearmonth)-[:IN_PROJECT]->(gorm_jodatime)
+CREATE (localtime)-[:IN_PROJECT]->(gorm_jodatime)
+
+// Assign issues to people
+CREATE (yearmonth)-[:ASSIGNED_TO]->(gary)
+CREATE (localtime)-[:ASSIGNED_TO]->(kevin)
+
+
+
+// Create Activity
+
+CREATE (lt_commit_1: Commit {name: "Commit 8e85763111bdc58f20e0cf5eb5957a15984bc8bd", description: "Added LocalTime Functionality to the mongo jodatime plugin", date: 1389687397})
+CREATE (lt_comment_1: Comment {name: "Comment", description: "Having issue with the above code when I try to load it within Grails", date: 1390551397})
+CREATE (lt_commit_2: Commit {name: "Commit f425afe331c191a361c96cc56b50df2b4ef1ba74", description: "Added doWithSpring - Plugin should now function correctly within the context of a Grails app.", date: 1390724197})
+
+CREATE (lt_commit_1)-[:ASSOCIATED_WITH]->(localtime)
+CREATE (lt_comment_1)-[:ASSOCIATED_WITH]->(localtime)
+CREATE (lt_commit_2)-[:ASSOCIATED_WITH]->(localtime)
+----
+//graph
+
+= Basic Usage
+
+List all the projects, and the users associated with them
+
+[source,cypher]
+----
+MATCH (project:Project)<-[:WORKS_ON]-(user:User)
+RETURN project.name as Project, collect(user.name) as Users
+----
+//table
+
+List all projects a single user is on
+
+[source, cypher]
+----
+MATCH (user:User {name: "Kevin Greene"})-[:WORKS_ON]->(project:Project)
+return project.name as Projects
+----
+//table
+
+List all issues with a single project, ordered by date
+
+[source, cypher]
+----
+MATCH (issue: Issue)-[:IN_PROJECT]->(project: Project {name: "Grails Mongo Jodatime"})
+RETURN issue.name as Issue ORDER BY issue.requested_on
+----
+//table
+
+Return all activity associated with a particular issue
+
+[source,cypher]
+----
+MATCH (activity)-[:ASSOCIATED_WITH]->(issue:Issue {name: "Add LocalTime support"})
+RETURN activity.name as Type, activity.description as description, activity.date as Date ORDER BY Date
+----
+
+= Project Analytics and Planning
+
+It may be desirable to analyze certain metrics of productivity.
+
+Collect number of points finished in a specific time period.
+
+[source, cypher]
+----
+MATCH (issue: Issue)-[:IN_PROJECT]->(project:Project)
+WHERE issue.finished_on > 1389624638
+AND issue.finished_on < 1399624638
+return project.name as Project, sum(issue.points) as Velocity
+----
+//table
+
+Collect number of points completed by a specific user in a given time
+
+[source,cypher]
+----
+MATCH (user:User {name: "Kevin Greene"})<-[:ASSIGNED_TO]-(issue: Issue)
+WHERE issue.finished_on > 1389624638
+AND issue.finished_on < 1399624638
+return user.name as User, sum(issue.points) as Velocity
+----
+//table
+
+= Project Management
+
+Sometimes there may be certain requirements to make sure that people can focus on the given task at hand, and have help doing so.
+
+For example, one may not want project teams of 1. They could use the following query to identify those quickly, and analyze general team size.
+
+[source,cypher]
+----
+MATCH (project: Project)<-[:WORKS_ON]-(user:User)
+RETURN project.name as Project, collect(user.name) as TeamMembers, count(user) as TeamSize ORDER BY TeamSize
+----
+//table 
+
+Other times, you may want to focus on how many different projects someone is assigned to. Use the following query to quickly find out.
+
+[source,cypher]
+----
+MATCH (user:User)-[:WORKS_ON]->(project: Project)
+RETURN user.name as User, collect(project.name) as Projects, count(project) as WorkloadSize ORDER BY WorkloadSize
+----
+//table
+
+== Comments
+
+Unfortunately, I wasn't able to work on this solution as long as I would have liked, so I didn't get time to manually input the various data to perform better complex analytics.
+
+That said, because issue tracking revolves around assignment and ownership, it is very effectively modeled with a node-relationship graph.

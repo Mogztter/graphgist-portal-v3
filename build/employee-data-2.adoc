@@ -1,0 +1,168 @@
+= GraphGist
+:neo4j-version:
+:author:   Shirish Kale
+:style: #54A835/#1078B5/white:Colorized(name)
+
+= This is a GraphGist Created to Demonstrate an Employee Database in a Hierarchical Format
+
+= The Model consists of the Following Levels
+
+=== CEO who manages
+=== CFO and CTO 
+
+== CFO - Heads the Business Division 
+== CTO - Heads the Technology Division
+
+==	Business Division Consists of Three Departments
+===		Finance
+===		Sales 
+===		Marketing
+
+==	Technology Division Consists of Two Departments
+===		Tech Ops
+===		Analytics
+
+
+//setup
+//hide
+[source,cypher]
+----
+CREATE
+(Keanu:Person:Employee {name:'Keanu Reeves', born:1964, joined:1988 , designation:'Associate' , salary:35000 , bonuspct:5 ,PerfRating:5, probation:'Y' })  ,
+(Laurence:Person:Employee {name:'Laurence Fishburne', born:1961, joined:1979 , designation:'AVP' , salary:65000 , bonuspct:10 ,PerfRating:4, probation:'Y' })  ,
+(Charlize:Person:Employee {name:'Charlize Theron', born:1975, joined:2000 , designation:'VP' , salary:87200 , bonuspct:12 ,PerfRating:3, probation:'N' })  ,
+(Al:Person:Employee {name:'Al Pacino', born:1940, joined:1966 , designation:'SVP' , salary:103246 , bonuspct:15 ,PerfRating:3, probation:'N' })  ,
+(TomC:Person:Employee {name:'Tom Cruise', born:1962, joined:1987 , designation:'VP' , salary:94000 , bonuspct:12 ,PerfRating:2, probation:'N' })  ,
+(JackN:Person:Employee {name:'Jack Nicholson', born:1937, joined:1975 , designation:'AVP' , salary:67250 , bonuspct:10 ,PerfRating:3, probation:'N' })  ,
+(DemiM:Person:Employee {name:'Demi Moore', born:1962, joined:1980 , designation:'Associate' , salary:39547, bonuspct:5 ,PerfRating:3, probation:'N' })  ,
+(KevinB:Person:Employee {name:'Kevin Bacon', born:1958, joined:1998 , designation:'AVP' , salary:70000 , bonuspct:10 ,PerfRating:3, probation:'N' })  ,
+(KieferS:Person:Employee {name:'Kiefer Sutherland', born:1966, joined:2001 , designation:'SVP' , salary:110000 , bonuspct:15 ,PerfRating:2, probation:'N' })  ,
+(CubaG:Person:Employee {name:'Cuba Gooding Jr.', born:1968, joined:1988 , designation:'VP' , salary:85234 , bonuspct:12 ,PerfRating:4, probation:'Y' })  ,
+(ValK:Person:Employee {name:'Val Kilmer', born:1959, joined:1979 , designation:'SVP' , salary:99678 , bonuspct:15 ,PerfRating:2, probation:'N' })  ,
+(MegR:Person:Employee {name:'Meg Ryan', born:1961, joined:1985 , designation:'Associate' , salary:42150 , bonuspct:5 ,PerfRating:2, probation:'N' })  ,
+(TonyS:Person:Employee {name:'Tony Scott', born:1944, joined:1977 , designation:'AVP' , salary:63420 , bonuspct:10 ,PerfRating:3, probation:'N' })  ,
+(JohnC:Person:Employee {name:'John Cusack', born:1966, joined:1995 , designation:'AVP' , salary:71800 , bonuspct:10 ,PerfRating:1, probation:'N' })  ,
+(HelenH:Person:Employee {name:'Helen Hunt', born:1963, joined:2003 , designation:'AVP' , salary:73200 , bonuspct:10 ,PerfRating:5, probation:'Y' })  ,
+(Robin:Person:Employee {name:'Robin Williams', born:1951, joined:1995 , designation:'Exec Director' , salary:175000 , bonuspct:20,PerfRating:3, probation:'N' })  ,
+(JamesC:Person:Employee {name:'James Cromwell', born:1940, joined:1970 , designation:'VP' , salary:96345 , bonuspct:12 ,PerfRating:3, probation:'N' })  ,
+(TomH:Person:Employee {name:'Tom Hanks', born:1956, joined:1979 , designation:'VP' , salary:85430 , bonuspct:12 ,PerfRating:1, probation:'N' })  ,
+(RosieO:Person:Employee {name:'Rosie Donnelli', born:1962, joined:1996 , designation:'AVP' , salary:62000 , bonuspct:10 ,PerfRating:3, probation:'N' })  ,
+(BillyC:Person:Employee {name:'Billy Crystal', born:1948, joined:1968 , designation:'Exec Director' , salary:176005 , bonuspct:20,PerfRating:1, probation:'N' })  ,
+(CarrieF:Person:Employee {name:'Carrie Fisher', born:1956, joined:1976, designation:'Associate' , salary:38457 , bonuspct:5 ,PerfRating:4, probation:'Y' })  ,
+(Gene:Person:Employee {name:'Gene Hackman', born:1945, joined:1996 , designation:'AVP' , salary:74120 , bonuspct:10 ,PerfRating:2, probation:'N' })  ,
+(ClintE:Person:Employee {name:'Clint Eastwood', born:1930, joined:1968 , designation:'VP' , salary:88000 , bonuspct:12 ,PerfRating:5, probation:'Y' })  ,
+(Dina:Person:Employee {name:'Dina Meyer', born:1968, joined:1979 , designation:'SVP' , salary:101238 , bonuspct:15 ,PerfRating:1, probation:'N' })  ,
+(HalleB:Person:Employee {name:'Halle Berry', born:1966, joined: 1992 , designation:'AVP' , salary:66222 , bonuspct:10 ,PerfRating:3, probation:'N' })  ,
+(IanM:Person:Employee {name:'Ian McKellen', born:1939, joined:1979 , designation:'Associate' , salary:43100 , bonuspct:5 ,PerfRating:3, probation:'N' })  ,
+(NatalieP:Person:Employee {name:'Natalie Portman', born:1981, joined:2005 , designation:'AVP' , salary:63666 , bonuspct:10 ,PerfRating:4, probation:'Y' })  ,
+(JohnG:Person:Employee {name:'John Goodman', born:1960, joined:1996 , designation:'Associate' , salary:36000 , bonuspct:5 ,PerfRating:3, probation:'N' })  ,
+(SusanS:Person:Employee {name:'Susan Sarandon', born:1946, joined:1996 , designation:'SVP' , salary:114000 , bonuspct:15 ,PerfRating:4, probation:'Y' })  ,
+(GaryS:Person:Employee {name:'Gary Sinise', born:1955, joined:2005 , designation:'Director' , salary:147000 , bonuspct:15 ,PerfRating:3, probation:'N' })  ,
+(PatriciaC:Person:Employee {name:'Patricia Clarkson', born:1959, joined:1979 , designation:'Director' , salary:152156 , bonuspct:15 ,PerfRating:2, probation:'N' }) ,
+(Hugo:Person:Employee      {name:'Hugo Weaving', born:1950, joined:1979 , designation:'CTO' , salary:252156 , bonuspct:0 ,PerfRating:1, probation:'N' }) ,
+(AndyW:Person:Employee     {name:'Andy Wachowski', born:1957, joined:1979 , designation:'CFO' , salary:252156 , bonuspct:0 ,PerfRating:1, probation:'N' }) ,
+(JoelS:Person:Employee     {name:'Joel Silver', born:1952, joined:1979 , designation:'CEO' , salary:552156 , bonuspct:0 ,PerfRating:1, probation:'N' }) ,
+(Fin:Department  {name:'Finance',  CostCenter:21964 }) ,
+(Top:Department  {name:'Tech Ops', CostCenter:21961 }) ,
+(Ana:Department  {name:'Analytics',CostCenter:21975 }) ,
+(Sls:Department  {name:'Sales',    CostCenter:21940 }) ,
+(Mkt:Department  {name:'Marketing',CostCenter:21962 }) ,
+(Tech:Division  {name:'Technology',CostCenter:31940 }) ,
+(Busi:Division  {name:'Business',CostCenter:31950 }) ,
+(Tech) - [:CONSISTS_OF] -> (Top) ,
+(Tech) - [:CONSISTS_OF] -> (Ana) ,
+(Busi) - [:CONSISTS_OF] -> (Sls) ,
+(Busi) - [:CONSISTS_OF] -> (Mkt) ,
+(Busi) - [:CONSISTS_OF] -> (Fin) ,
+(Robin) - [:HEADS] -> (Fin) ,
+(BillyC) - [:HEADS] -> (Top)  ,
+(GaryS) - [:HEADS] -> (Ana)  ,
+(PatriciaC) - [:HEADS] -> (Sls)  ,
+(Al) - [:HEADS] -> (Mkt)  	  ,
+(Robin) - [:WORKS_IN] -> (Fin) ,
+(BillyC) - [:WORKS_IN] -> (Top)  ,
+(GaryS) - [:WORKS_IN] -> (Ana)  ,
+(PatriciaC) - [:WORKS_IN] -> (Sls)  ,
+(Al) - [:WORKS_IN] -> (Mkt) ,
+(Hugo) - [:HEADS] -> (Tech) ,
+(AndyW) - [:HEADS] -> (Busi)  ,
+(Keanu) - [:WORKS_IN] -> (Fin)  ,
+(Laurence) - [:WORKS_IN] -> (Fin)  ,
+(Charlize) - [:WORKS_IN] -> (Fin)  ,
+(TomC) - [:WORKS_IN] -> (Fin)  ,
+(JackN) - [:WORKS_IN] -> (Fin)  	  ,
+(DemiM) - [:WORKS_IN] -> (Top)  ,
+(KevinB) - [:WORKS_IN] -> (Top)  ,
+(KieferS) - [:WORKS_IN] -> (Top)  ,
+(CubaG) - [:WORKS_IN] -> (Top)  ,
+(ValK) - [:WORKS_IN] -> (Top) ,
+(MegR) - [:WORKS_IN] -> (Top) 	  ,
+(TonyS) - [:WORKS_IN] -> (Ana)  ,
+(JohnC) - [:WORKS_IN] -> (Ana)  ,
+(HelenH) - [:WORKS_IN] -> (Ana)  ,
+(JamesC) - [:WORKS_IN] -> (Ana)  ,
+(TomH) - [:WORKS_IN] -> (Ana) ,
+(RosieO) - [:WORKS_IN] -> (Sls)  ,
+(CarrieF) - [:WORKS_IN] -> (Sls)  ,
+(Gene) - [:WORKS_IN] -> (Sls)  ,
+(ClintE) - [:WORKS_IN] -> (Sls)  ,
+(Dina) - [:WORKS_IN] -> (Sls) ,
+(HalleB) - [:WORKS_IN] -> (Mkt)  ,
+(IanM) - [:WORKS_IN] -> (Mkt)  ,
+(NatalieP) - [:WORKS_IN] -> (Mkt)  ,
+(JohnG) - [:WORKS_IN] -> (Mkt)  ,
+(SusanS) - [:WORKS_IN] -> (Mkt) ,
+(Robin) - [:MANAGES] -> (Charlize) ,
+(Robin) - [:MANAGES] -> (TomC) ,
+(Charlize) - [:MANAGES] -> (Laurence) ,
+(Charlize) - [:MANAGES] -> (Keanu) ,
+(TomC) - [:MANAGES] -> (JackN) ,
+(BillyC) - [:MANAGES] -> (KieferS) ,
+(BillyC) - [:MANAGES] -> (ValK) ,
+(KieferS) - [:MANAGES] -> (CubaG) ,
+(KieferS) - [:MANAGES] -> (DemiM) ,
+(ValK) - [:MANAGES] -> (KevinB) ,
+(ValK) - [:MANAGES] -> (MegR) ,
+(GaryS) - [:MANAGES] -> (JamesC) ,
+(GaryS) - [:MANAGES] -> (TomH) ,
+(TomH) - [:MANAGES] -> (TonyS) ,
+(TomH) - [:MANAGES] -> (JohnC) ,
+(TomH) - [:MANAGES] -> (HelenH) ,
+(PatriciaC) - [:MANAGES] -> (Dina) ,
+(Dina) - [:MANAGES] -> (ClintE) ,
+(Dina) - [:MANAGES] -> (RosieO) ,
+(Dina) - [:MANAGES] -> (Gene) ,
+(Dina) - [:MANAGES] -> (CarrieF) ,
+(Al) - [:MANAGES] -> (SusanS) ,
+(Al) - [:MANAGES] -> (HalleB) ,
+(Al) - [:MANAGES] -> (NatalieP) ,
+(NatalieP) - [:MANAGES] -> (IanM) ,
+(NatalieP) - [:MANAGES] -> (JohnG) ,
+(JoelS) - [:MANAGES] -> (Hugo) ,
+(JoelS) - [:MANAGES] -> (AndyW) ,
+(Hugo) - [:MANAGES] -> (BillyC) ,
+(Hugo) - [:MANAGES] -> (GaryS) 	  ,
+(AndyW) - [:MANAGES] -> (Robin) 	,
+(AndyW) - [:MANAGES] -> (PatriciaC) 	,
+(AndyW) - [:MANAGES] -> (Al) 		  
+----
+
+Full graph:
+
+//graph
+
+[source,cypher]
+----
+match (n) - [r] -> (m) 
+where ( n.name = 'Joel Silver'
+or n.name = 'Hugo Weaving' 
+or n.name = 'Gary Sinise'
+or n.name = 'Billy Crystal')
+return  n,r,m
+----
+
+Graph result:
+
+//graph_result
+
+

@@ -1,0 +1,611 @@
+= Managing a Studbook
+:neo4j-version: 3.4.8
+:author: Alfredo Iafolla
+
+My aim in this gist is to show how a graph database is an environment where to manage _genealogies_ in a very natural way.
+
+I will deal with genealogies of horses, which are generally managed in a _Studbook_ by an institution that must ensure the correctness of the information and the compliance of the data with specific conditions.
+
+The gist will show:
+
+* how to register horses in the Studbook, 
+* how to check some consistency conditions, 
+* how to manage the relationships of the horses with owners, breeders and tenants, 
+* how to manage a purchase of a horse and 
+* how to query information from the Studbook, like horse’s pedigree, ancestors or descendants.
+
+We suppose here that the horses are registered in the Studbook only with some basic data: name, year of birth, gender, mantle. We also suppose that the horses are all thouroughbreds, so that we can not worry about breed compatibility. Many other data could be registered, such as race and percentage of Arabian blood (when the Studbook is for crossbreds, like Anglo-Arabian), nationality, date and place of birth and so on: these data could be managed in a more extended version.
+
+A horse can be a _mare_ (if female) or a _stud_ (if male) if it can have sons, even though it does not have any: to be a mare or stud is a qualification that can be acquired by the horse and corresponds to a registration in the Studbook as a _breeding horse_.
+
+= Initial upload
+
+The initial upload of the database with the horses already registered can be performed with instructions like the following:
+
+* *creation of the instance of a horse*
+----
+CREATE (h1:Horse {id: $registrationId,  name: $horseName, birth_year: toInteger($birthYear), gender: $gender, mantle: $mantle })
+----
+where _$gender_ can be ‘F’ or ‘M’ and _$registrationId_ is the code that identifies the horse in the Studbook.
+
+* *registration as a breeding horse*
+
+for a female horse:
+----
+MATCH (h1:Horse {name: $horseName})
+SET h1:Mare
+----
+or for a male horse:
+----
+MATCH (h1:Horse {name: $horseName})
+SET h1:Stud
+----
+
+* *creation of the parentship*
+----
+MATCH (m1:Mare {name: $MareName}) MATCH (h1:Horse {name: $horseName}) 
+MATCH (s1:Stud {name: $StudName}) MATCH (h1:Horse {name: $horseName}) 
+MERGE (m1)-[:DAM_OF]->(h1)
+MERGE (s1)-[:SIRE_OF]->(h1)
+----
+
+Here a script to upload some data to start:
+
+//hide
+//setup
+//output
+[source,cypher]
+----
+CREATE (h1:Horse {mantle:'chestnut',birth_year:toInt(1984),gender:'F',name:'Andromeda',id:1})
+CREATE (h2:Horse {mantle:'chestnut',birth_year:toInt(1989),gender:'F',name:'Lyra',id:2})
+CREATE (h3:Horse {mantle:'chestnut',birth_year:toInt(1992),gender:'F',name:'Crux',id:3})
+CREATE (h4:Horse {mantle:'bay',birth_year:toInt(1994),gender:'F',name:'Libra',id:4})
+CREATE (h5:Horse {mantle:'bay',birth_year:toInt(1999),gender:'F',name:'Virgo',id:5})
+CREATE (h6:Horse {mantle:'bay',birth_year:toInt(2004),gender:'F',name:'Corona Borealis',id:6})
+CREATE (h7:Horse {mantle:'bay',birth_year:toInt(2005),gender:'F',name:'Coma Berenices',id:7})
+CREATE (h8:Horse {mantle:'chestnut',birth_year:toInt(2008),gender:'F',name:'Corona Austrina',id:8})
+CREATE (h10:Horse {mantle:'bay',birth_year:toInt(2005),gender:'F',name:'Hydra',id:10})
+CREATE (h11:Horse {mantle:'bay',birth_year:toInt(2004),gender:'F',name:'Auriga',id:11})
+CREATE (h12:Horse {mantle:'dark bay',birth_year:toInt(2006),gender:'F',name:'Cassiopeia',id:12})
+CREATE (h13:Horse {mantle:'bay',birth_year:toInt(2005),gender:'F',name:'Columba',id:13})
+CREATE (h14:Horse {mantle:'bay',birth_year:toInt(2008),gender:'M',name:'Draco',id:14})
+CREATE (h15:Horse {mantle:'bay',birth_year:toInt(2007),gender:'M',name:'Corvus',id:15})
+CREATE (h16:Horse {mantle:'bay',birth_year:toInt(2006),gender:'F',name:'Carina',id:16})
+CREATE (h17:Horse {mantle:'bay',birth_year:toInt(2007),gender:'M',name:'Capricornus',id:17})
+CREATE (h18:Horse {mantle:'bay',birth_year:toInt(2009),gender:'M',name:'Aries',id:18})
+CREATE (h19:Horse {mantle:'bay',birth_year:toInt(2009),gender:'F',name:'Norma',id:19})
+CREATE (h20:Horse {mantle:'bay',birth_year:toInt(2010),gender:'M',name:'Crater',id:20})
+CREATE (h21:Horse {mantle:'chestnut',birth_year:toInt(2011),gender:'F',name:'Phoenix',id:21})
+CREATE (h22:Horse {mantle:'bay',birth_year:toInt(2011),gender:'M',name:'Scorpius',id:22})
+CREATE (h23:Horse {mantle:'chestnut',birth_year:toInt(2012),gender:'F',name:'Sagitta',id:23})
+CREATE (h24:Horse {mantle:'chestnut',birth_year:toInt(2014),gender:'M',name:'Boötes',id:24})
+CREATE (h25:Horse {mantle:'chestnut',birth_year:toInt(2002),gender:'F',name:'Aquila',id:25})
+CREATE (h26:Horse {mantle:'bay',birth_year:toInt(2016),gender:'F',name:'Tucana',id:26})
+CREATE (h27:Horse {mantle:'chestnut',birth_year:toInt(2016),gender:'M',name:'Ophiuchus',id:27})
+CREATE (h28:Horse {mantle:'bay',birth_year:toInt(1990),gender:'M',name:'Cepheus',id:28})
+CREATE (h29:Horse {mantle:'chestnut',birth_year:toInt(1990),gender:'M',name:'Sagittarius',id:29})
+CREATE (h30:Horse {mantle:'bay',birth_year:toInt(1992),gender:'M',name:'Pegasus',id:30})
+CREATE (h31:Horse {mantle:'bay',birth_year:toInt(1993),gender:'M',name:'Hercules',id:31})
+CREATE (h32:Horse {mantle:'bay',birth_year:toInt(1996),gender:'M',name:'Eridanus',id:32})
+CREATE (h33:Horse {mantle:'bay',birth_year:toInt(1999),gender:'M',name:'Dorado',id:33})
+CREATE (h34:Horse {mantle:'chestnut',birth_year:toInt(2000),gender:'M',name:'Aquarius',id:34})
+CREATE (h35:Horse {mantle:'grey',birth_year:toInt(2001),gender:'M',name:'Perseus',id:35})
+CREATE (h36:Horse {mantle:'bay',birth_year:toInt(2004),gender:'M',name:'Orion',id:36})
+SET h1:Mare 
+SET h2:Mare 
+SET h3:Mare 
+SET h4:Mare 
+SET h5:Mare 
+SET h6:Mare 
+SET h7:Mare 
+SET h8:Mare 
+SET h28:Stud 
+SET h29:Stud 
+SET h30:Stud 
+SET h31:Stud 
+SET h32:Stud 
+SET h33:Stud 
+SET h34:Stud 
+SET h35:Stud 
+SET h36:Stud
+----
+
+//setup
+//output
+[source,cypher]
+----
+CREATE INDEX ON :Horse (name);
+CREATE INDEX ON :Mare (name);
+CREATE INDEX ON :Stud (name);
+----
+
+//hide
+//setup
+//output
+[source,cypher]
+----
+MATCH (m1:Mare {name: 'Andromeda'}) MATCH (h1:Horse {name: 'Virgo'}) 
+MATCH (s1:Stud {name: 'Pegasus'}) MATCH (h1:Horse {name: 'Virgo'}) 
+MATCH (m2:Mare {name: 'Andromeda'}) MATCH (h2:Horse {name: 'Aquila'}) 
+MATCH (s2:Stud {name: 'Hercules'}) MATCH (h2:Horse {name: 'Aquila'}) 
+MATCH (m3:Mare {name: 'Crux'}) MATCH (h3:Horse {name: 'Auriga'}) 
+MATCH (s3:Stud {name: 'Cepheus'}) MATCH (h3:Horse {name: 'Auriga'}) 
+MATCH (m4:Mare {name: 'Libra'}) MATCH (h4:Horse {name: 'Corona Borealis'}) 
+MATCH (s4:Stud {name: 'Cepheus'}) MATCH (h4:Horse {name: 'Corona Borealis'}) 
+MATCH (m5:Mare {name: 'Crux'}) MATCH (h5:Horse {name: 'Hydra'}) 
+MATCH (s5:Stud {name: 'Cepheus'}) MATCH (h5:Horse {name: 'Hydra'}) 
+MATCH (m6:Mare {name: 'Libra'}) MATCH (h6:Horse {name: 'Columba'}) 
+MATCH (s6:Stud {name: 'Cepheus'}) MATCH (h6:Horse {name: 'Columba'}) 
+MATCH (m7:Mare {name: 'Virgo'}) MATCH (h7:Horse {name: 'Coma Berenices'}) 
+MATCH (s7:Stud {name: 'Aquarius'}) MATCH (h7:Horse {name: 'Coma Berenices'}) 
+MATCH (m8:Mare {name: 'Crux'}) MATCH (h8:Horse {name: 'Carina'}) 
+MATCH (s8:Stud {name: 'Cepheus'}) MATCH (h8:Horse {name: 'Carina'}) 
+MATCH (m9:Mare {name: 'Libra'}) MATCH (h9:Horse {name: 'Cassiopeia'}) 
+MATCH (s9:Stud {name: 'Cepheus'}) MATCH (h9:Horse {name: 'Cassiopeia'}) 
+MATCH (m10:Mare {name: 'Lyra'}) MATCH (h10:Horse {name: 'Corvus'}) 
+MATCH (s10:Stud {name: 'Pegasus'}) MATCH (h10:Horse {name: 'Corvus'}) 
+MATCH (m11:Mare {name: 'Virgo'}) MATCH (h11:Horse {name: 'Capricornus'}) 
+MATCH (s11:Stud {name: 'Dorado'}) MATCH (h11:Horse {name: 'Capricornus'}) 
+MATCH (m12:Mare {name: 'Crux'}) MATCH (h12:Horse {name: 'Corona Austrina'}) 
+MATCH (s12:Stud {name: 'Dorado'}) MATCH (h12:Horse {name: 'Corona Austrina'}) 
+MATCH (m13:Mare {name: 'Virgo'}) MATCH (h13:Horse {name: 'Draco'})	
+MATCH (s13:Stud {name: 'Orion'}) MATCH (h13:Horse {name: 'Draco'}) 
+MATCH (m14:Mare {name: 'Libra'}) MATCH (h14:Horse {name: 'Norma'}) 
+MATCH (s14:Stud {name: 'Eridanus'}) MATCH (h14:Horse {name: 'Norma'}) 
+MATCH (m15:Mare {name: 'Virgo'}) MATCH (h15:Horse {name: 'Aries'}) 
+MATCH (s15:Stud {name: 'Orion'}) MATCH (h15:Horse {name: 'Aries'}) 
+MATCH (m16:Mare {name: 'Crux'}) MATCH (h16:Horse {name: 'Crater'}) 
+MATCH (s16:Stud {name: 'Dorado'}) MATCH (h16:Horse {name: 'Crater'}) 
+MATCH (m17:Mare {name: 'Libra'}) MATCH (h17:Horse {name: 'Scorpius'}) 
+MATCH (s17:Stud {name: 'Sagittarius'}) MATCH (h17:Horse {name: 'Scorpius'}) 
+MATCH (m18:Mare {name: 'Virgo'}) MATCH (h18:Horse {name: 'Phoenix'}) 
+MATCH (s18:Stud {name: 'Aquarius'}) MATCH (h18:Horse {name: 'Phoenix'}) 
+MATCH (m19:Mare {name: 'Virgo'}) MATCH (h19:Horse {name: 'Sagitta'}) 
+MATCH (s19:Stud {name: 'Aquarius'}) MATCH (h19:Horse {name: 'Sagitta'}) 
+MATCH (m20:Mare {name: 'Virgo'}) MATCH (h20:Horse {name: 'Boötes'}) 
+MATCH (s20:Stud {name: 'Sagittarius'}) MATCH (h20:Horse {name: 'Boötes'}) 
+MATCH (m21:Mare {name: 'Virgo'}) MATCH (h21:Horse {name: 'Tucana'}) 
+MATCH (s21:Stud {name: 'Aquarius'}) MATCH (h21:Horse {name: 'Tucana'}) 
+MATCH (m22:Mare {name: 'Corona Austrina'}) MATCH (h22:Horse {name: 'Ophiuchus'}) 
+MATCH (s22:Stud {name: 'Perseus'}) MATCH (h22:Horse {name: 'Ophiuchus'}) 
+MERGE (m1)-[:DAM_OF]->(h1)
+MERGE (s1)-[:SIRE_OF]->(h1)
+MERGE (m2)-[:DAM_OF]->(h2)
+MERGE (s2)-[:SIRE_OF]->(h2)
+MERGE (m3)-[:DAM_OF]->(h3)
+MERGE (s3)-[:SIRE_OF]->(h3)
+MERGE (m4)-[:DAM_OF]->(h4)
+MERGE (s4)-[:SIRE_OF]->(h4)
+MERGE (m5)-[:DAM_OF]->(h5)
+MERGE (s5)-[:SIRE_OF]->(h5)
+MERGE (m6)-[:DAM_OF]->(h6)
+MERGE (s6)-[:SIRE_OF]->(h6)
+MERGE (m7)-[:DAM_OF]->(h7)
+MERGE (s7)-[:SIRE_OF]->(h7)
+MERGE (m8)-[:DAM_OF]->(h8)
+MERGE (s8)-[:SIRE_OF]->(h8)
+MERGE (m9)-[:DAM_OF]->(h9)
+MERGE (s9)-[:SIRE_OF]->(h9)
+MERGE (m10)-[:DAM_OF]->(h10)
+MERGE (s10)-[:SIRE_OF]->(h10)
+MERGE (m11)-[:DAM_OF]->(h11)
+MERGE (s11)-[:SIRE_OF]->(h11)
+MERGE (m12)-[:DAM_OF]->(h12)
+MERGE (s12)-[:SIRE_OF]->(h12)
+MERGE (m13)-[:DAM_OF]->(h13)
+MERGE (s13)-[:SIRE_OF]->(h13)
+MERGE (m14)-[:DAM_OF]->(h14)
+MERGE (s14)-[:SIRE_OF]->(h14)
+MERGE (m15)-[:DAM_OF]->(h15)
+MERGE (s15)-[:SIRE_OF]->(h15)
+MERGE (m16)-[:DAM_OF]->(h16)
+MERGE (s16)-[:SIRE_OF]->(h16)
+MERGE (m17)-[:DAM_OF]->(h17)
+MERGE (s17)-[:SIRE_OF]->(h17)
+MERGE (m18)-[:DAM_OF]->(h18)
+MERGE (s18)-[:SIRE_OF]->(h18)
+MERGE (m19)-[:DAM_OF]->(h19)
+MERGE (s19)-[:SIRE_OF]->(h19)
+MERGE (m20)-[:DAM_OF]->(h20)
+MERGE (s20)-[:SIRE_OF]->(h20)
+MERGE (m21)-[:DAM_OF]->(h21)
+MERGE (s21)-[:SIRE_OF]->(h21)
+MERGE (m22)-[:DAM_OF]->(h22)
+MERGE (s22)-[:SIRE_OF]->(h22)
+----
+
+The initial data give the following graph:
+
+image::https://github.com/alfiafit/hello-world/blob/master/Fig1.png?raw=true[]
+
+
+= Consistency checks
+
+In order to keep the data correct over time, it is advisable to have some instructions for periodic verification of the absence of anomalous situations. These instructions will also be essential after a massive upload of data from an existing database: data are consistent when all of them return no results.
+
+* Not existence of loops:
+
+//output
+[source,cypher]
+----
+MATCH (parent)-[*]->(parent) 
+RETURN COUNT(parent)
+----
+
+* Not existence of two dams or two sires for the same horse:
+
+//output
+[source,cypher]
+----
+MATCH (dam1:Mare)-->(h:Horse), (dam2:Mare)-->(h) 
+WHERE exists((dam1)-->(h)<--(dam2)) 
+RETURN DISTINCT h.name, dam1.name, dam2.name
+----
+
+//output
+[source,cypher]
+----
+MATCH (sire1:Sire)-->(h:Horse), (sire2:Sire)-->(h:Horse) 
+WHERE exists((sire1)-->(h)<--(sire2)) 
+RETURN DISTINCT h.name, sire1.name, sire2.name
+----
+
+* Not existence of a dam with two sons in the same year:
+
+//output
+[source,cypher]
+----
+MATCH (horse1:Horse)<--(dam:Mare)-->(horse2:Horse)
+WHERE horse1.birth_year = horse2.birth_year
+RETURN DISTINCT dam.name, horse1.name, horse2.name
+----
+
+* Not existence of dams or sires too young for their sons:
+
+//output
+[source,cypher]
+----
+MATCH (parent:Horse)-->(son:Horse) 
+WHERE parent.birth_year >= son.birth_year - 2 
+RETURN DISTINCT parent.name, parent.birth_year, son.name, son.birth_year
+----
+
+* Not existence of dams too old for their sons:
+
+//output
+[source,cypher]
+----
+MATCH (dam:Mare)-->(son:Horse) 
+WHERE dam.birth_year < son.birth_year - 20 
+RETURN DISTINCT dam.name, dam.birth_year, son.name, son.birth_year
+----
+
+As for studs, they can have sons even in their late seniority, if the rules of the Studbook allow the use of artificial insemination; otherwise, a similar check must be performed. 
+
+= How to manage data
+
+The first two functions necessary to manage the Studbook are those to register a new horse.
+
+* *Registration in the breeding section of the Studbook*
+
+Before generating foals eligible for registration, both the future dam (mother) and the future sire (father) must be registered as _breeding horses_ in the appropriate sections of the Studbook.
+
+For female horses the registration as breeding horse function has to perform the following instruction:
+----
+MATCH (h:Horse {name: $name}) 
+WHERE h.gender = 'F' AND NOT h:Mare
+SET h:Mare
+RETURN h.name as MareName, labels(h) as Labels
+----
+For male horses the registration as breeding horse function has to perform the following instruction:
+----
+MATCH (h:Horse {name: $name}) 
+WHERE h.gender = 'M' AND NOT h:Stud
+SET h:Stud 
+RETURN h.name as StudName, labels(h) as Labels
+----
+The conditions make us sure that:
+
+. the horse is of the right gender
+. the horse is not already in the register
+
+Only if both the conditions are satisfied, the registration will be performed.
+
+* *Registration of a foal in the Studbook*
+
+When a foal is born, it can be registered in the Studbook only if his dam and sire are both registered as well. So the instruction that has to be performed for such an action is the following:
+----
+MATCH (sire:Stud {name: $sireName})
+MATCH (dam:Mare {name: $dameName})
+OPTIONAL MATCH (dam)<-[:SIRE_OF]-(damssire)
+CREATE (foal:Horse {id: $registrationId,  name: $foalName, birth_year: toInteger($birthYear), gender: $gender, mantle: $mantle}) 
+CREATE (dam)-[:DAM_OF]->(foal)
+CREATE (sire)-[:SIRE_OF]->(foal)
+RETURN 'Foal registered: ' + foal.name + ' by ' + sire.name + ' out of ' + dam.name + ' (' + damssire.name + ')' as NewFoal
+----
+Clearly, if the dam or the sire are not registered as breeding horses, the corresponding MATCH will have no result and the registration of the foal fails. The OPTIONAL MATCH for the dam’s sire is needed to avoid the match fails when not all dam’s data are available (if she is imported or in case of genealogy reconstruction).
+
+* *Introduction of people in the model: breeders, owners and tenants*
+
+Respecting to a horse, the main roles a person can have are: 
+
+- _breeder_: who makes him born and raises him at least for a first period; 
+- _owner_: who has the rights on him and which does not necessarily coincide with the breeder;
+- _tenant_: who takes from the owner temporary rights on him.  
+
+On one hand, a public deed is sufficient to certify if a person is the owner or tenant of a horse. On the other hand, a person becomes a breeder as owner or tenant of the mare who gives birth to a foal. So, the role that a person can have with a horse arises from the relationship established between the person and the horse. 
+
+At the birth, the owner or tenant of the mare automatically becomes either the breeder or the owner of the foal: then, the instruction seen before for foal registration has to be completed in the following way:
+----
+MATCH (sire:Stud {name: $sireName})
+MATCH (dam:Mare {name: $dameName})
+OPTIONAL MATCH (dam)<-[:SIRE_OF]-(damssire)
+CREATE (foal:Horse {name: $foalName, birth_year: toInteger($birtYear), gender: $gender, mantle: $mantle})
+CREATE (dam)-[:DAM_OF]->(foal)
+CREATE (sire)-[:SIRE_OF]->(foal)
+WITH sire, dam, damssire, foal
+MATCH (dam)<-[ownshp:OWNER_OF]-(owner)
+OPTIONAL MATCH (dam)<-[tenshp:TENANT_OF]-(tenant)
+WITH sire, dam, damssire, foal, coalesce(tenant, owner) as breeder, coalesce(tenshp, ownshp) as quote
+CREATE (breeder)-[:BREEDER_OF {breed_perc: quote.property_perc}]->(foal)
+CREATE (breeder)-[:OWNER_OF {property_perc: quote.property_perc}]->(foal)
+RETURN DISTINCT 'Foal registered: ' + foal.name + ' by ' + sire.name + ' out of ' + dam.name + ' (' + damssire.name + ')' as NewFoal
+----
+After creating the new foal and the relations with his parents, the script continues (first WITH) obtaining the owner and the tenant, if any (OPTIONAL clause), of the mare; then (second WITH) the tenant or owner is chosen as breeder of the foal, in any case with the respective percentage of property (variable _quote_), and the property and breeding relationships are finally created. The string returned has the typical form for horse naming, with sire, dam and sire of the dam. Obviously, many people can be the owners or tenants of a horse: the script works perfectly even in this case.
+
+To check if all relationships between people and horses are consistent, i.e. the sum of the percentages of each relationship type is 100 for each horse, the following statement must be added to the consistency checks to be implemented:
+----
+MATCH (p:Person)-[r:OWNER_OF]->(h:Horse)
+WITH h, sum(r.property_perc) as sum_property_perc
+WHERE sum_property_perc <> 100
+RETURN h, sum_property_perc
+----
+and analogous for the other types of relationships (:BREEDER_OF, :TENANT_OF).
+
+In case of *purchase* of a horse by a different person or group of persons, the new configuration of property rights can be obtained with the following instructions (here the new owners are three):
+----
+WITH [{name:$newowner1, property_perc: toFloat($perc1)}, {name:$newowner2, property_perc: toFloat($perc2)}, {name:$newowner3, property_perc: toFloat($perc3)}] AS purchaserList
+UNWIND purchaserList AS purchaser
+MATCH (h:Horse {name: $horseName})
+OPTIONAL MATCH (h)<-[oldRel:OWNER_OF]-()
+DELETE oldRel
+MERGE (p:Person {name: purchaser.name})
+ON CREATE SET p.property_perc = purchaser.property_perc
+ON MATCH SET p.property_perc = purchaser.property_perc
+MERGE (p)-[newRel:OWNER_OF]->(h)
+SET newRel.property_perc = p.property_perc 
+REMOVE p.property_perc
+RETURN h.name, collect(p.name)
+----
+In the initial WITH there is the list of the new owners, each with his/her property percentage. Then the list in UNWINDed to get the table of the new owners. Matched the horse, the old ownerships, if existing, are deleted; then, for each new owner, the property percentage is temporarily assigned to him/her and then assigned to the new relationship between the new owner and the horse. Finally the temporary value is removed from the owner.
+
+A similar instruction can be written for rental, while breeding rights normally cannot be sold.
+
+= An example
+
+Let's add some people related to three of the registered horses: their breeders and owners, and a tenant for one of them:
+
+//output
+[source,cypher]
+----
+MATCH (h1:Horse {name: 'Scorpius'})
+MATCH (h2:Horse {name: 'Tucana'})
+MATCH (h3:Horse {name: 'Aries'})
+CREATE (p1:Person {name: 'Julia Stokes'})
+CREATE (p2:Person {name: 'Hugh Kelley'})
+CREATE (p3:Person {name: 'Anne Nicholson'})
+CREATE (p4:Person {name: 'Jeremy Dalton'}) 
+CREATE (p5:Person {name: 'Beatrice Fowler'})
+CREATE (p1)-[:BREEDER_OF {breed_perc: toFloat(100.0)}]-> (h1)
+CREATE (p1)-[:OWNER_OF {property_perc: toFloat(100.0)}]-> (h1)
+CREATE (p2)-[:BREEDER_OF {breed_perc: toFloat(100.0)}]-> (h2)
+CREATE (p3)-[:OWNER_OF {property_perc: toFloat(60.0)}]-> (h2) 
+CREATE (p4)-[:OWNER_OF {property_perc: toFloat(40.0)}]-> (h2)
+CREATE (p5)-[:BREEDER_OF {breed_perc: toFloat(100.0)}]-> (h3)
+CREATE (p5)-[:OWNER_OF {property_perc: toFloat(100.0)}]-> (h3)   
+CREATE (p3)-[:TENANT_OF {rental_perc: toFloat(100.0)}]-> (h3)
+RETURN h1,h2,h3,p1,p2,p3,p4,p5
+----
+
+In order to have a new foal, two of these horses, Tucana and Scorpius, must become breeding horses:
+
+//output
+[source,cypher]
+----
+MATCH (h:Horse {name: 'Tucana'}) 
+WHERE h.gender = 'F' AND NOT h:Mare
+SET h:Mare
+RETURN h.name as MareName, labels(h) as Labels
+----
+
+//output
+[source,cypher]
+----
+MATCH (h:Horse {name: 'Scorpius'}) 
+WHERE h.gender = 'M' AND NOT h:Stud
+SET h:Stud 
+RETURN h.name as StudName, labels(h) as Labels
+----
+
+The situation is now the following, where Scorpius is red as a stud, Tucana is violet as a mare and Aries is blue as he is not a stud yet:
+
+[source,cypher]
+----
+MATCH (h1:Horse {name: 'Scorpius'})
+MATCH (h2:Horse {name: 'Tucana'})
+MATCH (h3:Horse {name: 'Aries'})
+MATCH (p1)-[:BREEDER_OF|:OWNER_OF|:TENANT_OF]-> (h1)
+MATCH (p2)-[:BREEDER_OF|:OWNER_OF|:TENANT_OF]-> (h2)
+MATCH (p3)-[:BREEDER_OF|:OWNER_OF|:TENANT_OF]-> (h3)
+RETURN h1,h2,h3,p1,p2,p3
+----
+
+image::https://github.com/alfiafit/hello-world/blob/master/Fig2.png?raw=true[]
+
+Let’s suppose that Tucana and Scorpius give birth to a foal, Saturn:
+
+//output
+[source,cypher]
+----
+MATCH (sire:Stud {name: 'Scorpius'})
+MATCH (dam:Mare {name: 'Tucana'})
+OPTIONAL MATCH (dam)<-[:SIRE_OF]-(damssire)
+CREATE (foal:Horse {name: 'Saturn', birth_year: toInt(2016), gender: 'M', mantle: 'bay'})
+CREATE (dam)-[:DAM_OF]->(foal)
+CREATE (sire)-[:SIRE_OF]->(foal)
+WITH sire, dam, damssire, foal
+MATCH (dam)<-[ownshp:OWNER_OF]-(owner)
+OPTIONAL MATCH (dam)<-[tenshp:TENANT_OF]-(tenant)
+WITH sire, dam, damssire, foal, coalesce(tenant, owner) as breeder, coalesce(tenshp, ownshp) as quote
+CREATE (breeder)-[:BREEDER_OF {breed_perc: quote.property_perc}]->(foal)
+CREATE (breeder)-[:OWNER_OF {property_perc: quote.property_perc}]->(foal)
+RETURN DISTINCT 'Foal registered: ' + foal.name + ', by ' + sire.name + ' out of ' + dam.name + ' (' + damssire.name + ')' as NewFoal
+----
+
+The new situation is the following:
+
+[source,cypher]
+----
+MATCH (h1:Horse {name: 'Scorpius'})
+MATCH (h2:Horse {name: 'Tucana'})
+MATCH (h3:Horse {name: 'Aries'})
+MATCH (h4:Horse {name: 'Saturn'})
+MATCH (p1)-[:BREEDER_OF|:OWNER_OF|:TENANT_OF]-> (h1)
+MATCH (p2)-[:BREEDER_OF|:OWNER_OF|:TENANT_OF]-> (h2)
+MATCH (p3)-[:BREEDER_OF|:OWNER_OF|:TENANT_OF]-> (h3)
+MATCH (p4)-[:BREEDER_OF|:OWNER_OF|:TENANT_OF]-> (h4)
+MATCH (h1)-[]->(h4)<-[]-(h2)
+RETURN h1,h2,h3,h4,p1,p2,p3,p4
+----
+
+image::https://github.com/alfiafit/hello-world/blob/master/Fig3.png?raw=true[]
+
+You can see that the breeders and owners of Saturn are the owners of his dam Tucana, Anne Nicholson and Jeremy Dalton, with the same percentages of rights they have on the mare, respectively 60% and 40%:
+
+//output
+[source,cypher]
+----
+MATCH (h:Horse {name: 'Saturn'})
+MATCH (h)<-[r:OWNER_OF]-(p)
+RETURN p.name, r.property_perc
+----
+
+//output
+[source,cypher]
+----
+MATCH (h:Horse {name: 'Saturn'})
+MATCH (h)<-[r:BREEDER_OF]-(p)
+RETURN p.name, r.breed_perc
+----
+
+Let’s suppose now that the new foal is sold to Julia Stokes, Hugh Kelley and Philip Lindsey (not already present), respectively with the property percentages of 25%, 25% and 50%.
+
+//output
+[source,cypher]
+----
+MATCH (h:Horse {name: 'Saturn'})
+OPTIONAL MATCH (h)<-[oldOwnshp:OWNER_OF]-()
+DELETE oldOwnshp
+WITH DISTINCT h, [{name:'Julia Stokes', property_perc: toFloat(25)}, {name:'Hugh Kelley', property_perc: toFloat(25)}, {name:'Philip Lindsey', property_perc: toFloat(50)}] AS purchaserList
+UNWIND purchaserList AS purchaser
+MERGE (p:Person {name: purchaser.name})
+ON CREATE SET p.property_perc = purchaser.property_perc
+ON MATCH SET p.property_perc = purchaser.property_perc
+CREATE (p)-[newOwnshp:OWNER_OF {property_perc: p.property_perc}]->(h)
+REMOVE p.property_perc
+RETURN p.name, type(newOwnshp), newOwnshp.property_perc
+----
+
+and the final situation is the following:
+
+[source,cypher]
+----
+MATCH (h1:Horse {name: 'Scorpius'})
+MATCH (h2:Horse {name: 'Tucana'})
+MATCH (h3:Horse {name: 'Aries'})
+MATCH (h4:Horse {name: 'Saturn'})
+MATCH (p1)-[:BREEDER_OF|:OWNER_OF|:TENANT_OF]-> (h1)
+MATCH (p2)-[:BREEDER_OF|:OWNER_OF|:TENANT_OF]-> (h2)
+MATCH (p3)-[:BREEDER_OF|:OWNER_OF|:TENANT_OF]-> (h3)
+MATCH (p4)-[:BREEDER_OF|:OWNER_OF|:TENANT_OF]-> (h4)
+MATCH (h1)-[]->(h4)<-[]-(h2)
+RETURN h1,h2,h3,h4,p1,p2,p3,p4
+----
+
+image::https://github.com/alfiafit/hello-world/blob/master/Fig4.png?raw=true[]
+
+We can check if the property rights are correct:
+
+//output
+[source,cypher]
+----
+MATCH (h:Horse {name: 'Saturn'})
+MATCH (h)<-[r:OWNER_OF]-(p)
+RETURN p.name, r.property_perc
+----
+
+= Data querying
+
+The typical queries that a user can make are those concerning information about a horse, his/her ancestors and descendants, the people who own or manage him/her.
+
+* *Horse’s pedigree*
+
+The main part of the pedigree shows the data of the horse and those of parents and grandparents (often of the grand-grandparents as well):
+
+//output
+[source,cypher]
+----
+MATCH (h:Horse {name: 'Saturn'})
+OPTIONAL MATCH (h)<-[:DAM_OF]-(dam:Mare)
+OPTIONAL MATCH (h)<-[:SIRE_OF]-(sire:Stud)
+OPTIONAL MATCH (dam)<-[:DAM_OF]-(damsdam:Mare)
+OPTIONAL MATCH (dam)<-[:SIRE_OF]-(damssire:Stud) 
+OPTIONAL MATCH (sire)<-[:DAM_OF]-(siresdam:Mare)
+OPTIONAL MATCH (sire)<-[:SIRE_OF]-(siressire:Stud)
+RETURN h.name as Name, h.gender as Gender, h.birth_year as Birth_year, h.mantle as Mantle, sire.name as Sire_name, sire.birth_year as Sire_birth_year, sire.mantle as Sire_mantle, siressire.name as Sire_of_sire, siresdam.name as Dam_of_sire, dam.name as Dam_name, dam.birth_year as Dam_birth_year, dam.mantle as Dam_mantle, damssire.name as Sire_of_dam, damsdam.name as Dam_of_dam
+----
+
+* *Maternal ancestry*
+
+Another typical section of the pedigree is related to maternal ancestry, or the list of the mothers up to 3rd (or 4th) generation:
+
+//output
+[source,cypher]
+----
+MATCH (h:Horse {name: 'Saturn'})
+OPTIONAL MATCH (h)<-[:DAM_OF]-(d1:Horse)
+OPTIONAL MATCH (d1)<-[:DAM_OF]-(d2:Horse)
+OPTIONAL MATCH (d2)<-[:DAM_OF]-(d3:Horse)
+RETURN h.name AS Name, h.birth_year AS Birth, d1.name AS FirstMother, d1.birth_year AS FMBirth, d2.name AS SecondMother, d2.birth_year AS SMBirth, d3.name AS ThirdMother, d3.birth_year AS TMBirth
+----
+
+* *Horse’s descendants*
+
+Obviously, if a horse has descendants, it is important to know how many they are and from which parents:
+
+//output
+[source,cypher]
+----
+MATCH (h:Horse {name: 'Cepheus'})
+OPTIONAL MATCH (h)-->(d:Horse)
+OPTIONAL MATCH (d)<--(p:Horse) WHERE p.name <> h.name
+RETURN h.name as Name, h.gender as Gender, h.birth_year as Birth, h.mantle as Mantle, d.name as Descendant, d.gender as DGender, d.birth_year as DBirth, p.name as DParent, p.birth_year as DParent_birth
+ORDER BY d.birth_year
+----
+
+//output
+[source,cypher]
+----
+MATCH (h:Horse {name: 'Virgo'})
+OPTIONAL MATCH (h)-->(d:Horse)
+OPTIONAL MATCH (d)<--(p:Horse) WHERE p.name <> h.name
+RETURN h.name as Name, h.gender as Gender, h.birth_year as Birth, h.mantle as Mantle, d.name as Descendant, d.gender as DGender, d.birth_year as DBirth, p.name as DParent, p.birth_year as DParent_birth
+ORDER BY d.birth_year
+----
+
+= Conclusions
+
+I hope you enjoyed this gist and can get from it some hints for a real application.
+As said before, the data model can be enhanced a lot, adding further attributes to the instances or refactoring some aspects, like time or nationality (year of birth or country as nodes).
+
+Have a good time!

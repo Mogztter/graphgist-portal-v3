@@ -1,0 +1,102 @@
+= GNOME Games Health Analytics
+:neo4j-version: 2.3.0
+:author: Sahil Sareen
+:twitter: @SahilSareen1
+
+
+== Summary
+
+A graph based application to be able to check the health of the GNOME games built using python and neo4j.
+
+Check which gnome modules builds are failing/passing/timing out/missing from gnome-continuous builds
+Find out their dependencies
+Run queries on a graph to find out what possibly broke a module. For example: Find out which dependencies are used exclusively by the failing modules as an indication that the dependency is broken.
+
+image::http://imgur.com/gPXcA6Q.png[]
+
+
+== Building the Model with Cypher
+
+[source,cypher]
+----
+// Create all the game nodes 
+CREATE (chess:Game {name: 'Chess'})
+CREATE (sudoku:Game {name: 'Sudoku'})
+CREATE (taquin:Game {name: 'Taquin'})
+CREATE (klotski:Game {name: 'Klotski'})
+
+// Add dependency information used by each game
+MERGE (gio:Dependency {name:'gio-2.0'})-[:USED_BY]->(taquin)
+MERGE (glib:Dependency {name:'glib-2.0'})-[:USED_BY]->(taquin)
+MERGE (gmod:Dependency {name:'gmod'})-[:USED_BY]->(taquin)
+MERGE (gtk:Dependency {name:'gtk+-3.0'})-[:USED_BY]->(taquin)
+
+MERGE (gio)-[:USED_BY]->(klotski)
+MERGE (glib)-[:USED_BY]->(klotski)
+MERGE (gmodule1:Dependency {name:'gmodule-1.0'})-[:USED_BY]->(klotski)
+MERGE (gtk)-[:USED_BY]->(klotski)
+
+MERGE (gio)-[:USED_BY]->(chess)
+MERGE (glib)-[:USED_BY]->(chess)
+MERGE (gmodule:Dependency {name:'gmodule-2.0'})-[:USED_BY]->(chess)
+MERGE (gtk)-[:USED_BY]->(chess)
+MERGE (librsvg:Dependency {name:'librsvg-2.0'})-[:USED_BY]->(chess)
+
+MERGE (gio)-[:USED_BY]->(sudoku)
+MERGE (glib)-[:USED_BY]->(sudoku)
+MERGE (gtk)-[:USED_BY]->(sudoku)
+MERGE (gee:Dependency {name:'gee-0.8'})-[:USED_BY]->(sudoku)
+MERGE (qqwing:Dependency {name:'qqwing-1.0'})-[:USED_BY]->(sudoku)
+
+// Create possible build result nodes
+CREATE (passed_build:BuildPassed {name: 'Build Passed'})
+CREATE (failed_build:BuildFailed {name: 'Build Failed'})
+CREATE (timeout_build:BuildTimeout {name: 'Build Timeout'})
+CREATE (info_missing:BuildInfoMissing {name: 'Build Info Missing'})
+
+
+// Add build status information
+MERGE (taquin)-[:BUILD_IS]->(info_missing)
+MERGE (klotski)-[:BUILD_IS]->(passed_build)
+MERGE (chess)-[:BUILD_IS]->(passed_build)
+MERGE (sudoku)-[:BUILD_IS]->(failed_build)
+----
+
+
+== Querying the Graph
+[source,cypher]
+----
+// Sudoku's build is failing which needs to be looked into
+// Two potential problems:
+// 1. A bad commit pushed into Sudoku
+// 2. A bad commit pushed into a dependency
+//    - Incase a dependency is broken, filter out dependencies used exclusively by Sudoku
+
+// A query to find out which games build is failing and display exclusively used dependencies
+// Now from the resulting graph the exploration space of "what broke the build" is highly reduced!
+MATCH (dep:Dependency)-->(game:Game)-->(missing:BuildFailed)
+WHERE NOT (dep)-->(:Game)-->(:BuildPassed)
+RETURN dep, game, missing
+----
+//graph
+
+image::http://imgur.com/3xzafvx.png[]
+
+Now its easy to find out what possibly broke a module using some simple queries on a graph instead of:
+
+* going to the gnome-common webpage
+* looking for the modules that you maintain one by one
+* going to their source on GitHub(incase a module is broken)
+* finding out the dependencies and commits
+* coming back to the gnome-common webpage to see how the build was a day before and so on.
+
+Though I’m using this for just the GNOME-games, it can be easily extended to all the GNOME applications.
+
+Blog post: https://blogs.gnome.org/ssareen/2016/01/31/gnome-games-health-analytics/
+
+Full source code with automated graph creation and build status/dependency extraction: https://github.com/sahilsareen/GNOMEGamesHealthAnalytics
+
+
+== Demo
+
+https://www.youtube.com/watch?v=OUzUfVo77PI

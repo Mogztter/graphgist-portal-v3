@@ -1,0 +1,346 @@
+= Entitlements and Access Control Management
+:author: Kenny Bastani
+:twitter: @kennybastani
+:description: Graph database access control, entitlements, authorization solutions
+:tags: domain:finance, use-case:access-control
+
+ifdef::env-graphgist[]
+toc::[]
+endif::env-graphgist[]
+
+[[introduction]]
+== Graph Databases for Entitlements and Access Control
+
+Authorization and access control solutions store information about parties (e.g., security administrators) and resources (e.g., business users and owners), together with the rules governing access to those resources. The control system they then apply these rules to determine who can access or manipulate a set of actions on behalf of another user. Access control has traditionally been implemented either using directory services or by building a custom solution inside an application’s backend. Unfortunately, hierarchical directory structures developed on a relational database suffer join pain as the dataset size grows, becoming slow and unresponsive, and ultimately delivering a poor end-user experience.
+
+=== Complexity kills
+
+The key benefit of using a graph database like Neo4j for access control is that complex requirements that introduce a high degree of risk become reduced significantly. When a business unit requests a set of requirements for an access control use case there tends to be a fair amount of push back from the software developers responsible for delivering the system. This push back is what I like to call the "Complexity Comprimise" of sofware engineering projects. 
+
+=== Neo4j Solves for Complexity
+
+Complexity compromises are notably one of the key contributors to an engineering team's accrual of technical debt over time. Neo4j was expertly crafted and designed to elegantly reduce complexity in software projects. Neo4j is a mature database solution that has been relied on by the likes of engineering teams at companies such as Walmart, Glassdoor, Cisco Systems, HP, CrunchBase/AOL, and many many more top enterprises. Hundreds of thousands of engineering hours have gone into making Neo4j the most mature of the NoSQL databases that deal specifically with graph-shaped data.
+
+Neo4j can store complex and densely connected access control structures spanning billions of parties and resources. It provides the familiarity of a SQL database but is designed to handle your most complex use cases and requirements that deal with both hierarchical and non-hierarhical data structures. 
+
+==== Engineering teams love Neo4j
+
+Neo4j makes software developers, engineers, and architects look skillful, dependable, and valuable in the eyes of the business teams and product managers that profit from the fulfillment of each and every use case requirement for a software solution. *Complexity need not be compromised anymore*.
+
+==== Neo4j is familiar to SQL devs
+
+With a SQL-like query language that provides the power to traverse millions of relationships per second, the complexities that come standard with an access control use case can be reduced to a simple and elegant solution.
+
+[[overview]]
+== What this tutorial covers
+
+As with network management and analysis, a graph database access control solution allows for both top-down and bottom-up queries. This tutorial will explore how we can use Neo4j and Cypher to determine:
+
+- Which resources--company structures, products, services, agreements, accounts, and end users--can a particular security administrator manage?
+- Which resource can an end user perform actions on?
+- Given a particular resource, who can modify its access settings or entitlements?
+
+[[user_story]]
+== Access Control at ACME Systems
+
+This tutorial illustrates the organizational structure of the fictional company ACME Systems. At ACME Systems, security administrators are assigned to one or more user groups, which are connected to some but not all companies through inheritance relationships described below. If a company is not connected to a user group, it will inherit the security administrator's entitlements for the parent company. 
+
+Each company is assigned one or more business users via the `WORKS_FOR` relationship, and each business user is assigned one or more account via the `HAS_ACCOUNT` relationship. 
+
+.Group-Company Inheritance Rules
+- <<ALLOWED_INHERIT, `ALLOWED_INHERIT`>> connects a security administrator's group to an organizational unit, allowing the security administrators within that group to manage that organizational unit. This permission is inherited by children of the parent organizational unit. 
+- <<ALLOWED_DO_NOT_INHERIT,`ALLOWED_DO_NOT_INHERIT`>> connects a security administrator's group to an organizational unit in a way that allows administrators within that group to manage the organizational unit, but not any of its children. 
+- <<DENIED, `DENIED`>> forbids security administrators from accessing an organizational unit. This permission is inherited by children of the parent organizational unit. `DENIED` takes precedence over `ALLOWED_INHERIT`, but is subordinate to `ALLOWED_DO_NOT_INHERIT`.
+
+image:https://raw.githubusercontent.com/whatSocks/telenor/master/wholeGraph.png['the whole graph']
+
+=== Fine-Grained or Coarse-Grained Relationships?
+
+Notice that the ACME Systems access control data model uses fine-grained relationships (`ALLOWED_INHERIT`, `ALLOWED_DO_NOT_INHERIT`, and `DENIED`) rather than general coarse-grained relationships that are qualified by properties, for example a relationship type named `PERMISSION` with `allowed` and `inherited` properties on that relationship. ACME Systems performance-tested both approaches and determined that the fine-grained, property-free approach was nearly *twice as fast* as the coarse-grained approach one using properties on relationships. 
+
+[[dataset]]
+=== Example Dataset
+
+In this query we setup the sample dataset using the Cypher query language. We will use this dataset to answer our questions from earlier.
+
+//hide
+//setup
+[source,cypher]
+----
+//create the nodes
+//administrators
+CREATE (`Ben`:administrator {name:'Ben'}),
+	(`Sarah`:administrator {name:'Sarah'}),
+	(`Liz`:administrator {name:'Liz'}),
+	(`Phil`:administrator {name:'Phil'})
+
+//groups
+CREATE (`Group1`:group {name:'Group1'}),
+	(`Group2`:group {name:'Group2'}),
+	(`Group3`:group {name:'Group3'}),
+	(`Group4`:group {name:'Group4'}),
+	(`Group5`:group {name:'Group5'}),
+	(`Group6`:group {name:'Group6'}),
+	(`Group7`:group {name:'Group7'})
+
+//companies
+CREATE (`Acme`:company {name:'Acme'}),
+	(`Spinoff`:company {name:'Spinoff'}),
+	(`Startup`:company {name:'Startup'}),
+	(`Skunkworkz`:company {name:'Skunkworkz'}),
+	(`BigCo`:company {name:'BigCo'}),
+	(`Aquired`:company {name:'Aquired'}),
+	(`Subsidry`:company {name:'Subsidry'}),
+	(`DevShop`:company {name:'DevShop'}),
+	(`OneManShop`:company {name:'OneManShop'})
+
+//employees
+CREATE (`Arnold`:employee {name:'Arnold'}),
+	(`Charlie`:employee {name:'Charlie'}),
+	(`Emily`:employee {name:'Emily'}),
+	(`Gordon`:employee {name:'Gordon'}),
+	(`Lucy`:employee {name:'Lucy'}),
+	(`Kate`:employee {name:'Kate'}),
+	(`Alister`:employee {name:'Alister'}),
+	(`Eve`:employee {name:'Eve'}),
+	(`Gary`:employee {name:'Gary'}),
+	(`Bill`:employee {name:'Bill'}),
+	(`Mary`:employee {name:'Mary'})
+
+//accounts
+CREATE (`account1`:account {name:'Acct 1'}),
+	(`account2`:account {name:'Acct 2'}),
+	(`account3`:account {name:'Acct 3'}),
+	(`account4`:account {name:'Acct 4'}),
+	(`account5`:account {name:'Acct 5'}),
+	(`account6`:account {name:'Acct 6'}),
+	(`account7`:account {name:'Acct 7'}),
+	(`account8`:account {name:'Acct 8'}),
+	(`account9`:account {name:'Acct 9'}),
+	(`account10`:account {name:'Acct 10'}),
+	(`account11`:account {name:'Acct 11'}),
+	(`account12`:account {name:'Acct 12'})
+
+//create relationships
+
+//administrator-group relationships
+CREATE (`Ben`)-[:MEMBER_OF]->(`Group1`), (`Ben`)-[:MEMBER_OF]->(`Group3`), 
+	(`Sarah`)-[:MEMBER_OF]->(`Group2`), (`Sarah`)-[:MEMBER_OF]->(`Group3`), 
+	(`Liz`)-[:MEMBER_OF]->(`Group4`), (`Liz`)-[:MEMBER_OF]->(`Group5`), (`Liz`)-[:MEMBER_OF]->(`Group6`), 
+	(`Phil`)-[:MEMBER_OF]->(`Group7`) 
+
+//group-company relationships
+CREATE (`Group1`)-[:ALLOWED_INHERIT]->(`Acme`),
+	(`Group2`)-[:ALLOWED_DO_NOT_INHERIT]->(`Acme`),(`Group2`)-[:DENIED]->(`Skunkworkz`),
+	(`Group3`)-[:ALLOWED_INHERIT]->(`Startup`),
+	(`Group4`)-[:ALLOWED_INHERIT]->(`BigCo`),
+	(`Group5`)-[:DENIED]->(`Aquired`),
+	(`Group6`)-[:ALLOWED_DO_NOT_INHERIT]->(`OneManShop`),
+	(`Group7`)-[:ALLOWED_INHERIT]->(`Subsidry`)
+
+//company-company relationships
+CREATE (`Spinoff`)-[:CHILD_OF]->(`Acme`),
+	(`Skunkworkz`)-[:CHILD_OF]->(`Startup`),
+	(`Aquired`)-[:CHILD_OF]->(`BigCo`),
+	(`Subsidry`)-[:CHILD_OF]->(`Aquired`),
+	(`DevShop`)-[:CHILD_OF]->(`Subsidry`),
+	(`OneManShop`)-[:CHILD_OF]->(`Subsidry`)
+
+//employee-company relationships
+CREATE (`Arnold`)-[:WORKS_FOR]->(`Acme`),
+	(`Charlie`)-[:WORKS_FOR]->(`Acme`),
+	(`Emily`)-[:WORKS_FOR]->(`Spinoff`),
+	(`Gordon`)-[:WORKS_FOR]->(`Startup`),
+	(`Lucy`)-[:WORKS_FOR]->(`Startup`),
+	(`Kate`)-[:WORKS_FOR]->(`Skunkworkz`),
+	(`Alister`)-[:WORKS_FOR]->(`BigCo`),
+	(`Eve`)-[:WORKS_FOR]->(`Aquired`),
+	(`Gary`)-[:WORKS_FOR]->(`Subsidry`),
+	(`Bill`)-[:WORKS_FOR]->(`OneManShop`),
+	(`Mary`)-[:WORKS_FOR]->(`DevShop`)
+
+//employee-account relationships
+CREATE (`Arnold`)-[:HAS_ACCOUNT]->(`account1`),(`Arnold`)-[:HAS_ACCOUNT]->(`account2`),
+	(`Charlie`)-[:HAS_ACCOUNT]->(`account3`),
+	(`Emily`)-[:HAS_ACCOUNT]->(`account6`),
+	(`Gordon`)-[:HAS_ACCOUNT]->(`account4`),
+	(`Lucy`)-[:HAS_ACCOUNT]->(`account5`),
+	(`Kate`)-[:HAS_ACCOUNT]->(`account7`),
+	(`Alister`)-[:HAS_ACCOUNT]->(`account8`),
+	(`Eve`)-[:HAS_ACCOUNT]->(`account9`),
+	(`Gary`)-[:HAS_ACCOUNT]->(`account11`),
+	(`Bill`)-[:HAS_ACCOUNT]->(`account10`),
+	(`Mary`)-[:HAS_ACCOUNT]->(`account12`)
+
+RETURN *
+LIMIT 50
+----
+//graph_result
+
+
+[[LOAC]]
+== Levels of Access Control and their Interaction
+
+Although not extremely complex, this GraphGist has a lot of interconnected parts. Let's progress from simple to complex queries as we explore the different types of access control individually. 
+
+[[ALLOWED_INHERIT]]
+=== ALLOWED_INHERIT
+
+Again, `ALLOWED_INHERIT` connects an administrator group to an organizational unit, thereby allowing administrators within that group to manage the organizational unit. This permission is inherited by children of the parent organizational unit.
+
+At ACME Systems, the security admin Ben can manage employees of both the companies Skunkworks and Spinoff thanks to the `ALLOWED_INHERIT` relationship between Group1 (Ben is a member) and Acme and Group1 and Startup.  
+
+[source,cypher]
+----
+MATCH paths=(admin:administrator {name:'Ben'})-[:MEMBER_OF]->()-[:ALLOWED_INHERIT]->(c1:company)<-[:CHILD_OF*0..3]-(c2:company)<-[:WORKS_FOR]-(employee)-[:HAS_ACCOUNT]->(account)
+RETURN admin.name AS Admin, c1.name AS `Parent Company`, c2.name AS `Child Company`, employee.name AS Employee
+----
+//table
+
+
+[[ALLOWED_DO_NOT_INHERIT]]
+=== ALLOWED_DO_NOT_INHERIT
+
+Again, `ALLOWED_DO_NOT_INHERIT` connects an administrator group to an organizational unit in a way that allows administrators within that group to manage the organizational unit, but not any of its children. Sarah, as a member of Group 2, can administer Acme, but not its child Spinoff, because Group 2 is connected to Acme by an `ALLOWED_DO_NOT_INHERIT` relationship, not an `ALLOWED_INHERIT` relationship.
+
+This query explores what users administrator Sarah is *not* allowed to manage due to the `ALLOWED_DO_NOT_INHERIT` relationship:
+
+[source,cypher]
+----
+MATCH paths=(admin:administrator {name:'Sarah'})-[:MEMBER_OF]->()-[:ALLOWED_DO_NOT_INHERIT]->(c1:company)<-[:CHILD_OF*1..3]-(c2:company)<-[:WORKS_FOR]-(employee)-[:HAS_ACCOUNT]->(account)
+RETURN admin.name AS Admin, c1.name AS `Parent Company`, c2.name AS `Child Company`, employee.name AS Employee
+----
+//table
+
+image:https://raw.githubusercontent.com/whatSocks/telenor/master/sarah.png['Note Sarah doesn't manage Emily']
+
+[[DENIED]]
+=== DENIED
+
+Again, `DENIED` forbids administrators from accessing an organizational unit. This permission is inherited by children of the parent organizational unit. At ACME Systems, this is best illustrated by administrator Liz and her permissions with respect to Big Co, Acquired Ltd, Subsidiary, and One-Map Shop.
+
+Lets take a look at Liz _without_ the `DENIED` restriction:
+[source,cypher]
+----
+MATCH paths=(admin:administrator { name:'Liz' })-[:MEMBER_OF]->()-[:ALLOWED_INHERIT]->(:company)<-[:CHILD_OF*0..3]-(:company)<-[:WORKS_FOR]-(employee)-[:HAS_ACCOUNT]->(account)
+RETURN paths
+----
+//graph_result
+
+Lets take a look at Liz _with_ the `DENIED` restriction:
+[source,cypher]
+----
+MATCH paths=(admin:administrator { name:'Liz' })-[:MEMBER_OF]->()-[:ALLOWED_INHERIT]->(:company)<-[:CHILD_OF*0..3]-(c:company)<-[:WORKS_FOR]-(employee)-[:HAS_ACCOUNT]->(account)
+WHERE NOT ((admin)-[:MEMBER_OF]->()-[:DENIED]->()<-[:CHILD_OF*0..3]-(c))
+RETURN paths
+----
+//graph_result
+
+As a result of her membership of Group 4 and its `ALLOWED_INHERIT` permission on Big Co, Liz can manage Big Co. But despite this being an inheritable relationship, Liz cannot manage Acquired Ltd or Subsidiary. Group 5, of which Liz is a member, is `DENIED` access to Acquired Ltd and its children (which includes Subsidiary). 
+
+Liz can, however, manage One-Map Shop, thanks to an `ALLOWED_DO_NOT_INHERIT` permission granted to Group 6, the last group to which Liz belongs.
+
+Let's see the query again, this time adding `ALLOWED_DO_NOT_INHERIT`:
+
+[source,cypher]
+----
+MATCH paths=(admin:administrator {name:'Liz'})-[:MEMBER_OF]->()-[:ALLOWED_INHERIT]->()<-[:CHILD_OF*0..3]-(c:company)<-[:WORKS_FOR]-(employee)-[:HAS_ACCOUNT]->(account)
+WHERE NOT ((admin)-[:MEMBER_OF]->()-[:DENIED]->()<-[:CHILD_OF*0..3]-(c))
+RETURN paths
+UNION
+MATCH paths=(admin:administrator {name:'Liz'})-[:MEMBER_OF]->()-[:ALLOWED_DO_NOT_INHERIT]->()<-[:WORKS_FOR]-(employee)-[:HAS_ACCOUNT]->(account)
+RETURN paths
+----
+//graph_result
+
+Recall that `DENIED` takes precedence over `ALLOWED_INHERIT`, but is subordinate to `ALLOWED_DO_NOT_INHERIT`. Therefore, if an administrator is connected to a company by way of `ALLOWED_DO_NOT_INHERIT` and `DENIED`, `ALLOWED_DO_NOT_INHERIT` prevails.
+
+_Note: Cypher supports both `UNION` and `UNION ALL` operators. `UNION` eliminates duplicate results from the final result set, whereas `UNION ALL` includes any duplicates._
+
+[[problem_1]]
+== Finding All Accessible Resources for an Administrator
+
+Let's take a step towards what the graph database administrator might see when introspecting or exploring the database. Whenever an on-site administrator logs in to the system, he or she is presented with a browser-based list of all the employees and employee accounts he can manage.
+
+Lets take a look at all the resources any administrator can access:
+
+[source,cypher]
+----
+MATCH paths=(admin:administrator)-[:MEMBER_OF]->()-[:ALLOWED_INHERIT]->()<-[:CHILD_OF*0..3]-(company)<-[:WORKS_FOR]-(employee)-[:HAS_ACCOUNT]->(account)
+WHERE NOT ((admin)-[:MEMBER_OF]->()-[:DENIED]->()<-[:CHILD_OF*0..3]-(company)) 
+RETURN admin.name AS Admin, employee.name AS Employee, collect(account.name) AS Accounts
+ORDER BY Admin ASC
+UNION
+MATCH paths=(admin)-[:MEMBER_OF]->()-[:ALLOWED_DO_NOT_INHERIT]->()<-[:WORKS_FOR]-(employee)-[:HAS_ACCOUNT]->(account) 
+RETURN admin.name AS Admin, employee.name AS Employee, collect(account.name) AS Accounts
+ORDER BY Admin ASC
+----
+//table
+
+
+This query matches all accessible resources each administrator, taking into account the interaction between the `ALLOWED_INHERIT`,  `ALLOWED_DO_NOT_INHERIT` and `DENIED` controls. 
+
+[[problem_2]]
+== Determining Whether an Administrator has Access to a Resource
+
+The query we’ve just looked at returned a list of employees and accounts an administrator can manage. In a web application, each of these resources (employee, account) is accessible through its own URI. Given a friendly URI (e.g., http: //acme/accounts/ 5436), what’s to stop someone from an adminstrator accidentally changing an unauthorized account?
+
+What’s needed is a query that will determine whether an administrator has access to a specific resource:
+
+[source,cypher]
+----
+MATCH p=(admin:administrator)-[:MEMBER_OF]->()-[:ALLOWED_INHERIT]->()<-[:CHILD_OF*0..3]-(company:company)
+WHERE NOT ((admin)-[:MEMBER_OF]->()-[:DENIED]->()<-[:CHILD_OF*0..3]-(company))
+RETURN admin.name AS Admin, collect(company.name) AS Resource
+UNION
+MATCH p=(admin)-[:MEMBER_OF]->()-[:ALLOWED_DO_NOT_INHERIT]->(company)
+RETURN admin.name AS Admin, collect(company.name) AS Resource
+----
+//table
+
+
+[[problem_3]]
+== Finding Administrators for an Account
+
+The previous two queries represent “top-down” views of the graph. In this tutorial's final query we’ll discuss the “bottom-up” view of the data. Given a resource--either an employee OR account--who can manage it? 
+
+Here’s the query:
+
+[source,cypher]
+----
+MATCH p=(resource {name:'Acct 10'})-[:WORKS_FOR|HAS_ACCOUNT*1..2]-(company)-[:CHILD_OF*0..3]->()<-[:ALLOWED_INHERIT]-()<-[:MEMBER_OF]-(admin)
+WHERE NOT ((admin)-[:MEMBER_OF]->()-[:DENIED]->()<-[:CHILD_OF*0..3]-(company))
+RETURN resource.name AS Resource, collect(admin.name) AS Admins
+UNION
+MATCH p=(resource {name:'Acct 10'})-[:WORKS_FOR|HAS_ACCOUNT*1..2]-(company)<-[:ALLOWED_DO_NOT_INHERIT]-()<-[:MEMBER_OF]-(admin)
+RETURN resource.name AS Resource, collect(admin.name) AS Admins
+----
+//table
+
+The query looks like the previous two top down queries, but reversed. Notice how Cypher uses the `OR` pipe to select either an employee or an account resource. 
+
+image:https://raw.githubusercontent.com/whatSocks/telenor/master/bill.png['Exploring Account 10']
+
+[[conclusion]]
+== Summary
+
+Modeling a resource graph in Neo4j is quite natural, since the domain being modeled is inherently a graph. Neo4j provides fast and secure access and answers to important questions like: 
+
+* Which subscriptions can a user access, does the user have access to the given resource, and which agreements is a customer party to? 
+
+The speed and accuracy of these operations is quite *critical*, because users logging into the system are not able to proceed until the authorization calculation has completed.
+
+Neo4j offers the possibility of sub-second queries for densely connected permission trees, thereby improving the performance characteristics of the system. Moreover, Neo4j allows for faithfully reproducing a customer's structure and content hierarchies in the graph without modification, thereby eliminating the kinds of data duplication and denormalization that specialize a store for a particular application. By not having to specialize the data for a particular application's performance needs, Neo4j provides the basis for extending and reusing the customer graph in other applications.
+
+=== Brought to you by the Neo4j community
+
+This tutorial was brought to you by some of the most passionate developers in the Neo4j community and family. If you found it useful please share it with your fellow developers so they too can benefit from it.
+
+[[references]]
+== References
+
+This GraphGist features content from the O'Reily "Graph Databases" book written by Ian Robinson and Jim Webber. You can get a free copy as an e-book at http://graphdatabases.com/?_ga=1.6664178.1166768751.1400630774[http://www.graphdatabases.com/]
+
+== Helpful next steps
+
+Check out the community-managed developer resources website at http://www.neo4j.com/developer[http://www.neo4j.com/developer]

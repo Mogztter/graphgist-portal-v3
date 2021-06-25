@@ -1,0 +1,181 @@
+Mobile Operators in India
+-------------------------
+:author: Rushabh
+:twitter: @rushugroup
+
+With increasing number of mobile operators in India, it becomes a great opportunity to analyze on their revenues, technologies and reach in particular area.
+Mostly used excel reports do the job, but yuck who wants to use that when we can have added intelligence from graph.
+
+TIP: Some additions to the current gist, which is not implemented, is using actual neo4j spatial graph where we can map the actual region.
+* Find the regions not covered by a particular mobile operator, suggest them the same. 
+* Find the competitors of a particular mobile operator
+* Compare on a timeline, the income from particular region for a mobile operator
+* Expand model to include income sources from SMS, Internet, Call and this opens up another wide range of analysis to be done.
+
+For now the following is the domain model:
+* ServiceProvider
+- Airtel
+- Vodafone
+- Idea
+- TataDocomo
+- Reliance
+- MTNL
+
+* Technology
+- CDMA
+- EDGE
+- HSPA
+- GSM
+- WiMax
+
+* States
+-Maharashtra
+-Rajasthan
+-Gujarat
+-Kerela
+-Punjab
+-Haryana
+
+* Revenue
+-TotalAmount
+-GrowthYOY
+
+
+*The mapping of operator to region:*
+- airtel -> maharashtra, rajasthan, gujarat, punjab, kerela
+- vodafone -> maharashtra, rajasthan, gujarat
+- idea -> maharashtra, gujarat, punjab
+- tatadocomo -> rajasthan, gujarat, punjab, kerela
+- reliance -> maharashtra, rajasthan, gujarat, punjab, kerela
+- mtnl -> gujarat, punjab, kerela
+
+*The mapping of opeator to technology:*
+- airtel -> edge, hspa, gsm, wimax
+- vodafone -> cdma, edge, hspa, gsm, wimax
+- idea -> edge, hspa
+- tatadocomo -> cdma, edge
+- reliance -> edge, gsm, hspa
+- mtnl -> cdma
+
+
+*Model diagram using neo4j/browser*
+[[model]]
+image:https://dl.dropboxusercontent.com/u/133440194/Mobile-Operators.JPG[link="https://dl.dropboxusercontent.com/u/133440194/Mobile-Operators.JPG"]
+
+
+//hide
+
+//setup
+[source,cypher]
+----
+create (airtel:ServiceProvider { id: "airtel", name:"Airtel", revenue: 10000000, growthYOYPercent: 17})
+create (vodafone:ServiceProvider { id: "vodafone", name:"Vodafone", revenue: 2000000, growthYOYPercent: 23})
+create (idea:ServiceProvider { id: "idea", name:"Idea", revenue: 15000000, growthYOYPercent: 20})
+create (tatadocomo:ServiceProvider { id: "tatadocomo", name:"TataDocomo", revenue: 15600000, growthYOYPercent: 15})
+create (reliance:ServiceProvider { id: "reliance", name:"Reliance", revenue: 300000, growthYOYPercent: 3})
+create (mtnl:ServiceProvider { id: "mtnl", name:"MTNL", revenue: 60000, growthYOYPercent: -1})
+
+
+create (cdma:Technology { id:"cdma", name:"CDMA"})
+create (edge:Technology { id:"edge", name:"EDGE"})
+create (hspa:Technology { id:"hspa", name:"HSPA"})
+create (gsm:Technology { id:"gsm", name:"GSM"})
+create (wimax:Technology { id:"wimax", name:"WiMax"})
+
+
+create (maharashtra:State { id:"maharashtra", name:"Maharashtra"})
+create (rajasthan:State { id:"rajasthan", name:"Rajasthan"})
+create (gujarat:State { id:"gujarat", name:"Gujarat"})
+create (kerela:State { id:"kerela", name:"Kerela"})
+create (punjab:State { id:"punjab", name:"Punjab"})
+with airtel,vodafone,idea,tatadocomo,reliance,mtnl, cdma,edge,hspa,gsm,wimax, maharashtra,rajasthan,gujarat,kerela,punjab
+
+
+match states=(state:State) where state.id in  ['maharashtra', 'rajasthan', 'gujarat', 'punjab', 'kerela']
+create unique (airtel)-[:PROVIDES_SERVICE]->(maharashtra)
+create unique (airtel)-[:PROVIDES_SERVICE]->(rajasthan)
+create unique (airtel)-[:PROVIDES_SERVICE]->(gujarat)
+create unique (airtel)-[:PROVIDES_SERVICE]->(punjab)
+create unique (airtel)-[:PROVIDES_SERVICE]->(kerela)
+with airtel,vodafone,idea,tatadocomo,reliance,mtnl, cdma,edge,hspa,gsm,wimax,maharashtra,rajasthan,gujarat,kerela,punjab 
+
+
+create unique (vodafone)-[:PROVIDES_SERVICE]->(maharashtra)
+create unique (vodafone)-[:PROVIDES_SERVICE]->(rajasthan)
+create unique (vodafone)-[:PROVIDES_SERVICE]->(gujarat)
+with airtel,vodafone,idea,tatadocomo,reliance,mtnl, cdma,edge,hspa,gsm,wimax,maharashtra,rajasthan,gujarat,kerela,punjab
+
+
+create unique (idea)-[:PROVIDES_SERVICE]->(rajasthan)
+create unique (idea)-[:PROVIDES_SERVICE]->(gujarat)
+create unique (idea)-[:PROVIDES_SERVICE]->(punjab)
+create unique (idea)-[:PROVIDES_SERVICE]->(kerela)
+with airtel,vodafone,idea,tatadocomo,reliance,mtnl, cdma,edge,hspa,gsm,wimax,maharashtra,rajasthan,gujarat,kerela,punjab
+
+
+create unique (tatadocomo)-[:PROVIDES_SERVICE]->(rajasthan)
+create unique (tatadocomo)-[:PROVIDES_SERVICE]->(gujarat)
+create unique (tatadocomo)-[:PROVIDES_SERVICE]->(punjab)
+create unique (tatadocomo)-[:PROVIDES_SERVICE]->(kerela)
+with airtel,vodafone,idea,tatadocomo,reliance,mtnl, cdma,edge,hspa,gsm,wimax,maharashtra,rajasthan,gujarat,kerela,punjab
+
+
+create unique (reliance)-[:PROVIDES_SERVICE]->(maharashtra)
+create unique (reliance)-[:PROVIDES_SERVICE]->(rajasthan)
+create unique (reliance)-[:PROVIDES_SERVICE]->(gujarat)
+create unique (reliance)-[:PROVIDES_SERVICE]->(kerela)
+create unique (reliance)-[:PROVIDES_SERVICE]->(punjab)
+with airtel,vodafone,idea,tatadocomo,reliance,mtnl, cdma,edge,hspa,gsm,wimax,maharashtra,rajasthan,gujarat,kerela,punjab
+
+
+create unique (mtnl)-[:PROVIDES_SERVICE]->(gujarat)
+create unique (mtnl)-[:PROVIDES_SERVICE]->(punjab)
+create unique (mtnl)-[:PROVIDES_SERVICE]->(kerela)
+with airtel,vodafone,idea,tatadocomo,reliance,mtnl, cdma,edge,hspa,gsm,wimax,maharashtra,rajasthan,gujarat,kerela,punjab
+
+create unique (airtel)-[:HAS_TECHNOLOGY]->(edge)
+create unique (airtel)-[:HAS_TECHNOLOGY]->(hspa)
+create unique (airtel)-[:HAS_TECHNOLOGY]->(gsm)
+create unique (airtel)-[:HAS_TECHNOLOGY]->(wimax)
+
+create unique (vodafone)-[:HAS_TECHNOLOGY]->(cdma)
+create unique (vodafone)-[:HAS_TECHNOLOGY]->(edge)
+create unique (vodafone)-[:HAS_TECHNOLOGY]->(hspa)
+create unique (vodafone)-[:HAS_TECHNOLOGY]->(gsm)
+create unique (vodafone)-[:HAS_TECHNOLOGY]->(wimax)
+
+create unique (idea)-[:HAS_TECHNOLOGY]->(edge)
+create unique (idea)-[:HAS_TECHNOLOGY]->(hspa)
+create unique (idea)-[:HAS_TECHNOLOGY]->(gsm)
+create unique (idea)-[:HAS_TECHNOLOGY]->(wimax)
+
+create unique (tatadocomo)-[:HAS_TECHNOLOGY]->(cdma)
+create unique (tatadocomo)-[:HAS_TECHNOLOGY]->(edge)
+
+create unique (reliance)-[:HAS_TECHNOLOGY]->(edge)
+create unique (reliance)-[:HAS_TECHNOLOGY]->(hspa)
+create unique (reliance)-[:HAS_TECHNOLOGY]->(gsm)
+
+create unique (mtnl)-[:HAS_TECHNOLOGY]->(cdma)
+----
+
+Usecase:
+^^^^^^^^
+Getting all providers in particular state.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[source, cypher]
+----
+match (provider:ServiceProvider)-[:PROVIDES_SERVICE]->(state:State)
+return state.name as State, collect(distinct provider.name) as Providers
+----
+//table
+
+
+Getting technologies of providers.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[source, cypher]
+----
+match (provider:ServiceProvider)-[:HAS_TECHNOLOGY]->(tech:Technology)
+return provider.name as Provider, collect(distinct tech.name) as Technologies
+----
+//table

@@ -1,0 +1,218 @@
+= Car manufacturers 2013
+
+This is a graph of all the major car manufacturers and their earnings in 2013, alongside all of their main suppliers.
+
+It also shows the relationships between the various manufactures: cooperations, jointventuress and stock ownership. and the type of those 
+relationships.(For example a cooperation can be of the type: research/development)
+
+
+
+//hide
+
+//setup
+[source, cypher]
+----
+//Manufacturers
+CREATE (GM:Manufacturer {name: "General Motors" , headquarters :"USA" , employees :207000,factories:101 ,revenue:150.3 ,production:9267000 ,sales:9026000  })
+CREATE (Volkswagen:Manufacturer {name:"Volkswagen" , headquarters :"Germany" , employees :501956,factories:94 ,revenue:221.5 ,production: 8494280,sales:8361294  })
+CREATE (Toyota:Manufacturer {name:"Toyota" , headquarters :"Japan" , employees :317716,factories:65 ,revenue:226.6 ,production:7169721 ,sales:7948000  })
+CREATE (Hyundai:Manufacturer {name:"Hyundai" , headquarters :"South Korea" , employees :127000,factories:32 ,revenue:98.9 ,production:5800000 ,sales:6600000  })
+CREATE (Ford:Manufacturer {name:"Ford" , headquarters :"USA" , employees :164000,factories:76 ,revenue:136.3 ,production:5654000 ,sales:5695000  })
+CREATE (Nissan:Manufacturer {name:"Nissan" , headquarters :"Japan" , employees :155099,factories:37 ,revenue:100.6 ,production:4214959 ,sales:4669981  })
+CREATE (FIAT:Manufacturer {name:"FIAT" , headquarters :"Italy" , employees :222021,factories:177 ,revenue:116.5 ,sales:4367244  })
+CREATE (SAIC:Manufacturer {name:"SAIC" , headquarters :"China" , employees :70300 ,revenue:46.6 ,production:3620800 ,sales:4011775  })
+CREATE (PSA:Manufacturer {name:"PSA" , headquarters :"France" , employees :205345,factories:33 ,revenue:83.3 ,production:3582470 ,sales: 3549416 })
+CREATE (Honda:Manufacturer {name:"Honda" , headquarters :"Japan" , employees :180000,factories:70 ,revenue:112 ,sales:3095000  })
+CREATE (Renault:Manufacturer {name:"Renault" , headquarters :"France" , employees :128322,revenue:59.3 ,sales:2700000  })
+CREATE (Dongfeng:Manufacturer {name:"Dongfeng" , headquarters :"China" , employees :120000,revenue:51 ,sales:2615063  })
+CREATE (FAW:Manufacturer {name:"FAW" , headquarters :"China" , employees :118000,revenue:43.2 ,sales:2600000  })
+CREATE (Suzuki:Manufacturer {name:"Suzuki" , headquarters :"Japan" , employees :51503,factories:35 ,revenue:30.2 ,production:2878000 ,sales:2500000  })
+CREATE (Daimler:Manufacturer {name:"Daimler" , headquarters :"Germany" , employees :271370,factories:66 ,revenue:148 ,production:2137243 ,sales: 2111106 })
+CREATE (Changan:Manufacturer {name:"Changan" , headquarters :"China" , employees :50000,revenue:21.2 ,production:2010000 ,sales:1851500  })
+CREATE (BMW:Manufacturer {name:"BMW" , headquarters :"Germany" , employees :100306,factories:25 ,revenue:95.8 ,production:1668982 ,sales: 1688982 })
+
+//Suppliers
+CREATE
+(Bosch:Supplier{name:"Bosch",headquarters:"Germany",employees: 303000, revenue: 71.5}),
+(Continental:Supplier{name:"Continental",headquarters:"Germany",employees: 163788, revenue: 42.4}),
+(Denso:Supplier{name:"Denso", headquarters:"Japan",employees: 123165, revenue: 35.7}),
+(Bridgestone:Supplier{name:"Bridgestone",headquarters:"Japan",employees: 143124, revenue: 37.9}),
+(Michelin:Supplier{name:"Michelin",headquarters:"France",employees: 115000, revenue: 28.8}),
+(Magna:Supplier{name:"Magna",headquarters:"Canada",employees: 108000, revenue: 28.7}),
+(JhonsonControls:Supplier{name:"JhonsonControls",headquarters:"USA",employees: 162000, revenue: 40.8}),
+(Aisin:Supplier{name:"Aisin",headquarters:"Japan",employees: 74671, revenue: 25.5}),
+(Goodyear:Supplier{name:"Goodyear",headquarters:"USA",employees: 73000, revenue: 22.8}),
+(Faurecia:Supplier{name:"Faurecia",headquarters:"France",employees: 84719, revenue: 22.5})
+
+
+//Rel
+CREATE
+(Continental)-[:COOPERATION{type:"research_development"}]->(Faurecia),
+(Continental)-[:COOPERATION{type:"production"}]->(Faurecia),
+(Continental)-[:COOPERATION{type:"infrastructure"}]->(Faurecia),
+(Bosch)-[:COOPERATION{type:"research_development"}]->(Michelin),
+(Nissan)-[:COOPERATION{type:"production"}]->(Renault),
+(Renault)-[:COOPERATION{type:"production"}]->(Suzuki),
+(Nissan)-[:COOPERATION{type:"production"}]->(Suzuki),
+(Volkswagen)-[:COOPERATION{type:"production"}]->(Daimler),
+(Daimler)-[:COOPERATION{type:"production"}]->(FIAT),
+(FIAT)-[:COOPERATION{type:"production"}]->(GM),
+(FIAT)-[:COOPERATION{type:"production"}]->(Volkswagen),
+(GM)-[:COOPERATION{type:"production"}]->(Renault),
+(FIAT)-[:COOPERATION{type:"production"}]->(PSA),
+(PSA)-[:COOPERATION{type:"production"}]->(BMW),
+(BMW)-[:COOPERATION{type:"production"}]->(Toyota),
+(Suzuki)-[:COOPERATION{type:"production"}]->(FIAT),
+(FIAT)-[:COOPERATION{type:"production"}]->(Ford),
+(GM)-[:COOPERATION{type:"production"}]->(SAIC),
+(GM)-[:COOPERATION{type:"production"}]->(PSA),
+(BMW)-[:COOPERATION{type:"infrastructure"}]->(Daimler),
+(Ford)-[:COOPERATION{type:"research_development"}]->(Toyota),
+(Ford)-[:COOPERATION{type:"research_development"}]->(PSA),
+(Ford)-[:COOPERATION{type:"research_development"}]->(FIAT),
+(GM)-[:COOPERATION{type:"research_development"}]->(SAIC),
+(GM)-[:COOPERATION{type:"research_development"}]->(PSA),
+(GM)-[:COOPERATION{type:"research_development"}]->(Daimler),
+(GM)-[:COOPERATION{type:"research_development"}]->(Toyota),
+(GM)-[:COOPERATION{type:"research_development"}]->(Hyundai),
+(GM)-[:COOPERATION{type:"research_development"}]->(Honda),
+(GM)-[:COOPERATION{type:"research_development"}]->(Ford),
+(Daimler)-[:COOPERATION{type:"research_development"}]->(Toyota),
+(Daimler)-[:COOPERATION{type:"research_development"}]->(Hyundai),
+(Daimler)-[:COOPERATION{type:"research_development"}]->(Honda),
+(Daimler)-[:COOPERATION{type:"research_development"}]->(Ford),
+(Toyota)-[:COOPERATION{type:"research_development"}]->(Hyundai),
+(Toyota)-[:COOPERATION{type:"research_development"}]->(Honda),
+(Toyota)-[:COOPERATION{type:"research_development"}]->(Ford),
+(Hyundai)-[:COOPERATION{type:"research_development"}]->(Honda),
+(Hyundai)-[:COOPERATION{type:"research_development"}]->(Ford),
+(Honda)-[:COOPERATION{type:"research_development"}]->(Ford),
+(Bosch)-[:JOINTVENTURES{type:"research_development"}]->(Daimler),
+(Bosch)-[:JOINTVENTURES{type:"production"}]->(Daimler),
+(Dongfeng)-[:JOINTVENTURES{type:"production"}]->(PSA),
+(Dongfeng)-[:JOINTVENTURES{type:"infrastructure"}]->(PSA),
+(Dongfeng)-[:JOINTVENTURES{type:"infrastructure"}]->(Nissan),
+(Dongfeng)-[:JOINTVENTURES{type:"research_development"}]->(Nissan),
+(Dongfeng)-[:JOINTVENTURES{type:"production"}]->(Honda),
+(BMW)-[:JOINTVENTURES{type:"infrastructure"}]->(PSA),
+(BMW)-[:JOINTVENTURES{type:"research_development"}]->(PSA),
+(BMW)-[:JOINTVENTURES{type:"production"}]->(PSA),
+(Toyota)-[:JOINTVENTURES{type:"production"}]->(PSA),
+(Toyota)-[:JOINTVENTURES{type:"research_development"}]->(PSA),
+(Toyota)-[:JOINTVENTURES{type:"production"}]->(FAW),
+(FAW)-[:JOINTVENTURES{type:"production"}]->(GM),
+(FAW)-[:JOINTVENTURES{type:"research_development"}]->(GM),
+(FAW)-[:JOINTVENTURES{type:"infrastructure"}]->(GM),
+(FAW)-[:JOINTVENTURES{type:"production"}]->(Volkswagen),
+(Volkswagen)-[:JOINTVENTURES{type:"production"}]->(SAIC),
+(Volkswagen)-[:JOINTVENTURES{type:"research_development"}]->(SAIC),
+(SAIC)-[:JOINTVENTURES{type:"production"}]->(FIAT),
+(SAIC)-[:JOINTVENTURES{type:"infrastructure"}]->(FIAT),
+(SAIC)-[:JOINTVENTURES{type:"research_development"}]->(FIAT),
+(SAIC)-[:JOINTVENTURES{type:"production"}]->(Changan),
+(SAIC)-[:JOINTVENTURES{type:"infrastructure"}]->(Changan),
+(FIAT)-[:JOINTVENTURES{type:"production"}]->(PSA),
+(FIAT)-[:JOINTVENTURES{type:"production"}]->(Suzuki),
+(FIAT)-[:JOINTVENTURES{type:"production"}]->(Changan),
+(FIAT)-[:JOINTVENTURES{type:"infrastructure"}]->(Changan),
+(PSA)-[:JOINTVENTURES{type:"production"}]->(Changan),
+(PSA)-[:JOINTVENTURES{type:"infrastructure"}]->(Changan),
+(PSA)-[:JOINTVENTURES{type:"infrastructure"}]->(GM),
+(SAIC)-[:JOINTVENTURES{type:"research_development"}]->(GM),
+(SAIC)-[:JOINTVENTURES{type:"infrastructure"}]->(GM),
+(SAIC)-[:JOINTVENTURES{type:"production"}]->(GM),
+(Changan)-[:JOINTVENTURES{type:"infrastructure"}]->(Ford),
+(Changan)-[:JOINTVENTURES{type:"production"}]->(Suzuki),
+(Changan)-[:JOINTVENTURES{type:"infrastructure"}]->(Suzuki)
+
+//Share OwnerShip
+CREATE
+(Suzuki)-[:OWNS{}]->(Volkswagen),
+(SAIC)-[:OWNS{}]->(GM),
+(Volkswagen)-[:OWNS{percentage:19.9}]->(Suzuki),
+(Daimler)-[:OWNS{percentage:3.1}]->(Renault),
+(Daimler)-[:OWNS{percentage:3.1}]->(Nissan),
+(Renault)-[:OWNS{percentage:1.55}]->(Daimler),
+(Renault)-[:OWNS{percentage:43.4}]->(Nissan),
+(Nissan)-[:OWNS{percentage:15}]->(Renault),
+(Toyota)-[:OWNS{percentage:22.7}]->(Denso),
+(Toyota)-[:OWNS{percentage:22.7}]->(Aisin),
+(PSA)-[:OWNS{percentage:57.4}]->(Faurecia),
+(GM)-[:OWNS{percentage:7}]->(PSA),
+(GM)-[:OWNS{percentage:10}]->(SAIC)
+----
+//graph
+
+== Companies with greater production than sales
+This query shows the companies that increased their car inventory in 2013, by making more cars than they could sell.
+[source,cypher]
+----
+MATCH (manuf:Manufacturer)
+WHERE manuf.production > manuf.sales
+RETURN manuf.name AS name, manuf.production-manuf.sales AS Overstock
+ORDER BY Overstock DESC
+----
+//table
+
+== Stock ownership
+Here we can see all the relationships representing stock ownership.
+[source,cypher]
+----
+MATCH (manuf:Manufacturer)-[:OWNS]->(x)
+RETURN manuf.name AS Name, collect((x.name)) as Owned
+ORDER BY Name
+----
+//table
+
+== Coooperations
+The next one is similar, returning instead the various cooperations between companies.
+[source,cypher]
+----
+MATCH (manuf:Manufacturer)-[:COOPERATION]-(x)
+RETURN manuf.name AS Name, COUNT(DISTINCT(x)) AS CooperatingCompanies, COLLECT(DISTINCT(x.name)) AS Companies
+ORDER BY CooperatingCompanies DESC, Name ASC
+----
+//table
+
+== Non japanese companies in a joint venture with a japanese one.
+[source,cypher]
+---- 
+MATCH (manufacturer:Manufacturer)-[:JOINTVENTURES]-(m:Manufacturer)
+WITH manufacturer,filter (i in collect(distinct(m)) WHERE i.headquarters="Japan") AS japaneseManufacturers
+WHERE length(japaneseManufacturers)>0 and manufacturer.headquarters<>"Japan"
+RETURN manufacturer.name as Manufacturer, extract(x in japaneseManufacturers|x.name) as JapaneseManufacturers
+----
+//table
+
+== Stock ownership cycle
+This one returns a company A such as A owns stock in company B, which owns stock in company C, which owns stock in A.
+
+Tricky to say, but easy in graph form.
+[source,cypher]
+----
+MATCH (a:Manufacturer)-[:OWNS]->(b:Manufacturer)-[:OWNS]->(c:Manufacturer)-[:OWNS]->(a)
+RETURN a.name AS Company
+----
+//table
+
+== Employee efficiency
+This query returns the total income of a manufacturer divided by the number of employees that work for it in thousands of dollars.
+[source,cypher]
+----
+MATCH (company)
+RETURN company.name AS Company, ROUND(company.revenue*1000000/company.employees) AS ThousandsByEmploye
+ORDER BY ThousandsByEmploye DESC
+----
+//table
+
+== Market share
+Here is the percentage of sales made by each company.
+[source,cypher]
+----
+MATCH (manuf:Manufacturer), (manuf2:Manufacturer)
+RETURN manuf.name AS Manufacturer, ROUND(manuf.sales*100.0/(SUM(manuf2.sales))) AS Percentage
+ORDER BY Percentage DESC
+----
+//table
+
+=== Console

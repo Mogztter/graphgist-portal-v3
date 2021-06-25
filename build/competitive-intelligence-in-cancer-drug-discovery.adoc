@@ -1,0 +1,287 @@
+= Competitive Intelligence in Cancer Drug Discovery
+
+:neo4j-version: 3.1
+:author: Wolfgang Hoeck
+:twitter: @LiveDataConcept
+:tags: life science domain:competitive intelligence in cancer drug discovery
+
+Using the _Design for Queryability_ modeling approach by http://twitter.com/ianrobinson[Ian Robinson]
+
+=== 1. Application/End-User Goals ===
+
+____
+*As a* scientist, investor, patient, physician, friend
+
+*I want* to know which company develops therapeutics for the treatment of cancer, what form of cancer, what is the target and in what stage of development is the therapeutic
+
+*So that* we can understand treatment options, discuss such options with a physician in case I am the patient, or discuss options with friends and family, or make choices for investment to support the development of the therapeutic.
+____
+
+=== 2. Questions To Ask of the Domain ===
+
+____
+Which companies are developing therapeutics for lung cancer and what is their name?
+Which therapeutics that are antibody-based are developed for non-small cell lung cancer and what is their development stage?
+Which companies develop therapeutics that target the molecule PDCD1?
+____
+
+=== 3. Identify Entities ===
+
+____
+Which *companies* are developing *therapeutics* for *lung cancer*?
+Which *therapeutics* that are *antibody-based* are developed for *non-small cell lung cancer* and what is their *development stage*?
+Which *companies* develop *therapeutics* that target the *molecule PDCD1*?
+____
+
+* Company
+* TherapeuticMolecule
+* Disease
+* Modality
+* DevelopmentStage
+* MolecularTarget
+
+=== 4. Identify Relationships Between Entities ===
+
+____
+Which *companies* are developing *therapeutics* for *lung cancer*?
+Which *therapeutics* that are *antibody-based* are developed for *non-small cell lung cancer* and what is their *development stage*?
+Which *companies* develop *therapeutics* that target the *molecule PD-1*?
+Which *companies* are developing *therapeutics* for *lung adenocarcinoma*?
+____
+
+* TherapeuticMolecule +developedByCompany+ Company
+* TherapeuticMolecule +isIndicatedForDisease+ Disease
+* TherapeuticMolecule +hasModality+ Modality
+* TherapeuticMolecule +isInHighestDevelopmentStage+ DevelopmentStage
+* TherapeuticMolecule +inhibits|activates+ MolecularTarget
+* Disease +typeOfDisease+ Disease
+* Modality +typeOfModality+ Modality
+
+=== 5. Convert to Cypher Paths ===
+
+* TherapeuticMolecule developedByCompany Company ->
+
+----
+(:TherapeuticMolecule) - [:developedByCompany] -> (:Company)
+----
+
+* TherapeuticMolecule isIndicatedForDisease Disease ->
+
+----
+(:TherapeuticMolecule) - [:isIndicatedForDisease] -> (:Disease)
+----
+
+* TherapeuticMolecule hasModality Modality ->
+
+----
+(:TherapeuticMolecule) - [:hasModality] -> (:Modality)
+----
+
+* TherapeuticMolecule isInHighestDevelopmentStage DevelopmentStage ->
+
+----
+(:TherapeuticMolecule) - [:isInHighestDevelopmentStage] -> (:DevelopmentStage)
+----
+
+* TherapeuticMolecule inhibitsTargets|activatesTargets MolecularTarget ->
+
+----
+(:TherapeuticMolecule) - [:inhibitsTargets|activatesTargets] -> (:MolecularTarget)
+----
+
+* Disease typeOfDisease Disease ->
+
+----
+(:Disease) - [:typeOfDisease] -> (:Disease)
+----
+
+* Modality typeOfModality Modality ->
+
+----
+(:Modality) - [:typeOfModality] -> (:Modality)
+----
+
+=== Consolidate Paths ===
+
+----
+(:TherapeuticMolecule) - [:developedByCompany] -> (:Company)
+(:TherapeuticMolecule) - [:isIndicatedForDisease] -> (:Disease)
+(:TherapeuticMolecule) - [:hasModality] -> (:Modality)
+(:TherapeuticMolecule) - [:isInHighestDevelopmentStage] -> (:DevelopmentStage)
+(:TherapeuticMolecule) - [:inhibitsTargets|activatesTargets] -> (:MolecularTarget)
+(:Disease) - [:typeOfDisease] -> (:Disease)
+(:Modality) - [:typeOfModality] -> (:Modality)
+----
+
+->
+
+----
+(:TherapeuticMolecule) - [:developedByCompany] -> (:Company)
+(:TherapeuticMolecule) - [:isIndicatedForDisease] -> (:Disease) - [:typeOfDisease] -> (:Disease)
+(:TherapeuticMolecule) - [:hasModality] -> (:Modality) - [:typeOfModality] -> (:Modality)
+----
+
+=== Candidate Data Model ===
+
+//image::https://dl.dropboxusercontent.com/u/75453244/Foundation4Gist.png[Domain Model]
+
+//hide
+//setup
+[source,cypher]
+----
+CREATE 
+       (n4171:TherapeuticMolecule{Name:'nivolumab'}),
+       (n4172:MolecularTarget{Name:'PDCD1'}),
+       (n1064:Company{Name:'BMS-Bristol-Myers Squibb'}),
+       (n1155:Disease{Name:'Lung Cancer'}),
+       (n1001:DevelopmentStage{Name:'3 - Phase 2'}),
+       (n1061:Modality{Name:'Recombinant Human Antibody'}),
+       (n4171)-[:hasModality]->(n1061),
+       (n4171)-[:developedByCompany]->(n1064),
+       (n4171)-[:inhibitsTargets]->(n4172),
+       (n4171)-[:isInHighestDevelopmentStage]->(n1001),
+       (n4171)-[:isIndicatedForDisease]->(n1155),
+       (n4467:TherapeuticMolecule{Name:'lambrolizumab'}),
+       (n1024:Company{Name:'Merck'}),
+       (n1824:Company{Name:'Schering-Plough'}),
+       (n1002:DevelopmentStage{Name:'4 - Phase 3'}),
+       (n1060:Modality{Name:'Recombinant Chimeric Antibody'}),
+       (n1019:Disease{Name:'NSCLC-Non Small Cell Lung Cancer'}),
+       (n4467)-[:hasModality]->(n1060),
+       (n4467)-[:developedByCompany]->(n1024),
+       (n4467)-[:developedByCompany]->(n1824),
+       (n4467)-[:inhibitsTargets]->(n4172),
+       (n4467)-[:isInHighestDevelopmentStage]->(n1002),
+       (n4467)-[:isIndicatedForDisease]->(n1019),
+       (n991:Modality{Name:'Ab - Antibody'}),
+       (n1060)-[:typeOfModality]->(n991),
+       (n1061)-[:typeOfModality]->(n991),
+       (n1019)-[:typeOfDisease]->(n1155),
+       (n3718:Disease{Name:'LUAD - Lung Adenocarcinoma'}),
+       (n3718)-[:typeOfDisease]->(n1019),
+       (n3481:TherapeuticMolecule{Name:'Anti-EGFL7'}),
+       (n1055:Company{Name:'Genentech (Roche Holding AG)'}),
+       (n1000:DevelopmentStage{Name:'2 - Phase 1'}),
+       (n3480:MolecularTarget{Name:'EGFL7'}),
+       (n3481)-[:developedByCompany]->(n1055),
+       (n3481)-[:isInHighestDevelopmentStage]->(n1000),
+       (n3481)-[:isIndicatedForDisease]->(n3718),
+       (n3481)-[:hasModality]->(n991),
+       (n3481)-[:inhibitsTargets]->(n3480),
+       (n5428:TherapeuticMolecule{Name:'IMMU-132'}),
+       (n1815:Disease{Name:'SCLC-Small Cell Lung Cancer'}),
+       (n3712:Company{Name:'Immunomedics Inc.'}),
+       (n2411:Modality{Name:'ADC - Antibody-Drug Conjugate'}),
+       (n1018:Disease{Name:'CRC-Colorectal Cancer'}),
+       (n1506:Disease{Name:'Pancreatic Cancer'}),
+       (n5428)-[:developedByCompany]->(n3712),
+       (n5428)-[:isInHighestDevelopmentStage]->(n1001),
+       (n5428)-[:isIndicatedForDisease]->(n1018),
+       (n5428)-[:isIndicatedForDisease]->(n1506),
+       (n5428)-[:isIndicatedForDisease]->(n1815),
+       (n5428)-[:hasModality]->(n2411),
+       (n5158:TherapeuticMolecule{Name:'BMN673'}),
+       (n2599:MolecularTarget{Name:'PARP1'}),
+       (n5209:MolecularTarget{Name:'PARP2'}),
+       (n5157:Company{Name:'Biomarin Pharmaceuticals'}),
+       (n1421:Disease{Name:'Ovarian Cancer'}),
+       (n1088:Disease{Name:'Breast Cancer'}),
+       (n5158)-[:developedByCompany]->(n5157),
+       (n5158)-[:isInHighestDevelopmentStage]->(n1001),
+       (n5158)-[:isIndicatedForDisease]->(n1088),
+       (n5158)-[:isIndicatedForDisease]->(n1019),
+       (n5158)-[:isIndicatedForDisease]->(n1421),
+       (n5158)-[:isIndicatedForDisease]->(n1815),
+       (n5158)-[:inhibitsTargets]->(n2599),
+       (n5158)-[:inhibitsTargets]->(n5209),
+       (n1019)-[:typeOfDisease]->(n1155),
+       (n1815)-[:typeOfDisease]->(n1155),
+       (n3718)-[:typeOfDisease]->(n1019),
+       (n1061)-[:typeOfModality]->(n991),
+       (n1060)-[:typeOfModality]->(n991)
+
+RETURN *
+----
+// graph
+
+==== Company and Therapeutic Molecules ====
+
+[source,cypher]
+----
+MATCH (c:Company)<-[:developedByCompany]-(t:TherapeuticMolecule)
+WHERE c.Name = 'Biomarin Pharmaceuticals'
+RETURN c.Name,t.Name
+
+----
+
+// table
+
+==== Therapeutic Molecules and Company Table ====
+
+[source,cypher]
+----
+MATCH (t:TherapeuticMolecule)-[:developedByCompany]->(c:Company)
+RETURN t.Name as therapeutic, collect(c.Name) as company
+ORDER by therapeutic
+----
+
+// table
+
+==== Therapeutic Molecules and Company Table ====
+
+[source,cypher]
+----
+MATCH (t:TherapeuticMolecule)-[:developedByCompany]->(c:Company)
+RETURN t,c
+----
+
+// graph
+
+==== Company, Therapeutic Molecules and Disease ====
+
+[source,cypher]
+----
+MATCH (c:Company)<-[:developedByCompany]-(t:TherapeuticMolecule)-[:isIndicatedForDisease]->(d:Disease)
+RETURN c.Name as Company,t.Name as Therapeutics,collect(d.Name) as Diseases
+
+----
+
+// table
+
+==== Company and Therapeutic Molecules indicated for Lung Cancer ====
+
+[source,cypher]
+----
+MATCH (c:Company)<-[:developedByCompany]-(t:TherapeuticMolecule)-[:isIndicatedForDisease]->(d:Disease)-[:typeOfDisease*0..2]->(dc:Disease)
+WHERE dc.Name = 'Lung Cancer'
+RETURN c.Name as Company,t.Name as Therapeutics,collect(d.Name) as Diseases,dc.Name as DiseaseClass
+
+----
+
+// table
+
+==== Company and Therapeutic Molecules that target PDCD1 ====
+
+[source,cypher]
+----
+MATCH (c:Company)<-[:developedByCompany]-(t:TherapeuticMolecule)-[:isIndicatedForDisease]->(d:Disease),(t:TherapeuticMolecule)-[:inhibitsTargets]->(mt:MolecularTarget)
+WHERE mt.Name = 'PDCD1'
+RETURN collect(c.Name) as Company,t.Name as Therapeutics,collect(d.Name) as Diseases,mt.Name as MolecularTarget
+
+----
+
+// table
+
+==== Company and Therapeutic Molecules for Non-Small Cell Lung Cancer and their Development Stage ====
+
+[source,cypher]
+----
+MATCH (c:Company)<-[:developedByCompany]-(t:TherapeuticMolecule)-[:isIndicatedForDisease]->(d:Disease),(t:TherapeuticMolecule)-[:inhibitsTargets]->(mt:MolecularTarget),(t:TherapeuticMolecule)-[:isInHighestDevelopmentStage]->(ds:DevelopmentStage)
+WHERE d.Name = 'NSCLC-Non Small Cell Lung Cancer'
+RETURN collect(c.Name) as Companies,collect(t.Name) as Therapeutics,d.Name as Disease,collect(mt.Name) as MolecularTargets,ds.Name as Stage
+
+----
+
+// table
+
+// console

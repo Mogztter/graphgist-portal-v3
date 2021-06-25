@@ -1,0 +1,377 @@
+= Práctica de Neo4j sobre Pokemon
+:neo4j-version: 3.5.0
+:author: Carlos Álvarez Rábano
+
+= Creación del grafo
+
+//setup
+[source,cypher]
+----
+CREATE (Bulbasaur:Pokemon {nombre:'Bulbasaur', numero:1}) 
+
+CREATE (Ivysaur:Pokemon {nombre:'Ivysaur', numero:2}) 
+
+CREATE (Venusaur:Pokemon {nombre:'Venusaur', numero:3}) 
+
+CREATE (Charmander:Pokemon {nombre:'Charmander', numero:4}) 
+
+CREATE (Charmeleon:Pokemon {nombre:'Charmeleon', numero:5}) 
+
+CREATE (Charizard:Pokemon {nombre:'Charizard', numero:6}) 
+
+CREATE (Squirtle:Pokemon {nombre:'Squirtle', numero:7}) 
+
+CREATE (Wartortle:Pokemon {nombre:'Wartortle', numero:8}) 
+
+CREATE (Blastoise:Pokemon {nombre:'Blastoise', numero:9}) 
+
+CREATE (Caterpie:Pokemon {nombre:'Caterpie', numero:10}) 
+
+CREATE (Metapod:Pokemon {nombre:'Metapod', numero:11}) 
+
+CREATE (Butterfree:Pokemon {nombre:'Butterfree', numero:12}) 
+
+CREATE (Weedle:Pokemon {nombre:'Weedle', numero:13}) 
+
+CREATE (Kakuna:Pokemon {nombre:'Kakuna', numero:14}) 
+
+CREATE (Beedrill:Pokemon {nombre:'Beedrill', numero:15}) 
+
+CREATE (Pidgey:Pokemon {nombre:'Pidgey', numero:16}) 
+
+CREATE (Pidgeotto:Pokemon {nombre:'Pidgeotto', numero:17}) 
+
+CREATE (Pidgeot:Pokemon {nombre:'Pidgeot', numero:18}) 
+
+CREATE (Rattata:Pokemon {nombre:'Rattata', numero:19}) 
+
+CREATE (Raticate:Pokemon {nombre:'Raticate', numero:20}) 
+
+CREATE (Spearow:Pokemon {nombre:'Spearow', numero:21}) 
+
+CREATE (Fearow:Pokemon {nombre:'Fearow', numero:22}) 
+
+CREATE (Ekans:Pokemon {nombre:'Ekans', numero:23}) 
+
+CREATE (Arbok:Pokemon {nombre:'Arbok', numero:24}) 
+
+CREATE (Pikachu:Pokemon {nombre:'Pikachu', numero:25}) 
+
+CREATE (Raichu:Pokemon {nombre:'Raichu', numero:26}) 
+
+CREATE (Sandshrew:Pokemon {nombre:'Sandshrew', numero:27}) 
+
+CREATE (Sandslash:Pokemon {nombre:'Sandslash', numero:28}) 
+
+CREATE 
+
+    (Bulbasaur)-[:EVOLUCIONA_A]->(Ivysaur), 
+
+    (Ivysaur)-[:EVOLUCIONA_A]->(Venusaur), 
+
+    (Charmander)-[:EVOLUCIONA_A]->(Charmeleon), 
+
+    (Charmeleon)-[:EVOLUCIONA_A]->(Charizard), 
+
+    (Squirtle)-[:EVOLUCIONA_A]->(Wartortle), 
+
+    (Wartortle)-[:EVOLUCIONA_A]->(Blastoise), 
+
+    (Caterpie)-[:EVOLUCIONA_A]->(Metapod), 
+
+    (Metapod)-[:EVOLUCIONA_A]->(Butterfree), 
+
+    (Weedle)-[:EVOLUCIONA_A]->(Kakuna), 
+
+    (Kakuna)-[:EVOLUCIONA_A]->(Beedrill), 
+
+    (Pidgey)-[:EVOLUCIONA_A]->(Pidgeot), 
+
+    (Pidgeot)-[:EVOLUCIONA_A]->(Pidgeotto), 
+
+    (Rattata)-[:EVOLUCIONA_A]->(Raticate), 
+
+    (Spearow)-[:EVOLUCIONA_A]->(Fearow), 
+
+    (Ekans)-[:EVOLUCIONA_A]->(Arbok), 
+
+    (Pikachu)-[:EVOLUCIONA_A]->(Raichu), 
+
+    (Sandshrew)-[:EVOLUCIONA_A]->(Sandslash) 
+
+  
+
+CREATE (Planta:Tipo {nombre:'Planta'}) 
+
+CREATE (Veneno:Tipo {nombre:'Veneno'}) 
+
+CREATE (Fuego:Tipo {nombre:'Fuego'}) 
+
+CREATE (Volador:Tipo {nombre:'Volador'}) 
+
+CREATE (Agua:Tipo {nombre:'Agua'}) 
+
+CREATE (Bicho:Tipo {nombre:'Bicho'}) 
+
+CREATE (Normal:Tipo {nombre:'Normal'}) 
+
+CREATE (Electrico:Tipo {nombre:'Electrico'}) 
+
+CREATE (Tierra:Tipo {nombre:'Tierra'}) 
+
+  
+
+CREATE 
+
+    (Fuego)-[:GANA_A]->(Planta), 
+
+    (Fuego)-[:GANA_A]->(Bicho), 
+
+    (Agua)-[:GANA_A]->(Fuego), 
+
+    (Agua)-[:GANA_A]->(Tierra), 
+
+    (Planta)-[:GANA_A]->(Agua), 
+
+    (Planta)-[:GANA_A]->(Tierra), 
+
+    (Electrico)-[:GANA_A]->(Agua), 
+
+    (Electrico)-[:GANA_A]->(Volador), 
+
+    (Veneno)-[:GANA_A]->(Planta), 
+
+    (Tierra)-[:GANA_A]->(Fuego), 
+
+    (Tierra)-[:GANA_A]->(Electrico), 
+
+    (Tierra)-[:GANA_A]->(Veneno), 
+
+    (Volador)-[:GANA_A]->(Planta), 
+
+    (Volador)-[:GANA_A]->(Bicho), 
+
+    (Bicho)-[:GANA_A]->(Planta),     
+
+     
+
+    (Bulbasaur)-[:ES]->(Planta), 
+
+    (Bulbasaur)-[:ES]->(Veneno), 
+
+    (Ivysaur)-[:ES]->(Planta), 
+
+    (Ivysaur)-[:ES]->(Veneno), 
+
+    (Venusaur)-[:ES]->(Planta), 
+
+    (Venusaur)-[:ES]->(Veneno), 
+
+    (Charmander)-[:ES]->(Fuego), 
+
+    (Charmeleon)-[:ES]->(Fuego), 
+
+    (Charizard)-[:ES]->(Fuego), 
+
+    (Charizard)-[:ES]->(Volador), 
+
+    (Squirtle)-[:ES]->(Agua), 
+
+    (Wartortle)-[:ES]->(Agua), 
+
+    (Blastoise)-[:ES]->(Agua), 
+
+    (Caterpie)-[:ES]->(Bicho), 
+
+    (Metapod)-[:ES]->(Bicho), 
+
+    (Butterfree)-[:ES]->(Bicho), 
+
+    (Butterfree)-[:ES]->(Volador), 
+
+    (Weedle)-[:ES]->(Bicho), 
+
+    (Weedle)-[:ES]->(Veneno), 
+
+    (Kakuna)-[:ES]->(Bicho), 
+
+    (Kakuna)-[:ES]->(Veneno), 
+
+    (Beedrill)-[:ES]->(Bicho), 
+
+    (Beedrill)-[:ES]->(Veneno), 
+
+    (Pidgey)-[:ES]->(Normal), 
+
+    (Pidgey)-[:ES]->(Volador), 
+
+    (Pidgeot)-[:ES]->(Normal), 
+
+    (Pidgeot)-[:ES]->(Volador), 
+
+    (Pidgeotto)-[:ES]->(Normal), 
+
+    (Pidgeotto)-[:ES]->(Volador), 
+
+    (Rattata)-[:ES]->(Normal), 
+
+    (Raticate)-[:ES]->(Normal), 
+
+    (Spearow)-[:ES]->(Normal), 
+
+    (Spearow)-[:ES]->(Volador), 
+
+    (Fearow)-[:ES]->(Normal), 
+
+    (Fearow)-[:ES]->(Volador), 
+
+    (Ekans)-[:ES]->(Veneno), 
+
+    (Arbok)-[:ES]->(Veneno), 
+
+    (Pikachu)-[:ES]->(Electrico), 
+
+    (Raichu)-[:ES]->(Electrico), 
+
+    (Sandshrew)-[:ES]->(Tierra), 
+
+    (Sandslash)-[:ES]->(Tierra) 
+
+     
+
+CREATE (Ash:Entrenador {nombre:'Ash'}) 
+
+CREATE (CazaBichos:Entrenador {nombre:'Caza Bichos'}) 
+
+  
+
+CREATE 
+
+    (Ash)-[:Tiene]->(Pikachu), 
+
+    (Ash)-[:Tiene]->(Charmander), 
+
+    (Ash)-[:Tiene]->(Pidgey), 
+
+    (Ash)-[:Tiene]->(Caterpie), 
+
+    (CazaBichos)-[:Tiene]->(Kakuna), 
+
+    (CazaBichos)-[:Tiene]->(Weedle), 
+
+    (CazaBichos)-[:Tiene]->(Beedrill); 
+----
+
+//graph
+
+= Consultas
+
+= Consultas elementales
+
+Consulta para comprobar los tipos que ganan a otros tipos
+//setup
+[source,cypher]
+----
+MATCH (tipos)-[:GANA_A]->(:Tipo {nombre:'Planta'}) RETURN tipos 
+----
+
+//table
+
+Consulta para encontrar todos los pokemon de tipo agua
+
+[source,cypher]
+----
+match (p:Pokemon)-[:ES]->(t:Tipo {nombre:'Agua'})  
+return p
+----
+
+//graph_result
+
+Consulta para encontrar el nombre de los Pokemon del entrenador Caza Bichos
+
+[source,cypher]
+----
+MATCH (pokemon:Pokemon)<-[:Tiene]-(:Entrenador {nombre:'Caza Bichos'}) RETURN pokemon.nombre AS Nombre
+----
+
+//table
+
+Consulta para contar todos los tipos de pokemon que hay
+
+[source,cypher]
+----
+match (n:Tipo) return count(*) as total
+----
+
+//table
+
+= Consultas intermedias
+
+Consulta para encontrar nombre y número de los pokemon cuyo número es superior a 20
+
+[source,cypher]
+----
+MATCH (p:Pokemon)  
+WHERE p.numero > 20  
+RETURN p.nombre AS Nombre_Pokemon , p.numero AS Numero_Pokemon ORDER BY p.numero DESC
+----
+
+//table
+
+Consulta para encontrar pokemons cuyo número sea superior a 10 y que tengan más de un tipo
+
+[source,cypher]
+----
+MATCH(p:Pokemon)-[:ES]->(t:Tipo) 
+WHERE p.numero >= 10 
+WITH p.nombre AS nombre, p.numero AS numero, COUNT(*) AS total 
+WHERE total > 1 
+RETURN nombre, numero, total
+----
+
+//table
+
+Consulta para encontrar todos los pokemon que pueden evolucionar
+
+[source,cypher]
+----
+match (p:Pokemon)-[:EVOLUCIONA_A]->(p1:Pokemon) 
+return p.nombre, p1.nombre
+----
+
+//table
+
+Consulta para encontrar todos los pokemon del grafo agrupados por su tipo
+
+[source,cypher]
+----
+match (p:Pokemon)-[:ES]->(t:Tipo) 
+return distinct t.nombre as nombre_tipo, collect(p.nombre) as nombres
+----
+
+//table
+
+= Consultas avanzadas
+
+Consulta para identificar todos los tipos de los Pokemon que tiene el entrenador Ash
+
+[source,cypher]
+----
+MATCH (ash:Entrenador {nombre:"Ash"})-[*1..2]-(es) RETURN DISTINCT es
+----
+
+//table
+
+//graph_result
+
+Consulta para encontrar el camino mínimo más corto para llegar desde el nodo Ash hasta el nodo Bulbasaur
+
+[source,cypher]
+----
+match p=shortestPath( 
+               (ash:Entrenador {nombre:'Ash'})-[*]-(bulbasur:Pokemon {nombre:'Bulbasaur'}) 
+) 
+return p
+----
+
+//graph_result

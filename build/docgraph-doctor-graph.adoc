@@ -1,0 +1,61 @@
+= DocGraph - Doctor Graph
+
+Fred Trotter (@fredtrotter) works on modeling the US doctor data, see https://github.com/ftrotter/DocGraph[The Github project].
+
+The schema looks like
+
+image::https://dl.dropboxusercontent.com/u/14493611/docgraph.gif[]
+
+Setting up some data with it, we can run simple queries on the data model. Like this one:
+
+
+//setup
+//hide
+[source,cypher]
+----
+create (mh:HospitalChain {name:"Memorial Hermann"}),
+       (mhs:Hospital {name:"Spring"})-[:BELONGS_TO]->(mh),
+       (mhh:Hospital {name:"Houston"})-[:BELONGS_TO]->(mh),
+       (mt:HospitalChain {name:"Methodist"}),
+     (mth:Hospital {name:"Houston"})-[:BELONGS_TO]->(mt),
+	   (h1:Doctor:Hospitalist)-[:WORKS_FOR]->(mhs),
+	   (h2:Doctor:Hospitalist)-[:WORKS_FOR]->(mhs),
+	   (doc:Doctor:Primary {name:"Doc"})-[:REFERS_TO {score:100}]->(mhs),
+	   (doc)-[:REFERS_TO {score:150}]->(mhs),
+	   (doc)-[:REFERS_TO {score:500}]->(lab:Laboratory {name:"Lab"}),
+       (doc)-[:REFERS_TO {score:50}]->(card:Doctor:Cardiologist {name:"Cardio"}),
+	   (doc2:Doctor:Primary {name:"Bones"})-[:REFERS_TO {score:50}]->(mth),
+	   (doc2)-[:REFERS_TO {score:300}]->(lab)
+----
+
+
+=== Now we can answer some questions, e.g. 
+
+Which doctors referred the most to the "Memorial Hermann"
+
+[source,cypher]
+----
+MATCH (chain:HospitalChain)<-[:BELONGS_TO]-(hospital)<-[r:REFERS_TO]-(doc:Doctor:Primary) 
+WHERE chain.name = 'Memorial Hermann' 
+RETURN doc, collect(hospital.name), sum(r.score) AS score 
+ORDER BY score DESC 
+LIMIT 10
+----
+
+//table
+
+Or how many referrals did my doctors do, weighted by target type
+
+[source,cypher]
+----
+MATCH (receiver)<-[r:REFERS_TO]-(doc:Doctor:Primary) 
+WITH doc, receiver, sum(r.score) AS score, 
+     CASE WHEN receiver:Hospital THEN 1 WHEN receiver:Laboratory THEN 10 ELSE 3 END AS factor 
+RETURN doc, labels(receiver), score/factor as weighted_score
+ORDER BY weighted_score DESC 
+LIMIT 10
+----
+
+//table
+
+//console

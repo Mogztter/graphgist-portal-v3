@@ -1,0 +1,335 @@
+= Holiday Resorts
+
+Kerala is a state in India and popularly known as "God's own Country". It is very famous for the BackWaters, HouseBoats, Food, Culture. There are numerous resorts, hotels and homestays in Kerala. This application provides a fun and interactive way to find a Resort of your choice.
+
+image::https://m.ak.fbcdn.net/sphotos-b.ak/hphotos-ak-prn2/1268421_669202099764573_245107135_o.jpg[Domain_Model]
+//console
+
+[source, cypher]
+----
+
+CREATE (zuri:Resort{name : 'The Zuri Kumarakom', address : 'V-235 A1 to A54, Karottukayal, Kumarakom, Kerala 686563 India', avg_rate: 7650})
+CREATE (vivanta:Resort{name : 'Vivanta by Taj - Kumarakom', address : '1/404 Kamarakom Kottayam, Kumarakom, Kerala 686 563 India', avg_rate: 10000})
+CREATE (paradise:Resort{name : 'Paradise Resorts', address : 'Kumarakom South P.O, Kottayam, Kumarakom, Kerala 686563 India', avg_rate: 3753})
+CREATE (leCelestium:Resort{name : 'Le Celestium', address : 'Colony Road KDTC Hill Resort, Munnar, Kerala 685612 India', avg_rate: 2085})
+CREATE (glenmore:Resort{name : 'Glenmore Resorts', address : 'Near Recreation Club Pallivasal, Munnar, Kerala 685665 India', avg_rate: 1918})
+CREATE (worldBackWaters:Resort{name : 'The World Backwaters', address : 'Kannankara Post, Alleppey, Thanneermukkom, Kerala 688527 India', avg_rate: 4169})
+CREATE (rainbowCruises:Resort{name : 'Rainbow Cruises', address : 'V.C.N.B.Road, Opp.Boat Jetty Alleppey, Cochin, Alappuzha, Kerala 688013 India', avg_rate: 10271})
+CREATE (wildCorridor:Resort{name : 'Thekkady Wild Corridor', address : 'Murikkady P.O. Kumily, Thekkady, Kerala 685535 India', avg_rate: 5837})
+CREATE (spiceVillage:Resort{name : 'Spice Village', address : 'Kumily - Thekkady Road, Thekkady, Kerala 685536 India', avg_rate: 14176})
+CREATE (windHaven:Resort{name : 'WindHaven Resort', address : 'Ramakkal Tourist Center, Idukki, Ramakkalmedu, Kerala 685 552 India', avg_rate: 1376})
+
+CREATE (family:Category{name : 'Family', description:'Family Resort'})
+CREATE (beach:Category{name : 'Beach', description:'Beach Resort'})
+CREATE (hillStation:Category{name : 'Hill Station', description:'Hill Station Resort'})
+CREATE (backWaters:Category{name : 'Back Waters', description:'Kerala Back Waters Resort'})
+CREATE (holiday:Category{name : 'Holiday Park', description:'Holiday Park with Play-Area'})
+CREATE (romantic:Category{name : 'Romantic', description:'Romantic Destination'})
+CREATE (wildlife:Category{name : 'Wild Life', description:'Wild Life and Forest'})
+
+CREATE (january:Season{name : 'January'})
+CREATE (febraury:Season{name : 'Febraury'})
+CREATE (march:Season{name : 'March'})
+CREATE (april:Season{name : 'April'})
+CREATE (may:Season{name : 'May'})
+CREATE (june:Season{name : 'June'})
+CREATE (july:Season{name : 'July'})
+CREATE (august:Season{name : 'August'})
+CREATE (septemberr:Season{name : 'September'})
+CREATE (october:Season{name : 'October'})
+CREATE (november:Season{name : 'November'})
+CREATE (december:Season{name : 'December'})
+
+CREATE (swimmingPool:Facility{name : 'Swimming Pool'})
+CREATE (carParking:Facility{name : 'Car Parking'})
+CREATE (freeWifi:Facility{name : 'Free Wi-Fi Access'})
+CREATE (freeBreakfast:Facility{name : 'Free Breakfast'})
+CREATE (childCare:Facility{name : 'BabySitting or Child Care'})
+CREATE (garden:Facility{name : 'Garden'})
+CREATE (spa:Facility{name : 'Spa'})
+CREATE (cafe:Facility{name : 'Cafe'})
+CREATE (medicalAssistance:Facility{name : 'Medical Assistance'})
+CREATE (barbecue:Facility{name : 'Barbecue grill(s)'})
+CREATE (fitness:Facility{name : 'Fitness facilities'})
+CREATE (library:Facility{name : 'Library'})
+CREATE (frontDesk:Facility{name : '24-hour front desk'})
+CREATE (billiards:Facility{name : 'Billiards or pool table'})
+
+CREATE (rating2_5:Rating{rating : 2.5})
+CREATE (rating3_0:Rating{rating : 3.0})
+CREATE (rating3_5:Rating{rating : 3.5})
+CREATE (rating4_0:Rating{rating : 4.0})
+CREATE (rating4_5:Rating{rating : 4.5})
+CREATE (rating5_0:Rating{rating : 5.0})
+
+CREATE (raju:Person{name : 'Raju', email: 'rajur79@gmail.com'})
+CREATE (diya:Person{name : 'Diya', email: 'diya0908@gmail.com'})
+CREATE (geeta:Person{name : 'Geeta', email: 'gp0908@gmail.com'})
+
+CREATE (kumarakom:Place{name : 'Kumarakom', details: 'Kumarakom is home to a wide variety of flora and fauna. Kumarakom Bird Sanctuary is a noted bird sanctuary where many species of migratory birds visit. The Vembanad Lake, the largest backwater in Kerala, is habitat for many marine and freshwater fish species'})
+CREATE (alleppey:Place{name : 'Alleppey', details: 'The Backwaters of Alleppey are the most popular tourist attraction in Kerala'})
+CREATE (thekkady:Place{name : 'Thekkady', details: 'Situated in Kerala, close to the Kerala - Tamil Nadu border town - Kumily, it is located about 257 km (160 mi) from Trivandrum, 114 km from Madurai City and Madurai Airport, 185 km from Cochin International Airport and 114 km from Kottayam railway station.'})
+CREATE (munnar:Place{name : 'Munnar', details: 'Munnar is a hill station on the Western Ghats, a range of mountains situated in the Idukki district of the Indian state of Kerala.'})
+
+CREATE (kerala:State{name : 'Kerala', details: 'Gods own country'})
+
+CREATE (vembanadLake:Attraction{name : 'Vemabanad Lake'})
+CREATE (kumarakomBirdSanctuary:Attraction{name : 'Kumarakom Bird Sanctuary'})
+CREATE (aruvikkuzhi:Attraction{name : 'Aruvikkuzhi Waterfall'})
+CREATE (tigerReserve:Attraction{name : 'Periyar Tiger Reserve'})
+CREATE (periyarLake:Attraction{name : 'Periyar Lake'})
+CREATE (gaviForest:Attraction{name : 'Gavi Forest'})
+CREATE (teaGardens:Attraction{name : 'Tea Gardens'})
+CREATE (roseGarden:Attraction{name : 'Rose Garden'})
+CREATE (mattupetty:Attraction{name : 'Mattupetty Dam'})
+CREATE (keralaBackWaters:Attraction{name : 'Kerala Back Waters'})
+CREATE (marariBeach:Attraction{name : 'Marari Beach'})
+CREATE (kathakaly:Attraction{name : 'Kathakaly'})
+
+CREATE vembanadLake-[:ATTRACTION_IN]->kumarakom
+CREATE kumarakomBirdSanctuary-[:ATTRACTION_IN]->kumarakom
+CREATE aruvikkuzhi-[:ATTRACTION_IN]->kumarakom
+CREATE tigerReserve-[:ATTRACTION_IN]->thekkady
+CREATE periyarLake-[:ATTRACTION_IN]->thekkady
+CREATE gaviForest-[:ATTRACTION_IN]->thekkady
+CREATE teaGardens-[:ATTRACTION_IN]->munnar
+CREATE roseGarden-[:ATTRACTION_IN]->munnar
+CREATE mattupetty-[:ATTRACTION_IN]->munnar
+CREATE keralaBackWaters-[:ATTRACTION_IN]->alleppey
+CREATE marariBeach-[:ATTRACTION_IN]->alleppey
+CREATE kathakaly-[:ATTRACTION_IN]->alleppey
+
+CREATE zuri-[:CATEGORY]-> family
+CREATE zuri-[:CATEGORY]-> holiday
+CREATE zuri-[:CATEGORY]-> backWaters
+CREATE vivanta-[:CATEGORY]-> holiday
+CREATE vivanta-[:CATEGORY]-> family
+CREATE vivanta-[:CATEGORY]-> beach
+CREATE paradise-[:CATEGORY]-> holiday
+CREATE paradise-[:CATEGORY]-> family
+CREATE leCelestium-[:CATEGORY]-> family
+CREATE leCelestium-[:CATEGORY]-> hillStation
+CREATE leCelestium-[:CATEGORY]-> holiday
+CREATE glenmore-[:CATEGORY]-> family
+CREATE glenmore-[:CATEGORY]-> hillStation
+CREATE glenmore-[:CATEGORY]-> holiday
+CREATE worldBackWaters-[:CATEGORY]-> backWaters
+CREATE worldBackWaters-[:CATEGORY]-> holiday
+CREATE worldBackWaters-[:CATEGORY]-> romantic
+CREATE rainbowCruises-[:CATEGORY]-> backWaters
+CREATE rainbowCruises-[:CATEGORY]-> romantic
+CREATE wildCorridor-[:CATEGORY]-> wildlife
+CREATE wildCorridor-[:CATEGORY]-> holiday
+CREATE wildCorridor-[:CATEGORY]-> family
+CREATE spiceVillage-[:CATEGORY]-> holiday
+CREATE windHaven-[:CATEGORY]-> holiday
+CREATE windHaven-[:CATEGORY]-> beach
+
+CREATE kumarakom-[:BEST_SEASON]->january
+CREATE kumarakom-[:BEST_SEASON]->febraury
+CREATE kumarakom-[:BEST_SEASON]->march
+CREATE kumarakom-[:BEST_SEASON]->september
+CREATE kumarakom-[:BEST_SEASON]->october
+CREATE kumarakom-[:BEST_SEASON]->november
+CREATE kumarakom-[:BEST_SEASON]->december
+CREATE alleppey-[:BEST_SEASON]->january
+CREATE alleppey-[:BEST_SEASON]->febraury
+CREATE alleppey-[:BEST_SEASON]->march
+CREATE alleppey-[:BEST_SEASON]->september
+CREATE alleppey-[:BEST_SEASON]->october
+CREATE alleppey-[:BEST_SEASON]->november
+CREATE alleppey-[:BEST_SEASON]->december
+CREATE thekkady-[:BEST_SEASON]->january
+CREATE thekkady-[:BEST_SEASON]->febraury
+CREATE thekkady-[:BEST_SEASON]->march
+CREATE thekkady-[:BEST_SEASON]->september
+CREATE thekkady-[:BEST_SEASON]->october
+CREATE thekkady-[:BEST_SEASON]->november
+CREATE thekkady-[:BEST_SEASON]->december
+CREATE munnar-[:BEST_SEASON]->january
+CREATE munnar-[:BEST_SEASON]->febraury
+CREATE munnar-[:BEST_SEASON]->march
+CREATE munnar-[:BEST_SEASON]->april
+CREATE munnar-[:BEST_SEASON]->may
+CREATE munnar-[:BEST_SEASON]->august
+CREATE munnar-[:BEST_SEASON]->september
+CREATE munnar-[:BEST_SEASON]->october
+CREATE munnar-[:BEST_SEASON]->november
+CREATE munnar-[:BEST_SEASON]->december
+
+CREATE kumarakom-[:STATE]->kerala
+CREATE alleppey-[:STATE]->kerala
+CREATE thekkady-[:STATE]->kerala
+CREATE munnar-[:STATE]->kerala
+
+CREATE zuri-[:PLACE]->kumarakom
+CREATE vivanta-[:PLACE]->kumarakom
+CREATE paradise-[:PLACE]->kumarakom
+CREATE leCelestium-[:PLACE]->munnar
+CREATE glenmore-[:PLACE]->munnar
+CREATE worldBackWaters-[:PLACE]->alleppey
+CREATE rainbowCruises-[:PLACE]->alleppey
+CREATE wildCorridor-[:PLACE]->thekkady
+CREATE spiceVillage-[:PLACE]->thekkady
+CREATE windHaven-[:PLACE]->thekkady
+
+CREATE zuri-[:RATING]->rating4_5
+CREATE vivanta-[:RATING]->rating5_0
+CREATE paradise-[:RATING]->rating3_5
+CREATE leCelestium-[:RATING]->rating4_5
+CREATE glenmore-[:RATING]->rating4_0
+CREATE worldBackWaters-[:RATING]->rating4_5
+CREATE rainbowCruises-[:RATING]->rating3_0
+CREATE wildCorridor-[:RATING]->rating2_5
+CREATE spiceVillage-[:RATING]->rating4_5
+CREATE windHaven-[:RATING]->rating4_0
+
+CREATE zuri-[:FACILITY]->swimmingPool
+CREATE zuri-[:FACILITY]->carParking
+CREATE zuri-[:FACILITY]->freeWifi
+CREATE zuri-[:FACILITY]->childCare
+CREATE zuri-[:FACILITY]->freeBreakfast
+CREATE zuri-[:FACILITY]->garden
+CREATE vivanta-[:FACILITY]->swimmingPool
+CREATE vivanta-[:FACILITY]->carParking
+CREATE vivanta-[:FACILITY]->frontDesk
+CREATE vivanta-[:FACILITY]->garden
+CREATE vivanta-[:FACILITY]->freeWifi
+CREATE paradise-[:FACILITY]->swimmingPool
+CREATE paradise-[:FACILITY]->frontDesk
+CREATE paradise-[:FACILITY]->garden
+CREATE leCelestium-[:FACILITY]->spa
+CREATE leCelestium-[:FACILITY]->medicalAssistance
+CREATE leCelestium-[:FACILITY]->carParking
+CREATE glenmore-[:FACILITY]->medicalAssistance
+CREATE glenmore-[:FACILITY]->barbecue
+CREATE glenmore-[:FACILITY]->carParking
+CREATE glenmore-[:FACILITY]->spa
+CREATE worldBackWaters-[:FACILITY]->spa
+CREATE worldBackWaters-[:FACILITY]->fitness
+CREATE worldBackWaters-[:FACILITY]->garden
+CREATE worldBackWaters-[:FACILITY]->freeWifi
+CREATE rainbowCruises-[:FACILITY]->library
+CREATE wildCorridor-[:FACILITY]->frontDesk
+CREATE wildCorridor-[:FACILITY]->garden
+CREATE wildCorridor-[:FACILITY]->childCare
+CREATE wildCorridor-[:FACILITY]->freeWifi
+CREATE spiceVillage-[:FACILITY]->carParking
+CREATE spiceVillage-[:FACILITY]->billiards
+CREATE spiceVillage-[:FACILITY]->cafe
+CREATE spiceVillage-[:FACILITY]->freeBreakfast
+CREATE windHaven-[:FACILITY]->spa
+CREATE windHaven-[:FACILITY]->freeWifi
+
+CREATE raju-[:VISITED{month: 'October'}]->zuri
+CREATE raju-[:VISITED{month: 'September'}]->paradise
+CREATE raju-[:VISITED{month: 'January'}]->glenmore
+CREATE diya-[:VISITED{month: 'October'}]->zuri
+CREATE diya-[:VISITED{month: 'September'}]->paradise
+CREATE diya-[:VISITED{month: 'December'}]->spiceVillage
+CREATE diya-[:VISITED{month: 'November'}]->windHaven
+CREATE geeta-[:VISITED{month: 'October'}]->zuri
+CREATE geeta-[:VISITED{month: 'October'}]->rainbowCruises
+
+RETURN kerala;
+
+----
+
+//table
+
+//graph
+
+
+= Use Cases
+
+==== Holiday Destinations in Kerala
+Find all holiday destinations in Kerala. This dataset consists of only 4 destinations currently.
+
+[source, cypher]
+----
+
+MATCH p:Place-[:STATE]->kerala
+RETURN p.name as Destinations
+
+----
+
+//table
+
+
+==== Places of attraction near Hotel Zuri
+Find all tourist attractions near Hotel Zuri, which is located in Kumarakom.
+
+[source, cypher]
+----
+
+MATCH r:Resort-[:PLACE]->p:Place<-[:ATTRACTION_IN]-a:Attraction
+WHERE r.name = 'The Zuri Kumarakom'
+RETURN a.name as Attractions_Near_Zuri
+
+----
+
+//table
+
+
+==== HillStation Resorts to Visit in December
+Find all Resorts that are in a HillStation, that I can visit in the month of December. Return the Resort name and address, sort the results with highest rated resort first
+
+[source, cypher]
+----
+
+MATCH r1:Resort-[:CATEGORY]->c:Category,
+      r1:Resort-[:PLACE]->p:Place,
+      p:Place-[:BEST_SEASON]->s:Season,
+      r1:Resort-[:RATING]->r2:Rating
+WHERE c.name = 'Hill Station' AND s.name='December'
+RETURN r1.name as Resort, r2.rating as Rating, r1.address as Address
+ORDER BY r2.rating desc
+
+----
+
+//table
+
+
+==== Romantic Resorts (3 Star and above) within budget 9000 INR Per Day having Spa facility
+Find all Romantic Resorts that fit into my budget of 9000 INR Per Day. They need to provide a Spa facility and it should be atleast a 3 star rating.
+
+[source, cypher]
+----
+
+MATCH r1:Resort-[:CATEGORY]->c:Category,
+      r1:Resort-[:RATING]->r2:Rating,
+      r1:Resort-[:FACILITY]->f:Facility
+WHERE c.name = 'Romantic' AND r1.avg_rate <= 9000 AND f.name = 'Spa' AND r2.rating >= 3
+RETURN r1.name as Resort, r2.rating as Rating, r1.avg_rate as Rate_Per_Day
+ORDER BY r2.rating desc
+
+----
+
+//table
+
+
+==== RECOMMENDATION ENGINE: Recommend resorts for Raju to visit in January
+The recommendation engine first computes the similarity of Raju with other users. The other user is similar to Raju if he has checked-in to atleast 2 hotels, that were also checked-in by Raju in the same period. From the similar user, identify which resort he visited. Get the location of such resorts and find the top resorts from such locations, provided they are best to be visited in January. Return the resort name, it's location, rating. Sort the results by highest rating first
+
+[source, cypher]
+----
+
+MATCH a:Person-[v1:VISITED]->r1:Resort,
+      b:Person-[v2:VISITED]->r1:Resort,
+      a:Person-[v3:VISITED]->r2:Resort,
+      b:Person-[v4:VISITED]->r2:Resort,
+      b:Person-[v5:VISITED]->r3:Resort,
+      r3:Resort-[:PLACE]->p:Place,
+      r4:Resort-[:PLACE]->p:Place,
+      r4:Resort-[:RATING]->r5:Rating,
+      p:Place-[:BEST_SEASON]->s:Season
+WHERE a.name = 'Raju' AND a.name <> b.name
+      AND r1.name <> r2.name AND r1.name <> r3.name
+      AND v1.month = v2.month AND v3.month = v4.month
+      AND s.name = 'January' AND r5.rating >= 4
+RETURN DISTINCT r4.name as Resort, p.name as Place, r5.rating as Rating
+ORDER BY r5.rating DESC
+      
+----
+
+//table

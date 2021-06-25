@@ -1,0 +1,160 @@
+= OMA a graph Study
+:author: Michiel Van Der Elst
+:twitter: @your_twitter_username
+
+// Provide an introduction to your data modeling domain and what you are trying to accomplish
+OMA is a famous architecture firm. OMA is a big firm, you have different people working together. These people have different positions inside a firm.  For an outsider these relations are obsucure. When you think of a project like a theater. You say :'this is the work of Le Corbusier or OMA or Zaha Hadid', but who are the people working on the projects? and what project did they do? My graphigist is start of a framework in this new kind of architecture exploration. 
+
+Later  I would like to add other firms. You have  Zaha Hadid who started in OMA en created her own company it would be nice to see these relations.
+
+Another cool thing is that you have different domains coming together. You have People, Projects, Firms,....
+
+OMA is also interested in "data". So why not use data and graph to analyse an architect firm. Let start
+To see the projects visit http://oma.eu/projects So you can see them as a real project and not as node. 
+
+
+"I" took the data from their website and made a excel file.(Now i need to buy lots of beers, thx neo4j)
+"a graph file 8-)"
+I also choose to put the names and stuff without spaces it easier.
+i also have a  excel with more data (stupid graphgist) send me an email, if you want to play with it, it is more fun...
+
+// Provide a domain model image (using something like http://www.apcjones.com/arrows/# or https://www.gliffy.com/)
+
+// You can run this query to get an overview of entities and how they are related:
+// MATCH (a)-[r]->(b) WHERE labels(a) <> [] AND labels(b) <> []
+// RETURN DISTINCT head(labels(a)) AS This, type(r) as To, head(labels(b)) AS That LIMIT 10
+
+image::http://i.imgur.com/5g0ns0s.png[]
+
+We have people. They worked on a Project. This Project has a status: completed, study etc. But the project also has tag this is something like a category. office, scenografie etc.. It is realy an easy db structure
+// REMOVEME: A Cypher query to setup the database
+//setup
+//hide
+[source,cypher]
+----
+LOAD CSV WITH HEADERS FROM ' https://docs.google.com/spreadsheets/d/1K_lvruUdkX7Trkc-WlnshGaUzqcBSG6mUfwmLP38p90/export?format=csv&id=1K_lvruUdkX7Trkc-WlnshGaUzqcBSG6mUfwmLP38p90&gid=0' AS line
+create(n:Project{name:line.key})
+Merge(s:Status{status:line.status})
+Create(n)-[:hasStatus]->(s)
+with split(line.tags,",") as tags, n, line
+unwind tags as tag
+Merge(t:Tags{name:tag})
+Create(n)-[:hasTags]->(t)
+with n, line,split( line.team, "," )as teammembers
+unwind  teammembers as teammember
+Merge(t:People{name:teammember})
+create(t)-[:hasWorked]->(n)
+----
+
+// REMOVEME: Display the whole graph:
+I did not filter the null nodes it a bit stupid and i shoud delete them.(easier, but not the way to do it, dirty..)
+[source,cypher]
+----
+
+MATCH (n:People {name:""})
+DETACH DELETE n 
+----
+//graph
+
+// REMOVEME: Describe what this query is designed to do
+First we search the most active person in the db. Of the projects they want to show.
+// REMOVEME: A Cypher query to give table output
+[source,cypher]
+----
+Match(n:People)-[:hasWorked]->(r) 
+return n.name, count(r) Order by count(r)desc limit 10
+----
+//table
+
+What did Zaha Hadid do? Or what do they want to show?
+[source,cypher]
+----
+Match(n:People{name:"ZahaHadid"})-[:hasWorked]->(r) 
+return  count(r), r.name
+----
+//table
+
+What did she work on? what is the status and the tag and who did she work with?
+[source,cypher]
+----
+Match(n:People{name:"ZahaHadid"})-[:hasWorked]->(r)-[:hasStatus]->(s),(r)-[:hasTags]->(x), (r)<-[:hasWorked]-(p)
+return   r.name ,s.status, x.name,collect(p.name)
+----
+//table
+
+What should she work on? 
+A basis sugestion, We search for people who she worked together with, and to the project they put time in .
+A extra relation means they also where part in a different fase of the work process. So  people can be longer in the work process.
+
+(Maybe I could use weight as property on the relation and  make a new excel where I have the data about wich part of the process they where part of the design process but my db is big enough)
+[source,cypher]
+----
+Match(n:People{name:"ZahaHadid"})-[:hasWorked]->(r)-[:hasStatus]->(s), (r)<-[:hasWorked]-(p),(p)-[:hasWorked]->(b)
+return   b, count(p) order by count(p) desc limit 10
+----
+//table
+
+What should she work on? A basis sugestion, We search for people who she worked together with, without taking into account the strength of the relation. 
+
+[source,cypher]
+----
+Match(n:People{name:"ZahaHadid"})-[:hasWorked]->(r)-[:hasStatus]->(s),(r)-[:hasTags]->(x), (r)<-[:hasWorked]-(p),(p)-[:hasWorked]->(b)
+return   b.name, count(distinct(p)) as strength order by strength desc  limit 10
+----
+//table
+
+Oma what did they work on (or want to show)
+[source,cypher]
+----
+Match(n:Tags)<-[v]-(x)
+return n.name, count(v) order by count(v)desc limit 10
+----
+//table
+
+OMA what did they not work on (or don't find interesting enough)
+[source,cypher]
+----
+Match(n:Tags)<-[v]-(x)
+return n.name, count(v)  order by count(v) limit 10
+----
+//table
+
+what did they complete
+[source,cypher]
+----
+Match(r:Status{status:"completed"})
+Match(r)<-[:hasStatus]-(x:Project)-[:hasTags]->(m)
+return m.name, count(m)order by count(m) desc
+----
+//table
+
+// REMOVEME: Describe what this query is designed to do
+
+// REMOVEME: A Cypher query to give graph visualization output
+
+hey what is de relation between zaha and xaveer
+[source,cypher]
+----
+
+MATCH (Zaha:People { name:"ZahaHadid" }),(xavier:People { name:"XaveerdeGeyter" }), p = shortestPath((Zaha)-[*..5]-(xavier))
+RETURN p
+----
+//graph
+
+relation between Xaveer and Rem
+[source,cypher]
+----
+MATCH (xaveer:People { name:"XaveerdeGeyter" }),(rem:People{name:"RemKoolhaas"})
+, (rem)-[:hasWorked]->(p)
+, (xaveer)-[:hasWorked]->(p)
+RETURN rem,p,xaveer
+----
+//graph
+
+// REMOVEME: Offer a conclusion
+
+I would say have fun...
+And keep the queries simple
+
+Also for architects like me those  little queries are rather interesting and can be used to study relations inside a Firm. You could also think about expanding the db because a lot of the OMA "People" started their own firm. So you could see who worked in what firm and really analyse the data. It is a new way of looking at the architecture firm.And not at static way. And this is just the start. It also nice for me because some of the people in DB I know their work, been to their lectures etc... So they are not just data. I could also be a node inside a graph.(Not in the OMA Graph)
+remember graphs are everywhere.8-)

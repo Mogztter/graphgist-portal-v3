@@ -1,0 +1,33 @@
+:author: Mark Burns
+:twitter:
+
+Example output from bundler analysis
+
+//setup
+//hide
+[source,cypher]
+----
+create (_1092:`Class` {`name`:"Bundler::Source::Git"})
+create (_11959:`Class` {`name`:"Bundler::StubSpecification"})
+create (_12540:`Method` {`file`:"lib/bundler/stub_specification.rb", `line_number`:18, `name`:"source=", `type`:"InstanceMethod"})
+create (_16466:`CallSite` {`file`:"lib/bundler/stub_specification.rb", `line_number`:23})
+create (_27356:`Method` {`file`:"lib/bundler/source/git.rb", `line_number`:200, `name`:"load_spec_files", `type`:"InstanceMethod"})
+create (_27379:`CallSite` {`file`:"lib/bundler/source/path.rb", `line_number`:166})
+create (_27380:`Method` {`file`:"lib/bundler/source/git.rb", `line_number`:106, `name`:"extension_dir_name", `type`:"InstanceMethod"})
+create (_1092)-[:`OWNS`]->(_27380)
+create (_1092)-[:`OWNS`]->(_27356)
+create (_11959)-[:`OWNS`]->(_12540)
+create (_12540)-[:`CONTAINS`]->(_16466)
+create (_16466)-[:`CALLS`]->(_27380)
+create (_16466)-[:`CALLS`]->(_16467)
+create (_27356)-[:`CONTAINS`]->(_27379)
+create (_27379)-[:`CALLS`]->(_12540)
+RETURN *
+----
+
+
+//graph_result
+[source,cypher]
+----
+MATCH (n) RETURN n
+----

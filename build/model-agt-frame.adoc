@@ -1,0 +1,80 @@
+:CmA: CommonAccord
+:Cmorg: http://beta.commonaccord.org
+:kv: key/value
+
+:forteile: vorteile 
+
+= Model Agt Frame
+
+Graphs can represent very complex relationships.  B is an employee of A.  C has borrowed from D.   D and A are corporate affiliates.
+
+Documents are graphs.  The best way to handle documents is as source code - lists of {kv}s that render into the full document.  See {Cmorg}.
+Indeed, lists can be an authoring system and picture of the (formal relationships in the) world.  
+
+A teacher could assign an essay on Shakespeare and include a link to the graph of him, his plays, the roles, lines.  In the scope of the essay, auto complete would give Shakespeare references, without the distraction of the rest of the internet.  {Sh.play?.role?:Falstaff.line?} would return all of his lines. 
+
+The student's work could be structured or open.  They could be building out an outline created by the teacher, or create their own and work in structure.  An exam could include or not include the link to the sources.  All of the student's work would accumulate as layers, for both student and institution, in a portfolio of linked content.  Like a history of commits on Github. 
+
+Similarly, an assigment could attach the history of physics, including the names of great physicists and videos of their experiments. 
+
+A law school teacher, or litigant filing a brief, could link to a collection of cases and statutes, curated by a respected authority.
+
+Finally, an entire legal system could run as a distributed collection of linked lists.  Law is, ultimately, about people doing things (or persuading others to do things) with documents.  If the documents cease to be isolated rehashes of rules and are instead assertions in a context (diffs), then much will come clear. 
+
+@hazardj has begun a core of such content in Mediawiki (e.g., beta.commonaccord.org/wiki/Agt_Frame).  There appears every reason for that to become a graph. 
+
+[source,cypher]
+
+----
+CREATE (P1 {KV:'Name.First=James<>Name.Last=Hazard<>twitter=Hazardj'})
+CREATE (List1)
+CREATE (Span1 {span:'{Prologue}<ol><li>{Agt.Sec.S}</li></ol>{Agt.Signature}</br>{Agt.Attachment}'})
+CREATE (Span2 {span:'<ol><li>{Sec.Def}</li><li>{Sec.Deal}</li><li>{Sec.Term}</li><li>{Sec.Misc}</li></ol>'})
+CREATE (Span3 {span:'<u>{Misc._Title}</u>. <ol><li>{Misc.Notice}</li><li>{Misc.Law}</li><li>{Misc.Forum}</li><li>{Misc.Entire}</li></ol>'}) 
+CREATE (Span4 {span:'<u>Law</u>.  This agreement and any dispute relating to it shall be governed by the law of {Dispute.State.the}.'})
+CREATE (Span5 {span:'Miscellaneous'})
+
+CREATE (List1) -[:LISTS {key:'Doc.Body'}]->(Span1)
+
+CREATE (List1) -[:LISTS {key:'Agt.Sec.S'}]->(Span2)
+CREATE (List1) -[:LISTS {key:'Sec.Misc'}]->(Span3)
+CREATE (List1) -[:LISTS {key:'Misc.Law'}]->(Span4)
+CREATE (List1) -[:LISTS {key:'Misc._Title'}]->(Span5)
+
+CREATE (List2 {name:'MIT.edu/otl/NDA_Mutual'})
+CREATE (Span2_1 {span:'<ol><li>{Sec.Conf}</li><li>{Sec.Use}</li><li>{Sec.Care}</li><li>{Sec.Compelled}</li><li>{Sec.Disclaim.Warranty}</li><li>{Sec.Term}</li><li>{Sec.Remedy}</li><li>{Sec.Notice}</li><li>{Sec.Misc}</li></ol>'} )
+CREATE (List2) -[:LISTS {key:'Agt.Sec.S.'}]->(Span2_1)
+CREATE (P1) -[:LIKES]->(List1)
+CREATE (P1) -[:LIKES]->(List2)
+
+CREATE (DS1 {href:'http://web.mit.edu/tlo/www/misc/forms.html'})
+CREATE (DS1)<-[:HOSTED]-(List2)
+
+WITH Span1
+MATCH (v)<-[k:LISTS]-()
+RETURN k.key as Key, v.span as Value
+----
+
+
+== This Approach (A1)
+
+This is an extremely atomized approach to spans.  
+
+== Another Approach (A2)
+
+A different one would put all the {kv}s into a single node, either as (A2.1) a single string (value:'key1=value1<>key2=value2') or as (A2.2) individual attributes ( {key1='value1', key2='value2'}). 
+
+== Analysis (so to speak)
+
+There are front parts and back parts ({forteile} und nachteile) for both A1 and A2 solutions.  A2 is like beta.{cma}.org.   A2.2  has the disadvantage that there appears to be no Cypher search that returns the list of attributes.
+
+* BTW The AsciiDoc native "attribute" function at gist.neo4j seems fussier than at github.  (F1) Error if the attribute is defined after the use.  (F2) spacing -  (F2.1) new line and (F2.2) space following second colon.
+
+* (@hazardj)-[:SUGGEST {text: 'If an attribute could contain a call for another attribute and formatting, we'd be mostly there.'}]->(@mojavelinux)
+
+== Next Steps
+
+Aggregate Lists and establish priority (recursive, depth-first) as among Spans with the same names.
+
+@hazardj remembers how to do git coding locally instead of through github browser interface. 
+

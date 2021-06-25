@@ -1,0 +1,37 @@
+= Money Laundering with graphs
+
+== The setup
+
+Let's set up some data in the Money Laundering industry.
+
+//setup
+//hide
+[source,cypher]
+----
+CREATE (_1:ATM { name:"ATM1" }),(_2:ATM { name:"ATM2" })
+CREATE (_3:Person { name:"Crook nr 1" }),(_4 { name:"Crook nr 2" })
+CREATE (_5 { name:"Crook nr 3" }),(_6 { name:"NormalPerson" })
+CREATE (_7 { name:"Restaurant" }),(_8 { name:"Bank" })
+CREATE _3-[:spendsmoneyon { money:800 }]->_1, _3-[:spendsmoneyon { money:1200 }]->_2
+CREATE _4-[:wiresmoney { money:23000 }]->_3, _5-[:wiresmoney { money:12000 }]->_7
+CREATE _6-[:spendsmoneyon { money:43 }]->_1, _6-[:spendsmoneyon { money:43 }]->_2
+CREATE _7-[:spendsmoneyon { money:45000 }]->_2, _8-[:withdrawsmoney { money:23000 }]->_4
+CREATE _8-[:withdrawsmoney { money:12000 }]->_5
+----
+
+//graph
+
+=== Let's find a crook! ===
+
+//output
+[source,cypher]
+----
+MATCH p = shortestPath((crook:Person)-[*..3]-(atm:ATM)) 
+WHERE crook.name = 'Crook nr 1'
+RETURN p, atm.name
+----
+
+//table
+
+== try it yourself!
+//console

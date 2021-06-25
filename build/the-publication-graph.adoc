@@ -1,0 +1,48 @@
+= The Publication Graph
+
+In the world of publications and CMSes, meta-data about different articles, authors, issues and other entities lends itself very obviously to a graph.
+This example is modeling just a small subset of a fictive domain in this area.
+
+== Prepare the schema, make `Person` unique
+
+[source,cypher]
+----
+CREATE CONSTRAINT ON (p:Person) ASSERT p.handle IS UNIQUE
+----
+
+
+== Insert some basic data
+
+[source,cypher]
+----
+CREATE 
+  (JM_DE:Publication{name:'Java Magazin', language:'DE'}),
+  (JM_DE)<-[:ISSUE_OF]-(JMNov2013{month:11, title:'Java Magazin 11/2013'})-[:IN_YEAR]->(_2013{year:2013}),
+  (Neo4j20Tutorial:Content{title:'Neo4j 2.0 Tutorial'}),
+  (SnS:Publisher{name:'S&S Media'})-[:PUBLISHES]->(JM_DE),
+  (JMNov2013)-[:CONTAINS]->(Neo4j20Tutorial),
+  (Olli:Reader{name:'Oliver Meyer',handle:'@olli'})-[:RATED{rating:4}]->(Neo4j20Tutorial),
+  (MH:Author:Reader{name:'Michael Hunger',handle:'@mesirii'})-[:AUTHORED]->(Neo4j20Tutorial),
+  (Neo4j20Tutorial)-[:RELATED_TO]->(Neo4j20Rel:Content{title:'Neo4j 2.0-M05 released'})-[:TAGGED]->(NoSQL:Tag{name:'NOSQL'}),
+  (Neo4j20Tutorial)-[:TAGGED]->(NoSQL),
+  (Neo4j20Tutorial)-[:TAGGED]->(:Tag{name:'tutorial'}),
+  (Neo4j20Tutorial)-[:TAGGED]->(:Tag{name:'Neo4j'})
+----
+
+//graph
+
+== Find all articles in 2013 tagged with `NOSQL`
+
+[source,cypher]
+----
+MATCH
+  (year)<-[:IN_YEAR]-(issue)-[:ISSUE_OF]->(pub:Publication),
+  (issue)-[:CONTAINS]->(content:Content)-[:TAGGED]->(nosql:Tag)
+WHERE 
+  year.year = 2013 AND
+  nosql.name='NOSQL'
+RETURN
+  content.title as Title, issue.title as Issue, pub.name as Publication
+----
+
+//table

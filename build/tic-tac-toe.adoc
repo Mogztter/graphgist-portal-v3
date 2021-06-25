@@ -1,0 +1,186 @@
+= Tic Tac Toe !
+
+:author: Sylvain ROUSSY
+:twitter: @SylvainRoussy
+:neo4j-version: 2.0.0-RC1
+
+To play Tic Tac Toe ! with Cypher queries. 
+
+image::http://www.wired.com/images_blogs/underwire/images/2008/05/27/wargames.jpg[]
+
+ 
+1. Main goal
+~~~~~~~~~~~~
+
+This sample demonstrates how game rules can be managed using Cypher. Each player takes his turn executing a predefined query. This query first checks wether the shot is valid or not, and if this is the player’s turn. Then it checks if the current player wins (when the player’s shots draw a straight line on three consecutive tiles).
+
+First, we need to create the board, the game and two players Sylvain and Neo. The board is as 3x3 square represented by a complete graph.
+
+//hide
+[source,cypher]
+----
+
+// Creating the board : a 3x3 square, complete graph 
+// Creating players and game next
+
+CREATE
+(c11:TILE {x:1,y:1}),
+(c12:TILE {x:1,y:2}),
+(c13:TILE {x:1,y:3}),
+(c21:TILE {x:2,y:1}),
+(c22:TILE {x:2,y:2}),
+(c23:TILE {x:2,y:3}),
+(c31:TILE {x:3,y:1}),
+(c32:TILE {x:3,y:2}),
+(c33:TILE {x:3,y:3}),
+(c11)-[:Linked_To]->(c12),
+(c11)<-[:Linked_To]-(c12),
+(c12)-[:Linked_To]->(c13),
+(c12)<-[:Linked_To]-(c13),
+(c21)-[:Linked_To]->(c22),
+(c21)<-[:Linked_To]-(c22),
+(c22)-[:Linked_To]->(c23),
+(c22)<-[:Linked_To]-(c23),
+(c31)-[:Linked_To]->(c32),
+(c31)<-[:Linked_To]-(c32),
+(c32)-[:Linked_To]->(c33),
+(c32)<-[:Linked_To]-(c33), 
+(c11)-[:Linked_To]->(c21),
+(c11)<-[:Linked_To]-(c21),
+(c21)-[:Linked_To]->(c31),
+(c21)<-[:Linked_To]-(c31),
+(c12)-[:Linked_To]->(c22),
+(c12)<-[:Linked_To]-(c22),
+(c22)-[:Linked_To]->(c32),
+(c22)<-[:Linked_To]-(c32),
+(c13)-[:Linked_To]->(c23),
+(c13)<-[:Linked_To]-(c23),
+(c23)-[:Linked_To]->(c33),
+(c23)<-[:Linked_To]-(c33),
+(c11)-[:Linked_To]->(c22),
+(c11)<-[:Linked_To]-(c22),
+(c22)-[:Linked_To]->(c33),
+(c22)<-[:Linked_To]-(c33),
+(c13)-[:Linked_To]->(c22),
+(c13)<-[:Linked_To]-(c22),
+(c22)-[:Linked_To]->(c31),
+(c22)<-[:Linked_To]-(c31),
+(sylvain:PLAYER {name:"Sylvain"}),
+(neo:PLAYER {name:"Neo"}),
+(game:GAME {lastplayer:"none", winner:"none"}),
+(game)<-[:PLAYS]-(sylvain),
+(game)<-[:PLAYS]-(neo)
+----
+//graph
+
+Now, Sylvain and Neo can play, one after another, by querying the graph using the following query (it is quite big but explanations are given below). You just need to modify the player’s name (Neo or Sylvain), and the tile’s coordinates on which his mark has been placed: 
+
+[source,cypher]
+----
+
+// Play and verify the shot's suitability
+// The second part below the union, verifies if the current player wins
+
+MATCH (player:PLAYER { name:"Sylvain" })-[:PLAYS]->(game)
+WITH player, game
+MATCH (tile:TILE { x:3,y:3 }) OPTIONAL MATCH  ((tile)<-[occupied:PUTS_HERE]-())
+WITH 
+   occupied,
+   player,
+   game,
+   CASE
+      WHEN occupied IS NULL AND game.lastplayer <> player.name THEN COLLECT(tile)
+      ELSE []
+   END AS controlledTile,
+   CASE game.lastplayer
+      WHEN player.name THEN "It's not your turn to play !"
+      ELSE "Fine !"
+   END AS feedBack,
+   CASE COALESCE (occupied,"Free")
+      WHEN "Free" THEN "Tile is free."
+      ELSE "Invalid operation : occupied tile."
+   END AS feedBackTile
+FOREACH (value IN controlledTile | CREATE ((player)-[:PUTS_HERE]->(value)))
+FOREACH (value IN controlledTile | SET game.lastplayer=player.name)
+RETURN controlledTile AS Tiles, player.name AS Player, feedBack+", "+feedBackTile AS FeedBack
+UNION
+MATCH (n:PLAYER)-[:PLAYS]->(game)
+WITH n,game, 3 AS victorySize
+MATCH  (n:PLAYER)-[r:PUTS_HERE]->(tile)-[r2:Linked_To]->(tile2)<-[r3:Linked_To]-(tile3),
+   (n)-[:PUTS_HERE]->(tile2),
+   (n)-[:PUTS_HERE]->(tile3)
+WHERE ((tile.x + tile2.x +tile3.x) % victorySize = 0) OR ((tile.y + tile2.y +tile3.y) % victorySize = 0)
+SET game.winner=n.name
+RETURN  [tile,tile2,tile3] AS Tiles,n.name AS Player, "And the winner is : "+n.name AS FeedBack
+---- 
+//table
+
+If Sylvain plays again:
+
+//hide
+[source,cypher]
+----
+
+// Play and verify the shot's suitability
+// The second part below the union, verifies if the current player wins
+
+MATCH (player:PLAYER { name:"Sylvain" })-[:PLAYS]->(game)
+WITH player, game
+MATCH (tile:TILE { x:3,y:3 }) OPTIONAL MATCH  ((tile)<-[occupied:PUTS_HERE]-())
+WITH 
+   occupied,
+   player,
+   game,
+   CASE
+      WHEN occupied IS NULL AND game.lastplayer <> player.name THEN COLLECT(tile)
+      ELSE []
+   END AS controlledTile,
+   CASE game.lastplayer
+      WHEN player.name THEN "It's not your turn to play !"
+      ELSE "Fine !"
+   END AS feedBack,
+   CASE COALESCE (occupied,"Free")
+      WHEN "Free" THEN "Tile is free."
+      ELSE "Invalid operation : occupied tile."
+   END AS feedBackTile
+FOREACH (value IN controlledTile | CREATE ((player)-[:PUTS_HERE]->(value)))
+FOREACH (value IN controlledTile | SET game.lastplayer=player.name)
+RETURN controlledTile AS Tiles, player.name AS Player, feedBack+", "+feedBackTile AS FeedBack
+UNION
+MATCH (n:PLAYER)-[:PLAYS]->(game)
+WITH n,game, 3 AS victorySize
+MATCH  (n:PLAYER)-[r:PUTS_HERE]->(tile)-[r2:Linked_To]->(tile2)<-[r3:Linked_To]-(tile3),
+   (n)-[:PUTS_HERE]->(tile2),
+   (n)-[:PUTS_HERE]->(tile3)
+WHERE ((tile.x + tile2.x +tile3.x) % victorySize = 0) OR ((tile.y + tile2.y +tile3.y) % victorySize = 0)
+SET game.winner=n.name
+RETURN  [tile,tile2,tile3] AS Tiles,n.name AS Player, "And the winner is : "+n.name AS FeedBack
+---- 
+//table
+
+
+2. Some explanations about the query
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+First, we have to retrieve the current player and the shot he would play (here the marked tile is on the bottom right corner, with x=3 and y=3):
+   
+    MATCH (player:PLAYER { name:"Sylvain" })-[:PLAYS]->game
+    WITH player, game
+    MATCH (tile:TILE { x:3,y:3 }) OPTIONAL MATCH  ((tile)<-[occupied:PUTS_HERE]-())
+
+The optional match is used to verify if the targeted tile has already been marked by a previous shot. If not, a relationship is created (PUTS_HERE) between the player and the tile. We need to invent a way to do a conditional creation, and that is the reason why a collection like controlledTile has been used:
+
+    CASE
+      WHEN occupied IS NULL AND game.lastplayer <> player.name THEN COLLECT(tile)
+      ELSE []
+    END AS controlledTile
+
+We can then surround the creation of the relationship (that represents the shot) in a FOREACH clause:
+
+    FOREACH (value IN controlledTile | CREATE (player-[:PUTS_HERE]->value))
+
+If the collection is empty (that is, an occupied relationship exists) then nothing happens. A CREATE UNIQUE clause could have been used ; however, we need to intercept this condition to display an adequate message for the player, and if a different player tries to shot an occupied tile, CREATE UNIQUE is not suitable.
+
+Enjoy it !
+
+

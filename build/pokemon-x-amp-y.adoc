@@ -1,0 +1,1159 @@
+= Pokémon X & Y
+:neo4j-version: 2.0.0-M06
+:author: Nicole White
+:twitter: @_nicolemargaret
+:tags: domain:geography:fun:pokemon
+
+'''
+
+== Inspiration
+
+I came across link:http://www.reddit.com/r/pokemon/comments/1p7lbb/here_is_a_map_i_made_with_the_location_and_info/[this post] on Reddit where user link:http://www.reddit.com/user/Bobdor[/u/Bobdor] posted a really awesome diagram of catchable Pokémon in the X & Y games. link:http://www.40k.zombiecrisis.org/map.png[Click here] for the high-resolution image. I encourage you to keep the diagram open in a second tab or on a second monitor so you can follow along!
+
+'''
+
+== Model
+
+The graph consists of the following types of nodes:
+
+* +Pokémon+
+* +Cities+
+* +Caves+
+* +Forests+
+* +Routes+
+* +Points of Interest+
+* +Attractions+
+
+And the following relationships:
+
+* +CONNECTS_TO+
+* +CAUGHT_IN+
+* +HAS+
+
+The model is best illustrated through the diagram created by Bobdor:
+
+image::http://i.imgur.com/x3V0mjw.jpg[align="center"]
+
+But the relationships between nodes are summarized below:
+
+//image::https://dl.dropboxusercontent.com/u/94782892/pokemonarrowtool.PNG[align="center"]
+
+Note that +Caves+, +Forests+, and +Points of Interest+ are not shown in my diagram but are similar to +Routes+.
+
++Attractions+ include things like surfing, fishing, using rock smash to find items, or whether or not the place has a Pokémon Center or gym.
+
+The +CAUGHT_IN+ relationship has a property +catch_type+ that indicates what is needed for the catch, e.g., if you need to be surfing to catch the Pokémon, if catching the Pokémon requires a fishing rod, etc. These are summarized below, with descriptions from Bobdor's map key:
+
+++++
+<table>
+<tr><td><b>catch_type</b></td><td><b>Description</b></td></tr>
+<tr><td>Standard</td><td>Standard Catch (Bushes, Walking, etc.)</td></tr>
+<tr><td>Special</td><td>Special Catch (Shaking Bushes, etc.)</td></tr>
+<tr><td>Shallow Water</td><td>Catchable in Shallow Water</td></tr>
+<tr><td>Rock Smash</td><td>Catchable Using Rock Smash</td></tr>
+<tr><td>Hordes</td><td>Catchable in Hordes</td></tr>
+<tr><td>Surf</td><td>Catchable Using Surf</td></tr>
+<tr><td>Old Rod</td><td>Catchable Fishing with an Old Rod</td></tr>
+<tr><td>Good Rod</td><td>Catchable Fishing with a Good Rod</td></tr>
+<tr><td>Super Rod</td><td>Catchable Fishing with a Super Rod</td></tr>
+<tr><td>Interaction</td><td>Catching Requires an Interaction</td></tr>
+<tr><td>Gift</td><td>Pokémon Received as a Gift</td></tr>
+</table>
+++++
+
+'''
+
+== Setup
+
+//hide
+
+//setup
+
+[source,cypher]
+----
+//Cities
+CREATE    (Vaniville:City {name:'Vaniville Town'}),
+    (Aquacorde:City {name:'Aquacorde Town'}),
+    (SantaluneC:City {name:'Santalune City'}),
+    (Lumiose:City {name:'Lumiose City'}),
+    (Camphrier:City {name:'Camphrier Town'}),
+    (Ambrette:City {name:'Ambrette Town'}),
+    (Cyllage:City {name:'Cyllage City'}),
+    (Geosenge:City {name:'Geosenge Town'}),
+    (Shalour:City {name:'Shalour City'}),
+    (Coumarine:City {name:'Coumarine City'}),
+    (Laverre:City {name:'Laverre City'}),
+    (Dendemille:City {name:'Dendemille Town'}),
+    (Anistar:City {name:'Anistar City'}),
+    (Couriway:City {name:'Couriway Town'}),
+    (Snowbelle:City {name:'Snowbelle City'}),
+    (PokemonLeague:City {name:'Pokemon League'})
+    
+//Points of interest
+CREATE  (Parfum:PointOfInterest {name:'Parfum Palace'}),
+    (Berry:PointOfInterest {name:'Berry Fields'}),
+    (LostHotel:PointOfInterest {name:'Lost Hotel'}),
+    (Victory:PointOfInterest {name:'Victory Road'})
+
+//Caves & Forests
+CREATE    (SantaluneF:Forest {name:'Santalune Forest'}),
+    (Connecting:Cave {name:'Connecting Cave'}),
+    (Glittering:Cave {name:'Glittering Cave'}),
+    (Reflection:Cave {name:'Reflection Cave'}),
+    (SeaSpirit:Cave {name:'Sea Spirit\'s Den'}),
+    (Frost:Cave {name:'Frost Cavern'}),
+    (Terminus:Cave {name:'Terminus Cave'}),
+    (PokemonVillage:Cave {name:'Pokemon Village'})
+
+//Routes
+CREATE    (Route1:Route {name:'Route 1'}),
+    (Route2:Route {name:'Route 2'}),
+    (Route3:Route {name:'Route 3'}),
+    (Route4:Route {name:'Route 4'}),
+    (Route5:Route {name:'Route 5'}),
+    (Route6:Route {name:'Route 6'}),
+    (Route7:Route {name:'Route 7'}),
+    (Route8U:Route {name:'Route 8 Upper'}),
+    (Route8L:Route {name:'Route 8 Lower'}),
+    (Route9:Route {name:'Route 9'}),
+    (Route10:Route {name:'Route 10'}),
+    (Route11:Route {name:'Route 11'}),
+    (Route12:Route {name:'Route 12'}),
+    (AzureBay:Route {name:'Azure Bay'}),
+    (Route13:Route {name:'Route 13'}),
+    (Route14:Route {name:'Route 14'}),
+    (Route15:Route {name:'Route 15'}),
+    (Route16:Route {name:'Route 16'}),
+    (Route17:Route {name:'Route 17'}),
+    (Route18:Route {name:'Route 18'}),
+    (Route19:Route {name:'Route 19'}),
+    (Route20:Route {name:'Route 20'}),
+    (Route21:Route {name:'Route 21'}),
+    (Route22:Route {name:'Route 22'})
+
+//Attractions
+CREATE    (PokeCenter:Attraction {name:'Pokemon Center'}),
+    (Gym:Attraction {name:'Gym'}),
+    (RockSmashing:Attraction {name:'Rock Smashing'}),
+    (Surfing:Attraction {name:'Surfing'}),
+    (Fishing:Attraction {name:'Fishing'})
+
+//Pokemon
+CREATE    (Chespin:Pokemon {name:'Chespin'}),
+    (Fennekin:Pokemon {name:'Fennekin'}),
+    (Froakie:Pokemon {name:'Froakie'}),
+    (Weedle:Pokemon {name:'Weedle'}),
+    (Caterpie:Pokemon {name:'Caterpie'}),
+    (Pidgey:Pokemon {name:'Pidgey'}),
+    (Zigzagoon:Pokemon {name:'Zigzagoon'}),
+    (Bunnelby:Pokemon {name:'Bunnelby'}),
+    (Fletchling:Pokemon {name:'Fletchling'}),
+    (Scatterbug:Pokemon {name:'Scatterbug'}),
+    (Kakuna:Pokemon {name:'Kakuna'}),
+    (Metapod:Pokemon {name:'Metapod'}),
+    (Pikachu:Pokemon {name:'Pikachu'}),
+    (Pansage:Pokemon {name:'Pansage'}),
+    (Pansear:Pokemon {name:'Pansear'}),
+    (Panpour:Pokemon {name:'Panpour'}),
+    (Dunsparce:Pokemon {name:'Dunsparce'}),
+    (Azurill:Pokemon {name:'Azurill'}),
+    (Bidoof:Pokemon {name:'Bidoof'}),
+    (Burmy:Pokemon {name:'Burmy'}),
+    (Marill:Pokemon {name:'Marill'}),
+    (Masquerain:Pokemon {name:'Masquerain'}),
+    (Magikarp:Pokemon {name:'Magikarp'}),
+    (Goldeen:Pokemon {name:'Goldeen'}),
+    (Corphish:Pokemon {name:'Corphish'}),
+    (Seaking:Pokemon {name:'Seaking'}),
+    (Gyarados:Pokemon {name:'Gyarados'}),
+    (Crawdaunt:Pokemon {name:'Crawdaunt'}),
+    (Ledyba:Pokemon {name:'Ledyba'}),
+    (Ralts:Pokemon {name:'Ralts'}),
+    (Skitty:Pokemon {name:'Skitty'}),
+    (Budew:Pokemon {name:'Budew'}),
+    (Combee:Pokemon {name:'Combee'}),
+    (FlabebeY:Pokemon {name:'Flabebe (Yellow)'}),
+    (FlabebeO:Pokemon {name:'Flabebe (Orange)'}),
+    (FlabebeW:Pokemon {name:'Flabebe (White)'}),
+    (FlabebeR:Pokemon {name:'Flabebe (Red)'}),
+    (Bulbasaur:Pokemon {name:'Bulbasaur'}),
+    (Charmander:Pokemon {name:'Charmander'}),
+    (Squirtle:Pokemon {name:'Squirtle'}),
+    (Abra:Pokemon {name:'Abra'}),
+    (Doduo:Pokemon {name:'Doduo'}),
+    (Skiddo:Pokemon {name:'Skiddo'}),
+    (Pancham:Pokemon {name:'Pancham'}),
+    (Furfrou:Pokemon {name:'Furfrou'}),
+    (Plusle:Pokemon {name:'Plusle'}),
+    (Minun:Pokemon {name:'Minun'}),
+    (Gulpin:Pokemon {name:'Gulpin'}),
+    (Scraggy:Pokemon {name:'Scraggy'}),
+    (Oddish:Pokemon {name:'Oddish'}),
+    (Sentret:Pokemon {name:'Sentret'}),
+    (Nincada:Pokemon {name:'Nincada'}),
+    (Kecleon:Pokemon {name:'Kecleon'}),
+    (Espurr:Pokemon {name:'Espurr'}),
+    (Honedge:Pokemon {name:'Honedge'}),
+    (Audino:Pokemon {name:'Audino'}),
+    (Venipede:Pokemon {name:'Venipede'}),
+    (Volbeat:Pokemon {name:'Volbeat'}),
+    (Illumise:Pokemon {name:'Illumise'}),
+    (Spewpa:Pokemon {name:'Spewpa'}),
+    (Smeargle:Pokemon {name:'Smeargle'}),
+    (Croagunk:Pokemon {name:'Croagunk'}),
+    (Ducklett:Pokemon {name:'Ducklett'}),
+    (FlabebeB:Pokemon {name:'Flabebe (Blue)'}),
+    (Swirlix:Pokemon {name:'Swirlix'}),
+    (Spritzee:Pokemon {name:'Spritzee'}),
+    (Psyduck:Pokemon {name:'Psyduck'}),
+    (Hoppip:Pokemon {name:'Hoppip'}),
+    (Roselia:Pokemon {name:'Roselia'}),
+    (Snorlax:Pokemon {name:'Snorlax'}),
+    (Meditite:Pokemon {name:'Meditite'}),
+    (Zubat:Pokemon {name:'Zubat'}),
+    (Whismur:Pokemon {name:'Whismur'}),
+    (Axew:Pokemon {name:'Axew'}),
+    (Spoink:Pokemon {name:'Spoink'}),
+    (Absol:Pokemon {name:'Absol'}),
+    (Bagon:Pokemon {name:'Bagon'}),
+    (Drifloon:Pokemon {name:'Drifloon'}),
+    (Mienfoo:Pokemon {name:'Mienfoo'}),
+    (Inkay:Pokemon {name:'Inkay'}),
+    (Zangoose:Pokemon {name:'Zangoose'}),
+    (Seviper:Pokemon {name:'Seviper'}),
+    (Wingull:Pokemon {name:'Wingull'}),
+    (Taillow:Pokemon {name:'Taillow'}),
+    (Lunatone:Pokemon {name:'Lunatone'}),
+    (Solrock:Pokemon {name:'Solrock'}),
+    (Dwebble:Pokemon {name:'Dwebble'}),
+    (Binacle:Pokemon {name:'Binacle'}),
+    (Tentacool:Pokemon {name:'Tentacool'}),
+    (Wailmer:Pokemon {name:'Wailmer'}),
+    (Luvdisc:Pokemon {name:'Luvdisc'}),
+    (Staryu:Pokemon {name:'Staryu'}),
+    (Shellder:Pokemon {name:'Shellder'}),
+    (Clauncher:Pokemon {name:'Clauncher'}),
+    (Skrelp:Pokemon {name:'Skrelp'}),
+    (Starmie:Pokemon {name:'Starmie'}),
+    (Cloyster:Pokemon {name:'Cloyster'}),
+    (Qwilfish:Pokemon {name:'Qwilfish'}),
+    (Clawitzer:Pokemon {name:'Clawitzer'}),
+    (Dragalge:Pokemon {name:'Dragalge'}),
+    (Horsea:Pokemon {name:'Horsea'}),
+    (Seadra:Pokemon {name:'Seadra'}),
+    (Relicanth:Pokemon {name:'Relicanth'}),
+    (Aerodactyl:Pokemon {name:'Aerodactyl'}),
+    (Tyrunt:Pokemon {name:'Tyrunt'}),
+    (Amaura:Pokemon {name:'Amaura'}),
+    (Hippopotas:Pokemon {name:'Hippopotas'}),
+    (Sandile:Pokemon {name:'Sandile'}),
+    (Helioptile:Pokemon {name:'Helioptile'}),
+    (Machop:Pokemon {name:'Machop'}),
+    (Onix:Pokemon {name:'Onix'}),
+    (Cubone:Pokemon {name:'Cubone'}),
+    (Rhyhorn:Pokemon {name:'Rhyhorn'}),
+    (Kangaskhan:Pokemon {name:'Kangaskhan'}),
+    (Mawile:Pokemon {name:'Mawile'}),
+    (Woobat:Pokemon {name:'Woobat'}),
+    (Ferroseed:Pokemon {name:'Ferroseed'}),
+    (Eevee:Pokemon {name:'Eevee'}),
+    (Snubbull:Pokemon {name:'Snubbull'}),
+    (Sigilyph:Pokemon {name:'Sigilyph'}),
+    (Emolga:Pokemon {name:'Emolga'}),
+    (Golett:Pokemon {name:'Golett'}),
+    (Hawlucha:Pokemon {name:'Hawlucha'}),
+    (Houndour:Pokemon {name:'Houndour'}),
+    (Electrike:Pokemon {name:'Electrike'}),
+    (Yanma:Pokemon {name:'Yanma'}),
+    (Nosepass:Pokemon {name:'Nosepass'}),
+    (Xerneas:Pokemon {name:'Xerneas'}),
+    (Yveltal:Pokemon {name:'Yveltal'}),
+    (Nidorina:Pokemon {name:'Nidorina'}),
+    (Nidorino:Pokemon {name:'Nidorino'}),
+    (Hariyama:Pokemon {name:'Hariyama'}),
+    (Staravia:Pokemon {name:'Staravia'}),
+    (Chingling:Pokemon {name:'Chingling'}),
+    (Sawk:Pokemon {name:'Sawk'}),
+    (Throh:Pokemon {name:'Throh'}),
+    (Dedenne:Pokemon {name:'Dedenne'}),
+    (NidoranF:Pokemon {name:'Nidoran (Female)'}),
+    (NidoranM:Pokemon {name:'Nidoran (Male)'}),
+    (Starly:Pokemon {name:'Starly'}),
+    (Stunky:Pokemon {name:'Stunky'}),
+    (MrMime:Pokemon {name:'Mr. Mime'}),
+    (Wobbuffet:Pokemon {name:'Wobbuffet'}),
+    (Sableye:Pokemon {name:'Sableye'}),
+    (Solosis:Pokemon {name:'Solosis'}),
+    (Roggenrola:Pokemon {name:'Roggenrola'}),
+    (Carbink:Pokemon {name:'Carbink'}),
+    (MimeJr:Pokemon {name:'Mime Jr.'}),
+    (Mantyke:Pokemon {name:'Mantyke'}),
+    (Remoraid:Pokemon {name:'Remoraid'}),
+    (Chinchou:Pokemon {name:'Chinchou'}),
+    (Alomomola:Pokemon {name:'Alomomola'}),
+    (Octillery:Pokemon {name:'Octillery'}),
+    (Lanturn:Pokemon {name:'Lanturn'}),
+    (Lucario:Pokemon {name:'Lucario'}),
+    (Slowpoke:Pokemon {name:'Slowpoke'}),
+    (Exeggcute:Pokemon {name:'Exeggcute'}),
+    (Pinsir:Pokemon {name:'Pinsir'}),
+    (Heracross:Pokemon {name:'Heracross'}),
+    (Pachirisu:Pokemon {name:'Pachirisu'}),
+    (Chatot:Pokemon {name:'Chatot'}),
+    (Tauros:Pokemon {name:'Tauros'}),
+    (Mareep:Pokemon {name:'Mareep'}),
+    (Miltank:Pokemon {name:'Miltank'}),
+    (Lapras:Pokemon {name:'Lapras'}),
+    (Clamperl:Pokemon {name:'Clamperl'}),
+    (Corsola:Pokemon {name:'Corsola'}),
+    (Huntail:Pokemon {name:'Huntail'}),
+    (Gorebyss:Pokemon {name:'Gorebyss'}),
+    (Articuno:Pokemon {name:'Articuno'}),
+    (Zapdos:Pokemon {name:'Zapdos'}),
+    (Moltres:Pokemon {name:'Moltres'}),
+    (Diglett:Pokemon {name:'Diglett'}),
+    (Trapinch:Pokemon {name:'Trapinch'}),
+    (Gible:Pokemon {name:'Gible'}),
+    (Graveler:Pokemon {name:'Graveler'}),
+    (Slugma:Pokemon {name:'Slugma'}),
+    (Weepinbell:Pokemon {name:'Weepinbell'}),
+    (Haunter:Pokemon {name:'Haunter'}),
+    (Quagsire:Pokemon {name:'Quagsire'}),
+    (Carnivine:Pokemon {name:'Carnivine'}),
+    (Karrablast:Pokemon {name:'Karrablast'}),
+    (Shelmet:Pokemon {name:'Shelmet'}),
+    (Goomy:Pokemon {name:'Goomy'}),
+    (Stunfisk:Pokemon {name:'Stunfisk'}),
+    (Ekans:Pokemon {name:'Ekans'}),
+    (Bellsprout:Pokemon {name:'Bellsprout'}),
+    (Skorupi:Pokemon {name:'Skorupi'}),
+    (Poliwag:Pokemon {name:'Poliwag'}),
+    (Poliwhirl:Pokemon {name:'Poliwhirl'}),
+    (Barboach:Pokemon {name:'Barboach'}),
+    (Whiscash:Pokemon {name:'Whiscash'}),
+    (Basculin:Pokemon {name:'Basculin'}),
+    (Watchog:Pokemon {name:'Watchog'}),
+    (Mightyena:Pokemon {name:'Mightyena'}),
+    (Liepard:Pokemon {name:'Liepard'}),
+    (Pawniard:Pokemon {name:'Pawniard'}),
+    (Murkrow:Pokemon {name:'Murkrow'}),
+    (Foongus:Pokemon {name:'Foongus'}),
+    (Klefki:Pokemon {name:'Klefki'}),
+    (Lombre:Pokemon {name:'Lombre'}),
+    (Floatzel:Pokemon {name:'Floatzel'}),
+    (Magneton:Pokemon {name:'Magneton'}),
+    (Electrode:Pokemon {name:'Electrode'}),
+    (Litwick:Pokemon {name:'Litwick'}),
+    (Rotom:Pokemon {name:'Rotom'}),
+    (Trubbish:Pokemon {name:'Trubbish'}),
+    (Garbodor:Pokemon {name:'Garbodor'}),
+    (Magnemite:Pokemon {name:'Magnemite'}),
+    (Voltorb:Pokemon {name:'Voltorb'}),
+    (Jynx:Pokemon {name:'Jynx'}),
+    (Piloswine:Pokemon {name:'Piloswine'}),
+    (Beartic:Pokemon {name:'Beartic'}),
+    (Bergmite:Pokemon {name:'Bergmite'}),
+    (Cryogonal:Pokemon {name:'Cryogonal'}),
+    (Smoochum:Pokemon {name:'Smoochum'}),
+    (Vanillite:Pokemon {name:'Vanillite'}),
+    (Cubchoo:Pokemon {name:'Cubchoo'}),
+    (Phantump:Pokemon {name:'Phantump'}),
+    (Pumpkaboo:Pokemon {name:'Pumpkaboo'}),
+    (Sneasel:Pokemon {name:'Sneasel'}),
+    (Delibird:Pokemon {name:'Delibird'}),
+    (Snover:Pokemon {name:'Snover'}),
+    (Abomasnow:Pokemon {name:'Abomasnow'}),
+    (Sandslash:Pokemon {name:'Sandslash'}),
+    (Lairon:Pokemon {name:'Lairon'}),
+    (Pupitar:Pokemon {name:'Pupitar'}),
+    (Torkoal:Pokemon {name:'Torkoal'}),
+    (Gurdurr:Pokemon {name:'Gurdurr'}),
+    (Shuckle:Pokemon {name:'Shuckle'}),
+    (Geodude:Pokemon {name:'Geodude'}),
+    (Heatmor:Pokemon {name:'Heatmor'}),
+    (Durant:Pokemon {name:'Durant'}),
+    (Ariados:Pokemon {name:'Ariados'}),
+    (Noibat:Pokemon {name:'Noibat'}),
+    (Aron:Pokemon {name:'Aron'}),
+    (Larvitar:Pokemon {name:'Larvitar'}),
+    (Zygarde:Pokemon {name:'Zygarde'}),
+    (Drapion:Pokemon {name:'Drapion'}),
+    (Sliggoo:Pokemon {name:'Sliggoo'}),
+    (Arbok:Pokemon {name:'Arbok'}),
+    (Gligar:Pokemon {name:'Gligar'}),
+    (Politoed:Pokemon {name:'Politoed'}),
+    (Jigglypuff:Pokemon {name:'Jigglypuff'}),
+    (Noctowl:Pokemon {name:'Noctowl'}),
+    (Zoroark:Pokemon {name:'Zoroark'}),
+    (Gothorita:Pokemon {name:'Gothorita'}),
+    (Amoonguss:Pokemon {name:'Amoonguss'}),
+    (Sudowoodo:Pokemon {name:'Sudowoodo'}),
+    (Trevenant:Pokemon {name:'Trevenant'}),
+    (Ditto:Pokemon {name:'Ditto'}),
+    (Hoothoot:Pokemon {name:'Hoothoot'}),
+    (Banette:Pokemon {name:'Banette'}),
+    (Mewtwo:Pokemon {name:'Mewtwo'}),
+    (Ursaring:Pokemon {name:'Ursaring'}),
+    (Altaria:Pokemon {name:'Altaria'}),
+    (Scyther:Pokemon {name:'Scyther'}),
+    (Spinda:Pokemon {name:'Spinda'}),
+    (Swablu:Pokemon {name:'Swablu'}),
+    (Dratini:Pokemon {name:'Dratini'}),
+    (Dragonair:Pokemon {name:'Dragonair'}),
+    (Druddigon:Pokemon {name:'Druddigon'}),
+    (Zweilous:Pokemon {name:'Zweilous'}),
+    (Fearow:Pokemon {name:'Fearow'}),
+    (Skarmory:Pokemon {name:'Skarmory'}),
+    (Hydreigon:Pokemon {name:'Hydreigon'}),
+    (Lickitung:Pokemon {name:'Lickitung'}),
+    (Teddiursa:Pokemon {name:'Teddiursa'}),
+    (Poliwrath:Pokemon {name:'Poliwrath'}),
+    (Farfetchd:Pokemon {name:'Farfetch\'d'}),
+    (Azumarill:Pokemon {name:'Azumarill'}),
+    (Bibarel:Pokemon {name:'Bibarel'}),
+    (Riolu:Pokemon {name:'Riolu'}),
+    (Diggersby:Pokemon {name:'Diggersby'}),
+    (Litleo:Pokemon {name:'Litleo'}),
+    (Carvanha:Pokemon {name:'Carvanha'}),
+    (Sharpedo:Pokemon {name:'Sharpedo'})
+
+//Connections between things
+CREATE    (Route1)-[:CONNECTS_TO]->(Vaniville),
+    (Route1)-[:CONNECTS_TO]->(Aquacorde),
+    (Route2)-[:CONNECTS_TO]->(Aquacorde),
+    (Route2)-[:CONNECTS_TO]->(SantaluneF),
+    (Route3)-[:CONNECTS_TO]->(SantaluneF),
+    (Route3)-[:CONNECTS_TO]->(SantaluneC),
+    (Route4)-[:CONNECTS_TO]->(SantaluneC),
+    (Route4)-[:CONNECTS_TO]->(Lumiose),
+    (Route5)-[:CONNECTS_TO]->(Lumiose),
+    (Route5)-[:CONNECTS_TO]->(Camphrier),
+    (Route6)-[:CONNECTS_TO]->(Camphrier),
+    (Route6)-[:CONNECTS_TO]->(Parfum),
+    (Route7)-[:CONNECTS_TO]->(Camphrier),
+    (Route7)-[:CONNECTS_TO]->(Connecting),
+    (Connecting)-[:CONNECTS_TO]->(Cyllage),
+    (Connecting)-[:CONNECTS_TO]->(Route8U),
+    (Route8U)-[:CONNECTS_TO]->(Ambrette),
+    (Route8L)-[:CONNECTS_TO]->(Ambrette),
+    (Route8L)-[:CONNECTS_TO]->(Cyllage),
+    (Route9)-[:CONNECTS_TO]->(Glittering),
+    (Route10)-[:CONNECTS_TO]->(Cyllage),
+    (Route10)-[:CONNECTS_TO]->(Geosenge),
+    (Route11)-[:CONNECTS_TO]->(Geosenge),
+    (Route11)-[:CONNECTS_TO]->(Reflection),
+    (Reflection)-[:CONNECTS_TO]->(Shalour),
+    (Route12)-[:CONNECTS_TO]->(Shalour),
+    (Route12)-[:CONNECTS_TO]->(Coumarine),
+    (AzureBay)-[:CONNECTS_TO]->(Coumarine),
+    (AzureBay)-[:CONNECTS_TO]->(SeaSpirit),
+    (Route13)-[:CONNECTS_TO]->(Coumarine),
+    (Route13)-[:CONNECTS_TO]->(Lumiose),
+    (Route14)-[:CONNECTS_TO]->(Lumiose),
+    (Route14)-[:CONNECTS_TO]->(Laverre),
+    (Route15)-[:CONNECTS_TO]->(Laverre),
+    (Route15)-[:CONNECTS_TO]->(Dendemille),
+    (Frost)-[:CONNECTS_TO]->(Dendemille),
+    (Route16)-[:CONNECTS_TO]->(Dendemille),
+    (Route16)-[:CONNECTS_TO]->(Lumiose),
+    (Route17)-[:CONNECTS_TO]->(Dendemille),
+    (Route17)-[:CONNECTS_TO]->(Anistar),
+    (Route18)-[:CONNECTS_TO]->(Anistar),
+    (Terminus)-[:CONNECTS_TO]->(Route18),
+    (Route18)-[:CONNECTS_TO]->(Couriway),
+    (Route19)-[:CONNECTS_TO]->(Couriway),
+    (Route19)-[:CONNECTS_TO]->(Snowbelle),
+    (Route20)-[:CONNECTS_TO]->(Snowbelle),
+    (Route20)-[:CONNECTS_TO]->(PokemonVillage),
+    (Route21)-[:CONNECTS_TO]->(Snowbelle),
+    (Route21)-[:CONNECTS_TO]->(Victory),
+    (Route22)-[:CONNECTS_TO]->(Victory),
+    (Route22)-[:CONNECTS_TO]->(SantaluneC),
+    (Victory)-[:CONNECTS_TO]->(PokemonLeague),
+    (Berry)-[:CONNECTS_TO]->(Route7),
+    (LostHotel)-[:CONNECTS_TO]->(Route15)
+    
+//Attraction relationships
+CREATE    (Route3)-[:HAS]->(Surfing),
+    (Route3)-[:HAS]->(Fishing),
+    (SantaluneC)-[:HAS]->(PokeCenter),
+    (SantaluneC)-[:HAS]->(Gym),
+    (Lumiose)-[:HAS]->(PokeCenter),
+    (Lumiose)-[:HAS]->(Gym),
+    (Camphrier)-[:HAS]->(PokeCenter),
+    (Glittering)-[:HAS]->(RockSmashing),
+    (Route8L)-[:HAS]->(RockSmashing),
+    (Route8L)-[:HAS]->(Surfing),
+    (Route8L)-[:HAS]->(Fishing),
+    (Ambrette)-[:HAS]->(PokeCenter),
+    (Ambrette)-[:HAS]->(RockSmashing),
+    (Ambrette)-[:HAS]->(Surfing),
+    (Ambrette)-[:HAS]->(Fishing),
+    (Cyllage)-[:HAS]->(PokeCenter),
+    (Cyllage)-[:HAS]->(Gym),
+    (Cyllage)-[:HAS]->(RockSmashing),
+    (Cyllage)-[:HAS]->(Surfing),
+    (Cyllage)-[:HAS]->(Fishing),
+    (Geosenge)-[:HAS]->(PokeCenter),
+    (Shalour)-[:HAS]->(PokeCenter),
+    (Shalour)-[:HAS]->(Gym),
+    (Shalour)-[:HAS]->(Surfing),
+    (Shalour)-[:HAS]->(Fishing),
+    (Route12)-[:HAS]->(RockSmashing),
+    (Route12)-[:HAS]->(Surfing),
+    (Route12)-[:HAS]->(Fishing),
+    (Coumarine)-[:HAS]->(PokeCenter),
+    (Coumarine)-[:HAS]->(Gym),
+    (AzureBay)-[:HAS]->(RockSmashing),
+    (AzureBay)-[:HAS]->(Surfing),
+    (AzureBay)-[:HAS]->(Fishing),
+    (Route13)-[:HAS]->(RockSmashing),
+    (Route14)-[:HAS]->(Fishing),    
+    (Laverre)-[:HAS]->(PokeCenter),
+    (Laverre)-[:HAS]->(Gym),    
+    (Laverre)-[:HAS]->(Fishing),
+    (Route15)-[:HAS]->(Surfing),
+    (Route15)-[:HAS]->(Fishing),
+    (Route16)-[:HAS]->(Surfing),
+    (Route16)-[:HAS]->(Fishing),
+    (Dendemille)-[:HAS]->(PokeCenter),
+    (Frost)-[:HAS]->(Surfing),
+    (Frost)-[:HAS]->(Fishing),
+    (Anistar)-[:HAS]->(PokeCenter),
+    (Anistar)-[:HAS]->(Gym),
+    (Route18)-[:HAS]->(RockSmashing),
+    (Terminus)-[:HAS]->(RockSmashing),
+    (Couriway)-[:HAS]->(PokeCenter),
+    (Couriway)-[:HAS]->(Surfing),
+    (Couriway)-[:HAS]->(Fishing),
+    (Route19)-[:HAS]->(Surfing),
+    (Route19)-[:HAS]->(Fishing),
+    (Snowbelle)-[:HAS]->(PokeCenter),
+    (Snowbelle)-[:HAS]->(Gym),
+    (PokemonVillage)-[:HAS]->(Surfing),
+    (PokemonVillage)-[:HAS]->(Fishing),
+    (Route21)-[:HAS]->(Surfing),
+    (Route21)-[:HAS]->(Fishing),
+    (Victory)-[:HAS]->(RockSmashing),
+    (Victory)-[:HAS]->(Surfing),
+    (Victory)-[:HAS]->(Fishing),
+    (PokemonLeague)-[:HAS]->(PokeCenter),
+    (Route22)-[:HAS]->(Fishing)
+    
+//Places where Pokemon can be caught
+CREATE  (Chespin)-[:CAUGHT_IN {catch_type:'Gift'}]->(Aquacorde),
+    (Fennekin)-[:CAUGHT_IN {catch_type:'Gift'}]->(Aquacorde),
+    (Froakie)-[:CAUGHT_IN {catch_type:'Gift'}]->(Aquacorde),
+    (Weedle)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route2),
+    (Caterpie)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route2),
+    (Pidgey)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route2),
+    (Zigzagoon)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route2),
+    (Bunnelby)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route2),
+    (Fletchling)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route2),
+    (Scatterbug)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route2),
+    (Caterpie)-[:CAUGHT_IN {catch_type:'Standard'}]->(SantaluneF),
+    (Weedle)-[:CAUGHT_IN {catch_type:'Standard'}]->(SantaluneF),
+    (Kakuna)-[:CAUGHT_IN {catch_type:'Standard'}]->(SantaluneF),
+    (Metapod)-[:CAUGHT_IN {catch_type:'Standard'}]->(SantaluneF),
+    (Pikachu)-[:CAUGHT_IN {catch_type:'Standard'}]->(SantaluneF),
+    (Pansage)-[:CAUGHT_IN {catch_type:'Standard'}]->(SantaluneF),
+    (Pansear)-[:CAUGHT_IN {catch_type:'Standard'}]->(SantaluneF),
+    (Panpour)-[:CAUGHT_IN {catch_type:'Standard'}]->(SantaluneF),
+    (Fletchling)-[:CAUGHT_IN {catch_type:'Standard'}]->(SantaluneF),
+    (Scatterbug)-[:CAUGHT_IN {catch_type:'Standard'}]->(SantaluneF),
+    (Pidgey)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route3),
+    (Pikachu)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route3),
+    (Dunsparce)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route3),
+    (Azurill)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route3),
+    (Bidoof)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route3),
+    (Burmy)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route3),
+    (Bunnelby)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route3),
+    (Fletchling)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route3),
+    (Marill)-[:CAUGHT_IN {catch_type:'Surf'}]->(Route3),
+    (Masquerain)-[:CAUGHT_IN {catch_type:'Surf'}]->(Route3),
+    (Magikarp)-[:CAUGHT_IN {catch_type:'Old Rod'}]->(Route3),
+    (Goldeen)-[:CAUGHT_IN {catch_type:'Good Rod'}]->(Route3),
+    (Corphish)-[:CAUGHT_IN {catch_type:'Good Rod'}]->(Route3),
+    (Seaking)-[:CAUGHT_IN {catch_type:'Super Rod'}]->(Route3),
+    (Gyarados)-[:CAUGHT_IN {catch_type:'Super Rod'}]->(Route3),
+    (Crawdaunt)-[:CAUGHT_IN {catch_type:'Super Rod'}]->(Route3),
+    (Ledyba)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route4),
+    (Ralts)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route4),
+    (Skitty)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route4),
+    (Budew)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route4),
+    (Combee)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route4),
+    (FlabebeY)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route4),
+    (FlabebeO)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route4),
+    (FlabebeW)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route4),
+    (FlabebeR)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route4),
+    (Bulbasaur)-[:CAUGHT_IN {catch_type:'Gift'}]->(Lumiose),
+    (Charmander)-[:CAUGHT_IN {catch_type:'Gift'}]->(Lumiose),
+    (Squirtle)-[:CAUGHT_IN {catch_type:'Gift'}]->(Lumiose),
+    (Abra)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route5),
+    (Doduo)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route5),
+    (Bunnelby)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route5),
+    (Skiddo)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route5),
+    (Pancham)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route5),
+    (Furfrou)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route5),
+    (Plusle)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Route5),
+    (Minun)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Route5),
+    (Gulpin)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Route5),
+    (Scraggy)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Route5),
+    (Oddish)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route6),
+    (Sentret)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route6),
+    (Nincada)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route6),
+    (Kecleon)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route6),
+    (Espurr)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route6),
+    (Honedge)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route6),
+    (Audino)-[:CAUGHT_IN {catch_type:'Special'}]->(Route6),
+    (Venipede)-[:CAUGHT_IN {catch_type:'Special'}]->(Route6),
+    (Ledyba)-[:CAUGHT_IN {catch_type:'Special'}]->(Berry),
+    (Volbeat)-[:CAUGHT_IN {catch_type:'Special'}]->(Berry),
+    (Illumise)-[:CAUGHT_IN {catch_type:'Special'}]->(Berry),
+    (Burmy)-[:CAUGHT_IN {catch_type:'Special'}]->(Berry),
+    (Combee)-[:CAUGHT_IN {catch_type:'Special'}]->(Berry),
+    (Spewpa)-[:CAUGHT_IN {catch_type:'Special'}]->(Berry),
+    (Smeargle)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route7),
+    (Volbeat)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route7),
+    (Illumise)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route7),
+    (Croagunk)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route7),
+    (Ducklett)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route7),
+    (FlabebeY)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route7),
+    (FlabebeO)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route7),
+    (FlabebeW)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route7),
+    (FlabebeB)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route7),
+    (Swirlix)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route7),
+    (Spritzee)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route7),
+    (Psyduck)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Route7),
+    (Hoppip)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Route7),
+    (Roselia)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Route7),
+    (Snorlax)-[:CAUGHT_IN {catch_type:'Interaction'}]->(Route7),
+    (Meditite)-[:CAUGHT_IN {catch_type:'Standard'}]->(Connecting),
+    (Zubat)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Connecting),
+    (Whismur)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Connecting),
+    (Axew)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Connecting),
+    (Spoink)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route8U),
+    (Absol)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route8U),
+    (Bagon)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route8U),
+    (Drifloon)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route8U),
+    (Mienfoo)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route8U),
+    (Inkay)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route8U),
+    (Zangoose)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Route8U),
+    (Seviper)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Route8U),
+    (Wingull)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Route8U),
+    (Taillow)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Route8U),
+    (Lunatone)-[:CAUGHT_IN {catch_type:'Special'}]->(Route8L),
+    (Solrock)-[:CAUGHT_IN {catch_type:'Special'}]->(Route8L),
+    (Dwebble)-[:CAUGHT_IN {catch_type:'Rock Smash'}]->(Route8L),
+    (Binacle)-[:CAUGHT_IN {catch_type:'Rock Smash'}]->(Route8L),
+    (Tentacool)-[:CAUGHT_IN {catch_type:'Surf'}]->(Route8L),
+    (Wailmer)-[:CAUGHT_IN {catch_type:'Surf'}]->(Route8L),
+    (Luvdisc)-[:CAUGHT_IN {catch_type:'Old Rod'}]->(Route8L),
+    (Staryu)-[:CAUGHT_IN {catch_type:'Good Rod'}]->(Route8L),
+    (Shellder)-[:CAUGHT_IN {catch_type:'Good Rod'}]->(Route8L),
+    (Clauncher)-[:CAUGHT_IN {catch_type:'Good Rod'}]->(Route8L),
+    (Skrelp)-[:CAUGHT_IN {catch_type:'Good Rod'}]->(Route8L),
+    (Starmie)-[:CAUGHT_IN {catch_type:'Super Rod'}]->(Route8L),
+    (Cloyster)-[:CAUGHT_IN {catch_type:'Super Rod'}]->(Route8L),
+    (Qwilfish)-[:CAUGHT_IN {catch_type:'Super Rod'}]->(Route8L),
+    (Clawitzer)-[:CAUGHT_IN {catch_type:'Super Rod'}]->(Route8L),
+    (Dragalge)-[:CAUGHT_IN {catch_type:'Super Rod'}]->(Route8L),
+    (Dwebble)-[:CAUGHT_IN {catch_type:'Rock Smash'}]->(Ambrette),
+    (Binacle)-[:CAUGHT_IN {catch_type:'Rock Smash'}]->(Ambrette),
+    (Tentacool)-[:CAUGHT_IN {catch_type:'Surf'}]->(Ambrette),
+    (Wailmer)-[:CAUGHT_IN {catch_type:'Surf'}]->(Ambrette),
+    (Luvdisc)-[:CAUGHT_IN {catch_type:'Old Rod'}]->(Ambrette),
+    (Horsea)-[:CAUGHT_IN {catch_type:'Good Rod'}]->(Ambrette),
+    (Clauncher)-[:CAUGHT_IN {catch_type:'Good Rod'}]->(Ambrette),
+    (Skrelp)-[:CAUGHT_IN {catch_type:'Good Rod'}]->(Ambrette),
+    (Seadra)-[:CAUGHT_IN {catch_type:'Super Rod'}]->(Ambrette),
+    (Relicanth)-[:CAUGHT_IN {catch_type:'Super Rod'}]->(Ambrette),
+    (Clawitzer)-[:CAUGHT_IN {catch_type:'Super Rod'}]->(Ambrette),
+    (Dragalge)-[:CAUGHT_IN {catch_type:'Super Rod'}]->(Ambrette),
+    (Aerodactyl)-[:CAUGHT_IN {catch_type:'Gift'}]->(Ambrette),
+    (Tyrunt)-[:CAUGHT_IN {catch_type:'Gift'}]->(Ambrette),
+    (Amaura)-[:CAUGHT_IN {catch_type:'Gift'}]->(Ambrette),
+    (Hippopotas)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route9),
+    (Sandile)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route9),
+    (Helioptile)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route9),
+    (Machop)-[:CAUGHT_IN {catch_type:'Standard'}]->(Glittering),
+    (Onix)-[:CAUGHT_IN {catch_type:'Standard'}]->(Glittering),
+    (Cubone)-[:CAUGHT_IN {catch_type:'Standard'}]->(Glittering),
+    (Rhyhorn)-[:CAUGHT_IN {catch_type:'Standard'}]->(Glittering),
+    (Kangaskhan)-[:CAUGHT_IN {catch_type:'Standard'}]->(Glittering),
+    (Mawile)-[:CAUGHT_IN {catch_type:'Standard'}]->(Glittering),
+    (Lunatone)-[:CAUGHT_IN {catch_type:'Standard'}]->(Glittering),
+    (Solrock)-[:CAUGHT_IN {catch_type:'Standard'}]->(Glittering),
+    (Woobat)-[:CAUGHT_IN {catch_type:'Standard'}]->(Glittering),
+    (Ferroseed)-[:CAUGHT_IN {catch_type:'Standard'}]->(Glittering),
+    (Dwebble)-[:CAUGHT_IN {catch_type:'Rock Smash'}]->(Glittering),
+    (Dwebble)-[:CAUGHT_IN {catch_type:'Rock Smash'}]->(Cyllage),
+    (Binacle)-[:CAUGHT_IN {catch_type:'Rock Smash'}]->(Cyllage),
+    (Tentacool)-[:CAUGHT_IN {catch_type:'Surf'}]->(Cyllage),
+    (Wailmer)-[:CAUGHT_IN {catch_type:'Surf'}]->(Cyllage),
+    (Luvdisc)-[:CAUGHT_IN {catch_type:'Old Rod'}]->(Cyllage),
+    (Horsea)-[:CAUGHT_IN {catch_type:'Good Rod'}]->(Cyllage),
+    (Clauncher)-[:CAUGHT_IN {catch_type:'Good Rod'}]->(Cyllage),
+    (Skrelp)-[:CAUGHT_IN {catch_type:'Good Rod'}]->(Cyllage),
+    (Seadra)-[:CAUGHT_IN {catch_type:'Super Rod'}]->(Cyllage),
+    (Relicanth)-[:CAUGHT_IN {catch_type:'Super Rod'}]->(Cyllage),
+    (Clawitzer)-[:CAUGHT_IN {catch_type:'Super Rod'}]->(Cyllage),
+    (Dragalge)-[:CAUGHT_IN {catch_type:'Super Rod'}]->(Cyllage),
+    (Eevee)-[:CAUGHT_IN {catch_type:'Special'}]->(Route10),
+    (Snubbull)-[:CAUGHT_IN {catch_type:'Special'}]->(Route10),
+    (Sigilyph)-[:CAUGHT_IN {catch_type:'Special'}]->(Route10),
+    (Emolga)-[:CAUGHT_IN {catch_type:'Special'}]->(Route10),
+    (Golett)-[:CAUGHT_IN {catch_type:'Special'}]->(Route10),
+    (Hawlucha)-[:CAUGHT_IN {catch_type:'Special'}]->(Route10),
+    (Houndour)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Route10),
+    (Electrike)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Route10),
+    (Yanma)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Route10),
+    (Nosepass)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Route10),
+    (Xerneas)-[:CAUGHT_IN {catch_type:'Interaction'}]->(Geosenge),
+    (Yveltal)-[:CAUGHT_IN {catch_type:'Interaction'}]->(Geosenge),
+    (Nidorina)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route11),
+    (Nidorino)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route11),
+    (Hariyama)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route11),
+    (Staravia)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route11),
+    (Chingling)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route11),
+    (Sawk)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route11),
+    (Throh)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route11),
+    (Dedenne)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route11),
+    (NidoranF)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Route11),
+    (NidoranM)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Route11),
+    (Starly)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Route11),
+    (Stunky)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Route11),
+    (MrMime)-[:CAUGHT_IN {catch_type:'Standard'}]->(Reflection),
+    (Wobbuffet)-[:CAUGHT_IN {catch_type:'Standard'}]->(Reflection),
+    (Sableye)-[:CAUGHT_IN {catch_type:'Standard'}]->(Reflection),
+    (Chingling)-[:CAUGHT_IN {catch_type:'Standard'}]->(Reflection),
+    (Solosis)-[:CAUGHT_IN {catch_type:'Standard'}]->(Reflection),
+    (Woobat)-[:CAUGHT_IN {catch_type:'Special'}]->(Reflection),
+    (Ferroseed)-[:CAUGHT_IN {catch_type:'Special'}]->(Reflection),
+    (Roggenrola)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Reflection),
+    (Carbink)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Reflection),
+    (MimeJr)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Reflection),
+    (Tentacool)-[:CAUGHT_IN {catch_type:'Surf'}]->(Shalour),
+    (Mantyke)-[:CAUGHT_IN {catch_type:'Surf'}]->(Shalour),
+    (Luvdisc)-[:CAUGHT_IN {catch_type:'Old Rod'}]->(Shalour),
+    (Remoraid)-[:CAUGHT_IN {catch_type:'Good Rod'}]->(Shalour),
+    (Chinchou)-[:CAUGHT_IN {catch_type:'Good Rod'}]->(Shalour),
+    (Alomomola)-[:CAUGHT_IN {catch_type:'Super Rod'}]->(Shalour),
+    (Octillery)-[:CAUGHT_IN {catch_type:'Super Rod'}]->(Shalour),
+    (Lanturn)-[:CAUGHT_IN {catch_type:'Super Rod'}]->(Shalour),
+    (Lucario)-[:CAUGHT_IN {catch_type:'Gift'}]->(Shalour),
+    (Slowpoke)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route12),
+    (Exeggcute)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route12),
+    (Pinsir)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route12),
+    (Heracross)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route12),
+    (Pachirisu)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route12),
+    (Chatot)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route12),
+    (Dwebble)-[:CAUGHT_IN {catch_type:'Rock Smash'}]->(Route12),
+    (Binacle)-[:CAUGHT_IN {catch_type:'Rock Smash'}]->(Route12),
+    (Tauros)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Route12),
+    (Mareep)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Route12),
+    (Miltank)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Route12),
+    (Wingull)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Route12),
+    (Tentacool)-[:CAUGHT_IN {catch_type:'Surf'}]->(Route12),
+    (Lapras)-[:CAUGHT_IN {catch_type:'Surf'}]->(Route12),
+    (Mantyke)-[:CAUGHT_IN {catch_type:'Surf'}]->(Route12),
+    (Luvdisc)-[:CAUGHT_IN {catch_type:'Old Rod'}]->(Route12),
+    (Remoraid)-[:CAUGHT_IN {catch_type:'Good Rod'}]->(Route12),
+    (Clamperl)-[:CAUGHT_IN {catch_type:'Good Rod'}]->(Route12),
+    (Corsola)-[:CAUGHT_IN {catch_type:'Super Rod'}]->(Route12),
+    (Octillery)-[:CAUGHT_IN {catch_type:'Super Rod'}]->(Route12),
+    (Huntail)-[:CAUGHT_IN {catch_type:'Super Rod'}]->(Route12),
+    (Gorebyss)-[:CAUGHT_IN {catch_type:'Super Rod'}]->(Route12),
+    (Lapras)-[:CAUGHT_IN {catch_type:'Gift'}]->(Route12),
+    (Slowpoke)-[:CAUGHT_IN {catch_type:'Standard'}]->(AzureBay),
+    (Exeggcute)-[:CAUGHT_IN {catch_type:'Standard'}]->(AzureBay),
+    (Chatot)-[:CAUGHT_IN {catch_type:'Standard'}]->(AzureBay),
+    (Inkay)-[:CAUGHT_IN {catch_type:'Standard'}]->(AzureBay),
+    (Dwebble)-[:CAUGHT_IN {catch_type:'Rock Smash'}]->(AzureBay),
+    (Binacle)-[:CAUGHT_IN {catch_type:'Rock Smash'}]->(AzureBay),
+    (Wingull)-[:CAUGHT_IN {catch_type:'Hordes'}]->(AzureBay),
+    (Tentacool)-[:CAUGHT_IN {catch_type:'Surf'}]->(AzureBay),
+    (Lapras)-[:CAUGHT_IN {catch_type:'Surf'}]->(AzureBay),
+    (Mantyke)-[:CAUGHT_IN {catch_type:'Surf'}]->(AzureBay),
+    (Luvdisc)-[:CAUGHT_IN {catch_type:'Old Rod'}]->(AzureBay),
+    (Chinchou)-[:CAUGHT_IN {catch_type:'Good Rod'}]->(AzureBay),
+    (Remoraid)-[:CAUGHT_IN {catch_type:'Good Rod'}]->(AzureBay),
+    (Lanturn)-[:CAUGHT_IN {catch_type:'Super Rod'}]->(AzureBay),
+    (Octillery)-[:CAUGHT_IN {catch_type:'Super Rod'}]->(AzureBay),
+    (Alomomola)-[:CAUGHT_IN {catch_type:'Super Rod'}]->(AzureBay),
+    (Articuno)-[:CAUGHT_IN {catch_type:'Interaction'}]->(SeaSpirit),
+    (Zapdos)-[:CAUGHT_IN {catch_type:'Interaction'}]->(SeaSpirit),
+    (Moltres)-[:CAUGHT_IN {catch_type:'Interaction'}]->(SeaSpirit),
+    (Diglett)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route13),
+    (Trapinch)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route13),
+    (Gible)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route13),
+    (Graveler)-[:CAUGHT_IN {catch_type:'Rock Smash'}]->(Route13),
+    (Slugma)-[:CAUGHT_IN {catch_type:'Rock Smash'}]->(Route13),
+    (Weepinbell)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route14),
+    (Haunter)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route14),
+    (Quagsire)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route14),
+    (Carnivine)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route14),
+    (Karrablast)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route14),
+    (Shelmet)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route14),
+    (Goomy)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route14),
+    (Stunfisk)-[:CAUGHT_IN {catch_type:'ShallowWater'}]->(Route14),
+    (Ekans)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Route14),
+    (Bellsprout)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Route14),
+    (Skorupi)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Route14),
+    (Poliwag)-[:CAUGHT_IN {catch_type:'Old Rod'}]->(Route14),
+    (Poliwhirl)-[:CAUGHT_IN {catch_type:'Good Rod'}]->(Route14),
+    (Barboach)-[:CAUGHT_IN {catch_type:'Good Rod'}]->(Route14),
+    (Whiscash)-[:CAUGHT_IN {catch_type:'Super Rod'}]->(Route14),
+    (Poliwag)-[:CAUGHT_IN {catch_type:'Old Rod'}]->(Laverre),
+    (Poliwhirl)-[:CAUGHT_IN {catch_type:'Good Rod'}]->(Laverre),
+    (Basculin)-[:CAUGHT_IN {catch_type:'Good Rod'}]->(Laverre),
+    (Skorupi)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route15),
+    (Watchog)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route15),
+    (Mightyena)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route15),
+    (Liepard)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route15),
+    (Pawniard)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route15),
+    (Murkrow)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Route15),
+    (Foongus)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Route15),
+    (Klefki)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Route15),
+    (Lombre)-[:CAUGHT_IN {catch_type:'Surf'}]->(Route15),
+    (Floatzel)-[:CAUGHT_IN {catch_type:'Surf'}]->(Route15),
+    (Poliwag)-[:CAUGHT_IN {catch_type:'Old Rod'}]->(Route15),
+    (Poliwhirl)-[:CAUGHT_IN {catch_type:'Good Rod'}]->(Route15),
+    (Basculin)-[:CAUGHT_IN {catch_type:'Good Rod'}]->(Route15),
+    (Magneton)-[:CAUGHT_IN {catch_type:'Standard'}]->(LostHotel),
+    (Electrode)-[:CAUGHT_IN {catch_type:'Standard'}]->(LostHotel),
+    (Litwick)-[:CAUGHT_IN {catch_type:'Standard'}]->(LostHotel),
+    (Pawniard)-[:CAUGHT_IN {catch_type:'Standard'}]->(LostHotel),
+    (Klefki)-[:CAUGHT_IN {catch_type:'Standard'}]->(LostHotel),
+    (Rotom)-[:CAUGHT_IN {catch_type:'Special'}]->(LostHotel),
+    (Trubbish)-[:CAUGHT_IN {catch_type:'Special'}]->(LostHotel),
+    (Garbodor)-[:CAUGHT_IN {catch_type:'Special'}]->(LostHotel),
+    (Magnemite)-[:CAUGHT_IN {catch_type:'Hordes'}]->(LostHotel),
+    (Voltorb)-[:CAUGHT_IN {catch_type:'Hordes'}]->(LostHotel),
+    (Haunter)-[:CAUGHT_IN {catch_type:'Standard'}]->(Frost),
+    (Jynx)-[:CAUGHT_IN {catch_type:'Standard'}]->(Frost),
+    (Piloswine)-[:CAUGHT_IN {catch_type:'Standard'}]->(Frost),
+    (Beartic)-[:CAUGHT_IN {catch_type:'Standard'}]->(Frost),
+    (Bergmite)-[:CAUGHT_IN {catch_type:'Standard'}]->(Frost),
+    (Cryogonal)-[:CAUGHT_IN {catch_type:'Special'}]->(Frost),
+    (Poliwhirl)-[:CAUGHT_IN {catch_type:'Special'}]->(Frost),
+    (Smoochum)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Frost),
+    (Vanillite)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Frost),
+    (Cubchoo)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Frost),
+    (Floatzel)-[:CAUGHT_IN {catch_type:'Surf'}]->(Frost),
+    (Poliwag)-[:CAUGHT_IN {catch_type:'Old Rod'}]->(Frost),
+    (Poliwhirl)-[:CAUGHT_IN {catch_type:'Good Rod'}]->(Frost),
+    (Basculin)-[:CAUGHT_IN {catch_type:'Good Rod'}]->(Frost),
+    (Weepinbell)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route16),
+    (Floatzel)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route16),
+    (Skorupi)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route16),
+    (Phantump)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route16),
+    (Pumpkaboo)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route16),
+    (Murkrow)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Route16),
+    (Foongus)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Route16),
+    (Klefki)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Route16),
+    (Lombre)-[:CAUGHT_IN {catch_type:'Surf'}]->(Route16),
+    (Floatzel)-[:CAUGHT_IN {catch_type:'Surf'}]->(Route16),
+    (Poliwag)-[:CAUGHT_IN {catch_type:'Old Rod'}]->(Route16),
+    (Poliwhirl)-[:CAUGHT_IN {catch_type:'Good Rod'}]->(Route16),
+    (Basculin)-[:CAUGHT_IN {catch_type:'Good Rod'}]->(Route16),
+    (Sneasel)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route17),
+    (Delibird)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route17),
+    (Snover)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route17),
+    (Abomasnow)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route17),
+    (Sandslash)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route18),
+    (Graveler)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route18),
+    (Lairon)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route18),
+    (Pupitar)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route18),
+    (Torkoal)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route18),
+    (Gurdurr)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route18),
+    (Shuckle)-[:CAUGHT_IN {catch_type:'Rock Smash'}]->(Route18),
+    (Geodude)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Route18),
+    (Heatmor)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Route18),
+    (Durant)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Route18),
+    (Sandslash)-[:CAUGHT_IN {catch_type:'Standard'}]->(Terminus),
+    (Graveler)-[:CAUGHT_IN {catch_type:'Standard'}]->(Terminus),
+    (Lairon)-[:CAUGHT_IN {catch_type:'Standard'}]->(Terminus),
+    (Pupitar)-[:CAUGHT_IN {catch_type:'Standard'}]->(Terminus),
+    (Ariados)-[:CAUGHT_IN {catch_type:'Special'}]->(Terminus),
+    (Noibat)-[:CAUGHT_IN {catch_type:'Special'}]->(Terminus),
+    (Shuckle)-[:CAUGHT_IN {catch_type:'Rock Smash'}]->(Terminus),
+    (Geodude)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Terminus),
+    (Aron)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Terminus),
+    (Larvitar)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Terminus),
+    (Durant)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Terminus),
+    (Zygarde)-[:CAUGHT_IN {catch_type:'Interaction'}]->(Terminus),
+    (Lombre)-[:CAUGHT_IN {catch_type:'Surf'}]->(Couriway),
+    (Floatzel)-[:CAUGHT_IN {catch_type:'Surf'}]->(Couriway),
+    (Poliwag)-[:CAUGHT_IN {catch_type:'Old Rod'}]->(Couriway),
+    (Poliwhirl)-[:CAUGHT_IN {catch_type:'Good Rod'}]->(Couriway),
+    (Basculin)-[:CAUGHT_IN {catch_type:'Good Rod'}]->(Couriway),
+    (Haunter)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route19),
+    (Quagsire)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route19),
+    (Drapion)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route19),
+    (Carnivine)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route19),
+    (Karrablast)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route19),
+    (Shelmet)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route19),
+    (Sliggoo)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route19),
+    (Arbok)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Route19),
+    (Weepinbell)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Route19),
+    (Gligar)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Route19),
+    (Skorupi)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Route19),
+    (Stunfisk)-[:CAUGHT_IN {catch_type:'ShallowWater'}]->(Route19),
+    (Poliwag)-[:CAUGHT_IN {catch_type:'Old Rod'}]->(Route19),
+    (Poliwhirl)-[:CAUGHT_IN {catch_type:'Good Rod'}]->(Route19),
+    (Barboach)-[:CAUGHT_IN {catch_type:'Good Rod'}]->(Route19),
+    (Whiscash)-[:CAUGHT_IN {catch_type:'Super Rod'}]->(Route19),
+    (Politoed)-[:CAUGHT_IN {catch_type:'Super Rod'}]->(Route19),
+    (Jigglypuff)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route20),
+    (Noctowl)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route20),
+    (Zoroark)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route20),
+    (Gothorita)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route20),
+    (Amoonguss)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route20),
+    (Sudowoodo)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Route20),
+    (Foongus)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Route20),
+    (Trevenant)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Route20),
+    (Jigglypuff)-[:CAUGHT_IN {catch_type:'Standard'}]->(PokemonVillage),
+    (Ditto)-[:CAUGHT_IN {catch_type:'Standard'}]->(PokemonVillage),
+    (Zoroark)-[:CAUGHT_IN {catch_type:'Standard'}]->(PokemonVillage),
+    (Gothorita)-[:CAUGHT_IN {catch_type:'Standard'}]->(PokemonVillage),
+    (Amoonguss)-[:CAUGHT_IN {catch_type:'Standard'}]->(PokemonVillage),
+    (Hoothoot)-[:CAUGHT_IN {catch_type:'Standard'}]->(PokemonVillage),
+    (Banette)-[:CAUGHT_IN {catch_type:'Special'}]->(PokemonVillage),
+    (Garbodor)-[:CAUGHT_IN {catch_type:'Special'}]->(PokemonVillage),
+    (Poliwag)-[:CAUGHT_IN {catch_type:'Hordes'}]->(PokemonVillage),
+    (Noctowl)-[:CAUGHT_IN {catch_type:'Hordes'}]->(PokemonVillage),
+    (Foongus)-[:CAUGHT_IN {catch_type:'Hordes'}]->(PokemonVillage),
+    (Lombre)-[:CAUGHT_IN {catch_type:'Hordes'}]->(PokemonVillage),
+    (Poliwhirl)-[:CAUGHT_IN {catch_type:'Surf'}]->(PokemonVillage),
+    (Basculin)-[:CAUGHT_IN {catch_type:'Old Rod'}]->(PokemonVillage),
+    (Mewtwo)-[:CAUGHT_IN {catch_type:'Interaction'}]->(PokemonVillage),
+    (Ursaring)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route21),
+    (Altaria)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route21),
+    (Floatzel)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route21),
+    (Scyther)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Route21),
+    (Spinda)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Route21),
+    (Swablu)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Route21),
+    (Lombre)-[:CAUGHT_IN {catch_type:'Surf'}]->(Route21),
+    (Poliwag)-[:CAUGHT_IN {catch_type:'Old Rod'}]->(Route21),
+    (Poliwhirl)-[:CAUGHT_IN {catch_type:'Good Rod'}]->(Route21),
+    (Dratini)-[:CAUGHT_IN {catch_type:'Good Rod'}]->(Route21),
+    (Basculin)-[:CAUGHT_IN {catch_type:'Good Rod'}]->(Route21),
+    (Dragonair)-[:CAUGHT_IN {catch_type:'Super Rod'}]->(Route21),
+    (Graveler)-[:CAUGHT_IN {catch_type:'Standard'}]->(Victory),
+    (Haunter)-[:CAUGHT_IN {catch_type:'Standard'}]->(Victory),
+    (Druddigon)-[:CAUGHT_IN {catch_type:'Standard'}]->(Victory),
+    (Zweilous)-[:CAUGHT_IN {catch_type:'Standard'}]->(Victory),
+    (Fearow)-[:CAUGHT_IN {catch_type:'Special'}]->(Victory),
+    (Skarmory)-[:CAUGHT_IN {catch_type:'Special'}]->(Victory),
+    (Hydreigon)-[:CAUGHT_IN {catch_type:'Special'}]->(Victory),
+    (Ariados)-[:CAUGHT_IN {catch_type:'Special'}]->(Victory),
+    (Shuckle)-[:CAUGHT_IN {catch_type:'Rock Smash'}]->(Victory),
+    (Lickitung)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Victory),
+    (Teddiursa)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Victory),
+    (Gurdurr)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Victory),
+    (Geodude)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Victory),
+    (Floatzel)-[:CAUGHT_IN {catch_type:'Hordes'}]->(Victory),
+    (Lombre)-[:CAUGHT_IN {catch_type:'Surf'}]->(Victory),
+    (Poliwag)-[:CAUGHT_IN {catch_type:'Old Rod'}]->(Victory),
+    (Poliwhirl)-[:CAUGHT_IN {catch_type:'Good Rod'}]->(Victory),
+    (Basculin)-[:CAUGHT_IN {catch_type:'Good Rod'}]->(Victory),
+    (Poliwrath)-[:CAUGHT_IN {catch_type:'Super Rod'}]->(Victory),
+    (Psyduck)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route22),
+    (Farfetchd)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route22),
+    (Dunsparce)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route22),
+    (Azurill)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route22),
+    (Azumarill)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route22),
+    (Bidoof)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route22),
+    (Bibarel)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route22),
+    (Riolu)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route22),
+    (Bunnelby)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route22),
+    (Diggersby)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route22),
+    (Litleo)-[:CAUGHT_IN {catch_type:'Standard'}]->(Route22),
+    (Magikarp)-[:CAUGHT_IN {catch_type:'Old Rod'}]->(Route22),
+    (Goldeen)-[:CAUGHT_IN {catch_type:'Good Rod'}]->(Route22),
+    (Carvanha)-[:CAUGHT_IN {catch_type:'Good Rod'}]->(Route22),
+    (Seaking)-[:CAUGHT_IN {catch_type:'Super Rod'}]->(Route22),
+    (Gyarados)-[:CAUGHT_IN {catch_type:'Super Rod'}]->(Route22),
+    (Sharpedo)-[:CAUGHT_IN {catch_type:'Super Rod'}]->(Route22)
+----
+
+'''
+
+== Trip Planning
+
+Let's say you've just started the game and you're in Vaniville Town. You're about to set out on your journey and you want to know which +Routes+ with wild Pokémon you will have to traverse between Vaniville Town and the nearest city or town with a Pokémon Center.
+
+=== Routes with Wild Pokémon Between Vaniville Town and the Nearest City or Town with a Pokémon Center
+[source,cypher]
+----
+MATCH x = shortestPath((o:City)-[*]-(a:Attraction))
+WHERE o.name = "Vaniville Town" AND a.name = "Pokemon Center"
+WITH NODES(x) AS stops
+MATCH (p:Pokemon)-[:CAUGHT_IN]->(r:Route)
+WHERE r IN stops
+RETURN r.name AS `Route`, COLLECT(p.name) AS `Wild Pokemon`
+ORDER BY r.name
+----
+//table
+
+You will encounter wild Pokémon on Routes 2 and 3 on your way from Vaniville Town to the nearest city or town with a Pokémon Center. We should also query the graph for visual directions:
+
+=== Visual Directions
+
+[source,cypher]
+----
+MATCH x = shortestPath((o:City)-[*]-(a:Attraction))
+WHERE o.name = "Vaniville Town" AND a.name = "Pokemon Center"
+RETURN x
+----
+//graph_result
+
+With the visualization, we can see that we will pass through Aquacorde Town and Santalune Forest before we get to Santalune City, which is the nearest city or town with a Pokémon Center. We also know that Route 1 apparently has no wild Pokémon, since it was not returned in our earlier query.
+
+'''
+
+Now, let's say you've found your way to Lumiose City, a hub city, and can't decide which route you should take to leave. We can find which routes leave Lumiose city, the Pokémon you can catch on each route, and the routes' destinations all in one query:
+
+=== Routes Leaving Lumiose City, Catchable Pokémon on Each Route, and the Routes' Destinations
+
+[source,cypher]
+----
+MATCH (o:City)<-[:CONNECTS_TO]-(r:Route)-[:CONNECTS_TO]->(d:City)
+WHERE o.name = "Lumiose City"
+WITH r, d
+MATCH (p:Pokemon)-[:CAUGHT_IN]->(r)
+RETURN r.name AS Route, COLLECT(p.name) AS `Catchable Pokemon`, d.name AS Destination
+----
+//table
+
+Now we have a better idea of what our options are.
+
+Again, we should also query for visual directions:
+
+=== Visual Directions
+
+[source,cypher]
+----
+MATCH x = (o:City)<-[:CONNECTS_TO]-(r:Route)-[:CONNECTS_TO]->(d:City), y = (p:Pokemon)-[:CAUGHT_IN]->(r:Route)
+WHERE o.name = "Lumiose City"
+RETURN x, y
+----
+//graph_result
+
+'''
+
+== Finding Pokémon & More Trip Planning
+
+Let's say we're not very impressed with the list of Pokémon we saw in the queries above. In fact, we have a specific Pokémon in mind: Mr. Mime. We can find all locations where a Mr. Mime can be caught and what you might need to catch it:
+
+=== Find Where to Catch a Mr. Mime
+[source,cypher]
+----
+MATCH (p:Pokemon)-[c:CAUGHT_IN]->(d)
+WHERE p.name = "Mr. Mime"
+RETURN d.name AS Destination, c.catch_type AS `Catch Type`
+----
+//table
+
+It looks like the only place where we can catch a Mr. Mime is Reflection Cave. Luckily, it's a standard catch so we don't need to bring anything special. Now, where is Reflection Cave?! How do we get there from Lumiose City?
+
+=== Get Shortest Path Directions from Lumiose City to Reflection Cave
+[source,cypher]
+----
+MATCH x = shortestPath((o:City)-[:CONNECTS_TO*]-(d:Cave))
+WHERE o.name = "Lumiose City" AND d.name = "Reflection Cave"
+RETURN EXTRACT(n IN NODES(x) | n.name) AS Directions
+----
+//table
+
+=== Visual Directions
+[source,cypher]
+----
+MATCH x = shortestPath((o:City)-[:CONNECTS_TO*]-(d:Cave))
+WHERE o.name = "Lumiose City" AND d.name = "Reflection Cave"
+RETURN x
+----
+//graph_result
+
+Now that we have our trip planned, let's figure out what we can do along the way. If we really enjoy fishing, for example, we can find where we should stop along the way to go fishing. Specifically, let's say we are interested in the stops between Lumiose City and Reflection Cave where we can use our Super Rod to catch Pokémon, and what these Pokémon are:
+
+=== Stops Between Lumiose City and Reflection Cave Where We Can Go Fishing with a Super Rod
+[source,cypher]
+----
+MATCH x = shortestPath((o:City)-[:CONNECTS_TO*]-(d:Cave))
+WHERE o.name = "Lumiose City" AND d.name = "Reflection Cave"
+WITH NODES(x) AS stops
+MATCH (p:Pokemon)-[c:CAUGHT_IN]->(s)
+WHERE c.catch_type = "Super Rod" AND (s IN stops)
+WITH s, COLLECT(p.name) AS pokemon
+RETURN s.name AS Stop, pokemon AS `Pokemon Catchable with a Super Rod`
+ORDER BY Stop
+----
+//table
+
+Thus, we can plan to stop on Route 12 and in Shalour City to go fishing with our Super Rod and we know which Pokémon we can catch at each stop.
+
+=== Visual Directions
+
+[source,cypher]
+----
+MATCH x = shortestPath((o:City)-[:CONNECTS_TO*]-(d:Cave)) 
+WHERE o.name = "Lumiose City" AND d.name = "Reflection Cave" 
+WITH x 
+MATCH y = (p:Pokemon)-[c:CAUGHT_IN]->(s) 
+WHERE (s IN NODES(x)) AND c.catch_type = "Super Rod" 
+RETURN x, y
+----
+//graph_result
+
+'''
+
+== Console
+
+Use the console below to answer your own questions. Here are some templates to get started:
+
+=== Find where you can catch a specific Pokémon and what type of catch it is
+
+Replace +POKEMON_NAME+ with the Pokémon's name:
+
+[source,cypher]
+----
+MATCH (p:Pokemon)-[c:CAUGHT_IN]->(d)
+WHERE p.name = "POKEMON_NAME"
+RETURN d.name AS Destination, c.catch_type AS `Catch Type`
+----
+
+=== Find all locations with a certain attraction
+
+Replace +ATTRACTION_NAME+ with the name of the attraction.
+
+[source,cypher]
+----
+MATCH (d)-[:HAS]->(a:Attraction)
+WHERE a.name = "ATTRACTION_NAME"
+RETURN d.name AS Destination
+----
+
+=== Get shortest path directions from one place to another
+
+Replace +ORIGIN_NAME+ with the name of the origin +City+ / +Route+ / +Cave+ / +Forest+ / +Point of Interest+ and replace +DESTINATION_NAME+ with the name of the destination +City+ / +Route+ / +Cave+ / +Forest+ / +Point of Interest+:
+
+[source,cypher]
+----
+MATCH x = shortestPath((o)-[:CONNECTS_TO*]-(d))
+WHERE o.name = "ORIGIN_NAME" AND d.name = "DESTINATION_NAME"
+RETURN EXTRACT(n IN NODES(x) | n.name) AS Directions
+----
+
+All +Pokémon+ names, +Attraction+ names, and +City+ / +Route+ / +Cave+ / +Forest+ / +Point of Interest+ names can be found by expanding the data initilization query under <<X3, Setup>>.
+
+//console
+
+'''
+
+== About Me
+
+* link:https://twitter.com/_nicolemargaret[Twitter]
+
+// * link:http://nicolewhite.github.io[Blog]

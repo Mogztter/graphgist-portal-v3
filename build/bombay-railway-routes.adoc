@@ -1,0 +1,177 @@
+= Bombay Railway Routes
+
+Most people from Bombay have a love-hate relation with trains. While they are still the quickest way to get to almost any place, getting into a train is an entirely different matter.
+We have beautiful structures such as CST (formerly Victoria Terminus):
+
+image::https://dl.dropboxusercontent.com/u/15330610/cst.jpg[]
+
+and then horrors such as these:
+
+image::https://dl.dropboxusercontent.com/u/15330610/western.jpg[]
+
+Still, our train system deserves a graph.
+
+Two students from IIT-B put together this nice local train network - http://www.dnaindia.com/mumbai/report-iit-b-students-design-navigable-railway-map-to-ease-commuter-woes-1929123
+
+How to get from one station to another is easy to answer after this network is modeled as a graph. 
+
+image::https://dl.dropboxusercontent.com/u/15330610/train.png[]
+
+The graph in this example contains stations on the Western line (pink) from Churchgate to Vasai, Harbour line (green) from Andheri to Wadala and CST to Vashi and a few stations on Central(orange).
+
+== Domain
+We have four main railway lines- Western, Central, Harbour and Trans Harbour.  Each line serves various sections of the city. 
+There are also two minor lines- Vasai Road-Diva and Nerul-Uran line.
+To travel across sections, one must change lines at various interchange stations (many lines converge here). 
+A couple of lines notably Western and Central operate fast trains that do not stop at every station.
+
+image::https://dl.dropboxusercontent.com/u/15330610/bombay-railway.jpg[]
+
+=== Entities
+
+Station with attribute name
+
+=== Relationships
+Each station is connected to one or more stations by fast or slow trains (property on the relation), and a railway line (property on the relation). Direction does not matter in this case.
+
+== Setup
+
+//hide
+
+//setup
+
+[source,cypher]
+----
+CREATE (churchgate { name: "Churchgate" })
+CREATE (marine { name: "Marine Lines" })
+CREATE (charni { name: "Charni Road" })
+CREATE (grant { name: "Grant Road" })
+CREATE (bombaycentral { name: "Bombay Central" })
+CREATE (mahalaxmi { name: "Mahalaxmi" })
+CREATE (lowerparel { name: "Lower Parel" })
+CREATE (elphinstone { name: "Elphinstone" })
+CREATE (dadar { name: "Dadar" })
+CREATE (matunga { name: "Matunga" })
+CREATE (sion { name: "Sion" })
+CREATE (kurla { name: "Kurla" })
+CREATE (tilaknagar { name: "Tilak Nagar" })
+CREATE (chembur { name: "Chembur" })
+CREATE (govandi { name: "Govandi" })
+CREATE (mankhurd { name: "Mankhurd" })
+CREATE (matungaroad { name: "Matunga Road" })
+CREATE (mahim { name: "Mahim" })
+CREATE (bandra { name: "Bandra" })
+CREATE (khar { name: "Khar" })
+CREATE (santacruz { name: "Santa Cruz" })
+CREATE (vileparle { name: "Vile Parle" })
+CREATE (andheri { name: "Andheri" })
+CREATE (jogeshwari { name: "Jogeshwari" })
+CREATE (goregaon { name: "Goregaon" })
+CREATE (malad { name: "Malad" })
+CREATE (kandivali { name: "Kandivali" })
+CREATE (borivali { name: "Borivali" })
+CREATE (dahisar { name: "Dahisar" })
+CREATE (miraroad { name: "Mira Road" })
+CREATE (bhayandar { name: "Bhayandar" })
+CREATE (naigaon { name: "Naigaon" })
+CREATE (cst { name: "CST" })
+CREATE (masjid { name: "Masjid" })
+CREATE (sandhurst { name: "Sandhurst" })
+CREATE (dockyard { name: "Dockyard Road" })
+CREATE (reay { name: "Reay Road" })
+CREATE (cottongreen { name: "Cotton Green" })
+CREATE (sewri { name: "Sewri" })
+CREATE (wadala { name: "Wadala" })
+CREATE (gtb { name: "GTB Nagar" })
+CREATE (chunabhatti { name: "Chunabhatti" })
+CREATE (kingscircle { name: "Kings Circle" })
+CREATE (vasai { name: "Vasai" })
+CREATE (vashi { name: "Vashi" })
+
+CREATE (churchgate)-[:NEXT {line:"Western",type:"Slow"}]->(marine)-[:NEXT {line:"Western",type:"Slow"}]->(charni)-[:NEXT {line:"Western",type:"Slow"}]->(grant)-[:NEXT {line:"Western",type:"Slow"}]->(bombaycentral)-[:NEXT {line:"Western",type:"Slow"}]->(mahalaxmi)-[:NEXT {line:"Western",type:"Slow"}]->(lowerparel)-[:NEXT {line:"Western",type:"Slow"}]->(elphinstone)-[:NEXT {line:"Western",type:"Slow"}]->(dadar)-[:NEXT {line:"Western",type:"Slow"}]->(matungaroad)-[:NEXT {line:"Western",type:"Slow"}]->(mahim)-[:NEXT {line:"Western",type:"Slow"}]->(bandra)-[:NEXT {line:"Western",type:"Slow"}]->(khar)-[:NEXT {line:"Western",type:"Slow"}]->(santacruz)-[:NEXT {line:"Western",type:"Slow"}]->(vileparle)-[:NEXT {line:"Western",type:"Slow"}]->(andheri)-[:NEXT {line:"Western",type:"Slow"}]->(jogeshwari)-[:NEXT {line:"Western",type:"Slow"}]->(goregaon)-[:NEXT {line:"Western",type:"Slow"}]->(malad)-[:NEXT {line:"Western",type:"Slow"}]->(kandivali)-[:NEXT {line:"Western",type:"Slow"}]->(borivali)-[:NEXT {line:"Western",type:"Slow"}]->(dahisar)-[:NEXT {line:"Western",type:"Slow"}]->(miraroad)-[:NEXT {line:"Western",type:"Slow"}]->(bhayandar)-[:NEXT {line:"Western",type:"Slow"}]->(naigaon)-[:NEXT {line:"Western",type:"Slow"}]->(vasai)
+
+CREATE (churchgate)-[:NEXT {line:"Western",type:"Fast"}]->(marine)-[:NEXT {line:"Western",type:"Fast"}]->(charni)-[:NEXT {line:"Western",type:"Fast"}]->(grant)-[:NEXT {line:"Western",type:"Fast"}]->(bombaycentral)-[:NEXT {line:"Western",type:"Fast"}]->(dadar)-[:NEXT {line:"Western",type:"Fast"}]->(bandra)-[:NEXT {line:"Western",type:"Fast"}]->(andheri)-[:NEXT {line:"Western",type:"Fast"}]->(borivali)
+
+CREATE (cst)-[:NEXT {line:"Harbour",type:"Slow"}]->(masjid)-[:NEXT {line:"Harbour",type:"Slow"}]->(sandhurst)-[:NEXT {line:"Harbour",type:"Slow"}]->(dockyard)-[:NEXT {line:"Harbour",type:"Slow"}]->(reay)-[:NEXT {line:"Harbour",type:"Slow"}]->(cottongreen)-[:NEXT {line:"Harbour",type:"Slow"}]->(sewri)-[:NEXT {line:"Harbour",type:"Slow"}]->(wadala)-[:NEXT {line:"Harbour",type:"Slow"}]->(kingscircle)-[:NEXT {line:"Harbour",type:"Slow"}]->(mahim)-[:NEXT {line:"Harbour",type:"Slow"}]->(bandra)-[:NEXT {line:"Harbour",type:"Slow"}]->(khar)-[:NEXT {line:"Harbour",type:"Slow"}]->(santacruz)-[:NEXT {line:"Harbour",type:"Slow"}]->(vileparle)-[:NEXT {line:"Harbour",type:"Slow"}]->(andheri)
+
+CREATE (wadala)-[:NEXT {line:"Harbour",type:"Slow"}]->(gtb)-[:NEXT {line:"Harbour",type:"Slow"}]->(chunabhatti)-[:NEXT {line:"Harbour",type:"Slow"}]->(kurla)-[:NEXT {line:"Harbour",type:"Slow"}]->(tilaknagar)-[:NEXT {line:"Harbour",type:"Slow"}]->(chembur)-[:NEXT {line:"Harbour",type:"Slow"}]->(govandi)-[:NEXT {line:"Harbour",type:"Slow"}]->(mankhurd)-[:NEXT {line:"Harbour",type:"Slow"}]->(vashi)
+
+CREATE (dadar)-[:NEXT {line:"Central",type:"Slow"}]->(matunga)-[:NEXT {line:"Central",type:"Slow"}]->(sion)-[:NEXT {line:"Central",type:"Slow"}]->(kurla)
+
+
+----
+
+== The graph
+[source,cypher]
+----
+match n return n
+----
+//graph
+
+== Queries:
+
+=== Route from Churchgate to Vashi
+
+The shortest path is a fast train on the Western line up to Dadar, and then one switches over to Central line taking a slow up to Kurla, followed by a slow on Harbour line to Vashi.
+
+image::https://dl.dropboxusercontent.com/u/15330610/churchgate-vashi.png[]
+
+[source,cypher]
+----
+match (churchgate {name:"Churchgate"}),(vashi {name:"Vashi"}),p=shortestPath((churchgate)-[:NEXT*]->(vashi)) return p
+----
+//table
+
+=== Route from Santa Cruz to Dockyard Road
+A slow train from Santa Cruz right up to Dockyard Road on the Harbour line is the shortest path.
+
+image::https://dl.dropboxusercontent.com/u/15330610/santacruz-dockyard.png[]
+
+[source,cypher]
+----
+match (santacruz {name:"Santa Cruz"}),(dockyard {name:"Dockyard Road"}),p=shortestPath((santacruz)-[:NEXT*]-(dockyard)) return p
+----
+//table
+
+=== Route from Elphinstone to Andheri
+From Elphinstone, take a slow train to Dadar on the Western line, then switch over to a fast train on the same line up to Andheri.
+
+image::https://dl.dropboxusercontent.com/u/15330610/elphin-andheri-fast.png[]
+
+
+[source,cypher]
+----
+match (elphinstone {name:"Elphinstone"}),(andheri {name:"Andheri"}),p=shortestPath((elphinstone)-[:NEXT*]-(andheri)) return p
+----
+//table
+
+=== Route from Elphinstone to Andheri without having to change trains
+The query above might be the shortest path, but it involves changing trains, wherein you might face this:
+
+image::https://dl.dropboxusercontent.com/u/15330610/CST-station.jpg[]
+
+
+To stay on the same train (without switching lines or train types), the query below correctly advises that one must pick a slow train on Western line from Elphinstone all the to Andheri.
+
+[source,cypher]
+----
+match (elphinstone {name:"Elphinstone"}),(andheri {name:"Andheri"})
+with elphinstone, andheri
+match p=(elphinstone)-[r:NEXT*..10]-(andheri)
+with head(r).type as trainType, head(r).line as railwayLine, p,r
+where all(x in r where x.type=trainType) and
+all(y in r where y.line=railwayLine)
+return p;
+----
+//table
+
+
+Created by Luanne Misquitta:
+
+- link:https://twitter.com/luannem[Twitter]
+
+- link:http://thought-bytes.blogspot.in/[Blog]
+
+- link:https://in.linkedin.com/in/luannemisquitta/[LinkedIn]
+
+

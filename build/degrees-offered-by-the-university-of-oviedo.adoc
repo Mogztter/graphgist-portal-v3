@@ -1,0 +1,341 @@
+= Degrees offered by the University of Oviedo
+:author: María Leyva, Natalia Negri
+:twitter: @leyvanegri
+:tags: education, university, Oviedo
+
+
+== Introduction
+The University of Oviedo offers many Degrees (like Degree in Law, Degree in History or Degree in Computer Software Engineering), of different branches (Health Sciences, Arts and Humanities...) and located in different places. Sometimes, specially for new students, this can be quite confusing, and some of the questions asked are:
+
+* “Which Degrees can I study in this branch?”
+
+* “Where do I study that?”
+
+* “Is there a mark cut-off?” (Some Degrees require a minimum mark)
+
+* “If I don't get into the Degree I want, what similar alternatives do I have?”
+
+In order to answer these, and many other questions, we have modeled this information in a graph database.
+Obviously, this could be even more interesting if the database included all the information of all Degrees in Spain, but for simplicity, we have decided to start only with the Degrees in the University of Oviedo.
+
+== Model
+The University of Oviedo offers many _Degrees_ , which belong to different _branches_. Also, these Degrees are taught at a _Faculty_, _School_, or _Partner Institution_. Both Schools and Faculties are public centers and belong to the University (which is also public), but Partner Institutions are private centers that have signed an agreement with the University to offer common courses.
+
+In addition, these Schools, Faculties and Partner Institutions are located in a _Campus_.
+
+As an example, here's a little extract of our database.
+
+image::http://yuml.me/diagram/scruffy/class/c6288a74.png[]
+
+As you can see, we have three _Degrees_.
+
+* _Degree in Mechanical Engineering_: it has 240 credits, it got 260 new students in 2013 and offers the possibility of getting a bilingual degree. Also, it's taught at the _Polytechnic School of Engineering of Gijón_, founded in 1888. It belongs to the branch of _Engineering and Architecture_.
+* _Degree in Social Work_: it also has 240 credits and got 54 new students in 2013. It's taught at the _Faculty of Commerce, Tourism and Social Sciences Jovellanos_, founded in 1899. It belongs to the branch of _Social and Legal Sciences_.
+* _Degree in Nursing (Cabueñes)_: as the others, has 240 credits. In the year 2013, 70 places were offered, and 886 students applied to study this degree, but only 70 got in. This degree has a mark cut-off of 10.476, being 14 the maximum possible mark. It's taught at the Partner Institution called _University School of Nursing Cabueñes Gijon_. It belongs to the branch of _Health Sciences_.
+
+The _School, Faculty and Partner Institution_ named above are all located at the _Gijón_ Campus, at the city of Gijón.
+
+Confusing? Take a look to the whole model.
+
+//hide
+//setup
+
+[source, cypher]
+----
+//Branches
+CREATE
+(arc:Branch { name:'Engineering and Architecture'}),
+(hum:Branch {name: 'Arts and Humanities'}),
+(sci:Branch {name: 'Sciences'}),
+(health:Branch {name: 'Health Sciences'}),
+(social:Branch {name: 'Social and Legal Sciences'})
+//Degrees
+CREATE
+(DegreeGESCLR01:Degree { name:'Degree in Classics and Romance Studies.', code:'GESCLR01', credits: 240, students_first_year_2013: 16}),
+(DegreeGESCLR01)-[:TYPE]->(hum),
+(DegreeGESTIN01:Degree { name:'Degree in English Studies.', code:'GESTIN01', credits:  240, students_first_year_2013: 110}),
+(DegreeGESTIN01)-[:TYPE]->(hum),
+(DegreeGFILOS01:Degree { name:'Degree in Philosophy.', code:'GFILOS01', credits: 240, students_first_year_2013: 40}),
+(DegreeGFILOS01)-[:TYPE]->(hum),
+(DegreeGGEORT01:Degree { name:'Degree in Geography and Regional Planning.', code:'GGEORT01', credits: 240, students_first_year_2013: 27}),
+(DegreeGGEORT01)-[:TYPE]->(hum),
+(DegreeGHISTO01:Degree { name:'Degree in History.', code:'GHISTO01', credits: 240, students_first_year_2013: 83}),
+(DegreeGHISTO01)-[:TYPE]->(hum),
+(DegreeGHISAR01:Degree { name:'Degree in Art History.', code:'GHISAR01', credits: 240, students_first_year_2013: 51}),
+(DegreeGHISAR01)-[:TYPE]->(hum),
+(DegreeGHISCM01:Degree { name:'Degree in History and Science of Music.', code:'GHISCM01', credits: 240, students_first_year_2013: 35}),
+(DegreeGHISCM01)-[:TYPE]->(hum),
+(DegreeGLEESL01:Degree { name:'Degree in Spanish Language and Literature.', code:'GLEESL01', credits: 240, students_first_year_2013: 61}),
+(DegreeGLEESL01)-[:TYPE]->(hum),
+(DegreeGLEMOL01:Degree { name:'Degree in Modern Languages and Literatures.', code:'GLEMOL01', credits: 240, students_first_year_2013: 116}),
+(DegreeGLEMOL01)-[:TYPE]->(hum),
+(DegreeGBIOLO01:Degree { name:'Degree in Biology.', code:'GBIOLO01', credits: 240, students_first_year_2013:112, offered_places: 110, applications:825, mark_cut_off: 7.496}),
+(DegreeGBIOLO01)-[:TYPE]->(sci),
+(DegreeGBIOTE01:Degree { name:'Degree in Biotechnology.', code:'GBIOTE01', credits: 240, students_first_year_2013: 41, offered_places: 40, applications:812, mark_cut_off: 12.16}),
+(DegreeGBIOTE01)-[:TYPE]->(sci),
+(DegreeGFISIC01:Degree { name:'Degree in Physics.', code:'GFISIC01', credits: 240, students_first_year_2013: 54}),
+(DegreeGFISIC01)-[:TYPE]->(sci),
+(DegreeGGEOLO01:Degree { name:'Degree in Geology.', code:'GGEOLO01', credits: 240, students_first_year_2013: 37}),
+(DegreeGGEOLO01)-[:TYPE]->(sci),
+(DegreeGMATEM01:Degree { name:'Degree in Mathematics.', code:'GMATEM01', credits: 240, students_first_year_2013: 23}),
+(DegreeGMATEM01)-[:TYPE]->(sci),
+(DegreeGQUIMI01:Degree { name:'Degree in Chemistry.', code:'GQUIMI01', credits: 240, students_first_year_2013: 95}),
+(DegreeGQUIMI01)-[:TYPE]->(sci),
+(Degree2GFIMA01:Degree { name:'PCEO Degree in Mathematics / Degree in Physics.', code:'2GFIMA01', credits: 345, double_Degree: 'yes', students_first_year_2013: 62}),
+(Degree2GFIMA01)-[:TYPE]->(sci),
+(DegreeGENFER01:Degree { name:'Degree in Nursing.', code:'GENFER01', credits: 240, students_first_year_2013: 102, offered_places: 100, applications:1278, mark_cut_off: 10.0}),
+(DegreeGENFER01)-[:TYPE]->(health),
+(DegreeGENFCA01:Degree { name:'Degree in Nursing (Cabuenes).', code:'GENFCA01', credits: 240, students_first_year_2013: 70, offered_places: 70, applications:886, mark_cut_off: 10.476}),
+(DegreeGENFCA01)-[:TYPE]->(health),
+(DegreeGFISIO01:Degree { name:'Degree in Physiotherapy.', code:'GFISIO01', credits: 240, students_first_year_2013: 63, offered_places: 60, applications:1178, mark_cut_off: 10.968}),
+(DegreeGFISIO01)-[:TYPE]->(health),
+(DegreeGLOGOP01:Degree { name:'Degree in Speech Therapy.', code:'GLOGOP01', credits: 240, students_first_year_2013: 30, offered_places: 30, applications:487, mark_cut_off: 6.476}),
+(DegreeGLOGOP01)-[:TYPE]->(health),
+(DegreeGMEDIC01:Degree { name:'Degree in Medicine.', code:'GMEDIC01', credits: 360, students_first_year_2013: 154, offered_places: 150, applications:2522, mark_cut_off: 12.458}),
+(DegreeGMEDIC01)-[:TYPE]->(health),
+(DegreeGODONT01:Degree { name:'Degree in Dentistry.', code:'GODONT01', credits: 240, students_first_year_2013: 28, offered_places: 25, applications:919, mark_cut_off: 11.831}),
+(DegreeGODONT01)-[:TYPE]->(health),
+(DegreeGPSICO01:Degree { name:'Degree in Psychology.', code:'GPSICO01', credits: 240, students_first_year_2013: 127, offered_places: 120, applications: 1017, mark_cut_off: 7.882}),
+(DegreeGPSICO01)-[:TYPE]->(health),
+(DegreeATEROC01:Degree { name:'Degree in Occupational Therapy.', code:'ATEROC01', credits: 240, students_first_year_2013: 49}),
+(DegreeATEROC01)-[:TYPE]->(health),
+(DegreeGADEMP01:Degree { name:'Degree in Business Administration.', code:'GADEMP01', credits: 240, bilingual: 'Fully completed at the University of Oviedo.', students_first_year_2013: 269, offered_places: 275, applications:773, mark_cut_off: 5.0}),
+(DegreeGADEMP01)-[:TYPE]->(social),
+(DegreeGCOMAR01:Degree { name:'Degree in Commerce and Marketing.', code:'GCOMAR01', credits: 240, bilingual: 'Completed by an Erasmus stay at a foreign university or institution.', students_first_year_2013: 200}),
+(DegreeGCOMAR01)-[:TYPE]->(social),
+(DegreeGCONFI01:Degree { name:'Degree in Accounting and Finance.', code:'GCONFI01', credits: 240, bilingual: 'Completed by an Erasmus stay at a foreign university or institution.', students_first_year_2013: 84, offered_places: 100, applications:456, mark_cut_off: 5.5}),
+(DegreeGCONFI01)-[:TYPE]->(social),
+(DegreeGDEREC01:Degree { name:'Degree in Law.', code:'GDEREC01', credits: 240, students_first_year_2013: 332}),
+(DegreeGDEREC01)-[:TYPE]->(social),
+(DegreeGECONO01:Degree { name:'Degree in Economics.', code:'GECONO01', credits: 240, bilingual: 'Completed by an Erasmus stay at a foreign university or institution.', students_first_year_2013: 131, offered_places: 150, applications:551, mark_cut_off: 5.176}),
+(DegreeGECONO01)-[:TYPE]->(social),
+(DegreeAEDSOC01:Degree { name:'Degree in Social Education.', code:'AEDSOC01', credits: 240, students_first_year_2013: 9}),
+(DegreeAEDSOC01)-[:TYPE]->(social),
+(DegreeGGEADP01:Degree { name:'Degree in Public Administration and Management.', code:'GGEADP01', credits: 240, students_first_year_2013: 15}),
+(DegreeGGEADP01)-[:TYPE]->(social),
+(DegreeGPEDAG01:Degree { name:'Degree in Pedagogy.', code:'GPEDAG01', credits: 240, students_first_year_2013: 102}),
+(DegreeGPEDAG01)-[:TYPE]->(social),
+(DegreeGRLYRH01:Degree { name:'Degree in Labor Relations and Human Resources.', code:'GRLYRH01', credits: 240, students_first_year_2013: 70, offered_places: 100, applications:388, mark_cut_off: 5.026}),
+(DegreeGRLYRH01)-[:TYPE]->(social),
+(DegreeGTRASO01:Degree { name:'Degree in Social Work.', code:'GTRASO01', credits: 240, students_first_year_2013: 54}),
+(DegreeGTRASO01)-[:TYPE]->(social),
+(DegreeGTURIS01:Degree { name:'Degree in Tourism.', code:'GTURIS01', credits: 240, students_first_year_2013: 83}),
+(DegreeGTURIS01)-[:TYPE]->(social),
+(DegreeATURIS01:Degree { name:'Degree in Tourism.', code:'ATURIS01', credits: 240, bilingual: 'Completed by an Erasmus stay at a foreign university or institution.', students_first_year_2013: 15}),
+(DegreeATURIS01)-[:TYPE]->(social),
+(Degree2GADED01:Degree { name:'PCEO Degree in Business Administration / Degree in Laws.', code:'2GADED01', credits: 354, double_Degree: 'yes', students_first_year_2013: 128, applications:554, mark_cut_off: 8.878}),
+(Degree2GADED01)-[:TYPE]->(social),
+(DegreeGINGCI01:Degree { name:'Degree in Civil Engineering.', code:'GINGCI01', credits: 240, bilingual: 'Completed by an Erasmus stay at a foreign university or institution.', students_first_year_2013: 95}),
+(DegreeGINGCI01)-[:TYPE]->(arc),
+(DegreeGIMINA01:Degree { name:'Degree in Engineering of the Mining and Energy Resources.', code:'GIMINA01', credits: 240, bilingual: 'Completed by an Erasmus stay at a foreign university or institution.', students_first_year_2013: 36}),
+(DegreeGIMINA01)-[:TYPE]->(arc),
+(DegreeGITECI01:Degree { name:'Engineering Degree in Industrial Technology.', code:'GITECI01', credits: 240, students_first_year_2013: 134}),
+(DegreeGITECI01)-[:TYPE]->(arc),
+(DegreeGITEMI01:Degree { name:'Degree in Mining Engineering Technology.', code:'GITEMI01', credits: 240, students_first_year_2013: 58}),
+(DegreeGITEMI01)-[:TYPE]->(arc),
+(DegreeGIELEC01:Degree { name:'Degree in Electrical Engineering.', code:'GIELEC01', credits: 240, bilingual: 'Fully completed at the University of Oviedo.', students_first_year_2013: 64}),
+(DegreeGIELEC01)-[:TYPE]->(arc),
+(DegreeGIELIA01:Degree { name:'Degree in Industrial Electronics and Automation.', code:'GIELIA01', credits: 240, bilingual: 'Fully completed at the University of Oviedo.', students_first_year_2013: 115}),
+(DegreeGIELIA01)-[:TYPE]->(arc),
+(DegreeGIGETO01:Degree { name:'Degree in Geomatics and Surveying.', code:'GIGETO01', credits: 240, bilingual: 'Completed by an Erasmus stay at a foreign university or institution.', students_first_year_2013: 6}),
+(DegreeGIGETO01)-[:TYPE]->(arc),
+(DegreeGITELE01:Degree { name:'Degree in Telecommunication Technologies and Services.', code:'GITELE01', credits: 240, students_first_year_2013: 91}),
+(DegreeGITELE01)-[:TYPE]->(arc),
+(DegreeGIFOMN01:Degree { name:'Degree in Forestry and Natural Environment.', code:'GIFOMN01', credits: 240, bilingual: 'Completed by an Erasmus stay at a foreign university or institution.', students_first_year_2013: 44}),
+(DegreeGIFOMN01)-[:TYPE]->(arc),
+(DegreeGIISOF01:Degree { name:'Degree in Computer Software Engineering.', code:'GIISOF01', credits: 240, bilingual: 'Fully completed at the University of Oviedo.', students_first_year_2013: 171}),
+(DegreeGIISOF01)-[:TYPE]->(arc),
+(DegreeGIITIN01:Degree { name:'Computer Engineering in Information Technology.', code:'GIITIN01', credits: 240, students_first_year_2013: 67}),
+(DegreeGIITIN01)-[:TYPE]->(arc),
+(DegreeGIMARI01:Degree { name:'Degree in Marine Engineering.', code:'GIMARI01', credits: 240, students_first_year_2013: 30}),
+(DegreeGIMARI01)-[:TYPE]->(arc),
+(DegreeGIMECA01:Degree { name:'Degree in Mechanical Engineering.', code:'GIMECA01', credits: 240, bilingual: 'Fully completed at the University of Oviedo.', students_first_year_2013: 206}),
+(DegreeGIMECA01)-[:TYPE]->(arc),
+(DegreeGINATR01:Degree { name:'Degree in Nautical Engineering and Maritime Transport.', code:'GINATR01', credits: 240, students_first_year_2013: 34}),
+(DegreeGINATR01)-[:TYPE]->(arc),
+(DegreeGIQUIM01:Degree { name:'Degree in Chemical Engineering.', code:'GIQUIM01', credits: 240, students_first_year_2013: 45}),
+(DegreeGIQUIM01)-[:TYPE]->(arc),
+(DegreeGIIQUI01:Degree { name:'Degree in Chemical Engineering.', code:'GIIQUI01', credits: 240, bilingual: 'Completed by an Erasmus stay at a foreign university or institution.', students_first_year_2013: 47}),
+(DegreeGIIQUI01)-[:TYPE]->(arc),
+(DegreeGMEDIN01:Degree { name:'Teacher Degree in Early Childhood Education.', code:'GMEDIN01', credits: 240, students_first_year_2013: 159, offered_places: 160, applications:312, mark_cut_off: 5.302}),
+(DegreeGMEDIN01)-[:TYPE]->(social),
+(DegreeAMEDIN01:Degree { name:'Teacher Degree in Early Childhood Education.', code:'AMEDIN01', credits: 240, students_first_year_2013: 26}),
+(DegreeAMEDIN01)-[:TYPE]->(social),
+(DegreeGMEDPR01:Degree { name:'Teacher Degree in Elementary Education.', code:'GMEDPR01', credits: 240, students_first_year_2013: 248, offered_places: 240, applications:783, mark_cut_off: 5.04}),
+(DegreeGMEDPR01)-[:TYPE]->(social),
+(DegreeAMEDPR01:Degree { name:'Teacher Degree in Elementary Education.', code:'AMEDPR01', credits: 240, students_first_year_2013: 42}),
+(DegreeAMEDPR01)-[:TYPE]->(social)
+//Schools, Faculties and Partner Institutions
+CREATE
+(schoolBiology:Faculty{ name:'Faculty of Biology', foundation: 1961, web: 'http://biologia.uniovi.es'}),
+(schoolScience:Faculty{ name:'Faculty of Science', foundation: 1958, web:'http://ciencias.uniovi.es/'}),
+(schoolJovellanos:Faculty{ name:'Faculty of Commerce, Tourism and Social Sciences Jovellanos', web:'http://jovellanos.uniovi.es/', foundation: 1899}),
+(schoolLaw:Faculty{ name:'Faculty of Law', web:'http://derecho.uniovi.es/', foundation: 1608}),
+(schoolBusiness:Faculty{ name:'Faculty of Economics and Business', web:'http://econo.uniovi.es/'}),
+(schoolArts:Faculty{ name:'Faculty of Arts', web:'http://fyl.uniovi.es/', foundation: 2010}),
+(schoolEducation:Faculty{ name:'Faculty of Teacher Training and Education', web:'http://www.unioviedo.es/fpe/portal/', foundation: 2010}),
+(schoolGeology:Faculty{ name:'Faculty of Geology', web:'http://geologia.uniovi.es/', foundation:1958}),
+(schoolSciences:Faculty{ name:'Faculty of Medicine and Health Sciences', web:'http://www.unioviedo.es/medicina/presentacion.htm', foundation: 1968}),
+(schoolPsychology:Faculty{ name:'Faculty of Psychology', web:'http://psicologia.uniovi.es', foundation: 1991}),
+(schoolChemistry:Faculty{ name:'Faculty of Chemistry', web:'http://quimica.uniovi.es', foundation: 1848}),
+(schoolEngineering:School{ name:'School of Computer Engineering', web:'http://www.ingenieriainformatica.uniovi.es', foundation: 1982}),
+(schoolEPI:School{ name:'Polytechnic School of Engineering of Gijón', web:'http://www.epigijon.uniovi.es/', foundation: 1888}),
+(schoolMieres:School{ name:'Polytechnic School of Mieres', web:'http://epm.uniovi.es/', foundation: 1855}),
+(schoolSport:School{ name:'Professional Medical School of Physical Education and Sport', web:'http://medepor.uniovi.es/', foundation: 1985}),
+(schoolMarina:School{ name:'School of Civil Marina', web:'http://marina.uniovi.es/', foundation: 1990}),
+(schoolOviedo:School{ name:'Higher Technical School of Mining Engineering of Oviedo', web:'http://etsimo.uniovi.es/', foundation: 1959}),
+(schoolGijon:Partner_institution{ name:'University School of Nursing Cabueñes Gijon', web:''}),
+(schoolOssh:Partner_institution{ name:'University School Padre Enrique Ossó', web:''}),
+(schoolGijonSW:Partner_institution{ name:'University School of Social Work Gijón', web:''}),
+(schoolAsturias:Partner_institution{ name:'University School of Tourism of Asturias', web:''})
+//Campus
+CREATE
+(campusCristo:Campus { name:'El Cristo', city:'Oviedo'}),
+(campusLlamaquique:Campus { name:'Llamaquique', city:'Oviedo'}),
+(campusMilhn:Campus { name:'El Milán', city:'Oviedo'}),
+(campusCentro:Campus { name:'Oviedo Centro', city:'Oviedo'}),
+(campusGijon:Campus { name:'Gijón', city:'Gijón'}),
+(campusMieres:Campus { name:'Mieres', city:'Mieres'}),
+(campusCatalanes:Campus { name:'Los Catalanes', city:'Oviedo'})
+//Locations
+CREATE
+(schoolBiology)-[:LOCATED_IN]->(campusCristo),
+(schoolLaw)-[:LOCATED_IN]->(campusCristo),
+(schoolBusiness)-[:LOCATED_IN]->(campusCristo),
+(schoolChemistry)-[:LOCATED_IN]->(campusCristo),
+(schoolSciences)-[:LOCATED_IN]->(campusCristo),
+(schoolEducation)-[:LOCATED_IN]->(campusLlamaquique),
+(schoolGeology)-[:LOCATED_IN]->(campusLlamaquique),
+(schoolScience)-[:LOCATED_IN]->(campusLlamaquique),
+(schoolArts)-[:LOCATED_IN]->(campusMilhn),
+(schoolPsychology)-[:LOCATED_IN]->(campusCentro),
+(schoolOssh)-[:LOCATED_IN]->(campusCentro),
+(schoolOviedo)-[:LOCATED_IN]->(campusCentro),
+(schoolEngineering)-[:LOCATED_IN]->(campusCatalanes),
+(schoolSport)-[:LOCATED_IN]->(campusCatalanes),
+(schoolMieres)-[:LOCATED_IN]->(campusMieres),
+(schoolEPI)-[:LOCATED_IN]->(campusGijon),
+(schoolMarina)-[:LOCATED_IN]->(campusGijon),
+(schoolJovellanos)-[:LOCATED_IN]->(campusGijon),
+(schoolGijon)-[:LOCATED_IN]->(campusGijon),
+(schoolGijonSW)-[:LOCATED_IN]->(campusGijon),
+(schoolAsturias)-[:LOCATED_IN]->(campusGijon)
+//Teaching
+
+CREATE
+(DegreeGESCLR01)<-[:TEACHES]-(schoolArts),
+(DegreeGESTIN01)<-[:TEACHES]-(schoolArts),
+(DegreeGFILOS01)<-[:TEACHES]-(schoolArts),
+(DegreeGGEORT01)<-[:TEACHES]-(schoolArts),
+(DegreeGHISTO01)<-[:TEACHES]-(schoolArts),
+(DegreeGHISAR01)<-[:TEACHES]-(schoolArts),
+(DegreeGHISCM01)<-[:TEACHES]-(schoolArts),
+(DegreeGLEESL01)<-[:TEACHES]-(schoolArts),
+(DegreeGLEMOL01)<-[:TEACHES]-(schoolArts),
+(DegreeGBIOLO01)<-[:TEACHES]-(schoolBiology),
+(DegreeGBIOTE01)<-[:TEACHES]-(schoolBiology),
+(DegreeGFISIC01)<-[:TEACHES]-(schoolScience),
+(DegreeGGEOLO01)<-[:TEACHES]-(schoolGeology),
+(DegreeGMATEM01)<-[:TEACHES]-(schoolScience),
+(DegreeGQUIMI01)<-[:TEACHES]-(schoolChemistry),
+(Degree2GFIMA01)<-[:TEACHES]-(schoolScience),
+(DegreeGENFER01)<-[:TEACHES]-(schoolSciences),
+(DegreeGENFCA01)<-[:TEACHES]-(schoolGijon),
+(DegreeGFISIO01)<-[:TEACHES]-(schoolSciences),
+(DegreeGLOGOP01)<-[:TEACHES]-(schoolPsychology),
+(DegreeGMEDIC01)<-[:TEACHES]-(schoolSciences),
+(DegreeGODONT01)<-[:TEACHES]-(schoolSciences),
+(DegreeGPSICO01)<-[:TEACHES]-(schoolPsychology),
+(DegreeATEROC01)<-[:TEACHES]-(schoolOssh),
+(DegreeGADEMP01)<-[:TEACHES]-(schoolBusiness),
+(DegreeGCOMAR01)<-[:TEACHES]-(schoolJovellanos),
+(DegreeGCONFI01)<-[:TEACHES]-(schoolBusiness),
+(DegreeGDEREC01)<-[:TEACHES]-(schoolLaw),
+(DegreeGECONO01)<-[:TEACHES]-(schoolBusiness),
+(DegreeAEDSOC01)<-[:TEACHES]-(schoolOssh),
+(DegreeGGEADP01)<-[:TEACHES]-(schoolJovellanos),
+(DegreeGPEDAG01)<-[:TEACHES]-(schoolEducation),
+(DegreeGRLYRH01)<-[:TEACHES]-(schoolBusiness),
+(DegreeGTRASO01)<-[:TEACHES]-(schoolJovellanos),
+(DegreeGTURIS01)<-[:TEACHES]-(schoolJovellanos),
+(DegreeATURIS01)<-[:TEACHES]-(schoolAsturias),
+(Degree2GADED01)<-[:TEACHES]-(schoolBusiness),(Degree2GADED01)<-[:TEACHES]-(schoolLaw),
+(DegreeGINGCI01)<-[:TEACHES]-(schoolMieres),
+(DegreeGIMINA01)<-[:TEACHES]-(schoolMieres),
+(DegreeGITECI01)<-[:TEACHES]-(schoolEPI),
+(DegreeGITEMI01)<-[:TEACHES]-(schoolOviedo),
+(DegreeGIELEC01)<-[:TEACHES]-(schoolEPI),
+(DegreeGIELIA01)<-[:TEACHES]-(schoolEPI),
+(DegreeGIGETO01)<-[:TEACHES]-(schoolMieres),
+(DegreeGITELE01)<-[:TEACHES]-(schoolEPI),
+(DegreeGIFOMN01)<-[:TEACHES]-(schoolMieres),
+(DegreeGIISOF01)<-[:TEACHES]-(schoolEngineering),
+(DegreeGIITIN01)<-[:TEACHES]-(schoolEPI),
+(DegreeGIMARI01)<-[:TEACHES]-(schoolMarina),
+(DegreeGIMECA01)<-[:TEACHES]-(schoolEPI),
+(DegreeGINATR01)<-[:TEACHES]-(schoolMarina),
+(DegreeGIQUIM01)<-[:TEACHES]-(schoolChemistry),
+(DegreeGIIQUI01)<-[:TEACHES]-(schoolEPI),
+(DegreeGMEDIN01)<-[:TEACHES]-(schoolEducation),
+(DegreeAMEDIN01)<-[:TEACHES]-(schoolOssh),
+(DegreeGMEDPR01)<-[:TEACHES]-(schoolEducation),
+(DegreeAMEDPR01)<-[:TEACHES]-(schoolOssh)
+----
+
+//graph
+
+...
+
+== Applications
+
+=== Which are the Degrees in the branch of Health Sciences taught in Oviedo, ordered by mark cut-off?
+
+[source, cypher]
+match (b)-[:TYPE]-(d:Degree)<-[:TEACHES]-(f)-[:LOCATED_IN]-(c:Campus) where c.city='Oviedo' and b.name='Health Sciences' return d.name as Name, d.mark_cut_off as Mark_cut_off order by d.mark_cut_off;
+
+//table
+
+
+=== Which Degrees of which branches are bilingual?
+
+
+[source, cypher]
+match (d:Degree)-[:TYPE]->(b) where has(d.bilingual) return d.name as Name, d.bilingual as Bilingual, b.name as Branch;
+
+//table
+
+=== Which Degrees are double Degrees and where (school and campus) are they taught?
+
+
+[source, cypher]
+match (d:Degree)<-[:TEACHES]-(s)-[:LOCATED_IN]->(c:Campus) where has(d.double_Degree) return d.name as name, s.name as School, c.name as Campus;
+
+//table
+
+=== Average of students who can't get into the Degree they applied for, grouped by campus.
+
+
+[source, cypher]
+match (d:Degree)<-[:TEACHES]-(s)-[:LOCATED_IN]->(c:Campus) return avg((d.applications)-(d.students_first_year_2013)) as Rejected, c.name as Campus order by c.name;
+
+//table
+
+=== Faculties where there are Degrees from different branches.
+
+[source, cypher]
+match (f:Faculty)-[:TEACHES]->(d:Degree)-[:TYPE]->(b:Branch) with f,d,b match (f2:Faculty)-[:TEACHES]->(d2:Degree)-[:TYPE]->(b2:Branch) where b.name <> b2.name and f.name =~ f2.name return distinct f.name as Faculty;
+
+//table
+
+=== Degrees which have a number of credits above average.
+
+[source, cypher]
+match (d:Degree) with d, avg(d.credits) as average match (a:Degree) where a.credits > average return distinct a.name as Name, a.credits as Credits;
+
+//table
+
+== Console
+
+If you have thought of any other query, feel free to try!
+
+//console

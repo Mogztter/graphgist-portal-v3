@@ -1,0 +1,161 @@
+= Detection of inappropriate content in social networks
+:neo4j-version: 2.3.1
+:author: Miguel Hernandez
+:twitter: @Macario8
+:tags: domain:Social-Network, use-case:detection-inappropiate-content
+
+== How to extract information from users who publish this content
+
+This gist is an implementation to http://www.elladodelmal.com/2015/12/desenmascarar-cuentas-de-twitter-traves.html[blogpost that I wrote] about relationships between social networks.
+
+image::http://4.bp.blogspot.com/-DRBXuNiBSYc/UGtkY6i5SJI/AAAAAAAAPTc/87jFEiw40pg/s486/link-blogger-faceboook-twitter-gplus-youtube-pinterest.png[]
+
+In the example of blog, to extract the information, I use the apis of YouTube, Twitter and Souncloud Api's and using the method API REST. In this case, I prepare the dataset.
+We can relate different social networks to extract account information.
+First, twitter its a continuos feed of publications, we can extract differents elements about a tweet (hasthags, mentions, url).
+The urls are the elements that link a social network to another , giving us great potential.
+
+
+== Sample data set
+
+=== Entities
+
+* *Tweets* with attribute screen_name,text,timepstamp and country.
+* *URL* with attribute url.
+* *YouTubeVideos* with attributes title, channelid, tags, ytAgeRestricted and update.
+* *Tracks* with attribute title, description and upload.
+* *Channels* with attribute screen_name, description, googleplusid, relatedvideos and channelcreate.
+* *Googleusers* with attribute displayName, aboutMe, image, location and gender.
+
+
+
+
+//hide
+
+//setup
+
+[source, cypher]
+----
+
+//Nodes.
+CREATE (Tweet1:TWITTER {screen_name: "Alberto", text: "Metallica with Jason Newsted Creeping death LIVE San Francisco, USA 2011... https://t.co/RuI72pyx2v via @YouTube" , timepstamp :"1450687966" , country :"ES" })
+CREATE (Tweet2:TWITTER {screen_name:"Pedro", text: " RT Metallica with Jason Newsted Creeping death LIVE San Francisco, USA 2011... https://t.co/RuI72pyx2v via @YouTube" , timepstamp :"1450612800" , country :"ES" })
+CREATE (Tweet3:TWITTER {screen_name:"Eva", text: "RT Metallica with Jason Newsted Creeping death LIVE San Francisco, USA 2011... https://t.co/RuI72pyx2v via @YouTube" , timepstamp :"1450609980" , country :"ES" })
+CREATE (Tweet4:TWITTER {screen_name: "BadGuy", text: "LIVE Figth in school, https://t.co/ZcQ72pyx2v", timepstamp :"1450687966" , country :"ES" })
+CREATE (Tweet5:TWITTER {screen_name:"Mariano" , text:"Metallica https://t.co/RuI72pyx2v via @Soundcloud", timepstamp :"1450612800" , country :"ES" })
+CREATE (Tweet6:TWITTER {screen_name:"Miguel",text:"BBC NEWS https://t.co/RuI72pyx2v"  , timepstamp :"1450609980" , country :"ES" })
+CREATE (URL1:URL:SOCIALNETWORK {url: "https://youtu.be/ASZXbb3a24t" })
+CREATE (URL2:URL:SOCIALNETWORK {url:"https://youtu.be/CURLzg0ia5w" })
+CREATE (URL3:URL:SOCIALNETWORK {url:"https://soundcloud.com/hassan-awaly/8ik0r4axk78m" })
+CREATE (URL4:URL {url:"http://bbc.in/1MZFNWu"})
+CREATE (YouTubeVideo1:YOUTUBE {title: "Metallica",channelid: "456456456", tags: "music", ytAgeRestricted: "false", update :"1450685966" })
+CREATE (YouTubeVideo2:YOUTUBE {title:"School fight", channelid: "123123123", tags: "violence", ytAgeRestricted: "true", update :"1450614800" })
+CREATE (Track1:SOUNDCLOUD {title:"Queen - we are rock you", description: "The best song ever" , upload :"1450604980" })
+CREATE (Channel1:CHANNELYOUTUBE {screen_name: "Alberto", description:"I'm the best", googleplusid:"123321", relatedvideos:"Trailers 2016" , channelcreate :"1450604123" })
+CREATE (Channel2:CHANNELYOUTUBE {screen_name:"BadGuy", description:"I'm a bad guy", googleplusid:"678876", relatedvideos:"Why not?" , channelcreate :"1450234123" })
+CREATE (Googleuser1:GOOGLEPLUS {displayName:"BadGuy", aboutMe:"I'm 24 years old, (personal information)", image: "https://lh3.googleusercontent.com/ry5g21lx8j8/photo.jpg", location: "Spain", gender: "male" })
+CREATE (Googleuser2:GOOGLEPLUS {displayName:"Geroma", aboutMe:"Not all, (personal information)", image: "https://lh3.googleusercontent.com/asfdi23594/photo2.jpg", location: "USA", gender: "female" })
+
+
+// Relations.
+//TWITTER - URLS
+CREATE (Tweet1)-[:PUBLISHED {time:'4/17/2014'}]->(URL1)
+CREATE (Tweet2)-[:PUBLISHED {time:'5/15/2014'}]->(URL1)
+CREATE (Tweet3)-[:PUBLISHED {time:'3/28/2014'}]->(URL1)
+CREATE (Tweet4)-[:PUBLISHED {time:'3/20/2014'}]->(URL2)
+CREATE (Tweet5)-[:PUBLISHED {time:'7/24/2014'}]->(URL3)
+CREATE (Tweet6)-[:PUBLISHED {time:'7/24/2014'}]->(URL4)
+// URL - SOCIAL NETWORK
+CREATE (URL1)-[:RELATED]->(YouTubeVideo1)
+CREATE (URL2)-[:RELATED]->(YouTubeVideo2)
+CREATE (URL3)-[:RELATED]->(Track1)
+// YOUTUBEVIDEO - YOUTUBECHANNEL
+CREATE (YouTubeVideo1)-[:AUTHOR]->(Channel1)
+CREATE (YouTubeVideo2)-[:AUTHOR]->(Channel2)
+// YOUTUBECHANNEL - GOOGLE+
+CREATE (Channel2)-[:LINK]->(Googleuser1)
+CREATE (Channel1)-[:LINK]->(Googleuser2)
+----
+
+== THE GRAPH
+[source,cypher]
+----
+match n return n
+----
+//graph
+
+
+== QUERIES:
+
+== Identify the Urls on Tweets
+Tweets can have urls or not, this query will extract that interest us.
+
+
+[source,cypher]
+----
+MATCH (n1:URL)<-[:PUBLISHED]-(n2:TWITTER)
+RETURN n2.text
+----
+//table
+
+
+
+== Identify the Urls link Social Network
+These urls link to social network or others plataforms, We are interested only on social network.
+
+
+[source,cypher]
+----
+MATCH (n1:URL:SOCIALNETWORK)<-[:PUBLISHED]-(n2:TWITTER)
+RETURN n2.text
+----
+//table
+
+
+
+== Identify social Network Youtube
+To extract the maximum amount of information, we want the url is pointing youtube.
+
+
+[source,cypher]
+----
+MATCH (n1:URL:SOCIALNETWORK)<-[:PUBLISHED]-(n2:TWITTER)
+WITH n1 AS URL
+MATCH (n3:YOUTUBE)<-[:RELATED]-(URL)
+RETURN distinct n3
+----
+//table
+
+
+
+== Identify inappropiated videos youtube
+Filter with the restriction of age, these videos are important in some way. 
+
+[source,cypher]
+----
+MATCH (n1:URL:SOCIALNETWORK)<-[:PUBLISHED]-(n2:TWITTER)
+WITH n1 AS URL
+MATCH (n3:YOUTUBE)<-[:RELATED]-(URL)
+WITH n3 as VIDEO
+MATCH (VIDEO {ytAgeRestricted:"true"})
+RETURN distinct VIDEO
+----
+//table
+
+
+
+== Return Account Information
+
+
+[source,cypher]
+----
+MATCH (n5:GOOGLEPLUS)<--(n4:CHANNELYOUTUBE)<--(n3:YOUTUBE {ytAgeRestricted:"true"})<-[:RELATED]-(n2:URL:SOCIALNETWORK)<-[:PUBLISHED]-(n1:TWITTER)
+RETURN n1,n3,n4,n5
+----
+//table
+
+
+== Conclusions
+With this example , we can see the power of social networks , and how we can find people who inapropiad published content and inform the authorities, especially from the content and not finding these people. 
+
+

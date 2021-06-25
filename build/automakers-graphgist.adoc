@@ -1,0 +1,192 @@
+= Automakers GraphGist.
+:author: Federico Pfahler
+:style: red:Person(name)
+
+
+== Automakers Ownership Relations
+
+This GraphGist show the relations between Automotive companies.
+The informations source are different and the graph may be inaccurate.
+
+
+== Setup
+
+The following part setup the relations between nodes and create the Automotive elements:
+Note that Node "ROOT" is in not an Automaker. Is used in order to keep the nodes close together.
+
+//setup
+//hide
+
+[source,cypher]
+----
+CREATE (ROOT:ROOT{name:'Root'})
+CREATE (VwGroup:Automotive {foundation_year:1937, foundation_location:'Berlin', headquarters:'Wolfsburg', country:'Germany', number_factories: 100, number_of_employees: 610076, name:'Volkwswagen Group',type:'public'})
+CREATE (ToyotaMotorCompany:Automotive {foundation_year:1937, foundation_location:'Toyota', headquarters:'Toyota', country:'Japan', number_factories: 82, number_of_employees: 344109, name:'Toyota Motor Company',type:'public'})
+CREATE (fca:Automotive {foundation_year:2014, foundation_location:'London', headquarters:'London', country:'UK', number_factories: 29, number_of_employees: 225587, name:'Fiat Chrysler Automobiles',type:'public'})
+CREATE (GeneralMotors:Automotive {foundation_year:1908, foundation_location:'Detroit', headquarters:'Detroit', country:'US', number_facilities: 396, number_of_employees: 216000, name:'General Motors Company'})
+CREATE (TataGroup:Automotive {foundation_year: 1868, foundation_location: 'Not Known', headquarters:'Mumbai', country:'India', number_facilities: 'Not Known', number_of_employees: 600000, name:'Tata Group',type:'private' })
+CREATE (NissanMotors:Automotive {foundation_year: 1933, foundation_location: 'Osaka', headquarters:'Nishi-ku', country:'Japan', number_facilities: 'Not Known', number_of_employees: 142925, name:'Nissan Motors',type:'public' })
+CREATE (DaimlerAG:Automotive {foundation_year: 1926, foundation_location: 'Stuttgard', headquarters:'Stuttgard', country:'Germany', number_facilities: 'Not Known', number_of_employees: 279972, name:'Daimler AG',type:'joint-stock company' })
+CREATE (FordMotorCompany:Automotive {foundation_year: 1903, foundation_location: 'Detroit', headquarters:'Deaborn', country:'US', number_facilities: '~90', number_of_employees: 199000, name:'Ford Motor Comany',type:'public' })
+CREATE (bmw:Automotive {foundation_year: 1916, foundation_location: 'Munich', headquarters:'Munich', country:'Germany', number_facilities: '~90', number_of_employees: 116324, name:'Bayerische Motoren Werke AG',type:'joint-stock company' })
+CREATE (hyundai:Automotive {foundation_year: 1967, foundation_location: 'Seoul', headquarters:'Seoul', country:'South Korea', number_of_employees: 63099, name:'Hyundai Motor Company',type:'public' })
+CREATE (geely:Automotive {foundation_year: 1986, foundation_location: 'Not Known', headquarters:'Hangzhou', country:'China', number_of_employees: 18481, name:'Zhejiang Geely Holding Group Co., Ltd',type:'Holding company' })
+CREATE (psa:Automotive {foundation_year: 1976, foundation_location: 'Paris', headquarters:'Paris', country:'France', number_of_employees: 184107, name:'Groupe PSA',type:'Societé anonyme' })
+CREATE (honda:Automotive {foundation_year: 1946, foundation_location: '	Hamamatsu', headquarters:'Minato', country:'Japan', number_of_employees: 198561, name:'Honda Motor Co., Ltd.',type:'public' })
+CREATE (renault:Automotive {foundation_year: 1899, foundation_location: '	Boulogne-Billancourt', headquarters:'Boulogne-Billancourt', country:'France', number_of_employees: 127086, name:'Groupe Renault',type:'Societé anonyme' })
+CREATE (fiat:Automotive{country:'Italy',foundation_year:1899,name:'Fiat'})
+CREATE (chrysler:Automotive{country:'US',foundation_year:1925,name:'Chrysler'})
+CREATE (alfa:Automotive{country:'Italy',name:'Alfa Romeo',foundation_year:1910})
+CREATE (lancia:Automotive{country:'Italy',name:'Lancia',foundation_year:1906})
+CREATE (ferrari:Automotive{country:'Italy',name:'Ferrari',foundation_year:1947})
+CREATE (maserati:Automotive{country:'Italy',name:'Maserati',foundation_year:1914})
+CREATE (jeep:Automotive{country:'US',name:'Jeep',foundation_year:1941})
+CREATE (ram:Automotive{country:'US',name:'RAM',foundation_year:2009})
+CREATE (dodge:Automotive{country:'US',name:'Dodge',foundation_year:1914})
+CREATE (smart:Automotive{country:'Germany',name:'Smart',foundation_year:1996})
+CREATE (mercedes:Automotive{country:'Germany',name:'Mercedes-Benz',foundation_year:1883})
+CREATE (lincoln:Automotive{country:'US',name:'Lincoln Motor Company',foundation_year:1917})
+CREATE (bmw_brand:Automotive{country:'Germany',name:'BMW',foundation_year:1916})
+CREATE (rollsroyce:Automotive{country:'UK',name:'Rolls-Royce',foundation_year:1973})
+CREATE (mini:Automotive{country:'UK',name:'Mini',foundation_year:1959})
+CREATE (daihatsu:Automotive{country:'Japan',name:'Daihatsu',foundation_year:1907})
+CREATE (lexus:Automotive{country:'Japan',name:'Lexus',foundation_year:1989})
+CREATE (scion:Automotive{country:'Japan',name:'Scion',foundation_year:2003})
+CREATE (kia:Automotive{country:'South Korea',name:'Kia',foundation_year:1945})
+CREATE (seat:Automotive{country:'Spain',name:'Seat',foundation_year:1950})
+CREATE (skoda:Automotive{country:'Czech Republic',name:'Skoda',foundation_year:1895})
+CREATE (audi:Automotive{country:'Germany',name:'Audi',foundation_year:1910})
+CREATE (lamborghini:Automotive{country:'Italy',name:'Lamborghini',foundation_year:1963})
+CREATE (bentley:Automotive{country:'UK',name:'Bentley',foundation_year:1919})
+CREATE (bugatti:Automotive{country:'France',name:'Bugatti',foundation_year:1909})
+CREATE (vw:Automotive{country:'Germany',name:'Volkswagen Motor',foundation_year:1937})
+CREATE (porsche:Automotive{country:'Germany',name:'Porsche',foundation_year:1931})
+CREATE (volvo:Automotive{country:'Sweden',name:'Volvo',foundation_year:1927})
+CREATE (chevrolet:Automotive{country:'US',name:'Chevrolet',foundation_year:1911})
+CREATE (GMC:Automotive{country:'US',name:'GMC',foundation_year:1912})
+CREATE (holden:Automotive{country:'Australia',name:'Holden',foundation_year:1856})
+CREATE (cadillac:Automotive{country:'US',name:'Cadillac',foundation_year:1902})
+CREATE (opel:Automotive{country:'Germany',name:'Opel',foundation_year:1863})
+CREATE (buick:Automotive{country:'US',name:'Buick',foundation_year:1903})
+CREATE (vauxhall:Automotive{country:'Astralia',name:'Vauxhall',foundation_year:1857})
+CREATE (citroen:Automotive{country:'France',name:'Citroen',foundation_year:1919})
+CREATE (peugeot:Automotive{country:'France',name:'Peugeot',foundation_year:1810})
+CREATE (ds:Automotive{country:'France',name:'DS',foundation_year:2009})
+CREATE (acura:Automotive{country:'Japan',name:'Acura',foundation_year:1986})
+CREATE (tata:Automotive{country:'India',name:'Tata Motors',foundation_year:1945})
+CREATE (landrover:Automotive{country:'UK',name:'Land Rover',foundation_year:1925})
+CREATE (jaguar:Automotive{country:'UK',name:'Jaguar',foundation_year:1948})
+CREATE (dacia:Automotive{country:'Romania',name:'Dacia',foundation_year:1966})
+CREATE (infiniti:Automotive{country:'Japan',name:'Infinity',foundation_year:1989})
+CREATE (datsun:Automotive{country:'Japan',name:'Datsun',foundation_year:1931})
+
+CREATE (fca)-[:OWNS]->(fiat)
+CREATE (fca)-[:OWNS]->(chrysler)
+CREATE (fiat)-[:OWNS]->(alfa)
+CREATE (fiat)-[:OWNS]->(lancia)
+CREATE (fiat)-[:OWNS]->(ferrari)
+CREATE (fiat)-[:OWNS]->(maserati)
+CREATE (chrysler)-[:OWNS]->(jeep)
+CREATE (chrysler)-[:OWNS]->(ram)
+CREATE (chrysler)-[:OWNS]->(dodge)
+CREATE (DaimlerAG)-[:OWNS]->(mercedes)
+CREATE (DaimlerAG)-[:OWNS]->(smart)
+CREATE (FordMotorCompany)-[:OWNS]->(lincoln)
+CREATE (bmw)-[:OWNS]->(bmw_brand)
+CREATE (bmw)-[:OWNS]->(rollsroyce)
+CREATE (bmw)-[:OWNS]->(mini)
+CREATE (ToyotaMotorCompany)-[:OWNS]->(daihatsu)
+CREATE (ToyotaMotorCompany)-[:OWNS]->(lexus)
+CREATE (ToyotaMotorCompany)-[:OWNS]->(scion)
+CREATE (hyundai)-[:OWNS]->(kia)
+CREATE (VwGroup)-[:OWNS]->(seat)
+CREATE (VwGroup)-[:OWNS]->(skoda)
+CREATE (VwGroup)-[:OWNS]->(bentley)
+CREATE (VwGroup)-[:OWNS]->(audi)
+CREATE (VwGroup)-[:OWNS]->(lamborghini)
+CREATE (VwGroup)-[:OWNS]->(bugatti)
+CREATE (VwGroup)-[:OWNS]->(vw)
+CREATE (VwGroup)-[:OWNS]->(porsche)
+CREATE (geely)-[:OWNS]->(volvo)
+CREATE (GeneralMotors)-[:OWNS]->(chevrolet)
+CREATE (GeneralMotors)-[:OWNS]->(GMC)
+CREATE (GeneralMotors)-[:OWNS]->(holden)
+CREATE (GeneralMotors)-[:OWNS]->(cadillac)
+CREATE (GeneralMotors)-[:OWNS]->(opel)
+CREATE (GeneralMotors)-[:OWNS]->(buick)
+CREATE (GeneralMotors)-[:OWNS]->(vauxhall)
+CREATE (psa)-[:OWNS]->(citroen)
+CREATE (psa)-[:OWNS]->(peugeot)
+CREATE (psa)-[:OWNS]->(ds)
+CREATE (honda)-[:OWNS]->(acura)
+CREATE (TataGroup)-[:OWNS]->(tata)
+CREATE (TataGroup)-[:OWNS]->(landrover)
+CREATE (TataGroup)-[:OWNS]->(jaguar)
+CREATE (renault)-[:OWNS]->(dacia)
+CREATE (NissanMotors)-[:OWNS]->(infiniti)
+CREATE (NissanMotors)-[:OWNS]->(datsun)
+CREATE (ROOT)-[:to]->(TataGroup)
+CREATE (ROOT)-[:to]->(NissanMotors)
+CREATE (ROOT)-[:to]->(renault)
+CREATE (ROOT)-[:to]->(psa)
+CREATE (ROOT)-[:to]->(honda)
+CREATE (ROOT)-[:to]->(GeneralMotors)
+CREATE (ROOT)-[:to]->(geely)
+CREATE (ROOT)-[:to]->(VwGroup)
+CREATE (ROOT)-[:to]->(ToyotaMotorCompany)
+CREATE (ROOT)-[:to]->(bmw)
+CREATE (ROOT)-[:to]->(FordMotorCompany)
+CREATE (ROOT)-[:to]->(DaimlerAG)
+CREATE (ROOT)-[:to]->(fca)
+CREATE (ROOT)-[:to]->(FordMotorCompany)
+----
+//graph
+
+You can get information about single automakers:
+
+
+[source,cypher]
+----
+MATCH( automaker:Automotive )
+REMOVE automaker:ROOT
+RETURN automaker
+----
+//graph_result
+[source,cypher]
+----
+MATCH( automaker:Automotive {name:'Volkwswagen Group'})
+RETURN automaker.foundation_year,automaker.foundation_location,automaker.number_of_employees
+----
+//table
+
+or simply get all information about all the automakers, or all automakers based in germany:
+[source,cypher]
+----
+MATCH(automaker:Automotive) 
+RETURN automaker.name as Comapany,automaker.foundation_year as founded,automaker.foundation_location as founded_location,automaker.number_of_employees as employees,automaker.headquarters as headquarters, automaker.country as Country
+----
+//table
+[source,cypher]
+----
+MATCH(automaker:Automotive{country:'Germany'}) 
+RETURN automaker.name as Comapany,automaker.foundation_year as founded,automaker.foundation_location as founded_location,automaker.number_of_employees as employees,automaker.headquarters as headquarters
+----
+//table
+You can get the 10 oldest companies:
+[source,cypher]
+----
+MATCH(automaker:Automotive) 
+RETURN automaker.name as Comapany,automaker.foundation_year as founded
+ORDER BY automaker.foundation_year ASC 
+LIMIT 10
+----
+//table
+or  automakers that have more employees
+[source,cypher]
+----
+MATCH(automaker:Automotive) 
+WHERE EXISTS (automaker.number_of_employees)
+RETURN automaker.name as Comapany,automaker.number_of_employees as Employees
+ORDER BY automaker.number_of_employees  DESC
+---- 
+//table

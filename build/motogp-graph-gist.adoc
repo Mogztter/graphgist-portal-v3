@@ -1,0 +1,183 @@
+= MotoGp Graph Gist
+
+These queries are my first attempts at Cypher and using Neo4j, I am just begining my journey so if you can identify ways to improve the queries then please post a comment to help me improve.
+
+OK with that out of the way where did I begin? I love bike racing and thought the interrelated domains of championships, circuits, riders and teams would be a great place to start. I thought it would be cool to come up with a model that allowed to me to extrapolate bizarre facts from this years MotoGP championship (just in case anyone asked me to commentate on a upcoming race).
+
+What sort of facts would I want to dazzle people with?
+
+* What is the total race distance for the year?
+* Which is the longest race?
+* When they arrive at Sachsenring what is the total race distance left this season?
+* When they leave Silverstone how many right turns have they raced around?
+
+With this as an initial target I could begin by creating the following model and queries:
+
+image::https://dl.dropboxusercontent.com/u/73520990/MotoGpModelFirstCut.jpeg[]
+
+//hide
+//setup
+[source,cypher]
+----
+CREATE (r1:Race {laps:22})-[:HELD_AT]->(:Circuit {length:5.380, left:6, right:10, straight:1.068, name:'Losail Circuit'}),
+(r2:Race {laps:21})-[:HELD_AT]->(:Circuit {length:5.513, left:11, right:9, straight:1.200, name:'Circuit of the Americas'}),
+(r3:Race {laps:27})-[:HELD_AT]->(:Circuit {length:4.423, left:5, right:8, straight:0.607, name:'Jerez'}),
+(r4:Race {laps:28})-[:HELD_AT]->(:Circuit {length:4.185, left:4, right:9, straight:0.674, name:'Le Mans'}),
+(r5:Race {laps:23})-[:HELD_AT]->(:Circuit {length:5.245, left:6, right:9, straight:1.141, name:'Mugello'}),
+(r6:Race {laps:25})-[:HELD_AT]->(:Circuit {length:4.727, left:5, right:8, straight:1.047, name:'Circuit de Catalunya'}),
+(r7:Race {laps:26})-[:HELD_AT]->(:Circuit {length:4.542, left:6, right:12, straight:0.487, name:'Assen'}),
+(r8:Race {laps:30})-[:HELD_AT]->(:Circuit {length:3.671, left:10, right:3, straight:0.700, name:'Sachsenring'}),
+(r9:Race {laps:32})-[:HELD_AT]->(:Circuit {length:3.610, left:7, right:4, straight:0.453, name:'Mazda Raceway'}),
+(r10:Race {laps:27})-[:HELD_AT]->(:Circuit {length:4.216, left:10, right:6, straight:0.872, name:'Indianapolis Motor Speedway'}),
+(r11:Race {laps:22})-[:HELD_AT]->(:Circuit {length:5.403, left:6, right:8, straight:0.636, name:'Automotodrom Brno'}),
+(r12:Race {laps:20})-[:HELD_AT]->(:Circuit {length:5.900, left:8, right:10, straight:0.770, name:'Silverstone'}),
+(r13:Race {laps:28})-[:HELD_AT]->(:Circuit {length:4.226, left:6, right:10, straight:0.565, name:'Misano World Circuit'}),
+(r14:Race {laps:23})-[:HELD_AT]->(:Circuit {length:5.078, left:10, right:7, straight:0.968, name:'MotorLand Aragon'}),
+(r15:Race {laps:27})-[:HELD_AT]->(:Circuit {length:5.548, left:5, right:10, straight:0.920, name:'Sepang Circuit'}),
+(r16:Race {laps:22})-[:HELD_AT]->(:Circuit {length:4.448, left:7, right:5, straight:0.900, name:'Phillip Island'}),
+(r17:Race {laps:24})-[:HELD_AT]->(:Circuit {length:4.801, left:6, right:8, straight:0.762, name:'Motegi'}),
+(r18:Race {laps:30})-[:HELD_AT]->(:Circuit {length:4.005, left:9, right:5, straight:0.876, name:'Comunitat Valenciana'}),
+(r1)-[:BEFORE]->(r2)-[:AFTER]->(r1),
+(r2)-[:BEFORE]->(r3)-[:AFTER]->(r2),
+(r3)-[:BEFORE]->(r4)-[:AFTER]->(r3),
+(r4)-[:BEFORE]->(r5)-[:AFTER]->(r4),
+(r5)-[:BEFORE]->(r6)-[:AFTER]->(r5),
+(r6)-[:BEFORE]->(r7)-[:AFTER]->(r6),
+(r7)-[:BEFORE]->(r8)-[:AFTER]->(r7),
+(r8)-[:BEFORE]->(r9)-[:AFTER]->(r8),
+(r9)-[:BEFORE]->(r10)-[:AFTER]->(r9),
+(r10)-[:BEFORE]->(r11)-[:AFTER]->(r10),
+(r11)-[:BEFORE]->(r12)-[:AFTER]->(r11),
+(r12)-[:BEFORE]->(r13)-[:AFTER]->(r12),
+(r13)-[:BEFORE]->(r14)-[:AFTER]->(r13),
+(r14)-[:BEFORE]->(r15)-[:AFTER]->(r14),
+(r15)-[:BEFORE]->(r16)-[:AFTER]->(r15),
+(r16)-[:BEFORE]->(r17)-[:AFTER]->(r16),
+(r17)-[:BEFORE]->(r18)-[:AFTER]->(r17),
+(r1)-[:FIRST]->(jl:Rider {nation:'SPA', name:'Jorge Lorenzo'})-[:RIDES_FOR]->(:Team {name:'Yamaha Factory Racing'})-[:RUN]->(:Bike {manufacturer:'Yamaha'}),
+(r1)-[:SECOND]->(vr:Rider {nation:'ITA', name:'Valentino Rossi'})-[:RIDES_FOR]->(:Team {name:'Yamaha Factory Racing'})-[:RUN]->(:Bike {manufacturer:'Yamaha'}),
+(r1)-[:THIRD]->(mm:Rider {nation:'SPA', name:'Marc Marquez'})-[:RIDES_FOR]->(:Team {name:'Repsol Honda Team'})-[:RUN]->(:Bike {manufacturer:'Honda'}),
+(r1)-[:FOURTH]->(dp:Rider {nation:'SPA', name:'Dani Pedrosa'})-[:RIDES_FOR]->(:Team {name:'Repsol Honda Team'})-[:RUN]->(:Bike {manufacturer:'Honda'}),
+(r1)-[:FIFTH]->(cc:Rider {nation:'GBR', name:'Cal Crutchlow'})-[:RIDES_FOR]->(:Team {name:'Monster Yamaha Tech 3'})-[:RUN]->(:Bike {manufacturer:'Yamaha'}),
+(r2)-[:FIRST]->(mm),
+(r2)-[:SECOND]->(dp),
+(r2)-[:THIRD]->(jl),
+(r2)-[:FOURTH]->(cc),
+(r2)-[:FIFTH]->(sb:Rider {nation:'GER', name:'Stefan Bradl'})-[:RIDES_FOR]->(:Team {name:'LCR Honda MotoGP'})-[:RUN]->(:Bike {manufacturer:'Honda'}),
+(r3)-[:FIRST]->(dp),
+(r3)-[:SECOND]->(mm),
+(r3)-[:THIRD]->(jl),
+(r3)-[:FOURTH]->(vr),
+(r3)-[:FIFTH]->(cc),
+(r4)-[:FIRST]->(dp),
+(r4)-[:SECOND]->(cc),
+(r4)-[:THIRD]->(mm),
+(r4)-[:FOURTH]->(ad:Rider {nation:'ITA', name:'Andrea Dovizioso'})-[:RIDES_FOR]->(:Team {name:'Ducati Team'})-[:RUN]->(:Bike {manufacturer:'Ducati'}),
+(r4)-[:FIFTH]->(nh:Rider {nation:'USA', name:'Nicky Hayden'})-[:RIDES_FOR]->(:Team {name:'Ducati Team'})-[:RUN]->(:Bike {manufacturer:'Ducati'}),
+(r5)-[:FIRST]->(jl),
+(r5)-[:SECOND]->(dp),
+(r5)-[:THIRD]->(cc),
+(r5)-[:FOURTH]->(sb),
+(r5)-[:FIFTH]->(ad),
+(r6)-[:FIRST]->(jl),
+(r6)-[:SECOND]->(dp),
+(r6)-[:THIRD]->(mm),
+(r6)-[:FOURTH]->(vr),
+(r6)-[:FIFTH]->(sb),
+(r7)-[:FIRST]->(vr),
+(r7)-[:SECOND]->(mm),
+(r7)-[:THIRD]->(cc),
+(r7)-[:FOURTH]->(dp),
+(r7)-[:FIFTH]->(jl),
+(r8)-[:FIRST]->(mm),
+(r8)-[:SECOND]->(cc),
+(r8)-[:THIRD]->(vr),
+(r8)-[:FOURTH]->(sb),
+(r8)-[:FIFTH]->(ab:Rider {nation:'SPA', name:'Alvaro Bautista'})-[:RIDES_FOR]->(:Team {name:'GO&FUN Honda Gresini'})-[:RUN]->(:Bike {manufacturer:'Honda'}),
+(r9)-[:FIRST]->(mm),
+(r9)-[:SECOND]->(sb),
+(r9)-[:THIRD]->(vr),
+(r9)-[:FOURTH]->(ab),
+(r9)-[:FIFTH]->(dp),
+(r10)-[:FIRST]->(mm),
+(r10)-[:SECOND]->(dp),
+(r10)-[:THIRD]->(jl),
+(r10)-[:FOURTH]->(vr),
+(r10)-[:FIFTH]->(cc),
+(r11)-[:FIRST]->(mm),
+(r11)-[:SECOND]->(dp),
+(r11)-[:THIRD]->(jl),
+(r11)-[:FOURTH]->(vr),
+(r11)-[:FIFTH]->(ab),
+(r12)-[:FIRST]->(jl),
+(r12)-[:SECOND]->(mm),
+(r12)-[:THIRD]->(dp),
+(r12)-[:FOURTH]->(vr),
+(r12)-[:FIFTH]->(ab),
+(r13)-[:FIRST]->(jl),
+(r13)-[:SECOND]->(mm),
+(r13)-[:THIRD]->(dp),
+(r13)-[:FOURTH]->(vr),
+(r13)-[:FIFTH]->(sb)
+----
+
+//graph
+
+*What is the total race distance for the year?*
+[source,cypher]
+----
+MATCH (r:Race)-[:HELD_AT]->(c:Circuit)
+RETURN sum(r.laps * c.length) AS TotalRaceDistance
+----
+//table
+
+*Which is the longest race?*
+[source,cypher]
+----
+MATCH (r:Race)-[:HELD_AT]->(c:Circuit) 
+RETURN c.name AS LongestRace
+ORDER BY r.laps * c.length DESC 
+LIMIT 1
+----
+//table
+
+*When they leave Sachsenring what is the total race distance left this season?*
+[source,cypher]
+----
+MATCH (c1:Circuit)<-[:HELD_AT]-(r:Race)-[:AFTER*1..10]->()-[:HELD_AT]->(c2:Circuit) 
+WHERE c2.name = 'Sachsenring'
+RETURN SUM(r.laps * c1.length) + "km" AS RaceDistanceRemaining
+----
+//table
+
+*When they leave Silverstone how many right turns have they raced around?*
+[source,cypher]
+----
+MATCH(c1:Circuit)<-[HELD_AT]-(r1:Race)<-[:AFTER]-(r2:Circuit)
+WHERE c1.name = 'Silverstone'
+WITH r2
+MATCH (r2)<-[:BEFORE*]-(r3)-[:HELD_AT]->(c3)
+RETURN SUM(r3.laps * c3.right) AS TotalRightTurns
+----
+//table
+
+Not bad but not the most exciting model! So lets throw caution to the wind, add in some riders, teams and bikes with some data for the first five places in each race so far and see what we can figure out from there.
+
+image::https://dl.dropboxusercontent.com/u/73520990/MotoGpModel.jpeg[]
+
+Now I'd like to be able to derive from the results data available which manufacturer produces the best bike for going left. I'd like to perform some function of points allocation based on race results and number of left turns per race. Unfortunately I've run out of time, this is where I've got too.
+
+[source,cypher]
+----
+MATCH (b)<-[:RUN]-()<-[:RIDES_FOR]-()<-[]-(r:Race)-[:HELD_AT]->(c:Circuit)
+WITH b, c
+RETURN c.name, c.left, COLLECT(b.manufacturer)
+ORDER BY c.left DESC
+----
+//table
+
+If you can help I'd very much appreciate some pointers and advice. I'm enjoying my first steps with Neo4j and Graph Gists are an excellent way to get started without requiring the boilerplate setup that can be off putting.
+
+There's a huge amount of statistics out there for motogp and I'll be taking this further as I continue to learn Neo4j.
+
+Thanks for reading this far!

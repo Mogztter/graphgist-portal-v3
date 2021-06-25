@@ -1,0 +1,411 @@
+# The story of rebels economical system began
+
+## Introduction
+
+Here I tell you a story to present a solution to an everyday problem.
+How many times it happens that you go for a travel in the hyperspace
+with other rebels, you go on a mission with a couple of Jedi or,
+in general, you do something together with other people with which
+you have to share expenses?
+
+Often in those situations it happens that there is
+someone owing money to someone else owing money to the first.
+
+Here I present the story of how the Republic solved the issue
+in an elegant way using Neo4j.
+
+
+## The story
+
+A long time ago in a galaxy far far away there were four people
+travelling together to save the republic.
+
+They were brave but tolls and gasoline for the hyperspace
+are not for free; they weren't rich and didn't have
+a centralised financial system but rather a distributed
+one made by their savings.
+
+Luckily they had in addition to Force also a Neo4j
+database to take care of this distributed finance.
+
+So there were Rey the brave Jedi girl, Finn the 
+repentant, Han the history and Chewbacca the furry alien.
+
+They had a mission: get from the Neo4j planet
+the technology to manage the finances of the Republic
+and find a way to use it in the right way.
+
+The first bit was easy, they got to the planet with
+a USB key and got the database, but they had to find a
+way to use it in the right way to solve Organa's problem.
+They decided to make a small experiment with their return
+journey.
+
+Before departing they added themselves to the database
+as nodes with their names as properties and labelised as
+`Friend`s.
+
+//setup
+[source,cypher]
+----
+CREATE (f:Friend {name:'Rey'}) RETURN f;
+CREATE (f:Friend {name:'Finn'}) RETURN f;
+CREATE (f:Friend {name:'Han'}) RETURN f;
+CREATE (f:Friend {name:'Chewbacca'}) RETURN f;
+----
+
+Then they had to fill the
+fuel tanks so Han put 1000 republic credits (from now
+we'll call them £) of gasoline in the Millenium Falcon,
+this way the others owed him 250£ each (1000 / 4 = 250).
+
+They decided to represent as `Expense` nodes
+the 250£ and the relationship between the
+crewmen and Han is a `Credit` node containing the
+total amount of the money owed to the creditor -
+in this case 250£ -. Each `Credit` is linked to the
+creditor through a `:CREDIT` relationship and to the
+debitor through a `:DEBIT` relationship.
+In Cypher, with Han as a creditor and Rey as a debitor is:
+
+[source,cypher]
+----
+MATCH (creditor:Friend {name:'Han'}), (debitor:Friend {name:'Rey'})
+CREATE UNIQUE (creditor)-[:CREDIT]->(c:Credit {Creditor: creditor.name, Debitor: debitor.name})-[:DEBIT]->(debitor)
+CREATE UNIQUE (c)<-[:EXPENSE]-(exp:Expense {Creditor: creditor.name, Debitor: debitor.name, Amount: 250, Description: 'Fuel Millenium Falcon'})
+WITH c
+MATCH (c)<-[:EXPENSE]-(exp)
+WITH c, SUM(exp.Amount) AS total
+SET c.Amount = total;
+----
+
+//hide
+[source, cypher]
+----
+MATCH (creditor:Friend {name:'Han'}), (debitor:Friend)
+WHERE debitor.name IN ['Finn', 'Chewbacca']
+CREATE UNIQUE (creditor)-[:CREDIT]->(c:Credit {Creditor: creditor.name, Debitor: debitor.name})-[:DEBIT]->(debitor)
+CREATE UNIQUE (c)<-[:EXPENSE]-(exp:Expense {Creditor: creditor.name, Debitor: debitor.name, Amount: 250, Description: 'Fuel Millenium Falcon'})
+WITH c
+MATCH (c)<-[:EXPENSE]-(exp)
+WITH c, SUM(exp.Amount) AS total
+SET c.Amount = total;
+----
+
+that becomes for all the group:
+
+//hide
+[source, cypher]
+----
+MATCH (n)
+RETURN n
+----
+//graph_result
+
+After the fuel they started the journey but after a while it becomes lunch time
+so they stopped to a service area where Chewbacca got some http://starwars.wikia.com/wiki/Category:Quarren_food[Quarren food] for 80£.
+
+In the same way they added the expense to their Neo4j database
+so they owed Chewbacca 20£ each:
+
+// hide
+[source,cypher]
+----
+MATCH (creditor:Friend {name:'Chewbacca'}), (debitor:Friend)
+WHERE creditor <> debitor
+CREATE UNIQUE (creditor)-[:CREDIT]->(c:Credit {Creditor: creditor.name, Debitor: debitor.name})-[:DEBIT]->(debitor)
+CREATE UNIQUE (c)<-[:EXPENSE]-(exp:Expense {Creditor: creditor.name, Debitor: debitor.name, Amount: 20, Description: 'Quarren food'})
+WITH c
+MATCH (c)<-[:EXPENSE]-(exp)
+WITH c, SUM(exp.Amount) AS total
+SET c.Amount = total;
+----
+
+At this point there is an interesting poing:
+Chewbacca owes 250£ to Han
+and Han owes 20£ to Chewbacca. This means their credits
+are linked.
+
+[source,cypher]
+----
+MATCH p=(c:Friend {name:'Chewbacca'})-[:CREDIT|DEBIT*2]-(h:Friend {name:'Han'})
+RETURN p
+----
+//graph_result
+
+They wanted to describe this link so they defined a
+relationship between two credits of the same person
+as a `:CHAIN`, this states there is a money flow
+between his inbound and outbound credits.
+
+In this case we have a `:CHAIN` relationship between Han's debit
+and credit, and the same is for Chewbacca:
+
+[source,cypher]
+----
+MATCH (credit:Credit)<-[:CREDIT]-(creditor:Friend {name:'Han'})<-[:DEBIT]-(debit :Credit) 
+MERGE (credit)<-[chain:CHAIN]-(debit);
+
+MATCH (credit:Credit)<-[:CREDIT]-(creditor:Friend {name:'Chewbacca'})<-[:DEBIT]-(debit :Credit) 
+MERGE (credit)<-[chain:CHAIN]-(debit);
+----
+
+(Here there is the link to a clear picture of the
+https://www.dropbox.com/s/87r9nczj9qas207/Model.png?dl=0[model] unfortunately
+I've not been able to link to Dropbox image :( )
+
+Here starts the magic because they discover they can ask Neo4j
+to find if there is a compensation between credits and 
+settle them up:
+
+[source, cypher]
+----
+MATCH (creditor:Friend {name:'Chewbacca'})-[:CREDIT]->(credit:Credit),
+p = (credit)-[:CHAIN*1..]->(credit)
+WITH TAIL(NODES(p)) AS ns, credit
+
+WITH ns,
+	SIZE(ns) AS Chain_length,
+    extract(x IN ns | x.Creditor) AS People_involved, 
+    REDUCE(comp = credit.Amount, n in ns | CASE WHEN comp < n.Amount THEN comp ELSE n.Amount END) AS Compensation
+WHERE Compensation > 0
+FOREACH (credit in ns| SET credit.Amount = credit.Amount - Compensation)
+RETURN Chain_length, People_involved, Compensation;
+----
+
+//table
+
+In this case there was a compensation of 20£ between
+Chewbacca and Han following a chain of length 2.
+The query `MATCH` started from Chewbacca because
+his last credit update could have arisen a chain.
+
+Till here it's trivial but lets go forward with the story
+to see the power of the tool.
+
+After they resumed the journey they encountered a
+meteor shower that damaged the shields.
+
+So they went to get a mechanical part to replace the
+broken one and Rey paid 1200£ (300£ each).
+
+// hide
+[source,cypher]
+----
+MATCH (creditor:Friend {name:'Rey'}), (debitor:Friend)
+WHERE creditor <> debitor
+CREATE UNIQUE (creditor)-[:CREDIT]->(c:Credit {Creditor: creditor.name, Debitor: debitor.name})-[:DEBIT]->(debitor)
+CREATE UNIQUE (c)<-[:EXPENSE]-(exp:Expense {Creditor: creditor.name, Debitor: debitor.name, Amount: 300, Description: 'Shield parts'})
+WITH c, creditor
+MATCH (c)<-[:EXPENSE]-(exp)
+WITH c, creditor, SUM(exp.Amount) AS total
+SET c.Amount = total
+WITH c
+MATCH (c1)<-[:CREDIT]-(:Friend)<-[:DEBIT]-(c)<-[:CREDIT]-(creditor)<-[:DEBIT]-(debit :Credit) 
+MERGE (c)<-[:CHAIN]-(debit)
+MERGE (c1)<-[:CHAIN]-(c)
+----
+
+This complicates some more the network because they got some more
+compensations:
+
+//hide
+[source, cypher]
+----
+MATCH (creditor:Friend)-[:CREDIT]->(credit:Credit),
+p = (credit)-[:CHAIN*1..]->(credit)
+WITH TAIL(NODES(p)) AS ns, credit
+
+WITH ns,
+	SIZE(ns) AS Chain_length,
+    extract(x IN ns | x.Creditor) AS People_involved, 
+    REDUCE(comp = credit.Amount, n in ns | CASE WHEN comp < n.Amount THEN comp ELSE n.Amount END) AS Compensation
+WHERE Compensation > 0 AND
+ALL(n in People_involved where 
+          1=length(filter(m in People_involved where m=n))) 
+RETURN Chain_length, People_involved, Compensation
+ORDER BY Compensation DESC, Chain_length DESC
+----
+//table
+
+Now there is the tricky part: we've got
+different chains with different compensation values
+but with some credit nodes in common.
+This doesn't allow us to compensate everything
+like we did for Chewbacca and Han.
+We have to proceed with caution compensating
+one chain at time.
+The best soultion possible is
+the one compensating the most with the maximum chain
+length (when the compensating value is the same it's
+better to satisfy the highest number of people).
+
+[source, cypher]
+----
+MATCH (creditor:Friend)-[:CREDIT]->(credit:Credit),
+p = (credit)-[:CHAIN*1..]->(credit)
+WITH TAIL(NODES(p)) AS ns, credit
+
+WITH ns,
+	SIZE(ns) AS Chain_length,
+    extract(x IN ns | x.Creditor) AS People_involved, 
+    REDUCE(comp = credit.Amount, n in ns | CASE WHEN comp < n.Amount THEN comp ELSE n.Amount END) AS Compensation
+WHERE Compensation > 0 AND
+ALL(n in People_involved where 
+          1=length(filter(m in People_involved where m=n))) 
+
+WITH Chain_length, People_involved, Compensation, ns
+ORDER BY Compensation DESC, Chain_length DESC
+LIMIT 1
+FOREACH (credit in ns| SET credit.Amount = credit.Amount - Compensation)
+RETURN Chain_length, People_involved, Compensation
+----
+// table
+
+Going on with the story, once they've got the shield
+parts they go to a mechanic and Finn pays for the
+job 600£ (150£ each), that they add to the system.
+
+In the meanwhile Chewbacca and Han decide to get
+a Bantha Milk Cocktail and a Jedi Beer to the Cantina
+where Chewbacca pays 50£ for the two (25£ each).
+
+// hide
+[source,cypher]
+----
+MATCH (creditor:Friend {name:'Finn'}), (debitor:Friend)
+WHERE creditor <> debitor
+CREATE UNIQUE (creditor)-[:CREDIT]->(c:Credit {Creditor: creditor.name, Debitor: debitor.name})-[:DEBIT]->(debitor)
+CREATE UNIQUE (c)<-[:EXPENSE]-(exp:Expense {Creditor: creditor.name, Debitor: debitor.name, Amount: 150, Description: 'Mechanic job'})
+WITH c, creditor
+MATCH (c)<-[:EXPENSE]-(exp)
+WITH c, creditor, SUM(exp.Amount) AS total
+SET c.Amount = total
+WITH c
+MATCH (c1)<-[:CREDIT]-(:Friend)<-[:DEBIT]-(c)<-[:CREDIT]-(creditor)<-[:DEBIT]-(debit :Credit) 
+MERGE (c)<-[:CHAIN]-(debit)
+MERGE (c1)<-[:CHAIN]-(c);
+
+MATCH (creditor:Friend {name:'Chewbacca'}), (debitor:Friend {name:'Han'})
+WHERE creditor <> debitor
+CREATE UNIQUE (creditor)-[:CREDIT]->(c:Credit {Creditor: creditor.name, Debitor: debitor.name})-[:DEBIT]->(debitor)
+CREATE UNIQUE (c)<-[:EXPENSE]-(exp:Expense {Creditor: creditor.name, Debitor: debitor.name, Amount: 25, Description: 'Bantha Milk Cocktail and Jedi Beer'})
+WITH c, creditor
+MATCH (c)<-[:EXPENSE]-(exp)
+WITH c, creditor, SUM(exp.Amount) AS total
+SET c.Amount = total
+WITH c
+MATCH (c1)<-[:CREDIT]-(:Friend)<-[:DEBIT]-(c)<-[:CREDIT]-(creditor)<-[:DEBIT]-(debit :Credit) 
+MERGE (c)<-[:CHAIN]-(debit)
+MERGE (c1)<-[:CHAIN]-(c)
+----
+
+Again the database comes to help and finds some compensations
+to flatten credits.
+
+//hide
+[source, cypher]
+----
+MATCH (creditor:Friend)-[:CREDIT]->(credit:Credit),
+p = (credit)-[:CHAIN*1..]->(credit)
+WITH TAIL(NODES(p)) AS ns, credit
+
+WITH ns,
+	SIZE(ns) AS Chain_length,
+    extract(x IN ns | x.Creditor) AS People_involved, 
+    REDUCE(comp = credit.Amount, n in ns | CASE WHEN comp < n.Amount THEN comp ELSE n.Amount END) AS Compensation
+WHERE Compensation > 0 AND
+ALL(n in People_involved where 
+          1=length(filter(m in People_involved where m=n))) 
+
+WITH Chain_length, People_involved, Compensation, ns
+ORDER BY Compensation DESC, Chain_length DESC
+LIMIT 1
+FOREACH (credit in ns| SET credit.Amount = credit.Amount - Compensation)
+RETURN Chain_length, People_involved, Compensation
+----
+// table
+
+And running the query many times they get to a point where
+everything gets compensated.
+
+//hide
+[source, cypher]
+----
+MATCH (creditor:Friend)-[:CREDIT]->(credit:Credit),
+p = (credit)-[:CHAIN*1..]->(credit)
+WITH TAIL(NODES(p)) AS ns, credit
+
+WITH ns,
+	SIZE(ns) AS Chain_length,
+    extract(x IN ns | x.Creditor) AS People_involved, 
+    REDUCE(comp = credit.Amount, n in ns | CASE WHEN comp < n.Amount THEN comp ELSE n.Amount END) AS Compensation
+WHERE Compensation > 0 AND
+ALL(n in People_involved where 
+          1=length(filter(m in People_involved where m=n))) 
+
+WITH Chain_length, People_involved, Compensation, ns
+ORDER BY Compensation DESC, Chain_length DESC
+LIMIT 1
+FOREACH (credit in ns| SET credit.Amount = credit.Amount - Compensation)
+RETURN Chain_length, People_involved, Compensation
+----
+// table
+
+//hide
+[source, cypher]
+----
+MATCH (creditor:Friend)-[:CREDIT]->(credit:Credit),
+p = (credit)-[:CHAIN*1..]->(credit)
+WITH TAIL(NODES(p)) AS ns, credit
+
+WITH ns,
+	SIZE(ns) AS Chain_length,
+    extract(x IN ns | x.Creditor) AS People_involved, 
+    REDUCE(comp = credit.Amount, n in ns | CASE WHEN comp < n.Amount THEN comp ELSE n.Amount END) AS Compensation
+WHERE Compensation > 0 AND
+ALL(n in People_involved where 
+          1=length(filter(m in People_involved where m=n))) 
+
+WITH Chain_length, People_involved, Compensation, ns
+ORDER BY Compensation DESC, Chain_length DESC
+LIMIT 1
+FOREACH (credit in ns| SET credit.Amount = credit.Amount - Compensation)
+RETURN Chain_length, People_involved, Compensation
+----
+// table
+
+They knew this technoloy was the beginning of the new revolution.
+This could really simplify all the financial system
+of the rebels and save a lot of money and time.
+
+They flew to their planet and illustrated their
+discovery to Organa general.
+
+The rest of the story is well known but until this moment
+no one explained how the poor rebels managed their
+money in such a sparse republic.
+
+
+## Future developments
+In my work I explain a way to compensate chains that is
+a little bit mechanical but I'm quite confident there
+are better ways to do it. First of all it would be
+really interesting to describe a query to compensate
+all disjointed sub networks, furthermore it would
+be nice to find a way to compensate everything all
+at once.
+
+
+## Conclusions
+This was a fun story to explain a use case were graph
+databases really can do their best, it is possible
+to describe such an intrinsecally interconnected network
+and perform very descriptive queries on the data.
+My job is just an approach to the problem of finding
+subnetworks sharing credits and could be an idea to 
+develop a distributed economical system.
+I really have to thank Neo4j because its approach
+to the description of connected data opens the way of thinking
+and allowes to have better insights of the real value
+of the information.

@@ -1,0 +1,107 @@
+== The Graph of Programming Languages
+ 
+== Inspiration
+ 
+I was quite interested to start working on Neo4j, playing around I came across a blog (https://www.brendangriffen.com/) and was surprised with the image on the blog so thought to represent it in Neo4j Graph Style.
+
+The image:
+
+image::http://griffsgraphs.files.wordpress.com/2012/07/programming-languages_label.png[]
+
+The Graph shows which programming languages are linked to the largest number of programming languages around today. The node with large number of edges represents the number of influence it has.
+
+The version number quoted for each language are not précised, It is just an example demonstrating the relationship between different programming Languages. 
+
+There are more than 100+ Programming Languages but to limit the scope I have created the graph only for 29 languages.
+ 
+== The Graph
+
+//hide
+//setup
+[source,cypher]
+----
+ CREATE
+(l1 {name:"Java", version:"1.7"}),
+(l2 {name:"C", version: "c11"}),
+(l3 {name:"Ruby", version: "2.0"}),
+(l4 {name:"Python", version: "3.25"}),
+(l5 {name:"JavaScript", version:"1.8"}),
+(l6 {name:"Haskel", version:"7.4.2"}),
+
+(l2)-[:LINKED_TO_JAVA]->(l1),
+(l5)-[:LINKED_TO_JAVA]->(l1), 
+(l5)-[:LINKED_TO_JAVA]->(l3), 
+(l6)-[:LINKED_TO_JAVA]->(l1), 
+
+(l7 {name:"Objective C", version:"3.0"}),
+(l8 {name:"Sharp", version:"1.8"}),
+(l9 {name:"Vala", version:"0.22"}),
+(l10 {name:"Clojure", version:"1.4"}),
+(l11 {name:"AWK", version:"4.2"}),
+(l12 {name:"LISP", version:"6.1.1"}),
+(l13 {name:"Cobra", version:"7.0"}),
+(l14 {name:"JSON", version:"3.0"}),
+
+(l6)-[:LINKED_TO]->(l14), 
+(l5)-[:LINKED_TO]->(l4), 
+(l6)-[:LINKED_TO]->(l4), 
+(l7)-[:LINKED_TO]->(l1), 
+(l8)-[:LINKED_TO]->(l1), 
+(l10)-[:LINKED_TO]->(l2), 
+(l11)-[:LINKED_TO]->(l2),
+(l12)-[:LINKED_TO]->(l14),
+(l13)-[:LINKED_TO]->(l4), 	
+
+(l15 {name:"Pascal", version:"2.6.2"}),
+(l16 {name:"PHP", version:"5.3"}),
+(l17 {name:"Windows-Powershell", version:"3.0"}),
+(l18 {name:"VBScript", version:"6.0"}),
+(l19{name:"VisualBasic.NET", version:"13.2"}),
+(l20{name:"AppleScript", version: "7.2"}),
+
+(l14)-[:LINKED_TO]->(l4), 
+(l15)-[:LINKED_TO]->(l6),
+(l16)-[:LINKED_TO]->(l2), 
+(l17)-[:LINKED_TO]->(l8), 
+(l17)-[:LINKED_TO]->(l9), 
+(l18)-[:LINKED_TO]->(l7),
+(l19)-[:LINKED_TO]->(l8),
+(l20)-[:LINKED_TO]->(l12), 
+
+(l21 {name:"Logo", version: "2.0"}),
+(l22 {name:"APL", version: "5.0"}),
+(l23 {name:"Factor", version:"1.8"}),
+(l24 {name:"C-Sharp", version:"7.4.2"}),
+(l25 {name:"Scala", version:"7.4.2"}),
+(l26 {name:"C++", version:"7.4.2"}),
+(l27 {name:"Groovy", version:"7.4.2"}),
+
+(l24)-[:LINKED_TO]->(l1), 
+(l25)-[:LINKED_TO]->(l1), 
+(l26)-[:LINKED_TO]->(l2), 
+(l27)-[:LINKED_TO]->(l3), 
+(l21)-[:LINKED_TO]->(l12), 
+(l23)-[:LINKED_TO]->(l6),
+
+(l28 {name:"J", version:"7.4.2"}),
+(l22)-[:LINKED_TO]->(l28), 
+(l28)-[:LINKED_TO]->(l1)
+----
+//graph
+	
+== Use cases
+
+* Dominance of Java
+
+[source, cypher]
+----
+MATCH (n)<-[:LINKED_TO*]-(Related_languages)
+WHERE n.name = "Java"
+RETURN Related_languages
+----
+//table
+
+== References
+
+* http://zoom.it/6rJp
+* http://en.wikipedia.org/wiki/Programming_language

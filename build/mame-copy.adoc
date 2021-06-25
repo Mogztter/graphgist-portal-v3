@@ -1,0 +1,152 @@
+== MAME - Graph
+:neo4j-version: 2.3.0
+:author: Carlos Santillan
+
+image::https://raw.githubusercontent.com/csantill/MAMEGraphGist/master/pacman.png[MAME,align="center"]
+
+// Provide an introduction to your data modeling domain and what you are trying to accomplish
+
+== MAME
+http://mamedev.org/[MAME Dev]
+
+MAME stands for Multiple Arcade Machine Emulator. When used in conjunction with images of the original arcade game's ROM and disk data, MAME attempts to reproduce that game as faithfully as possible on a more modern general-purpose computer. MAME can currently emulate several thousand different classic arcade video games from the late 1970s through the modern era.
+
+// http://graphgist.neo4j.com/#!/gists/check_submission_form
+
+
+
+
+
+=== Create the Constraints and load data
+
+A list of Arcade Games currently emulated by MAME can be retrieved by using the listxml command line parameter
+
+---
+mame -listxml > mamelist.xml
+---
+The generated list was converted to a CSV to simplyfy loading into neo4j.
+
+//setup
+//hide
+[source,cypher]
+----
+CREATE CONSTRAINT ON (C:Clone) ASSERT C.name IS UNIQUE;
+CREATE CONSTRAINT ON (G:Game) ASSERT G.name IS UNIQUE;
+CREATE CONSTRAINT ON (C:Clone) ASSERT C.name IS UNIQUE;
+CREATE CONSTRAINT ON (Y:Year) ASSERT Y.name IS UNIQUE;
+CREATE CONSTRAINT ON (S:Status) ASSERT S.name IS UNIQUE;
+CREATE CONSTRAINT ON (M:Manufacturer) ASSERT M.name IS UNIQUE;
+
+LOAD CSV WITH HEADERS FROM "https://raw.githubusercontent.com/csantill/MAMEGraphGist/master/submamelist.csv" AS line
+
+FOREACH(ignoreMe IN CASE WHEN trim(line.cloneof) <> "" THEN [1] ELSE [] END | 
+	MERGE (C:Clone{name:line.name}) 
+	ON MATCH SET C.description = line.description
+	MERGE (So:Source{name:line.sourcefile}) 
+	MERGE (G:Game{name:line.cloneof}) 
+	MERGE (C)-[:CLONEOF]->(G) 
+	MERGE (So)-[:DRIVER]->(C) 
+)
+FOREACH(ignoreMe IN CASE WHEN trim(line.cloneof) <> "" THEN [] ELSE [1] END | 
+	MERGE (G:Game{name:line.name})
+	ON MATCH SET G.description = line.description
+	MERGE (M:Manufacturer{name:line.manufacturer}) 
+	MERGE (So:Source{name:line.sourcefile}) 
+	MERGE (M)-[:MANUFACTURED]->(G) 
+	MERGE (M)-[:MANUFACTURED]->(G)
+	MERGE (Y:Year{name:line.year})
+	MERGE (S:Status{name:line.status})
+	MERGE (G)-[:PRODUCED]->(Y)
+	MERGE (G)-[:STATUS]->(S)
+	MERGE (So)-[:DRIVER]->(G) 
+);
+
+----
+
+== Games and Clones
+
+A small subset of the list was used for demo there are only 77 Games, and 212 Clones
+MAME version 0.169 emulates 10,567 games and 22,276 Clones
+
+[source,cypher]
+----
+match (G:Game)
+return count(G)
+----
+//table
+
+
+[source,cypher]
+----
+match (C:Clone)
+return count(C)
+----
+//table
+
+
+== Pacman 
+Pacman is probably one of the most widely known video games of all time. Was released by Namco in 1980.
+
+Trivia :
+Pacman was originally called PuckMan the name was changed due to the fact that the middle section of the P could be scratched to make an offensive word
+
+[source,cypher]
+----
+match (C:Clone {name:'pacman'})-[:CLONEOF]-(G:Game) 
+match (M:Manufacturer)-[:MANUFACTURED]-(G)
+match (Y:Year)-[:PRODUCED]-(G)
+match (S:Source)-[:DRIVER]-(G)
+return C,G,M,Y,S
+----
+//graph_result
+
+== Clones 
+
+Some of the video games may have clones , most times these are simply slightly different versions of the same game, for Example different Language , updated versions , or bootlegs.
+There were a lot of clones released for PuckMan
+
+[source,cypher]
+----
+match (C:Clone )-[:CLONEOF]-(G:Game {name:'puckman'} )
+return C,G
+----
+
+//graph_result
+
+Other games also had clones 
+
+[source,cypher]
+----
+
+match (C:Clone)-[:CLONEOF]-(G:Game)
+return G.name , count(C) as Clones order by Clones  desc
+----
+//table
+
+== Hardware
+A lot of arcade machines used the same hardware, this is is to say that when once an arcade was produced Game manufacturers wanted to reuse the hardware and only change the game ROMs.
+MAME implements this on drivers that support a particular type of hardware. For example the galaxian.cpp driver has the following games
+
+This includes a variety of games, such as :
+* Frogger
+* Galaxian
+* Kong (a Donkey Kong bootleg)
+* Scramble 
+
+
+[source,cypher]
+----
+match (S:Source {name:'galaxian.cpp'})-[:DRIVER]-(G:Game)
+return G.description as Name order by Name
+----
+//table
+
+
+
+
+
+==Additional resources
+* https://github.com/csantill/MAMEGraphGist[Data and scripts used]
+* http://www.arcade-museum.com/game_detail.php?game_id=9149[Puck Man page @ the Arcade Museum]
+* https://en.wikipedia.org/wiki/Pac-Man[Pac-Man Wikipedia]
+* http://wiki.mamedev.org/index.php/FAQ:ROMs[MAMEDev ROM FAQ]

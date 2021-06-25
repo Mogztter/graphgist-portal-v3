@@ -1,0 +1,545 @@
+= Gentics Mesh (dev-versioning)
+
+:neo4j-version: 3.0
+:author: Johannes Schüth
+:twitter: @jotschi
+
+== Intro
+
+This graph gist is used to document the http://getmesh.io/[Gentics Mesh] graph database structure. The graph contains concepts for authentication handling, versioning and user/role/group management.
+
+
+== Root Tree
+
+
+The MeshRootImpl vertex is the root for the mesh graph data structure. Only a single MeshRootImpl exists in the whole graph.
+Various aggregation vertices are connected to the mesh root vertex.
+
+
+//hide
+//setup
+[source,cypher]
+----
+CREATE (meshRoot:MeshRootImpl { name: 'MeshRootImpl'}),
+
+ (nodeRoot:NodeRootImpl { name: 'NodeRootImpl'}),
+ (meshRoot)-[:HAS_NODE_ROOT]->(nodeRoot),
+
+ (tagRoot:TagRootImpl { name: 'TagRootImpl'}),
+ (meshRoot)-[:HAS_TAG_ROOT]->(tagRoot),
+
+ (tagFamilyRoot:TagFamilyRootImpl { name: 'TagFamilyRootImpl'}),
+ (meshRoot)-[:HAS_TAGFAMILY_ROOT]->(tagFamilyRoot),
+
+ (projectRoot:ProjectRootImpl { name: 'ProjectRootImpl'}),
+ (meshRoot)-[:HAS_PROJECT_ROOT]->(projectRoot),
+
+ (userRoot:UserRootImpl { name: 'UserRootImpl'}),
+ (meshRoot)-[:HAS_USER_ROOT]->(userRoot),
+
+ (groupRoot:GroupRootImpl { name: 'GroupRootImpl'}),
+ (meshRoot)-[:HAS_GROUP_ROOT]->(groupRoot),
+
+ (roleRoot:RoleRootImpl { name: 'RoleRootImpl'}),
+ (meshRoot)-[:HAS_ROLE_ROOT]->(roleRoot),
+
+ (changelogRoot:ChangelogRootImpl { name: 'ChangelogRootImpl'}),
+ (meshRoot)-[:HAS_CHANGELOG_ROOT]->(changelogRoot),
+
+ (languageRoot:LanguageRootImpl { name: 'LanguageRootImpl'}),
+ (meshRoot)-[:HAS_LANGUAGE_ROOT]->(languageRoot),
+
+ (sqRoot:SearchQueueRootImpl { name: 'SearchQueueRootImpl'}),
+ (meshRoot)-[:HAS_SEARCH_QUEUE_ROOT]->(sqRoot),
+
+ (schemaRoot:SchemaContainerRootImpl { name: 'SchemaContainerRootImpl'}),
+ (meshRoot)-[:HAS_ROOT_SCHEMA]->(schemaRoot),
+
+ (microschemaRoot:MicroschemaContainerRootImpl { name: 'MicroschemaContainerRootImpl'}),
+ (meshRoot)-[:HAS_MICROSCHEMA_ROOT]->(microschemaRoot)
+
+----
+
+//graph
+
+
+== Node Root
+
+There are multiple node root vertices. One is attached to the central mesh root and each project also has its own node root vertex. 
+
+//hide
+//setup
+[source,cypher]
+----
+MATCH (n) DETACH DELETE n;
+CREATE (meshRoot:MeshRootImpl { name: 'MeshRootImpl'}),
+ (node1:NodeImpl { name: 'NodeImpl' }),
+ (node2:NodeImpl { name: 'NodeImpl' }),
+ (node3:NodeImpl { name: 'NodeImpl' }),
+ (centralNodeRoot:NodeRootImpl { name: 'NodeRootImpl'}),
+ (projectNodeRoot:NodeRootImpl { name: 'NodeRootImpl'}),
+ (meshRoot)-[:HAS_NODE_ROOT]->(centralNodeRoot),
+ (projectRoot:ProjectRootImpl { name: 'ProjectRootImpl'}),
+ (meshRoot)-[:HAS_PROJECT_ROOT]->(projectRoot),
+ (project:ProjectImpl { name: 'ProjectImpl'}),
+ (projectRoot)-[:HAS_PROJECT]->(project),
+ (project)-[:HAS_NODE_ROOT]->(projectNodeRoot),
+ (projectNodeRoot)-[:HAS_NODE]->(node1),
+ (projectNodeRoot)-[:HAS_NODE]->(node2),
+ (centralNodeRoot)-[:HAS_NODE]->(node1),
+ (centralNodeRoot)-[:HAS_NODE]->(node2),
+ (centralNodeRoot)-[:HAS_NODE]->(node3);
+----
+
+//graph
+
+
+
+== Tag Root
+
+There are multiple tag root vertices. One central one is connected to the mesh root vertex (MeshRootImpl) and additional ones are created for each tag family.
+
+//hide
+//setup
+[source,cypher]
+----
+MATCH (n) DETACH DELETE n;
+CREATE (meshRoot:MeshRootImpl { name: 'MeshRootImpl'}),
+ (tagRoot:TagRootImpl { name: 'TagRootImpl'}),
+ (tag:TagImpl { name: 'TagImpl'}),
+ (tagRoot)-[:HAS_TAG]->(tag),
+ (meshRoot)-[:HAS_TAG_ROOT]->(tagRoot);
+----
+
+//graph
+
+== TagFamily Root
+
+There are multiple tag family root vertices. One central which is connected to the mesh root vertex and additional tag family root vertices are created for each project.
+
+//hide
+//setup
+[source,cypher]
+----
+MATCH (n) DETACH DELETE n;
+CREATE (meshRoot:MeshRootImpl { name: 'MeshRootImpl'}),
+ (tagfamilyRoot:TagFamilyRootImpl { name: 'TagFamilyRootImpl'}),
+ (tagFamily:TagFamilyImpl { name: 'TagFamilyImpl'}),
+ (tag1:TagImpl { name: 'TagImpl'}),
+ (tag1)-[:HAS_TAGFAMILY_ROOT]->(tagFamily),
+ (tag2:TagImpl { name: 'TagImpl'}),
+ (tag2)-[:HAS_TAGFAMILY_ROOT]->(tagFamily),
+ (tagFamily)-[:HAS_TAG]->(tag1),
+ (tagFamily)-[:HAS_TAG]->(tag2),
+ (tagfamilyRoot)-[:HAS_TAG_FAMILY]->(tagFamily),
+ (meshRoot)-[:HAS_TAGFAMILY_ROOT]->(tagfamilyRoot),
+ (projectTagfamilyRoot:TagFamilyRootImpl { name: 'TagFamilyRootImpl'}),
+ (projectRoot:ProjectRootImpl { name: 'ProjectRootImpl'}),
+ (meshRoot)-[:HAS_PROJECT_ROOT]->(projectRoot),
+ (project:ProjectImpl { name: 'ProjectImpl'}),
+ (projectRoot)-[:HAS_PROJECT]->(project),
+ (project)-[:HAS_TAGFAMILY_ROOT]->(projectTagfamilyRoot),
+ (projectTagfamilyRoot)-[:HAS_TAG_FAMILY]->(tagFamily);
+----
+
+//graph
+
+
+Tag relationships to other elements (nodes, projects)
+
+//hide
+//setup
+[source,cypher]
+----
+MATCH (n) DETACH DELETE n;
+CREATE (tag:TagImpl { name: 'TagImpl'}),
+ (node:NodeImpl {name: 'NodeImpl'}),
+ (project:ProjectImpl {name: 'ProjectImpl'}),
+ (user1:UserImpl {name: 'UserImpl'}),
+ (user2:UserImpl {name: 'UserImpl'}),
+ (tag)<-[:HAS_TAG]-(node),
+ (tag)-[:ASSIGNED_TO_PROJECT]->(project),
+ (tag)-[:HAS_EDITOR]->(user1),
+ (tag)-[:HAS_CREATOR]->(user2);
+----
+
+//graph
+
+== Project Root
+
+The project root vertex is used to aggregate all project vertices.
+
+//hide
+//setup
+[source,cypher]
+----
+MATCH (n) DETACH DELETE n;
+CREATE (meshRoot:MeshRootImpl { name: 'MeshRootImpl'}),
+ (project:ProjectImpl { name: 'ProjectImpl'}),
+ (projectRoot:ProjectRootImpl { name: 'ProjectRootImpl'}),
+ (projectRoot)-[:HAS_PROJECT]->(project),
+ (node:NodeImpl {name: 'NodeImpl'}),
+ (nodeRoot:NodeRootImpl {name: 'NodeRootImpl'}),
+ (language:LanguageImpl {name: 'LanguageImpl'}),
+ (project)-[:HAS_LANGUAGE]->(language),
+ (tagFamilyRoot:TagFamilyRootImpl {name: 'TagFamilyRootImpl'}),
+ (schemaRoot:ProjectSchemaContainerRootImpl {name: 'ProjectSchemaContainerRootImpl'}),
+ (microschemaRoot:ProjectMicroschemaContainerRootImpl {name: 'ProjectMicroschemaContainerRootImpl'}),
+ (project)-[:HAS_SCHEMA_ROOT]->(schemaRoot),
+ (project)-[:HAS_MICROSCHEMA_ROOT]->(microschemaRoot),
+ (project)-[:HAS_TAGFAMILY_ROOT]->(tagFamilyRoot),
+ (project)-[:HAS_BASE_NODE]->(node),
+ (project)-[:HAS_NODE_ROOT]->(nodeRoot),
+ (nodeRoot)-[:HAS_NODE]->(node),
+ (meshRoot)-[:HAS_PROJECT_ROOT]->(projectRoot);
+----
+
+//graph
+
+== User/Group/Role Root
+
+Each element type (user, role, group) has its own root aggregation vertex. 
+Users are assigned to groups and roles are assigned to groups. 
+The additional *ASSIGNED_TO_ROLE* edge is a shortcut edge which improves performance.
+
+//hide
+//setup
+[source,cypher]
+----
+MATCH (n) DETACH DELETE n;
+CREATE  (meshRoot:MeshRootImpl { name: 'MeshRootImpl'}), 
+
+ (user:UserImpl { name: 'UserImpl' }),
+ (userRoot:UserRootImpl { name: 'UserRootImpl'}),
+ (meshRoot)-[:HAS_USER_ROOT]->(userRoot),
+ (userRoot)-[:HAS_USER]->(user),
+
+ (groupRoot:GroupRootImpl { name: 'GroupRootImpl'}),
+ (group:GroupImpl { name: 'GroupImpl' }),
+ (meshRoot)-[:HAS_GROUP_ROOT]->(groupRoot),
+ (groupRoot)-[:HAS_GROUP]->(group),
+
+ (roleRoot:RoleRootImpl { name: 'RoleRootImpl'}),
+ (role:RoleImpl { name: 'RoleImpl' }),
+ (meshRoot)-[:HAS_ROLE_ROOT]->(roleRoot),
+ (roleRoot)-[:HAS_ROLE]->(role),
+
+ (user)-[:ASSIGNED_TO_ROLE]->(role),
+ (group)<-[:HAS_USER]-(user),
+ (group)<-[:HAS_ROLE]-(role);
+----
+
+//graph
+
+
+== User Node References
+
+A user can reference a single node in order to construct the nodeReference information.
+
+//hide
+//setup
+[source,cypher]
+----
+MATCH (n) DETACH DELETE n;
+CREATE (user:UserImpl { name: 'UserImpl' }),
+ (node:NodeImpl { name: 'NodeImpl' }),
+ (user)-[:HAS_NODE_REFERENCE]->(node);
+----
+
+//graph
+
+== Permissions
+
+Gentics Mesh uses a document based permission system. Permissions are created in between roles and mesh elements such as tags, projects, nodes, tag families. 
+
+//hide
+//setup
+[source,cypher]
+----
+MATCH (n) DETACH DELETE n;
+CREATE (user:UserImpl { name: 'UserImpl' }),
+ (node1:NodeImpl { name: 'NodeImpl' }),
+ (node2:NodeImpl { name: 'NodeImpl' }),
+ (node3:NodeImpl { name: 'NodeImpl' }),
+ (node4:NodeImpl { name: 'NodeImpl' }),
+ (node5:NodeImpl { name: 'NodeImpl' }),
+ (node6:NodeImpl { name: 'NodeImpl' }),
+ (group:GroupImpl { name: 'GroupImpl' }),
+ (role:RoleImpl { name: 'RoleImpl' }),
+ (user)-[:ASSIGNED_TO_ROLE]->(role),
+ (group)<-[:HAS_USER]-(user),
+ (group)<-[:HAS_ROLE]-(role),
+ (node1)<-[:HAS_READ_PERMISSION]-(role),
+ (node2)<-[:HAS_CREATE_PERMISSION]-(role),
+ (node3)<-[:HAS_UPDATE_PERMISSION]-(role),
+ (node4)<-[:HAS_DELETE_PERMISSION]-(role),
+ (node5)<-[:HAS_PUBLISH_PERMISSION]-(role),
+ (node6)<-[:HAS_READ_PUBLISHED_PERMISSION]-(role);
+----
+
+//graph
+
+
+== Schema Root
+
+//hide
+//setup
+[source,cypher]
+----
+MATCH (n) DETACH DELETE n;
+CREATE (meshRoot:MeshRootImpl { name: 'MeshRootImpl'}),
+ (schemaRoot:SchemaContainerRootImpl { name: 'SchemaContainerRootImpl'}),
+ (meshRoot)-[:HAS_ROOT_SCHEMA]->(schemaRoot),
+ (sc:SchemaContainerImpl { name: 'SchemaContainerImpl'}),
+ (scv1:SchemaContainerVersionImpl { name: 'SchemaContainerVersionImpl'}),
+ (sc)-[:HAS_LATEST_VERSION]->(scv1),
+ (node:NodeImpl { name: 'NodeImpl'}),
+ (nodeFC:NodeGraphFieldContainerImpl { name: 'NodeGraphFieldContainerImpl'}),
+ (schemaRoot)-[:HAS_SCHEMA_CONTAINER_ITEM]->(sc),
+ (nodeFC)-[:HAS_SCHEMA_CONTAINER_VERSION]->(scv1),
+ (node)-[:HAS_FIELD_CONTAINER]->(nodeFC);
+----
+
+//graph
+
+
+== Changelog Root
+
+The changelog root aggregation vertex is used to list all applied changelog entries. 
+Each connected change vertex contains information about executed graph changelog actions. 
+This way the mesh installation can determine which changes have already been executed.
+
+//hide
+//setup
+[source,cypher]
+----
+MATCH (n) DETACH DELETE n;
+CREATE (meshRoot:MeshRootImpl { name: 'MeshRootImpl'}),
+ (changelogRoot:ChangelogRootImpl { name: 'ChangelogRootImpl'}),
+ (change1:Change {name: 'Change'}),
+ (change2:Change {name: 'Change'}),
+ (change3:Change {name: 'Change'}),
+ (changelogRoot)-[:HAS_CHANGE]->(change1),
+ (changelogRoot)-[:HAS_CHANGE]->(change2),
+ (changelogRoot)-[:HAS_CHANGE]->(change3),
+ (meshRoot)-[:HAS_CHANGELOG_ROOT]->(changelogRoot);
+----
+
+//graph
+
+== Node With Fields
+
+A node can have multiple graph field containers. A graph field container represents the content of the node for a specific language, release and version.
+The edge *HAS_FIELD_CONTAINER* contains additional information in order to identify the language, release,  and type of the field container.
+A field container can represent the latest draft version, the current published version or any older version of the graph field container.
+
+* HAS_FIELD_CONTAINER: edgeType, releaseUuid, languageTag 
+ 
+//hide
+//setup
+[source,cypher]
+----
+MATCH (n) DETACH DELETE n;
+CREATE (node:NodeImpl { name: 'NodeImpl'}),
+ (nodeFC1:NodeGraphFieldContainerImpl { name: 'NodeGraphFieldContainerImpl' }),
+ (nodeFC2:NodeGraphFieldContainerImpl { name: 'NodeGraphFieldContainerImpl' }),
+ (schemaVersion:SchemaContainerVersionImpl { name: 'SchemaContainerVersionImpl'}),
+ (nodeFC1)-[:HAS_SCHEMA_CONTAINER_VERSION]->(schemaVersion),
+ (nodeFC2)-[:HAS_SCHEMA_CONTAINER_VERSION]->(schemaVersion),
+ (node)-[:HAS_FIELD_CONTAINER]->(nodeFC1),
+ (node)-[:HAS_FIELD_CONTAINER]->(nodeFC2);
+----
+
+//graph
+
+
+== Node Relationships
+
+Tag relationships to other elements (nodes, projects)
+
+//hide
+//setup
+[source,cypher]
+----
+MATCH (n) DETACH DELETE n;
+CREATE (tag:TagImpl { name: 'TagImpl'}),
+ (node:NodeImpl {name: 'NodeImpl'}),
+ (nodeFC:NodeGraphFieldContainerImpl { name: 'NodeGraphFieldContainerImpl' }),
+ (project:ProjectImpl {name: 'ProjectImpl'}),
+ (user1:UserImpl {name: 'UserImpl'}),
+ (user2:UserImpl {name: 'UserImpl'}),
+ (tag)<-[:HAS_TAG]-(node),
+ (tag)-[:ASSIGNED_TO_PROJECT]->(project),
+ (node)-[:ASSIGNED_TO_PROJECT]->(project),
+ (nodeFC)-[:HAS_EDITOR]->(user1),
+ (nodeFC)-[:HAS_CREATOR]->(user2);
+----
+
+//graph
+
+== Node Fields
+
+There are three types of field elements in mesh.
+
+1. Basic Field Types such as:
+
+* StringFieldImpl
+* DateFieldImpl
+* NumberFieldImpl
+* BooleanFieldImpl
+* HtmlFieldImpl
+
+These field types are mapped to properties of the  field container and thus don't require additional vertices, edges.
+
+2. Referencing field types such as:
+
+* MicronodeField
+* NodeField
+
+These field types create edges to the referenced element (e.g.: a NodeImpl vertex or a MicronodeImpl)
+
+3. Complex field types such as:
+
+* All kind of lists
+
+These field types require additional vertices which are used to store the information. 
+
+//hide
+//setup
+[source,cypher]
+----
+MATCH (n) DETACH DELETE n;
+CREATE (nodeFC:NodeGraphFieldContainerImpl { name: 'NodeGraphFieldContainerImpl' }),
+ (node:NodeImpl { name: 'NodeImpl'}),
+ (node2:NodeImpl { name: 'NodeImpl'}),
+ (node3:NodeImpl { name: 'NodeImpl'}),
+ (micronode:MicronodeImpl { name: 'MicronodeImpl'}),
+ (nodeFC)-[:HAS_LIST]->(micronodeList:MicronodeGraphFieldListImpl { name: 'MicronodeGraphFieldListImpl'}),
+ (nodeFC)-[:HAS_LIST]->(htmlList:HtmlGraphFieldListImpl { name: 'HtmlGraphFieldListImpl'}),
+ (nodeFC)-[:HAS_LIST]->(dateList:DateGraphFieldListImpl { name: 'DateGraphFieldListImpl'}),
+ (nodeFC)-[:HAS_LIST]->(booleanList:BooleanGraphFieldListImpl { name: 'BooleanGraphFieldListImpl'}),
+ (nodeFC)-[:HAS_LIST]->(numberList:NumberGraphFieldListImpl { name: 'NumberGraphFieldListImpl'}),
+ (nodeFC)-[:HAS_LIST]->(stringList:StringGraphFieldListImpl { name: 'StringGraphFieldListImpl'}),
+ (nodeFC)-[:HAS_LIST]->(nodeList:NodeGraphFieldListImpl { name: 'NodeGraphFieldListImpl'}),
+ (nodeList)-[:HAS_ITEM]->(node2),
+ (nodeList)-[:HAS_ITEM]->(node3),
+ (nodeFC)-[:HAS_FIELD {name: 'NodeGraphFieldImpl'}]->(node),
+ (nodeFC)-[:HAS_FIELD {name: 'MicronodeGraphFieldImpl'}]->(micronode),
+ (binaryField:BinaryGraphFieldImpl { name: 'BinaryGraphFieldImpl'}),
+ (nodeFC)-[:HAS_FIELD]->(binaryField),
+ (node)-[:HAS_FIELD_CONTAINER]->(nodeFC);
+----
+
+//graph
+
+== Schema Versions
+
+
+//hide
+//setup
+[source,cypher]
+----
+MATCH (n) DETACH DELETE n;
+CREATE (sc:SchemaContainerImpl { name: 'SchemaContainerImpl'}),
+ (scv1:SchemaContainerVersionImpl { name: 'SchemaContainerVersionImpl'}),
+ (scv2:SchemaContainerVersionImpl { name: 'SchemaContainerVersionImpl'}),
+ (change1:AddFieldChangeImpl { name: 'AddFieldChangeImpl'}),
+ (change2:AddFieldChangeImpl { name: 'AddFieldChangeImpl'}),
+ (change3:UpdateSchemaChangeImpl { name: 'UpdateSchemaChangeImpl'}),
+ (scv1)-[:HAS_CHANGE]->(change1),
+ (change1)-[:HAS_CHANGE]->(change2),
+ (change2)-[:HAS_CHANGE]->(change3),
+ (change1)-[:HAS_SCHEMA_CONTAINER]->(scv1),
+ (sc)-[:HAS_PARENT_CONTAINER]->(scv2),
+ (sc)-[:HAS_PARENT_CONTAINER]->(scv1),
+ (scv1)-[:HAS_VERSION]->(scv2),
+ (sc)-[:HAS_LATEST_VERSION]->(scv1);
+----
+
+//graph
+
+* SchemaContainerVersionImpl: version 
+
+== Releases
+
+A release is a bundle of specific schema container version vertices.
+
+//hide
+//setup
+[source,cypher]
+----
+MATCH (n) DETACH DELETE n;
+CREATE (scv1:SchemaContainerVersionImpl { name: 'SchemaContainerVersionImpl'}),
+ (scv2:SchemaContainerVersionImpl { name: 'SchemaContainerVersionImpl'}),
+ (release:ReleaseImpl { name: 'ReleaseImpl' }),
+ (release)-[:HAS_VERSION]->(scv1),
+ (release)-[:HAS_VERSION]->(scv2),
+ (releaseRoot:ReleaseRootImpl { name: 'ReleaseRootImpl'}),
+ (releaseRoot)-[:HAS_INITIAL_RELEASE]->(release),
+ (releaseRoot)-[:HAS_RELEASE]->(release),
+ (releaseRoot)-[:HAS_LATEST_RELEASE]->(release),
+ (projectRoot:ProjectRootImpl { name: 'ProjectRootImpl'}),
+ (project:ProjectImpl { name: 'ProjectImpl'}),
+ (project)-[:HAS_RELEASE_ROOT]->(releaseRoot),
+ (projectRoot)-[:HAS_PROJECT]->(project),
+ (meshRoot:MeshRootImpl { name: 'MeshRootImpl'}),
+ (meshRoot)-[:HAS_PROJECT_ROOT]->(projectRoot);
+----
+
+//graph
+
+
+
+== Node Versioning
+
+The displayed node has two field container. One which is represents the latest version of the node content and one which represents the previous version.
+One of those field containers is connected to two field vertices. 
+This means that the old field (DateGraphFieldListImpl) did not change in the previous revision and was thus reused. 
+The date list field would not be reused if a modification had been detected in the fields content in between both versions.
+
+//hide
+//setup
+[source,cypher]
+----
+MATCH (n) DETACH DELETE n;
+CREATE (node:NodeImpl { name: 'NodeImpl'}),
+ (nodeFC1:NodeGraphFieldContainerImpl { name: 'NodeGraphFieldContainerImpl' }),
+ (nodeFC2:NodeGraphFieldContainerImpl { name: 'NodeGraphFieldContainerImpl' }),
+ (dateList:DateGraphFieldListImpl { name: 'DateGraphFieldListImpl'}),
+ (nodeFC1)-[:HAS_LIST]->(dateList),
+ (stringList:StringGraphFieldListImpl { name: 'StringGraphFieldListImpl'}),
+ (nodeFC2)-[:HAS_LIST]->(stringList),
+ (nodeFC1)-[:HAS_LIST]->(dateList),
+ (nodeFC2)-[:HAS_LIST]->(dateList),
+ (node)-[:HAS_FIELD_CONTAINER]->(nodeFC1),
+ (node)-[:HAS_FIELD_CONTAINER]->(nodeFC2);
+----
+
+//graph
+
+
+== Node Hierarchy
+
+The project node tree structure is build using the *HAS_PARENT_NODE* relationship.
+
+//hide
+//setup
+[source,cypher]
+----
+MATCH (n) DETACH DELETE n;
+CREATE (node:NodeImpl { name: 'NodeImpl'}),
+ (childNode1:NodeImpl { name: 'NodeImpl'}),
+ (childNode2:NodeImpl { name: 'NodeImpl'}),
+ (subchildNode1:NodeImpl { name: 'NodeImpl'}),
+ (subchildNode2:NodeImpl { name: 'NodeImpl'}),
+ (node)<-[:HAS_PARENT_NODE]-(childNode1),
+ (node)<-[:HAS_PARENT_NODE]-(childNode2),
+ (childNode1)<-[:HAS_PARENT_NODE]-(subchildNode1),
+ (childNode1)<-[:HAS_PARENT_NODE]-(subchildNode2),
+ (project:ProjectImpl { name: 'ProjectImpl'}),
+ (basenode:NodeImpl {name: 'NodeImpl'}),
+ (basenode)<-[:HAS_PARENT_NODE]-(node),
+ (project)-[:HAS_BASE_NODE]->(basenode);
+----
+
+//graph

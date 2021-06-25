@@ -1,0 +1,410 @@
+= Markov Chains
+:author: Nicole White
+:twitter: @_nicolemargaret
+:neo4j-version:2.1.3
+:tags: domain:math:probability:markov
+
+A while back I wrote a link:http://nicolewhite.github.io/r/2014/06/10/steady-state-transition-matrix.html[blog post] explaining Markov chains and demonstrating different ways of finding their steady-state distribution in R. Now, I want to play with Markov chains as a graph. I'm going to pull examples from around the internet and answer the same questions in Cypher as the authors do with matrices. This gives me the opportunity to explore more advanced Cypher queries while working with a topic I enjoy very much (stochastic processes and Markov chains). So this is officially *just for funsies*.
+
+I found three Markov chains online that I'm going to showcase, and they involve the following topics:
+
+* <<X1, Finance>>
+* <<X2, Manufacturing>>
+* <<X3, Actuarial Science>>
+
+If you are unfamiliar with Markov chains, you might want to refer to my blog post linked above for a quick overview.
+
+'''
+
+[[X1]]
+== Finance
+
+=== Description
+
+The Wikipedia article on Markov chains has link:http://en.wikipedia.org/wiki/Markov_chain#Example[an example] consisting of states and probabilities for a hypothetical stock market. The market can be in one of three states: 
+
+* Bull
+* Bear
+* Stagnant
+
+=== Matrix Representation
+
+++++
+<br>
+++++
+
+image::https://dl.dropboxusercontent.com/u/94782892/bullbearstag.png[]
+
+++++
+<br>
+++++
+
+=== Graph Representation
+
+Wikipedia conveniently provides a graphical representation of the states and probabilities:
+
+image::https://dl.dropboxusercontent.com/u/94782892/markov.png[align="center"]
+*link:http://en.wikipedia.org/wiki/File:Finance_Markov_chain_example_state_space.svg[SOURCE]*
+
+//hide
+[source,cypher]
+----
+//States
+CREATE (Bull {name:'Bull'}), (Bear {name:'Bear'}), (Stagnant {name:'Stagnant'})
+
+//Probabilities
+CREATE (Bull)-[:PROBABILITY {p:0.9}]->(Bull),
+     (Bull)-[:PROBABILITY {p:0.075}]->(Bear),
+	   (Bull)-[:PROBABILITY {p:0.025}]->(Stagnant),
+	   (Bear)-[:PROBABILITY {p:0.15}]->(Bull),
+	   (Bear)-[:PROBABILITY {p:0.8}]->(Bear),
+	   (Bear)-[:PROBABILITY {p:0.05}]->(Stagnant),
+	   (Stagnant)-[:PROBABILITY {p:0.25}]->(Bull),
+	   (Stagnant)-[:PROBABILITY {p:0.25}]->(Bear),
+	   (Stagnant)-[:PROBABILITY {p:0.5}]->(Stagnant)
+----
+//graph
+
+=== Question
+
+The question posed in the article is: If we are currently in a Bear market, what is the probability distribution three time-steps from now? In other words, what is the probability we will be in either a Bull, Bear, or Stagnant market three days from now given we are in a Bear market today?
+
+==== Solve with Matrices
+
+Wikipedia solves this by taking the one-time-step transition probability matrix, \(P\), to the third power and extracting the relevant row:
+
+[subs=none]
+++++
+\(P^3 = \begin{bmatrix} 0.7745 & 0.17875 & 0.04675 \\ 0.3575 & 0.56825 & 0.07425 \\ 0.4675 & 0.37125 & 0.16125 \end{bmatrix} \)
+++++
+
+\(Answer = [0.3575, 0.56825, 0.07425]\)
+
+==== Solve with Cypher
+
+In Cypher, we can achieve the same answer with the following:
+
+[source,cypher]
+----
+MATCH (w)-[r]->(x)
+WHERE w.name= "Bear"
+WITH x, r.p as p1
+MATCH (x)-[r]->(y)
+WITH y, p1, r.p as p2
+MATCH (y)-[r]->(z)
+WITH z, p1 * p2 * r.p AS product
+RETURN z.name AS `State at time t = 3`, SUM(product) AS Probability
+----
+//table
+
+This tells us that three days from now, given we are currently in a Bear market, we will be in a Bull market with probability 0.3575, in a Bear market with probability 0.56825, or in a Stagnant market with probability 0.07425.
+
+//hide
+[source, cypher]
+----
+MATCH n-[r]-m 
+WITH n, r 
+DELETE n, r
+----
+
+'''
+
+[[X2]]
+== Manufacturing
+
+Another example I found during my Google search expedition is the following from slide 4 of link:http://www.math.ucla.edu/~pejman/intro2prob/LiveMeeting10.pdf[this Beamer presentation]. The language in the presentation is not very clear; I think the author switched the example from a car to a machine but did not change all instances of the word 'car' in the presentation. Anyway, here is a description:
+
+=== Description
+
+Machines at a factory are either working or broken. If a machine is currently working, it will break down by tomorrow with probability \(b\). If a machine is currently broken, it will be repaired by the maintenance crew by tomorrow with probability \(r\). This factory has a rule that if a machine is broken for at least three days, then the machine is put on a list of urgent repairs and will be repaired by tomorrow with probability \(1\).
+
+Because the machine can be broken for up to but not exceeding three days, this Markov chain consists of four states:
+
+* Working
+* Broken for 1 day
+* Broken for 2 days
+* Broken for 3 days
+
+=== Matrix Representation
+
+++++
+<br>
+++++
+
+image::https://dl.dropboxusercontent.com/u/94782892/workingbroken.png[]
+
+++++
+<br>
+++++
+
+=== Graph Representation
+
+image::https://dl.dropboxusercontent.com/u/94782892/machine.PNG[align="center"]
+
+//hide
+[source,cypher]
+----
+//States
+CREATE (Working {name:'Working'}),
+		(Broken1 {name:'Broken1'}),
+		(Broken2 {name:'Broken2'}),
+		(Broken3 {name:'Broken3'})
+		
+//Probabilities
+CREATE (Working)-[:PROBABILITY {p:0.9}]->(Working),
+		(Working)-[:PROBABILITY {p:0.1}]->(Broken1),
+		
+		(Broken1)-[:PROBABILITY {p:0.8}]->(Working),
+		(Broken1)-[:PROBABILITY {p:0.2}]->(Broken2),
+		
+		(Broken2)-[:PROBABILITY {p:0.8}]->(Working),
+		(Broken2)-[:PROBABILITY {p:0.2}]->(Broken3),
+		
+		(Broken3)-[:PROBABILITY {p:1}]->(Working)
+----
+//graph
+
+=== Question
+
+From the presentation (slide 7):
+
+The factory buys 100 machines. 25 of the machines are bought used; of these 25, 20 have been broken for one day and 5 have been broken for two days. The remaining machines are new and are in working order. Four days from now, how many machines do we expect to have on our urgent repair list? In other words, how many machines will be in their third day of disrepair on day four?
+
+The presentation considers the following values for \(r\) and \(b\):
+
+\(r = 0.8\)
+
+\(b = 0.1\)
+
+==== Solve with Matrices
+
+To solve using matrices / vectors, we first need the initial distribution vector. We know 20 machines have been broken for one day, 5 machines have been broken for two days, 0 have been broken for three days, and thus 100 - 25 = 75 machines are in working order:
+
+[subs=none]
+++++
+\(\mu_0 = [\frac{75}{100}, \frac{20}{100}, \frac{5}{100}, 0] = [0.75, 0.20, 0.05, 0]\)
+++++
+
+Next, we need to find \(P^4\) so we can have the four-time-step transition probability matrix:
+
+[subs=none]
+++++
+\(P^4 = \begin{bmatrix} 0.8897 & 0.0889 & 0.0178 & 0.0036 \\ 0.8896 & 0.0896 & 0.0176 & 0.0032 \\ 0.8892 & 0.0892 & 0.0184 & 0.0032 \\ 0.8890 & 0.0890 & 0.0180 & 0.0040 \end{bmatrix} \)
+++++
+
+The answer can now be found by multiplying the initial distribution vector \(\mu_0\) by the relevant column (the column corresponding to Broken3) of the four-time-step transition probability matrix \(P^4\):
+
+[subs=none]
+++++
+\(= [0.75, 0.20, 0.05, 0] \times \begin{bmatrix} 0.0036 \\ 0.0032 \\ 0.0032 \\ 0.0040 \end{bmatrix}\)<br><br>
+
+\(= 0.0036(0.75) + 0.0032(0.20) + 0.0032(0.05) + 0.0040(0)\)<br><br>
+
+\(= 0.0035\)
+++++
+
+==== Solve with Cypher
+
+To solve this in Cypher, we get to use a CASE statement! How fun:
+
+[source, cypher]
+----
+MATCH (v)-[r]->(w) 
+WITH v, w, r.p AS p1 
+MATCH (w)-[r]->(x) 
+WITH v, x, p1, r.p AS p2 
+MATCH (x)-[r]->(y) 
+WITH v, y, p1, p2, r.p AS p3 
+MATCH (y)-[r]->(z) 
+WITH v, z, p1 * p2 * p3 * r.p AS product 
+WHERE z.name = "Broken3"
+WITH v,
+	product * (
+	CASE
+		WHEN v.name="Working" THEN 0.75
+		WHEN v.name="Broken1" THEN 0.20
+		WHEN v.name="Broken2" THEN 0.05
+		ELSE 0
+	END) AS dist
+RETURN SUM(dist) AS Probability
+----
+//table
+
+This tells us that we expect 0.0035 or 0.35% of machines to be in their third day of disrepair on day four. 0.35% of 100 is 0.35, so we expect 0.35 machines to be in their third day of disrepair on day four.
+
+Moreover, we can find the distribution of all 100 machines (the presentation does not ask or go over this) with some tweaks in the query:
+
+[source, cypher]
+----
+MATCH (v)-[r]->(w) 
+WITH v, w, r.p AS p1 
+MATCH (w)-[r]->(x) 
+WITH v, x, p1, r.p AS p2 
+MATCH (x)-[r]->(y) 
+WITH v, y, p1, p2, r.p AS p3 
+MATCH (y)-[r]->(z) 
+WITH v, z, p1 * p2 * p3 * r.p AS product 
+WITH v, z,
+	product * (
+	CASE
+		WHEN v.name="Working" THEN 0.75
+		WHEN v.name="Broken1" THEN 0.20
+		WHEN v.name="Broken2" THEN 0.05
+		ELSE 0
+	END) AS dist
+WITH z, SUM(dist) AS prob
+ORDER BY prob DESC
+RETURN z.name AS State, prob*100 AS `Expected Number of Machines in State on Day 4`
+----
+//table
+
+From this, we find that we expect there to be, on day four, roughly 88.97 machines in working order, 8.91 machines in their first day of disrepair, 1.78 machines in their second day of disrepair, and 0.35 machines (which we just found earlier) in their third day of disrepair.
+
+//hide
+[source, cypher]
+----
+MATCH n-[r]-m 
+WITH n, r 
+DELETE n, r
+----
+
+'''
+
+[[X3]]
+== Actuarial Science
+
+In actuarial science, insurance holders are often modeled in Markov chains where the state is typically some indication of their profitability and the probabilities of changing states is typically a function of the insurance holder's attributes, such as their weight and whether or not they smoke (if we're dealing with health insurance), or maybe attributes of their car, such as its maximum speed and color (if we're dearling with automobile insurance).
+
+Using #20 from link:http://www.casact.org/admissions/studytools/exam3/sp08-3.pdf[this exam] as inspiration, we have the following:
+
+=== Description
+
+Insurance holders can belong to one of three classes for automobile insurance:
+
+* Preferred
+* Standard
+* Substandard
+
+At the end of each year, insurance holders can transition from one class to another according to the following one-time-step transition probability matrix:
+
+=== Matrix Represenatation
+
+++++
+<br>
+++++
+
+image::https://dl.dropboxusercontent.com/u/94782892/preferredstandard.png[]
+
+++++
+<br>
+++++
+
+=== Graph Representation
+
+image::https://dl.dropboxusercontent.com/u/94782892/actuarial.PNG[align="center"]
+
+//hide
+[source,cypher]
+----
+CREATE  (Preferred {name:'Preferred'}),
+	(Standard {name:'Standard'}),
+	(Substandard {name:'Substandard'})
+		
+CREATE  (Preferred)-[:PROBABILITY {p:0.5}]->(Preferred),
+	(Preferred)-[:PROBABILITY {p:0.5}]->(Standard),
+
+	(Standard)-[:PROBABILITY {p:0.2}]->(Preferred),
+	(Standard)-[:PROBABILITY {p:0.6}]->(Standard),
+	(Standard)-[:PROBABILITY {p:0.2}]->(Substandard),
+		
+	(Substandard)-[:PROBABILITY {p:0.3}]->(Standard),
+	(Substandard)-[:PROBABILITY {p:0.7}]->(Substandard)
+----
+//graph
+
+=== Question 1
+
+If an insurance holder is currently in the Standard class, what is the probablity he will be in the Standard class in two years?
+
+==== Solve with Matrices
+
+As we know, we need to find \(P^2\) in order to answer this question. The answer will be the (Standard, Standard) entry of this matrix:
+
+[subs=none]
+++++
+\(P^2 = \begin{bmatrix} 0.35 & 0.55 & 0.1 \\ 0.22 & 0.52 & 0.26 \\ 0.06 & 0.39 & 0.55 \end{bmatrix} \)<br><br>
+
+\(Answer = 0.52\)
+++++
+
+There is a 52% chance the customer currently in the Standard class will be in the Standard class in two years.
+
+==== Solve with Cypher
+
+[source,cypher]
+----
+MATCH (v)-[r]->(w)
+WHERE v.name = "Standard"
+WITH w, r.p AS p1 
+MATCH (w)-[r]->(x) 
+WHERE x.name = "Standard"
+RETURN SUM(p1 * r.p) AS Probability
+----
+//table
+
+=== Question 2
+
+A question not asked by the exam but that is interesting: What is the probability an insurance holder currently in the Standard class will *not* be in the Substandard class in *any* of the next five years?
+
+==== Solve with Matrices
+
+In order to solve using matrices, we need to arbitrarily change the one-time-step transition probability matrix so that the Substandard class is an link:http://en.wikipedia.org/wiki/Markov_chain#Absorbing_states['absorbing state']. With this, if the Markov chain ever enters the Substandard state, it can't leave that state. We do this because we eventually find the 'complement' of the probabilities resulting from this arbitrary transition probability matrix in order to answer questions involving scenarios where the process can never enter that state. So, our new one-time-step transition probability matrix is:
+
+[subs=none]
+++++
+\(A = \begin{bmatrix} 0.5 & 0.5 & 0 \\ 0.2 & 0.6 & 0.2 \\ 0 & 0 & 1 \end{bmatrix} \)
+++++
+
+Notice the third row (the row corresponding to the Substandard state): \([0, 0, 1]\). This means that there is a 0 probability of transitioning from the Substandard class to the Preferred class, a 0 probability of transitioning from the Substandard class to the Standard class, and a 100% probability of staying in the Substandard class. With this, we then find the five-time-step transitiion probability matrix of our new matrix \(A\):
+
+[subs=none]
+++++
+\(A^5 = \begin{bmatrix} 0.21085 & 0.38905 & 0.4001 \\ 0.15562 & 0.28866 & 0.55572 \\ 0 & 0 & 1 \end{bmatrix} \)
+++++
+
+Like I mentioned earlier, we are interested in the 'complement' of the probabilities shown here when answering questions involving the constraint that the insurance holder 'never' enters the Substandard class. Thus, our answer is the complement of the (Standard, Substandard) entry of the matrix shown above, since we want to know the probability that an insurance holder currently in the Standard class is never in the Substandard class during the next five years:
+
+\(Answer = 1 - 0.55572 = 0.44428\)
+
+==== Solve with Cypher
+
+In Cypher, we do not need to make any arbitrary changes to the transition probabilities. We just tell the query to avoid the Substandard class:
+
+[source,cypher]
+----
+MATCH (u)-[r]->(v)
+WHERE u.name = "Standard" AND v.name <> "Substandard"
+WITH v, r.p AS p1 
+MATCH (v)-[r]->(w) 
+WHERE w.name <> "Substandard"
+WITH w, p1, r.p AS p2 
+MATCH (w)-[r]->(x) 
+WHERE x.name <> "Substandard"
+WITH x, p1, p2, r.p AS p3 
+MATCH (x)-[r]->(y) 
+WHERE y.name <> "Substandard"
+WITH y, p1, p2, p3, r.p AS p4
+MATCH (y)-[r]->(z)
+WHERE z.name <> "Substandard"
+WITH z, p1 * p2 * p3 * p4 * r.p AS prob
+RETURN SUM(prob) AS Probability
+----
+//table
+
+'''
+
+== About Me
+
+* link:https://twitter.com/_nicolemargaret[Twitter]
+
+* link:http://nicolewhite.github.io/[Blog]

@@ -1,0 +1,217 @@
+= GraphGist
+:neo4j-version: 
+:author: Roger
+:twitter:
+:style: #54A835/#1078B5/white:Colorized(name)
+
+= 医疗知识图谱示例
+如下为几个疾病的知识图谱示例图。
+//setup
+//hide
+
+[source,cypher]
+----
+CREATE (z17:症状 {name:'骨痛'})
+CREATE (z24:症状 {name:'视力障碍'})
+CREATE (x58:检查 {name:'囊状支气管扩张'})
+CREATE (j27:疾病 {name:'肺科疾病'})
+CREATE (z5:症状 {name:'眼球凹陷'})
+CREATE (z16:症状 {name:'腰痛'})
+CREATE (j7:疾病 {name:'弥漫性肺疾病'})
+CREATE (x66:检查 {name:'气胸'})
+CREATE (z30:症状 {name:'血源性肺脓肿'})
+CREATE (z44:症状 {name:'贫血'})
+CREATE (j14:疾病 {name:'肺癌'})
+CREATE (x65:检查 {name:'肺心病'})
+CREATE (x60:检查 {name:'脓气胸'})
+CREATE (x61:检查 {name:'肺功能减退'})
+CREATE (z29:疾病 {name:'急性肺脓肿'})
+CREATE (x39:检查 {name:'白细胞'})
+CREATE (z34:症状 {name:'吸入性肺脓肿'})
+CREATE (z11:症状 {name:'关节痛'})
+CREATE (z10:症状 {name:'乏力'})
+CREATE (x52:检查 {name:'肺结核'})
+CREATE (x59:检查 {name:'支气管扩张'})
+CREATE (z19:症状 {name:'呕吐'})
+CREATE (x67:检查 {name:'肺气肿'})
+CREATE (z22:症状 {name:'关节疼痛'})
+CREATE (z25:症状 {name:'在痰液中可找到脱落的癌细胞'})
+CREATE (x40:检查 {name:'红细胞沉降率'})
+CREATE (x57:检查 {name:'支气管肺囊肿继发感染'})
+CREATE (z35:症状 {name:'咳血（有时）'})
+CREATE (z3:症状 {name:'呼吸困难'})
+CREATE (z38:症状 {name:'白细胞总数偏高'})
+CREATE (x51:检查 {name:'皮肤外伤感染所致菌血症'})
+CREATE (z8:症状 {name:'咯血'})
+CREATE (x55:检查 {name:'受寒'})
+CREATE (z32:症状 {name:'继发性肺脓肿'})
+CREATE (z37:症状 {name:'中性粒细胞偏高'})
+CREATE (z21:症状 {name:'多尿'})
+CREATE (j0:疾病 {name:'恶性纵隔肿瘤'})
+CREATE (z33:症状 {name:'阿米巴肺脓肿'})
+CREATE (x64:检查 {name:'脓胸'})
+CREATE (x48:检查 {name:'抗生素'})
+CREATE (x42:疾病 {name:'慢性肺脓肿'})
+CREATE (x62:检查 {name:'支气管肺炎'})
+CREATE (z28:疾病 {name:'肺脓肿'})
+CREATE (z15:症状 {name:'咳痰'})
+CREATE (z18:症状 {name:'恶心'})
+CREATE (x68:检查 {name:'肺纤维化'})
+CREATE (z12:症状 {name:'关节红肿'})
+CREATE (z4:症状 {name:'眼睑下垂'})
+CREATE (z23:症状 {name:'心悸'})
+CREATE (x54:检查 {name:'心内膜炎'})
+CREATE (z43:症状 {name:'消瘦'})
+CREATE (z13:症状 {name:'发热'})
+CREATE (z31:症状 {name:'胸部X线检查示有两肺多发性小脓肿'})
+CREATE (x46:检查 {name:'血红蛋白'})
+CREATE (x56:检查 {name:'极度疲劳'})
+CREATE (z1:症状 {name:'胸痛'})
+CREATE (x50:检查 {name:'痰液引流'})
+CREATE (z36:症状 {name:'畏寒'})
+CREATE (x63:检查 {name:'胸膜增厚'})
+CREATE (z26:症状 {name:'骨显像有阳性发现'})
+CREATE (x49:检查 {name:'外科治疗'})
+CREATE (x53:检查 {name:'扁桃体化脓'})
+CREATE (x47:检查 {name:'红细胞'})
+CREATE (x41:检查 {name:'中性粒细胞'})
+CREATE (z45:症状 {name:'红细胞沉降率加快'})
+CREATE (z2:症状 {name:'慢性咳嗽'})
+CREATE (z9:症状 {name:'肌肉痛'})
+CREATE (z6:症状 {name:'心率不齐'})
+CREATE (z20:症状 {name:'多汗'})
+CREATE (z29)-[:症状]->(z8)
+CREATE (j0)-[:症状]->(z1)
+CREATE (j0)-[:症状]->(z2)
+CREATE (j0)-[:症状]->(z3)
+CREATE (j0)-[:症状]->(z4)
+CREATE (j0)-[:症状]->(z5)
+CREATE (j0)-[:症状]->(z6)
+CREATE (j7)-[:症状]->(z3)
+CREATE (j7)-[:症状]->(z2)
+CREATE (j7)-[:症状]->(z8)
+CREATE (j7)-[:症状]->(z9)
+CREATE (j7)-[:症状]->(z10)
+CREATE (j7)-[:症状]->(z11)
+CREATE (j7)-[:症状]->(z12)
+CREATE (j7)-[:症状]->(z13)
+CREATE (j14)-[:症状]->(z2)
+CREATE (j14)-[:症状]->(z15)
+CREATE (j14)-[:症状]->(z1)
+CREATE (j14)-[:症状]->(z3)
+CREATE (j14)-[:症状]->(z16)
+CREATE (j14)-[:症状]->(z17)
+CREATE (j14)-[:症状]->(z18)
+CREATE (j14)-[:症状]->(z19)
+CREATE (j14)-[:症状]->(z13)
+CREATE (j14)-[:症状]->(z20)
+CREATE (j14)-[:症状]->(z21)
+CREATE (j14)-[:症状]->(z12)
+CREATE (j14)-[:症状]->(z22)
+CREATE (j14)-[:症状]->(z23)
+CREATE (j14)-[:症状]->(z24)
+CREATE (j14)-[:诊断]->(z25)
+CREATE (j14)-[:诊断]->(z26)
+CREATE (j27)-[:包含]->(z28)
+CREATE (z28)-[:包含]->(z29)
+CREATE (z29)-[:包含]->(z30)
+CREATE (z30)-[:诊断]->(z31)
+CREATE (z29)-[:包含]->(z32)
+CREATE (z29)-[:包含]->(z33)
+CREATE (z29)-[:包含]->(z34)
+CREATE (z29)-[:症状]->(z13)
+CREATE (z29)-[:症状]->(z15)
+CREATE (z29)-[:症状]->(z1)
+CREATE (z29)-[:症状]->(z35)
+CREATE (z29)-[:症状]->(z10)
+CREATE (z29)-[:症状]->(z2)
+CREATE (z29)-[:症状]->(z36)
+CREATE (z29)-[:诊断]->(z36)
+CREATE (z29)-[:诊断]->(z2)
+CREATE (z29)-[:诊断]->(z15)
+CREATE (z29)-[:诊断]->(z13)
+CREATE (z29)-[:诊断]->(z37)
+CREATE (z29)-[:诊断]->(z38)
+CREATE (z29)-[:检查]->(x39)
+CREATE (z29)-[:检查]->(x40)
+CREATE (z29)-[:检查]->(x41)
+CREATE (z28)-[:包含]->(x42)
+CREATE (x42)-[:症状]->(z15)
+CREATE (x42)-[:症状]->(z2)
+CREATE (x42)-[:症状]->(z13)
+CREATE (x42)-[:症状]->(z43)
+CREATE (x42)-[:症状]->(z8)
+CREATE (x42)-[:诊断]->(z2)
+CREATE (x42)-[:诊断]->(z15)
+CREATE (x42)-[:诊断]->(z43)
+CREATE (x42)-[:诊断]->(z8)
+CREATE (x42)-[:诊断]->(z44)
+CREATE (x42)-[:诊断]->(z45)
+CREATE (x42)-[:检查]->(x39)
+CREATE (x42)-[:检查]->(x46)
+CREATE (x42)-[:检查]->(x40)
+CREATE (x42)-[:检查]->(x47)
+CREATE (z28)-[:治疗]->(x48)
+CREATE (z28)-[:治疗]->(x49)
+CREATE (z28)-[:治疗]->(x50)
+CREATE (z28)-[:诱因]->(x55)
+CREATE (z28)-[:诱因]->(x56)
+CREATE (z28)-[:鉴别诊断]->(x57)
+CREATE (z28)-[:鉴别诊断]->(x58)
+CREATE (z28)-[:后遗症]->(x59)
+CREATE (z28)-[:后遗症]->(x60)
+CREATE (z28)-[:后遗症]->(x61)
+CREATE (z28)-[:并发症]->(x62)
+CREATE (z28)-[:并发症]->(x63)
+CREATE (z28)-[:并发症]->(x64)
+CREATE (z28)-[:并发症]->(x65)
+CREATE (z28)-[:并发症]->(x66)
+CREATE (z28)-[:并发症]->(x67)
+CREATE (z28)-[:并发症]->(x68)
+----
+
+//graph
+
+= 医疗辅助诊断流程
+== 疾病知识库展示
+
+//hide
+[source,cypher]
+----
+MATCH (n)-[l:症状|诊断|包含]->(m) RETURN n, l, m
+----
+//graph_result
+
+== 输入症状
+输入症状：慢性咳嗽、咯血、咳痰
+
+//hide
+[source,cypher]
+----
+match (n1) -[l:症状]->(m)  where m.name = '慢性咳嗽' with n1
+match (n2) -[l:症状]->(m)  where m.name = '咯血' and n1=n2 with n2
+match (n3) -[l:症状]->(m)  where m.name = '咳痰' and n2=n3 with n3
+match (n3)-[x]-(r) return n3,x,r
+----
+//graph_result
+
+此时发现急性肺脓肿与慢性肺脓肿皆有可能出现，根据系统判断需要做如下三个进一步检查（两个病不共有的症状）：
+是否畏寒
+是否中性粒细胞偏高
+是否贫血
+
+== 复诊检查后判断
+病人畏寒
+
+//hide
+[source,cypher]
+----
+match (n1) -[l:症状]->(m)  where m.name = '慢性咳嗽' with n1
+match (n2) -[l:症状]->(m)  where m.name = '咯血' and n1=n2 with n2
+match (n3) -[l:症状]->(m)  where m.name = '咳痰' and n2=n3 with n3
+match (n4) -[l:症状]->(m)  where m.name = '畏寒' and n3=n4 with n4
+match (n4)-[x]-(r) return n4,x,r
+----
+//graph_result
+
+最终确认就诊情况：急性肺脓肿

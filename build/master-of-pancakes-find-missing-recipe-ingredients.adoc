@@ -1,0 +1,135 @@
+= Master of Pancakes: Find Missing Recipe Ingredients
+
+:neo4j-version: 2.0.0
+:author: Stefan Plantikow
+:twitter: @boggle
+
+image::http://www.perfectpancake.info/wp-content/uploads/2013/04/pancakes.jpg[]
+
+Let's say you have a database of recipes and ingredients, as well as chefs and their current kitchen inventory.
+
+One chef (admired and known only as "The Master of Pancakes" by his colleages) would like to make some pancakes. Before he can start, he needs to know if he has the right ingredients in his kitchen.
+
+We start with by creating ingredients.
+
+[source, cypher]
+----
+MERGE (:Ingredient {name: "Flour"})
+MERGE (:Ingredient {name: "Baking Powder"})
+MERGE (:Ingredient {name: "Salt"})
+MERGE (:Ingredient {name: "Sugar"})
+MERGE (:Ingredient {name: "Egg"})
+MERGE (:Ingredient {name: "Milk"})
+MERGE (:Ingredient {name: "Butter"});
+----
+
+We also describe a good pancake recipe.
+
+[source, cypher]
+----
+MERGE (flour:Ingredient {name: "Flour"})
+MERGE (powder:Ingredient {name: "Baking Powder"})
+MERGE (salt:Ingredient {name: "Salt"})
+MERGE (sugar:Ingredient {name: "Sugar"})
+MERGE (egg:Ingredient {name: "Egg"})
+MERGE (milk:Ingredient {name: "Milk"})
+MERGE (butter:Ingredient {name: "Butter"})
+CREATE (pancake:Recipe {title: "Ultimate Pancake Recipe"})
+CREATE (pancake)-[:requires_value]->(flour_val:Value)-[:is_part_of]->(flour)
+CREATE (pancake)-[:requires_value]->(powder_val:Value)-[:is_part_of]->(powder)
+CREATE (pancake)-[:requires_value]->(salt_val:Value {value: "Himalaya"})-[:is_part_of]->(salt)
+CREATE (pancake)-[:requires_value]->(sugar_val:Value {value: "White"})-[:is_part_of]->(sugar)
+CREATE (pancake)-[:requires_value]->(egg_val:Value {value: "Bio"})-[:is_part_of]->(egg)
+CREATE (pancake)-[:requires_value]->(milk_val:Value {value: "Bio"})-[:is_part_of]->(milk)
+CREATE (pancake)-[:requires_value]->(butter_val:Value {value: "Plain"})-[:is_part_of]->(butter)
+RETURN *;
+----
+
+//graph
+
+Hmm pancakes, yummy!
+
+Next, let's describe what the Master of Pancakes has left in his kitchen:
+
+[source, cypher]
+----
+CREATE (pancakeMaster:Chef {name: "Master of Pancakes"})
+MERGE (flour:Ingredient {name: "Flour"})
+MERGE (salt:Ingredient {name: "Salt"})
+MERGE (sugar:Ingredient {name: "Sugar"})
+MERGE (egg:Ingredient {name: "Egg"})
+MERGE (milk:Ingredient {name: "Milk"})
+MERGE (butter:Ingredient {name: "Butter"})
+CREATE (pancakeMaster)-[:has_value]->(flour_val:Value)-[:is_part_of]->(flour)
+CREATE (pancakeMaster)-[:has_value]->(salt_val:Value {value: "Fleur de Sel"})-[:is_part_of]->(salt)
+CREATE (pancakeMaster)-[:has_value]->(sugar_val:Value {value: "Brown"})-[:is_part_of]->(sugar)
+CREATE (pancakeMaster)-[:has_value]->(egg_val:Value {value: "Bio"})-[:is_part_of]->(egg)
+CREATE (pancakeMaster)-[:has_value]->(milk_val:Value {value: "Bio"})-[:is_part_of]->(milk)
+CREATE (pancakeMaster)-[:has_value]->(butter_val:Value {value: "Salty"})-[:is_part_of]->(butter)
+RETURN *;
+----
+
+//graph
+
+Now, that we have all the data, let's see if we are ready to make pancakes:
+
+[source, cypher]
+----
+MATCH 
+  (pancake:Recipe {title: "Ultimate Pancake Recipe"})-[:requires_value]->(req_value:Value)-[:is_part_of]->(ingredient:Ingredient)
+OPTIONAL MATCH (ingredient)<-[:is_part_of]-(avail_value)<-[:has_value]-(pancakeMaster:Chef {name: "Master of Pancakes"})
+RETURN ingredient.name AS ingredient, req_value, avail_value;
+----
+
+//table
+
+That's already not bad but we'd like to only see where we are missing ingredients or have the wrong kind. For this we need to compare what is required with what's available:
+
+[source, cypher]
+----
+MATCH 
+  (pancake:Recipe {title: "Ultimate Pancake Recipe"})-[:requires_value]->(req_value:Value)-[:is_part_of]->(ingredient:Ingredient)
+OPTIONAL MATCH (ingredient)<-[:is_part_of]-(avail_value)<-[:has_value]-(pancakeMaster:Chef {name: "Master of Pancakes"})
+WITH ingredient, req_value, avail_value
+WHERE avail_value IS NULL OR req_value.value <> avail_value.value
+RETURN 
+  ingredient.name AS ingredient, 
+  CASE WHEN req_value.value IS NULL THEN "Any" ELSE req_value.value END AS required, 
+  CASE WHEN avail_value IS NULL THEN "None" ELSE avail_value.value END AS available;
+----
+
+//table
+
+Ewk! Salty butter! If we can get some baking powder and non-salty butter, we should be good to go.
+
+[source, cypher]
+----
+MERGE (pancakeMaster:Chef {name: "Master of Pancakes"})
+MERGE (powder:Ingredient {name: "Baking Powder"})
+MERGE (butter:Ingredient {name: "Butter"})
+WITH *
+MATCH (pancakeMaster)-[:has_value]->(butter_val:Value)-[:is_part_of]->(butter)
+SET butter_val.value = "Plain"
+CREATE (pancakeMaster)-[:has_value]->(powder_val:Value)-[:is_part_of]->(powder)
+RETURN *;
+----
+
+Et Voila, now the chef can work his magic:
+
+//hide
+[source, cypher]
+----
+MATCH (pancake:Recipe {title: "Ultimate Pancake Recipe"})-[:requires_value]->(req_value:Value)-[:is_part_of]->(ingredient:Ingredient)
+OPTIONAL MATCH (ingredient)<-[:is_part_of]-(avail_value)<-[:has_value]-(pancakeMaster:Chef {name: "Master of Pancakes"})
+WITH ingredient, req_value, avail_value
+WHERE avail_value IS NULL OR req_value.value <> avail_value.value
+RETURN 
+  ingredient.name AS ingredient, 
+  CASE WHEN req_value.value IS NULL THEN "Any" ELSE req_value.value END AS required, 
+  CASE WHEN avail_value IS NULL THEN "None" ELSE avail_value.value END AS available;
+----
+
+//table
+
+As you can see, it's great fun cooking with Neo4j!
+

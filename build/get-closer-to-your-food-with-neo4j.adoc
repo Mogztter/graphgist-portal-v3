@@ -1,0 +1,300 @@
+== A Foodys guide
+
+**'' Part of the secret of success in life is to eat what you like  - Mark Twain ''**
+
+I think each one of us loves eating, yes I know some were born to overeat. In this GraphGist we will see how a graph model can bring you closer to your favourite food. I usually have 6-7 cup of tea/coffee in a day which some people call as caffeine addiction but who cares. Next we will see how *Neo4j can take you to the best buffet or latte place in the city*
+
+image::https://s3-ap-southeast-1.amazonaws.com/s3freebucket/nerd-quote-technology-download-food.jpg[]
+
+== The Foody Model 
+Below is our Foody model, each restaurant is representated by a Node. Note that Restaurants are grouped by the area, *IndiraNagar have Starbucks Coffee and Beanstalk*, *Frazer Town have Savoury Restaurant.*
+Another important thing is, I'm representing each eatable that a restaurant offers as a Node in the Neo4j model because most of our queries will require fast search of eatables offered by a restaurant.
+
+image::https://s3-ap-southeast-1.amazonaws.com/s3freebucket/model.JPG[]
+
+- Each eatable offered by the restaurant will have following properties
+ 1. Name of the eatable
+ 2. Price
+ 3. Rating
+ 4. Comments
+ 
+By storing the rating and comments for individual dishes, we can easily figure out what is the best place in a city/area to have dish 'X'. Say you are planning for a party and you want to invite your friends for buffet, so you start your search to find out what is the best place for buffet, of course within your budget. 
+
+''''
+In most of the cases a restaurant is famous for its dish 'X' or 'Y' and not for all of their dishes. So it makes sense to store rating and comments for individual dishes rather than just on an overall restaurant level.
+
+''''
+
+With the above Neo4j model we can answer all these questions very easily. We have talked a lot time for cypher, lets throw out some nodes in the outer space
+
+== Setup
+
+
+[source, cypher]
+----
+//Bangalore City
+
+create (bangalore:City{city:"Bangalore"})
+
+// Locations around city - Koramangala, IndiraNagar, Richmond Town, Jayanagar, Frazer Town
+
+create (koramangala:Location{location:"Koramangala"}),
+       (koramangala)-[:in]->(bangalore),
+       (indiraNagar:Location{location:"IndiraNagar"}),
+       (indiraNagar)-[:in]->(bangalore),
+       (richmondTown:Location{location:"Richmond Town"}),
+       (richmondTown)-[:in]->(bangalore),
+       (jayanagar:Location{location:"Jayanagar"}),
+       (jayanagar)-[:in]->(bangalore),
+       (frazerTown:Location{location:"Frazer Town"}),
+       (frazerTown)-[:in]->(bangalore)	 
+	   
+	 
+// Black Pearl, Koramangala
+
+create (blackPearl:Restaurant{name:"The Black Pearl",address:"Koramangala 5th Block",contactNumber:"080-49652187"}),	
+       (blackPearl)<-[:at]-(koramangala),	   
+       (blackPearlBuffet:Buffet{name:"Buffet",price:1000,rating:6,comments:["Buffet is ok","Not that good as heared"]}),	   
+       (blackPearl)-[:serves]->(blackPearlBuffet)
+
+
+// Blu Petal, Koramangala
+
+create (bluPetal:Restaurant{name:"Buff Buffet Buff - BluPetal Hotel",address:"Koramangala 5th Block",contactNumber:"080-49652556"}),  
+       (bluPetal)<-[:at]-(koramangala),
+       (bluPetalBuffet:Buffet{name:"Buffet",price:800,rating:7.5,comments:["Buffet is good with some crispy starters","Ambience is not big but food is awesome"]}),
+       (bluPetal)-[:serves]->(bluPetalBuffet) 	   
+	   
+// Barleyz, Koramangala
+
+create (barleyz:Restaurant{name:"Barleyz",address:"Koramangala 6th Block",contactNumber:"080-49653421"}),	   
+       (barleyz)<-[:at]-(koramangala),
+       (barleyzBuffet:Buffet{name:"Buffet",price:1000,rating:7,comments:["Buffet is good but service is very bad","Food is just OK","Good place for dinner"]}),
+       (barleyz)-[:serves]->(barleyzBuffet)	
+
+// Beanstalk, IndiraNagar
+
+create (beansTalk:Restaurant{name:"Beanstalk",address:"80 Feet Road, Indiranagar",contactNumber:"080-65358858"}),	   
+       (beansTalk)<-[:at]-(indiraNagar),
+       (beansTalkLatte:Latte{name:"Latte",price:70,rating:8,comments:["The perfect cup of Latte","I can be found here on Sunday"]}),  
+       (beansTalk)-[:serves]->(beansTalkLatte)
+
+// Cafe Coffee Day, IndiraNagar
+
+create (ccd80Feet:Restaurant{name:"Cafe Coffee Day",address:"80 Feet Road, Indiranagar",contactNumber:"9243601943"}),	   
+       (ccd80Feet)<-[:at]-(indiraNagar),
+       (ccd80FeetLatte:Latte{name:"Latte",price:90,rating:7,comments:["Same as other CCDs","Ambience is good, good place to enjoy a cup of coffee"]}),	   
+       (ccd80Feet)-[:serves]->(ccd80FeetLatte)		
+
+// Starbucks Coffee, IndiraNagar
+
+create (starBucks:Restaurant{name:"Starbucks Coffee",address:"100 Feet Road, Indiranagar",contactNumber:"8884678529"}),	   
+       (starBucks)<-[:at]-(indiraNagar),
+       (starBucksBlueberryMuffin:Muffin{name:"Blueberry Muffin",price:140,rating:9,comments:["I love Starbucks Blueberry Muffin"]}),  
+       (starBucks)-[:serves]->(starBucksBlueberryMuffin),
+       (starBucksChocolateMuffin:Muffin{name:"Java Chip Chocolate Muffin",price:145,rating:9,comments:["Perfect place for Muffin lovers"]}),	   
+       (starBucks)-[:serves]->(starBucksChocolateMuffin),
+       (starBucksWhiteChocolate:Chocolate{name:"White Hot Chocolate",price:130,rating:9,comments:["Great combination of white chocolate and steamed milk"]}),	   
+       (starBucks)-[:serves]->(starBucksWhiteChocolate),
+       (starBucksCappuccino:Cappuccino{name:"Cappuccino",price:155,rating:10,comments:["Probably the best place for Cappuccino lovers"]}),	   
+       (starBucks)-[:serves]->(starBucksCappuccino),
+       (starBucksEspresso:Espresso{name:"Espresso",price:110,rating:8,comments:["Similar to CCD"]}),	   
+       (starBucks)-[:serves]->(starBucksEspresso),
+       (starBucksLatte:Latte{name:"Latte",price:180,rating:10,comments:["Perfect cup of latte, may be a bit costly but worth every penny"]}),	   
+       (starBucks)-[:serves]->(starBucksLatte)	
+
+// Lazeez Restaurant, Koramangala
+
+create (lazeez:Restaurant{name:"Lazeez",address:"Koramangala 5th Block",contactNumber:"080-49653192"}),	   
+       (lazeez)<-[:at]-(koramangala),	   
+       (lazeezMuttonBiryani:MuttonBiryani{name:"Mutton Biryani",price:175,rating:9,comments:["How non vegeterian live, awesome mutton Biryani"]}),
+       (lazeez)-[:serves]->(lazeezMuttonBiryani),	   
+       (lazeezChickenBiryani:ChickenBiryani{name:"Chicken Biryani",price:165,rating:7,comments:["Their Chicken Biryani is not as good as Mutton Biryani"]}),
+       (lazeez)-[:serves]->(lazeezChickenBiryani),	   
+       (lazeezChickenIrani:ChickenIrani{name:"Chicken Irani",price:155,rating:8,comments:["I liked it"]}),
+       (lazeez)-[:serves]->(lazeezChickenIrani),	   
+       (lazeezMuttonStew:MuttonStew{name:"Mutton Stew",price:165,rating:8,comments:["A perfect mutton stew"]}),
+       (lazeez)-[:serves]->(lazeezMuttonStew)	
+
+// Hyderabad Biryani House, Richmond Town
+
+create (hyderabadBiryaniHouse:Restaurant{name:"Hyderabad Biryani House",address:"Richmond Town",contactNumber:"080-65979401,080-65979203"}),	   
+       (hyderabadBiryaniHouse)<-[:at]-(richmondTown),	   
+       (hBHMuttonBiryani:MuttonBiryani{name:"Mutton Biryani",price:190,rating:8,comments:["Good place to have mutton biryani","Their Victoria Road shop is much better than their other outlets"]}),
+       (hyderabadBiryaniHouse)-[:serves]->(hBHMuttonBiryani),	   
+       (hBHChickenBiryani:ChickenBiryani{name:"Chicken Biryani",price:180,rating:7,comments:["Their Chicken Birynai is not as good as their Mutton Biryani"]}),
+       (hyderabadBiryaniHouse)-[:serves]->(hBHChickenBiryani),	   
+       (hBHMuttonMughlai:MuttonMughlai{name:"Mutton Mughlai",price:220,rating:8,comments:["I love their mutton biryani and mughlai mutton","Only problem is ambience"]}),
+       (hyderabadBiryaniHouse)-[:serves]->(hBHMuttonMughlai) 	  
+
+// Savoury Restaurant, Frazer Town 
+
+create (savoury:Restaurant{name:"Savoury Restaurant",address:"Mosque Road, Frazer Town",contactNumber:"080-49336333"}),	   
+       (savoury)<-[:at]-(frazerTown),	   
+       (savouryMuttonBiryani:MuttonBiryani{name:"Mutton Biryani",price:170,rating:10,comments:["Their Mutton Biryani taste is bit different than others, very good place to overeat, good ambience and parking facility"]}),
+       (savoury)-[:serves]->(savouryMuttonBiryani),	   
+       (savouryMuttonChops:MuttonChops{name:"Mutton Chops",price:240,rating:9,comments:["Perfect place for non vegeterians, wide variety of dishes including arabian, thai, indian and chinese"]}),
+       (savoury)-[:serves]->(savouryMuttonChops)
+
+// Shivaji Military Hotel, Jayanagar
+
+create (sjMilitaryHotel:Restaurant{name:"Shivaji Military Hotel",address:"8th Block, Jayanagar",contactNumber:"9845149217,9980739217"}),	   
+       (sjMilitaryHotel)<-[:at]-(jayanagar),	   
+       (militaryHotelMuttonBiryani:MuttonBiryani{name:"Mutton Biryani",price:175,rating:10,comments:["Awesomest place to have mutton biryani in Bangalore","They beat everyone, best place for biryani"]}),
+       (sjMilitaryHotel)-[:serves]->(militaryHotelMuttonBiryani),	   
+       (militaryHotelChickenBiryani:ChickenBiryani{name:"Chicken Biryani",price:150,rating:9,comments:["I love their chicken biryani, very old hotel. At lunch time, its hard to find place to sit"]}),
+       (sjMilitaryHotel)-[:serves]->(militaryHotelChickenBiryani),	   
+       (militaryHotelNattyChickenBiryani:NattyChickenBiryani{name:"Natty Chicken Biryani",price:175,rating:9,comments:["Superb Natty Chicken Biryani, they have maintaned their taste"]}),
+       (sjMilitaryHotel)-[:serves]->(militaryHotelNattyChickenBiryani) 	
+
+// Meghana Foods, Koramangala
+
+create (meghana:Restaurant{name:"Meghana Foods",address:"Koramangala 5th Block",contactNumber:"080-49653429"}),	   
+       (meghana)<-[:at]-(koramangala),	   
+       (meghanaMuttonBiryani:MuttonBiryani{name:"Mutton Biryani",price:265,rating:9,comments:["Heared a lot of this place, very good Biryani"]}),
+       (meghana)-[:serves]->(meghanaMuttonBiryani),	   
+       (meghanaChickenBiryani:ChickenBiryani{name:"Chicken Biryani",price:215,rating:8,comments:["As good as their Mutton Biryani"]}),
+       (meghana)-[:serves]->(meghanaChickenBiryani),	   
+       (meghanaPrawnsBiryani:PrawnsBiryani{name:"Prawns Biryani",price:275,rating:8,comments:["Among very few places where you can get prawns Biryani"]}),
+       (meghana)-[:serves]->(meghanaPrawnsBiryani),	   
+       (meghanaChillyPaneer:ChillyPaneer{name:"Chilly Paneer",price:195,rating:7,comments:["It was good"]}),
+       (meghana)-[:serves]->(meghanaChillyPaneer)		   
+----
+//graph      
+
+== Insights
+It's time to get answers of some interesting questions.
+
+=== What all Starbucks Coffee, IndiraNagar serves? Give me their price, rating and comments
+
+[source, cypher]
+----
+match  (bangalore:City{city:"Bangalore"})<-[:in]-(indiraNagar:Location{location:"IndiraNagar"}),
+       (indiraNagar)-[:at]->(restaurant:Restaurant{name:"Starbucks Coffee"}),
+       (restaurant)-[:serves]->(eatable)
+return eatable.name AS Menu,eatable.price AS Price,eatable.rating AS Rating,eatable.comments AS Comments;	 
+----
+//table
+
+=== Give me the list of all the Restaurants in IndiraNagar along with address and contact number
+
+[source, cypher]
+----
+match  (bangalore:City{city:"Bangalore"})<-[:in]-(indiraNagar:Location{location:"IndiraNagar"}),
+       (indiraNagar)-[:at]->(restaurant:Restaurant)	 
+return restaurant.name AS Restaurant,restaurant.address AS Address,restaurant.contactNumber AS Contact_Number;	 
+----
+//table
+
+=== Which Restaurants in Koramangala serve Buffet, Give me the Restuarant name, Buffet price, rating and comments
+
+[source, cypher]
+----
+match  (bangalore:City{city:"Bangalore"})<-[:in]-(koramangala:Location{location:"Koramangala"}),
+       (koramangala)-[:at]->(restaurant:Restaurant),
+       (restaurant)-[:serves]->(buffet:Buffet)
+return restaurant.name AS Restaurant,buffet.price AS Price,buffet.rating AS Rating,buffet.comments AS Comments;	  
+
+----
+//table
+
+=== Which Restaurants offer Latte within 120 bucks near IndiraNagar?
+
+[source, cypher]
+----
+match  (bangalore:City{city:"Bangalore"})<-[:in]-(indiraNagar:Location{location:"IndiraNagar"}),
+       (indiraNagar)-[:at]->(restaurant:Restaurant),
+       (restaurant)-[:serves]->(latte:Latte)
+	  where latte.price <= 120
+return restaurant.name AS Restaurant,restaurant.address AS Address,latte.price AS Price,latte.rating AS Rating,latte.comments AS Comments;	
+
+----
+//table
+
+=== What people say in general about StarBucks Coffee, IndiraNagar, Bangalore?
+
+[source, cypher]
+----
+match  (bangalore:City{city:"Bangalore"})<-[:in]-(indiraNagar:Location{location:"IndiraNagar"}),
+       (indiraNagar)-[:at]->(restaurant:Restaurant{name:"Starbucks Coffee"}),
+       (restaurant)-[:serves]->(eatable)
+return eatable.comments AS Starbucks_Comments;	
+
+----
+//table
+
+=== What are customer's comments about Cappuccino served by Starbucks Coffee, IndiraNagar, Bangalore?
+
+[source, cypher]
+----
+match  (bangalore:City{city:"Bangalore"})<-[:in]-(indiraNagar:Location{location:"IndiraNagar"}),
+       (indiraNagar)-[:at]->(restaurant:Restaurant{name:"Starbucks Coffee"}),
+       (restaurant)-[:serves]->(cappuccino:Cappuccino)
+return cappuccino.comments AS Starbucks_Cappuccino_Reviews;	
+
+----
+//table
+
+=== Compare the Latte of Starbucks Coffee, IndiraNagar to Latte of Beanstalk, IndiraNagar
+
+[source, cypher]
+----
+match  (bangalore:City{city:"Bangalore"})<-[:in]-(indiraNagar:Location{location:"IndiraNagar"}),
+       (indiraNagar)-[:at]->(starbucks:Restaurant{name:"Starbucks Coffee"}),
+       (indiraNagar)-[:at]->(beanstalk:Restaurant{name:"Beanstalk"}),
+       (starbucks)-[:serves]->(sLatte:Latte),
+       (beanstalk)-[:serves]->(bLatte:Latte)
+return sLatte.rating AS Starbucks_Latte_Rating,sLatte.price AS Starbucks_Price,sLatte.comments AS Starbucks_Comments,bLatte.rating AS Beanstalk_Latte_Rating,bLatte.price AS Beanstalk_Price,bLatte.comments AS Beanstalk_Comments;
+
+----
+//table
+
+=== Which Restaurants in Bangalore serve Mutton Biryani? Give me their address, rating, price and customer reviews (comments)
+
+[source, cypher]
+----
+match  (bangalore:City{city:"Bangalore"})<-[:in]-(area:Location),
+       (area)-[:at]->(restaurant:Restaurant),
+       (restaurant)-[:serves]->(muttonBiryani:MuttonBiryani)
+return restaurant.name AS Restaurant,area.location AS Area,restaurant.address AS Address,muttonBiryani.rating AS Rating,muttonBiryani.price AS Price;	
+
+----
+//table
+
+=== Give me the list of restaurants that serve Mutton Biryani, sort the list according to Rating in descending order and by price in ascending order
+
+[source, cypher]
+----
+match (bangalore:City{city:"Bangalore"})<-[:in]-(area:Location),
+      (area)-[:at]->(restaurant:Restaurant),
+      (restaurant)-[:serves]->(muttonBiryani:MuttonBiryani)	  
+return restaurant.name AS Restaurant,area.location AS Area,restaurant.address AS Address,muttonBiryani.rating AS Rating,muttonBiryani.price AS Price
+order by Rating DESC, Price ASC	
+
+----
+//table
+
+=== What is available at Starbucks Coffee, IndiraNagar under 200 bucks? Give me a sorted list according to price
+
+[source, cypher]
+----
+match  (bangalore:City{city:"Bangalore"})<-[:in]-(indiraNagar:Location{location:"IndiraNagar"}),
+       (indiraNagar)-[:at]->(restaurant:Restaurant{name:"Starbucks Coffee"}),
+       (restaurant)-[:serves]->(eatable)
+	 where eatable.price <= 200
+return eatable.name as Menu,eatable.price AS Price,eatable.rating AS Rating,eatable.comments AS Comments
+order by Price ASC
+----
+//table
+
+= What else could be done?
+You can go ahead and add your Juice Corners, Soup Corners, Tea-stalls, Road side Food stalls. You can even add some extra properties like cuisine which will let you query for certain dishes of specific cuisine. Say you want to eat your favourite Chilly Chicken but you want to eat in some chinese restaurant(chinese cuisine). You can even add timings of the restaurant and pretty much anything that you can think of. 
+
+
+= My thoughts on Graph Databases, specifically Neo4j
+Graph model really gives you the answers to some interesting questions. No, we are not going to bash RDBMS, you can design the similar thing in other databases also. But what I really like about graph databases and in particular Neo4j is, you can really visualize your query as a step by step approach to reach to that final result and *its all possible bacause everything is connected.* Good to see some big companies and startups are using Neo4j, I found one of them near my place link:http://www.wooplr.com/about[Wooplr]
+
+Created by link:http://mahtabalam.net/[Mahtab] with the help of lots of tea
+
+- link:https://twitter.com/alammahtab08[Twitter]
+- link:https://in.linkedin.com/in/alammahtab[LinkedIn]

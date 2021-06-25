@@ -1,0 +1,239 @@
+= Personality Prediction based on Pattern Analysis on Social Media
+:tags: predictions
+
+== Introduction
+
+On August 10th, 2015 Coby Persin uploaded a video on YouTube titled https://www.youtube.com/watch?v=6jMhMVEjEQg[*The Dangers Of Social Media (Child Predator Social Experiment) Girl Edition!*]. In this video he posed as a young boy (Jason) aged 15 years old, and he sent friend request to three girls aged 14, 13 and 12. Then he spoke to these girls for 3-4 days, then he requested these girls to meet up. He was supposed to meet a girl at the park, the other at her house and the last agreed to get picked up by his(Jason's) brother so that they could meet somewhere else. You need to watch the video to know what happened.
+
+This video inspired us, the more we searched on-line we discovered such events occurred more frequently than we expected. We wanted to make a model that analyses the behavioural patterns of people on social media and alerts the required personnel when it finds similar patterns. 
+
+== Problem Statement
+
+In our example we are trying to find the accounts that exhibit such behaviour, by running script on their database. In this example we are trying to filter out Males who exhibit such tendencies. The qualities that define such a activity are :
+
+. The account has only one display image.
+. The email used to create the account is never an email that is used for any public communication, and is not available on any professional network(like LinkedIn, etc).
+. The culprit and the prey have no mutual friends.
+. The friends that the culprit has are usually people with similar profiles, who are usually staying abroad.
+. The account that the culprit uses has recently been created, and the date of creation of the account is usually less than a week prior to the friends request sent.
+. The conversation that the culprit has with his victims usually revolves around sex, drugs, money, phone number, nudity, etc., and the usage of these words are actually more often then when the victim chats with her friends.
+
+The points listed above for this model can be broadly categorized as graph problems and non graph problems. The issues 3 and 4 represent graph problems and hence this data is represented as nodes and relations, and the rest can be classified as non graph problems and are represented as properties on the nodes.
+
+== The Model: Nodes & Relationships 
+
+The model revolves around a Person Node that is a representation of an account on social media website. 
+
+.Person Node
+image::http://i.imgur.com/NvNX3Ar.jpg[Person Node]
+
+Each Conversation between Persons is represented via a Conversation Node. This node contains the conversation exchanges between two Persons.
+
+.Conversation Node
+image::http://i.imgur.com/cCmaVrJ.jpg[Conversation Node]
+
+Each conversation has a [HAD_A] relation with two Person Nodes.
+
+.Relationship between Person and Conversation Nodes
+image::http://i.imgur.com/sDsVu5i.jpg [Relationship between Person and Conversation Nodes]
+
+To represent point 2, we have another node called PublicEmails, this will just hold a set of valid email ids. In a real world scenario this will be a third party service that will not be a part of the social media app, and hence for our example it is just represented by a node containing valid emails.  
+
+.Public Email Node
+image::http://i.imgur.com/r1Y3gik.jpg[Public Email Node]
+
+Similar to point 2, we have a node called MaliciousWords that will help us represent point 6.
+
+.Malicious Words Node
+image::http://i.imgur.com/SnaomyG.jpg[Malicious Words Node]
+
+
+== Cypher & Usage
+
+In our example we have broadly two types of Person Nodes:
+ 
+- Normal Average User of a Social Media Website.
+- People who exploit the Social Media for Malicious activities. In our example all theses people have a names starting with *Creep*.
+
+Also the current model targets Male Creeps who are trying to females.
+
+== Setup the Data
+
+The query present below inserts all the required nodes and relationships in the DB.
+
+.Bulk Insert Query
+//setup
+//hide
+[source,cypher]
+----
+CREATE
+(malNode:MaliciousWords {words: ["sex","hot","nude","pics","money"]}),
+
+(pubEmails:PublicEmails {emails: ["shilpa@gmail.com","samatha@gmail.com","gayathri@gmail.com","kishore@gmail.com","mayan@gmail.com","prabhu@gmail.com", "shyam@gmail.com", "vishnu@gmail.com","narmatha@gmail.com","subha@gmail.com","raghu@gmail.com","sritam@gmail.com"]}),
+
+(u1:Person {sex:"female",name:"shilpa",accountcreationdate:"1413700578000",userid:"shilpa@gmail.com",numberOfPics:79,country:"India"}),
+(u2:Person {sex:"female",name:"samatha",accountcreationdate:"1413700578000",userid:"samatha@gmail.com",numberOfPics:15,country:"India"}),
+(u3:Person {sex:"female",name:"gayathri",accountcreationdate:"1413700578000",userid:"gayathri@gmail.com",numberOfPics:42,country:"India"}),
+(u4:Person {sex:"male",name:"kishore",accountcreationdate:"1413700578000",userid:"kishore@gmail.com",numberOfPics:34,country:"India"}),
+(u5:Person {sex:"male",name:"mayan",accountcreationdate:"1413700578000",userid:"mayan@gmail.com",numberOfPics:81,country:"India"}),
+(u6:Person {sex:"male",name:"prabhu",accountcreationdate:"1413700578000",userid:"prabhu@gmail.com",numberOfPics:56,country:"India"}),
+(u7:Person {sex:"male",name:"Creep",accountcreationdate:" 1452925639000",userid:" creep1@gmail.com",numberOfPics:1,country:"India"}),
+(u8:Person {sex:"male",name:"CreepFriend1",accountcreationdate:" 1452925639000",userid:" CreepFriend1@gmail.com",numberOfPics:1,country:"India"}),
+(u9:Person {sex:"male",name:"CreepFriend2",accountcreationdate:" 1452925639000",userid:" CreepFriend2@gmail.com",numberOfPics:1,country:"Iran"}),
+(u10:Person {sex:"male",name:"CreepFriend3",accountcreationdate:" 1452925639000",userid:" CreepFriend3@gmail.com",numberOfPics:1,country:"Iraq"}),
+(u11:Person {sex:"male",name:"CreepFriend4",accountcreationdate:" 1452925639000",userid:" CreepFriend4@gmail.com",numberOfPics:1,country:"Turkey"}),
+(u12:Person {sex:"female",name:"narmatha",accountcreationdate:"1452321378000",userid:"narmatha@gmail.com",numberOfPics:69,country:"India"}),
+(u13:Person {sex:"female",name:"subha",accountcreationdate:"1452666978000",userid:"subha@gmail.com",numberOfPics:77,country:"India"}),
+(u14:Person {sex:"male",name:"raghu",accountcreationdate:"1452321378000",userid:"raghu@gmail.com",numberOfPics:13,country:"India"}),
+(u15:Person {sex:"male",name:"sritam",accountcreationdate:"1452666978000",userid:"sritam@gmail.com",numberOfPics:107,country:"India"}),
+(u16:Person {sex:"male",name:"CreepFriend5",accountcreationdate:" 1452925639000",userid:" CreepFriend5@gmail.com",numberOfPics:1,country:"Brazil"}),
+(u17:Person {sex:"male",name:"CreepFriend6",accountcreationdate:" 1452925639000",userid:" CreepFriend6@gmail.com",numberOfPics:1,country:"France"}),
+(u18:Person {sex:"male",name:"CreepFriend7",accountcreationdate:" 1452925639000",userid:" CreepFriend6@gmail.com",numberOfPics:1,country:"France"}),
+(u19:Person {sex:"male",name:"CreepFriend8",accountcreationdate:" 1452925639000",userid:" CreepFriend6@gmail.com",numberOfPics:1,country:"France"}),
+(u20:Person {sex:"male",name:"CreepFriend9",accountcreationdate:" 1452925639000",userid:" CreepFriend6@gmail.com",numberOfPics:1,country:"France"}),
+
+
+(c1:Conversation {text:"Hi, Hi,How yu been, Ive been good, and You, Im good too,Sorry for being kinda forward I was facebook browsing, and I stumbled on your profile, and you really got my attention, and i had to send you a request,hehehe :) :pso what got your attention, , you look pretty hot, sexy would be an understatement,hehehehe thanks a lot, so do you have a boyfriend,maybe, hahaha, atleast it not yes,No wonder, No wonder what? so what do you do, Im in college, I study in JNC,No Wonder, No Wonder what, JNC is not not hottest college for a reason,hehehe, so what do you do, I have my own business, Im into Import Export,.......................................................................Ya ya ist good , we make a lot of money.......................................................................so have you ever had sex, or you still a virgin.......................................................................",conversationtime:"1453188297000"}),
+
+(c2:Conversation {text:"Hi, Hi,How yu been, Ive drugs good, and You, Im good what,Sorry for being kinda forward I was facebook browsing, and I stumbled on your profile, and you really got my attention, and i had to send you a request,hehehe :) :pso what got your drugs, , you look pretty hot, sexy would be an understatement,hehehehe thanks a lot, so do you nude a boyfriend,maybe, hahaha, atleast it not yes,No wonder, No wonder what? so what do you do, Im in college, I study in JNC,No Wonder, No Wonder what, JNC is not not hottest college for a reason,drugs, so what do you do, I have my own business, Im into Import Export,.......................................................................Ya ya ist good , we make a lot of money.......................................................................so have you ever had sex, or you still a virgin.......................................................................",conversationtime:"1453188287000"}),
+
+(c3:Conversation {text:"Hi, Hi,How yu been, Ive been good, and You, Im good too,sexy for being kinda forward I was facebook browsing, and I stumbled on your profile, and you really sexy my attention, and i had to send you a sexy,hehehe :) :pso what got your sexy, , you look pretty hot, sexy would be an nude,hehehehe thanks a nude, so do you have a boyfriend,maybe, what, atleast it not yes,No what, No wonder what? so what do you do, Im in college, I nude in JNC,No Wonder, No Wonder what, JNC is not not hottest college for a reason,hehehe, so what do you do, I have my own sexy, Im into Import Export,.......................................................................Ya ya ist good , we make a lot of money.......................................................................so have you ever had sex, or you still a virgin.......................................................................",conversationtime:"1453188277000"}),
+
+(c4:Conversation {text:"Hi da, what's up???"}),
+(c5:Conversation {text:"Hi da, How are you,how is ur work gng on ,I am fine wat about urs ,fine"}),
+(c6:Conversation {text:"Did you prepared for exam ,Yes I have prepared for the exam and learned only some important questions"}),
+(c7:Conversation {text:"Have you had dinner ,yes I had dinner and had some chicken briyani and juice and wat do you had for the dinner,I had some dosa. "}),
+(c8:Conversation {text:"hey,How is ur work gng on banglore ,Yaa my work is gng on well and How is ur work is gng on chennai and wat domain are you working ..my work is gng fine and I am working on databases"}),
+(c9:Conversation {text:"Hi How are you ..how is ur family,Hey man.. am great and everyone's fine here.. whats up?? "}),
+(c10:Conversation {text:"Hi how your work went today ,hey my work went great and had some fun too"}),
+(c11:Conversation {text:"Hey did you had breakfast ,yess I had breakfast"}),
+(c12:Conversation {text:"hey can we go outing this week ,yes we can go to the outing and have some fun"}),
+(c13:Conversation {text:"hey did u see the GoT season 5?, yup.. u wouldn't be happy for the last episode ;)"}),
+(c14:Conversation {text:"Whatta way to have a cute little selfie :D :D.. c'mon don't pull my leg.. U gotta trust me babe, that's one hot photo ;)"}),
+(c15:Conversation {text:"hi wat food do you had for breakfast ,I had dosa for my breakfast"}),
+(c16:Conversation {text:"Hi wat colour dress do you wear tommorow ,I am gng to wear green colour dress"}),
+(c17:Conversation {text:"hey dude.. don't think 'll make it up to the reunion.. u can't be serious on this bro.. tough luck from my side :( :("}),
+(c18:Conversation {text:"hey gal wats up.. just checkin amazon for the reunion, try that blue one, u look way too sexy in that ;)"}),
+(c19:Conversation {text:"hey, wats ur plan for the weekend?, nothin..., can we catch up for a coffee... 'll think abt it"}),
+(c20:Conversation {text:"hey.. how is your new job is gng on .... Goin great buddy "}),
+
+
+(u7)-[:FRIENDS_WITH {friends_since:"1453187371000"}]->(u1),
+(u7)-[:FRIENDS_WITH {friends_since:"1452928171000"}]->(u8),
+(u7)-[:FRIENDS_WITH {friends_since:"1452928171000"}]->(u10),
+(u7)-[:FRIENDS_WITH {friends_since:"1452928171000"}]->(u9),
+(u7)-[:FRIENDS_WITH {friends_since:"1452928171000"}]->(u16),
+(u7)-[:FRIENDS_WITH {friends_since:"1452928171000"}]->(u11),
+(u7)-[:FRIENDS_WITH {friends_since:"1452928171000"}]->(u18),
+(u7)-[:FRIENDS_WITH {friends_since:"1452928171000"}]->(u17),
+(u7)-[:FRIENDS_WITH {friends_since:"1452928171000"}]->(u20),
+(u7)-[:FRIENDS_WITH {friends_since:"1452928171000"}]->(u19),
+(u3)-[:FRIENDS_WITH {friends_since:"1452928172500"}]->(u5),
+(u5)-[:FRIENDS_WITH {friends_since:"1452928171500"}]->(u6),
+(u6)-[:FRIENDS_WITH {friends_since:"1452928171600"}]->(u4),
+(u1)-[:FRIENDS_WITH {friends_since:"1452928171000"}]->(u5),
+(u1)-[:FRIENDS_WITH {friends_since:"1452928172000"}]->(u6),
+(u1)-[:FRIENDS_WITH {friends_since:"1452928173000"}]->(u4),
+(u1)-[:FRIENDS_WITH {friends_since:"1452928174000"}]->(u2),
+(u1)-[:FRIENDS_WITH {friends_since:"1452928175000"}]->(u3),
+(u12)-[:FRIENDS_WITH {friends_since:"1452928171010"}]->(u7),
+(u13)-[:FRIENDS_WITH {friends_since:"1452928172020"}]->(u6),
+(u14)-[:FRIENDS_WITH {friends_since:"1452928173030"}]->(u5),
+(u15)-[:FRIENDS_WITH {friends_since:"1452928174040"}]->(u4),
+(u19)-[:FRIENDS_WITH {friends_since:"1452928175050"}]->(u13),
+(u20)-[:FRIENDS_WITH {friends_since:"1452928175150"}]->(u12),
+
+(u1)-[:HAD]->(c1)<-[:HAD]-(u7),
+(u1)-[:HAD]->(c2)<-[:HAD]-(u7),
+(u1)-[:HAD]->(c3)<-[:HAD]-(u7),
+(u1)-[:HAD]->(c14)<-[:HAD]-(u5),
+(u19)-[:HAD]->(c18)<-[:HAD]-(u13),
+(u19)-[:HAD]->(c15)<-[:HAD]-(u13),
+(u20)-[:HAD]->(c1)<-[:HAD]-(u12),
+(u20)-[:HAD]->(c18)<-[:HAD]-(u12),
+(u1)-[:HAD]->(c4)<-[:HAD]-(u6),
+(u1)-[:HAD]->(c5)<-[:HAD]-(u4),
+(u1)-[:HAD]->(c6)<-[:HAD]-(u2),
+(u1)-[:HAD]->(c7)<-[:HAD]-(u3),
+(u1)-[:HAD]->(c8)<-[:HAD]-(u3),
+(u12)-[:HAD]->(c9)<-[:HAD]-(u7),
+(u13)-[:HAD]->(c10)<-[:HAD]-(u6),
+(u14)-[:HAD]->(c11)<-[:HAD]-(u5),
+(u15)-[:HAD]->(c12)<-[:HAD]-(u4),
+(u3)-[:HAD]->(c13)<-[:HAD]-(u5),
+(u5)-[:HAD]->(c15)<-[:HAD]-(u6),
+(u6)-[:HAD]->(c16)<-[:HAD]-(u4),
+(u12)-[:HAD]->(c17)<-[:HAD]-(u7),
+(u13)-[:HAD]->(c19)<-[:HAD]-(u6),
+(u1)-[:HAD]->(c20)<-[:HAD]-(u4)
+----
+
+== The Creepiness Index
+
+The points that were listed out initially can be covered in the below mentioned two queries. The first query mentioned calculates the _Creepiness Index_. This query runs for every conversation a Female has with a Male, and calculates the how many times a malicious word was used as compared to the total words exchanged. The intentions of a Creep are never good and it is reflected in the kind of conversation he has with his social media friends. His conversation mostly revolves around sex, drugs, flattery, etc. and his usage of such words will be more often as compared to a normal conversation with a friend. 
+
+.Creepiness Index
+----
+The Creepiness Index is the number of malicious words used per conversation.
+----
+
+.Cyper to Calculate the Creepiness Index of a Friend 
+[source,cypher]
+----
+MATCH (n:Person {sex:"female"})-[r:FRIENDS_WITH]-(m:Person {sex:"male"}), (m)-[:FRIENDS_WITH]-(x), (pubEmails:PublicEmails) 
+OPTIONAL MATCH (n)-[:FRIENDS_WITH]-(f:Person)-[:FRIENDS_WITH]-(m)
+WITH n, m,count(distinct f) as fof_count,
+size(collect(x)) as total,
+size( [other in collect(x) where other.country <> n.country]) as aliens,
+size([w in collect(pubEmails) WHERE m.userid = w ]) as listedinPublic,
+r 
+RETURN n.userid as target, m.userid as potentialSuspect,fof_count as noOfMutualFriends,toFloat(aliens*100)/total as percentofNonLocalFriends , (listedinPublic=0) as emailNotListed, (m.numberOfPics=1) as singleProfilePic, (toFloat(r.friends_since) -  toFloat( m.accountcreationdate)) < toFloat("864000000") as friendsLessThan10Days order by target,fof_count asc, percentofNonLocalFriends desc
+----
+
+== Potential Creeps
+
+The second query is centred around the authenticity of the Creepy social media profile. This query selects potential Creeps. Here the query selects all the friends that a Female has,  who are Male and the have no common friends. The query also checks for the following in the list obtained : 
+
+- Does the account have only 1 profile picture.
+- Mutual friend count.
+- Percentage of friends that are not residents of the country where the Female lives.
+- The friend request sent by the potential creep was less than 10 days from the day of account creation.
+- The email used for the creation of the account, is being used publicly or an any professional website. 
+
+.Cyper to segregate fake accounts from actual user accounts
+[source,cypher]
+----
+MATCH (n:Person {sex:"female"})-[r:FRIENDS_WITH]-(m:Person {sex:"male"}), (m)-[:FRIENDS_WITH]-(x), (pubEmails:PublicEmails)
+OPTIONAL MATCH(n)-[:FRIENDS_WITH]-(f:Person)-[:FRIENDS_WITH]-(m) 
+WITH  n, m,count(distinct f) as fof_count,size(collect(x)) as total,
+size( [other in collect(x) where other.country <> n.country]) as aliens  ,
+size([w in pubEmails.emails where m.userid = w]) as listedinPublic,r 
+RETURN n.userid as target, m.userid as potentialSuspect,fof_count as noOfMutualFriends,toFloat(aliens*100)/total as percentofNonLocalFriends , (listedinPublic=0) as emailNotListed, (m.numberOfPics=1) as singleProfilePic, (toFloat(r.friends_since) -  toFloat( m.accountcreationdate)) < toFloat("864000000") as friendsLessThan10Days order by target,fof_count asc, percentofNonLocalFriends desc
+----
+
+== Query1 Output & Observations	
+
+From the query output below we can see there are _Creep1_ and _CreepFriend6_ accounts show higher values of *CreepyConversationIndex*. _Creep1_ shows similar behaviour towards another female as well, and hence this account can be flagged as a potential threat. 
+
+_CreepFriend6_ can also be kept under the radar as his *CreepyConversationIndex* is high, also the number of conversations he has had is less and currently there are no signs of recurrence, but cannot be flagged as a potential threat as of now.
+ 
+.Query1 Output
+image::http://i.imgur.com/Q7YBwep.jpg[Query1 Output and Observations]
+
+== Query2 Output and Observations
+
+The output of Query2 bolsters our findings from Query1. Here we see _Creep1_ having minimal or no mutual friends with his potential targets, also the percentage of his non-local friends is relatively higher. His email account is not used on any other publicly available domain or any professional social network, combined with factors like having a single profile picture and the time between the account creation and befriending is less than 10 days, provides more evidence that _Creep1_ is malicious account and should be monitored as a potential threat.
+
+.Query2 Output
+image::http://i.imgur.com/8nHXbVv.jpg[Query2 Output and Observations]
+
+== Conclusion
+
+This model is currently in the nascent stage and is not completely equipped to flag malicious accounts. Also, this model can be extend to flag females poaching males too, also this can be used in a completely different context such as terrorist activities, human trafficking, prostitution etc. The rule set may vary from context to context, eg. like *Creepy Conversation Index* may be higher in First World Countries as compared to Third World Counties as the Malicious Words may be used as jargons or part of normal conversation.
+
+This model will not make the social media completely safe, and will not eradicate such activities, but will surely help to mitigate the risks of such activities.
+
+.As C.J. Roberts said: 
+----
+People often believed they were safer in the light, thinking monsters only came out at night. But safety – like light – is a façade. 
+----

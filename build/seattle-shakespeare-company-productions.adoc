@@ -1,0 +1,949 @@
+= Seattle Shakespeare Company Productions
+:neo4j-version: 2.3.0
+:author: Amanda Schaffer
+:twitter: @yhoppyokapi
+
+== Introduction
+After attending plays around Seattle, I became curious about the relationships between theater companies, plays, actors, directors, and crew. This GraphGist starts to explore some of that data, using the production history of the link:http://www.seattleshakespeare.org/about-us/production-history/[Seattle Shakepeare Company].
+
+== Model
+image:http://i.imgur.com/f5h7wPP.jpg[Model]
+
+* **Person**: represents a person! Unique by name for this simplified model, may have relationships like "Wrote", "Directed"
+* **Play**: represents a written play - a Person WROTE the Play, which may be STAGED in a Production. Properties might include year written, year published, and genre.
+* **Production**: represents a performance or group of performances of a given play. The Production will generally be DIRECTED by a Person, and may include properties indicating the start and end year and month, and whether it was performed as part of a tour or in parks.
+
+
+//setup
+//hide
+//result
+[source,cypher]
+----
+CREATE CONSTRAINT ON (play:Play) ASSERT play.name IS UNIQUE;
+CREATE CONSTRAINT ON (person:Person) ASSERT person.name IS UNIQUE;
+
+CREATE (p:Person {name:"William Shakespeare"});
+CREATE (p:Person {name:"George Peele"});
+CREATE (p:Person {name:"George Wilkins"});
+CREATE (p:Person {name:"John Fletcher"});
+CREATE (p:Person {name:"Thomas Middleton"});
+CREATE (p:Person {name:"Bertolt Brecht"});
+CREATE (p:Person {name:"Carlo Goldoni"});
+CREATE (p:Person {name:"David Davalos"});
+CREATE (p:Person {name:"David Wright"});
+CREATE (p:Person {name:"Edmond Rostand"});
+CREATE (p:Person {name:"George Bernard Shaw"});
+CREATE (p:Person {name:"Henrik Ibsen"});
+CREATE (p:Person {name:"Moliere"});
+CREATE (p:Person {name:"Jeffrey Hatcher"});
+CREATE (p:Person {name:"John Gray"});
+CREATE (p:Person {name:"John O'Keeffe"});
+CREATE (p:Person {name:"Oscar Wilde"});
+CREATE (p:Person {name:"Patrick Page"});
+CREATE (p:Person {name:"Richard Brinsley Sheridan"});
+CREATE (p:Person {name:"Richard Carter"});
+CREATE (p:Person {name:"Samuel Beckett"});
+CREATE (p:Person {name:"Sophocles"});
+CREATE (p:Person {name:"Eric Peterson"});
+CREATE (p:Person {name:"Aaron Levin"});
+CREATE (p:Person {name:"Aimee Bruneau"});
+CREATE (p:Person {name:"Amy Thone"});
+CREATE (p:Person {name:"Annie Lareau"});
+CREATE (p:Person {name:"Arne Zaslove"});
+CREATE (p:Person {name:"Cal Winn"});
+CREATE (p:Person {name:"Carys Kresny"});
+CREATE (p:Person {name:"Dan McCleary"});
+CREATE (p:Person {name:"Dan Tierney"});
+CREATE (p:Person {name:"Daniel Wilson"});
+CREATE (p:Person {name:"Danny Scheie"});
+CREATE (p:Person {name:"David Quicksall"});
+CREATE (p:Person {name:"Desdemona Chiang"});
+CREATE (p:Person {name:"George Mount"});
+CREATE (p:Person {name:"Gregg Loughridge"});
+CREATE (p:Person {name:"Hans Altwies"});
+CREATE (p:Person {name:"Henry Woronicz"});
+CREATE (p:Person {name:"James Lapan"});
+CREATE (p:Person {name:"Jane Nichols"});
+CREATE (p:Person {name:"Jeff Steitzer"});
+CREATE (p:Person {name:"Jody Hahn"});
+CREATE (p:Person {name:"John Langs"});
+CREATE (p:Person {name:"Jon Kretzu"});
+CREATE (p:Person {name:"Kelly Kitchens"});
+CREATE (p:Person {name:"M. Burke Walker"});
+CREATE (p:Person {name:"Makaela Pollock"});
+CREATE (p:Person {name:"Marcus Goodwin"});
+CREATE (p:Person {name:"Mark Harrison"});
+CREATE (p:Person {name:"Mark Jenkins"});
+CREATE (p:Person {name:"Mary Machala"});
+CREATE (p:Person {name:"Michael Kevin"});
+CREATE (p:Person {name:"Paul T. Mitri"});
+CREATE (p:Person {name:"Rita Giomi"});
+CREATE (p:Person {name:"Robert Currier"});
+CREATE (p:Person {name:"Rod Ceballos"});
+CREATE (p:Person {name:"Rosa Joshi"});
+CREATE (p:Person {name:"Russ Banham"});
+CREATE (p:Person {name:"Sheila Daniels"});
+CREATE (p:Person {name:"Stephanie Shine"});
+CREATE (p:Person {name:"Susanna Wilson-Lapan"});
+CREATE (p:Person {name:"Terry Edward Moore"});
+CREATE (p:Person {name:"Tim Hyland"});
+CREATE (p:Person {name:"Todd Jamieson"});
+CREATE (p:Person {name:"Vanessa Miller"});
+CREATE (p:Person {name:"Victor Pappas"});
+CREATE (p:Person {name:"Henry James"});
+CREATE (p:Person {name:"Dakin Matthews"});
+
+CREATE (play:Play  {name:"Richard II", year_written:1595, year_published:1597, genre:"History"})
+WITH play MATCH (writer:Person {name:"William Shakespeare"}) CREATE (writer)-[:WROTE]->(play);	
+
+CREATE (play:Play  {name:"Henry VI Part II", year_written:1590, year_published:1594, genre:"History"})
+WITH play MATCH (writer:Person {name:"William Shakespeare"}) CREATE (writer)-[:WROTE]->(play);	
+
+CREATE (play:Play  {name:"Henry VI Part III", year_written:1590, year_published:1595, genre:"History"})
+WITH play MATCH (writer:Person {name:"William Shakespeare"}) CREATE (writer)-[:WROTE]->(play);	
+CREATE (play:Play  {name:"Henry VI Part I", year_written:1590, year_published:1623, genre:"History"})
+WITH play MATCH (writer:Person {name:"William Shakespeare"}) CREATE (writer)-[:WROTE]->(play);	
+CREATE (play:Play  {name:"Richard III", year_written:1592, year_published:1597, genre:"History"})
+WITH play MATCH (writer:Person {name:"William Shakespeare"}) CREATE (writer)-[:WROTE]->(play);	
+CREATE (play:Play  {name:"The Comedy of Errors", year_written:1592, year_published:1623, genre:"Comedy"})
+WITH play MATCH (writer:Person {name:"William Shakespeare"}) CREATE (writer)-[:WROTE]->(play);	
+CREATE (play:Play  {name:"Titus Andronicus", year_written:1593, year_published:1594, genre:"Tragedy"})
+WITH play MATCH (writer:Person {name:"William Shakespeare"}) CREATE (writer)-[:WROTE]->(play)
+WITH play MATCH (writer:Person {name:"George Peele"}) CREATE (writer)-[:WROTE]->(play);
+
+CREATE (play:Play  {name:"The Taming of the Shrew", year_written:1593, year_published:1623, genre:"Comedy"})
+WITH play MATCH (writer:Person {name:"William Shakespeare"}) CREATE (writer)-[:WROTE]->(play);	
+CREATE (play:Play  {name:"The Two Gentlemen of Verona", year_written:1594, year_published:1623, genre:"Comedy"})
+WITH play MATCH (writer:Person {name:"William Shakespeare"}) CREATE (writer)-[:WROTE]->(play);	
+CREATE (play:Play  {name:"Love's Labour's Lost", year_written:1594, year_published:1598, genre:"Comedy"})
+WITH play MATCH (writer:Person {name:"William Shakespeare"}) CREATE (writer)-[:WROTE]->(play);	
+CREATE (play:Play  {name:"Romeo and Juliet", year_written:1594, year_published:1597, genre:"Tragedy"})
+WITH play MATCH (writer:Person {name:"William Shakespeare"}) CREATE (writer)-[:WROTE]->(play);	
+CREATE (play:Play  {name:"A Midsummer Night's Dream", year_written:1595, year_published:1600, genre:"Comedy"})
+WITH play MATCH (writer:Person {name:"William Shakespeare"}) CREATE (writer)-[:WROTE]->(play);	
+CREATE (play:Play  {name:"King John", year_written:1596, year_published:1623, genre:"History"})
+WITH play MATCH (writer:Person {name:"William Shakespeare"}) CREATE (writer)-[:WROTE]->(play);	
+CREATE (play:Play  {name:"The Merchant of Venice", year_written:1596, year_published:1600, genre:"Comedy"})
+WITH play MATCH (writer:Person {name:"William Shakespeare"}) CREATE (writer)-[:WROTE]->(play);	
+CREATE (play:Play  {name:"Henry IV Part I", year_written:1597, year_published:1598, genre:"History"})
+WITH play MATCH (writer:Person {name:"William Shakespeare"}) CREATE (writer)-[:WROTE]->(play);	
+CREATE (play:Play  {name:"Henry IV Part II", year_written:1597, year_published:1600, genre:"History"})
+WITH play MATCH (writer:Person {name:"William Shakespeare"}) CREATE (writer)-[:WROTE]->(play);	
+CREATE (play:Play  {name:"Much Ado About Nothing", year_written:1598, year_published:1600, genre:"Comedy"})
+WITH play MATCH (writer:Person {name:"William Shakespeare"}) CREATE (writer)-[:WROTE]->(play);	
+CREATE (play:Play  {name:"Henry V", year_written:1598, year_published:1600, genre:"History"})
+WITH play MATCH (writer:Person {name:"William Shakespeare"}) CREATE (writer)-[:WROTE]->(play);	
+CREATE (play:Play  {name:"Julius Caesar", year_written:1599, year_published:1623, genre:"Tragedy"})
+WITH play MATCH (writer:Person {name:"William Shakespeare"}) CREATE (writer)-[:WROTE]->(play);	
+CREATE (play:Play  {name:"As You Like It", year_written:1599, year_published:1623, genre:"Comedy"})
+WITH play MATCH (writer:Person {name:"William Shakespeare"}) CREATE (writer)-[:WROTE]->(play);	
+
+CREATE (play:Play  {name:"Twelfth Night", year_written:1599, year_published:1623, genre:"Comedy"})
+WITH play MATCH (writer:Person {name:"William Shakespeare"}) CREATE (writer)-[:WROTE]->(play);	
+CREATE (play:Play  {name:"Hamlet", year_written:1600, year_published:1603, genre:"Tragedy"})
+WITH play MATCH (writer:Person {name:"William Shakespeare"}) CREATE (writer)-[:WROTE]->(play);	
+CREATE (play:Play  {name:"The Merry Wives of Windsor", year_written:1600, year_published:1602, genre:"Comedy"})	
+WITH play MATCH (writer:Person {name:"William Shakespeare"}) CREATE (writer)-[:WROTE]->(play);	
+CREATE (play:Play  {name:"Troilus and Cressida", year_written:1601, year_published:1609, genre:"Comedy"})	
+WITH play MATCH (writer:Person {name:"William Shakespeare"}) CREATE (writer)-[:WROTE]->(play);	
+CREATE (play:Play  {name:"All's Well That Ends Well", year_written:1602, year_published:1623, genre:"Comedy"})	
+WITH play MATCH (writer:Person {name:"William Shakespeare"}) CREATE (writer)-[:WROTE]->(play);	
+CREATE (play:Play  {name:"Measure for Measure", year_written:1604, year_published:1623, genre:"Comedy"})	
+WITH play MATCH (writer:Person {name:"William Shakespeare"}) CREATE (writer)-[:WROTE]->(play);	
+CREATE (play:Play  {name:"Othello", year_written:1604, year_published:1622, genre:"Tragedy"})	
+WITH play MATCH (writer:Person {name:"William Shakespeare"}) CREATE (writer)-[:WROTE]->(play);	
+CREATE (play:Play  {name:"King Lear", year_written:1605, year_published:1608, genre:"Tragedy"})
+WITH play MATCH (writer:Person {name:"William Shakespeare"}) CREATE (writer)-[:WROTE]->(play);	
+CREATE (play:Play  {name:"Macbeth", year_written:1605, year_published:1623, genre:"Tragedy"})
+WITH play MATCH (writer:Person {name:"William Shakespeare"}) CREATE (writer)-[:WROTE]->(play);	
+CREATE (play:Play  {name:"Antony and Cleopatra", year_written:1606, year_published:1623, genre:"Tragedy"})
+WITH play MATCH (writer:Person {name:"William Shakespeare"}) CREATE (writer)-[:WROTE]->(play);	
+
+CREATE (play:Play  {name:"Coriolanus", year_written:1607, year_published:1623, genre:"Tragedy"})
+WITH play MATCH (writer:Person {name:"William Shakespeare"}) CREATE (writer)-[:WROTE]->(play);	
+CREATE (play:Play  {name:"Timon of Athens", year_written:1607, year_published:1623, genre:"Tragedy"})
+WITH play MATCH (writer:Person {name:"William Shakespeare"}) CREATE (writer)-[:WROTE]->(play)
+WITH play MATCH (writer:Person {name:"Thomas Middleton"}) CREATE (writer)-[:WROTE]->(play);
+
+CREATE (play:Play  {name:"Pericles", year_written:1608, year_published:1609, genre:"Tragicomedy"})
+WITH play MATCH (writer:Person {name:"William Shakespeare"}) CREATE (writer)-[:WROTE]->(play)
+WITH play MATCH (writer:Person {name:"George Wilkins"}) CREATE (writer)-[:WROTE]->(play);
+
+CREATE (play:Play  {name:"Cymbeline", year_written:1609, year_published:1623, genre:"Tragicomedy"})
+WITH play MATCH (writer:Person {name:"William Shakespeare"}) CREATE (writer)-[:WROTE]->(play);	
+CREATE (play:Play  {name:"The Winter's Tale", year_written:1610, year_published:1623, genre:"Tragicomedy"})
+WITH play MATCH (writer:Person {name:"William Shakespeare"}) CREATE (writer)-[:WROTE]->(play);	
+CREATE (play:Play  {name:"The Tempest", year_written:1611, year_published:1623, genre:"Tragicomedy"})
+WITH play MATCH (writer:Person {name:"William Shakespeare"}) CREATE (writer)-[:WROTE]->(play);	
+CREATE (play:Play  {name:"Henry VIII", year_written:1612, year_published:1623, genre:"History"})
+WITH play MATCH (writer:Person {name:"William Shakespeare"}) CREATE (writer)-[:WROTE]->(play)
+WITH play MATCH (writer:Person {name:"John Fletcher"}) CREATE (writer)-[:WROTE]->(play);
+
+CREATE (play:Play  {name:"Two Noble Kinsmen", year_written:1612, year_published:1634, genre:"Comedy"})
+WITH play MATCH (writer:Person {name:"William Shakespeare"}) CREATE (writer)-[:WROTE]->(play)
+WITH play MATCH (writer:Person {name:"John Fletcher"}) CREATE (writer)-[:WROTE]->(play);
+
+CREATE (play:Play  {name:"Mother Courage and Her Children", year_written:1939, ShakespeareRelated:FALSE, genre:""})
+WITH play MATCH (writer:Person {name:"Bertolt Brecht"}) CREATE (writer)-[:WROTE]->(play);
+
+CREATE (play:Play  {name:"The Threepenny Opera", year_written:1928, ShakespeareRelated:FALSE, genre:"Musical"})
+WITH play MATCH (writer:Person {name:"Bertolt Brecht"}) CREATE (writer)-[:WROTE]->(play);
+
+CREATE (play:Play  {name:"The Servant of Two Masters", year_written:1746, ShakespeareRelated:FALSE, genre:""})
+WITH play MATCH (writer:Person {name:"Carlo Goldoni"}) CREATE (writer)-[:WROTE]->(play);
+
+CREATE (play:Play  {name:"Wittenberg", year_written:2008, ShakespeareRelated:TRUE, genre:""})
+WITH play MATCH (writer:Person {name:"David Davalos"}) CREATE (writer)-[:WROTE]->(play);
+
+CREATE (play:Play  {name:"When Love Speaks", year_written:"NA", ShakespeareRelated:TRUE, genre:"Derived Work"})
+WITH play MATCH (writer:Person {name:"David Wright"}) CREATE (writer)-[:COMPILED]->(play);
+
+CREATE (play:Play  {name:"Cyrano de Bergerac", year_written:1897, ShakespeareRelated:FALSE, genre:""})
+WITH play MATCH (writer:Person {name:"Edmond Rostand"}) CREATE (writer)-[:WROTE]->(play);
+
+CREATE (play:Play  {name:"Mrs. Warren's Profession", year_written:1893, ShakespeareRelated:FALSE, genre:""})
+WITH play MATCH (writer:Person {name:"George Bernard Shaw"}) CREATE (writer)-[:WROTE]->(play);
+
+CREATE (play:Play  {name:"Pygmalion", year_written:1912, ShakespeareRelated:FALSE, genre:""})
+WITH play MATCH (writer:Person {name:"George Bernard Shaw"}) CREATE (writer)-[:WROTE]->(play);
+
+CREATE (play:Play  {name:"A Doll's House", year_written:1897, ShakespeareRelated:FALSE, genre:""})
+WITH play MATCH (writer:Person {name:"Henrik Ibsen"}) CREATE (writer)-[:WROTE]->(play);
+
+CREATE (play:Play  {name:"The Miser", year_written:1668, ShakespeareRelated:FALSE, genre:""})
+WITH play MATCH (writer:Person {name:"Moliere"}) CREATE (writer)-[:WROTE]->(play);
+
+CREATE (play:Play  {name:"The Turn of the Screw", year_written:1898, ShakespeareRelated:FALSE, genre:""})
+WITH play MATCH (writer:Person {name:"Henry James"}) CREATE (writer)-[:WROTE]->(play)
+WITH play MATCH (writer:Person {name:"Jeffrey Hatcher"}) CREATE (writer)-[:WROTE]->(play);
+CREATE (play:Play  {name:"Billy Bishop Goes to War", year_written:1978, ShakespeareRelated:FALSE, genre:"Musical"})
+WITH play MATCH (writer:Person {name:"Eric Peterson"}) CREATE (writer)-[:WROTE]->(play)
+WITH play MATCH (writer:Person {name:"John Gray"}) CREATE (writer)-[:WROTE]->(play);
+CREATE (play:Play  {name:"Wild Oats", year_written:1791, ShakespeareRelated:FALSE, genre:""})
+WITH play MATCH (writer:Person {name:"John O'Keeffe"}) CREATE (writer)-[:WROTE]->(play);
+
+CREATE (play:Play  {name:"Tartuffe", year_written:1664, ShakespeareRelated:FALSE, genre:""})
+WITH play MATCH (writer:Person {name:"Moliere"}) CREATE (writer)-[:WROTE]->(play);
+
+CREATE (play:Play  {name:"The Importance of Being Earnest", year_written:1895, ShakespeareRelated:FALSE, genre:""})
+WITH play MATCH (writer:Person {name:"Oscar Wilde"}) CREATE (writer)-[:WROTE]->(play);
+
+CREATE (play:Play  {name:"Swansong", year_written:2006, ShakespeareRelated:TRUE, genre:""})
+WITH play MATCH (writer:Person {name:"Patrick Page"}) CREATE (writer)-[:WROTE]->(play);
+
+CREATE (play:Play  {name:"The School For Scandal", year_written:1777, ShakespeareRelated:FALSE, genre:""})
+WITH play MATCH (writer:Person {name:"Richard Brinsley Sheridan"}) CREATE (writer)-[:WROTE]->(play);
+
+CREATE (play:Play  {name:"Blood and Iron", year_written:1997, ShakespeareRelated:FALSE, genre:""})
+WITH play MATCH (writer:Person {name:"Richard Carter"}) CREATE (writer)-[:WROTE]->(play);
+
+CREATE (play:Play  {name:"Waiting for Godot", year_written:1949, ShakespeareRelated:FALSE, genre:""})
+WITH play MATCH (writer:Person {name:"Samuel Beckett"}) CREATE (writer)-[:WROTE]->(play);
+
+CREATE (play:Play  {name:"Electra", year_written:-405, ShakespeareRelated:FALSE, genre:""})
+WITH play MATCH (writer:Person {name:"Sophocles"}) CREATE (writer)-[:WROTE]->(play);
+
+CREATE (play:Play  {name:"Lovers & Madmen", year_written:"NA", ShakespeareRelated:TRUE, genre:"Derived Work"})	
+WITH play MATCH (writer:Person {name:"William Shakespeare"}) CREATE (writer)-[:WROTE]->(play)
+WITH play MATCH (writer:Person {name:"Paul T. Mitri"}) CREATE (writer)-[:CONCEIVED]->(play)
+WITH play MATCH (writer:Person {name:"Stephanie Shine"}) CREATE (writer)-[:CONCEIVED]->(play);
+
+
+CREATE (play:Play  {name:"Henry IV", year_written:"NA", ShakespeareRelated:TRUE, genre:"History"})
+WITH play MATCH (writer:Person {name:"Dakin Matthews"}) CREATE (writer)-[:ADAPTED]->(play);
+
+CREATE (prod:Production {title:"Mother Courage and Her Children", startYear:2015, startMonth:10, endYear:2015, endMonth: 11, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Jeff Steitzer"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Mother Courage and Her Children"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"The Threepenny Opera", startYear:2011, startMonth:2, endYear:2011, endMonth:3, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Stephanie Shine"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"The Threepenny Opera"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"The Servant of Two Masters", startYear:2009, startMonth:1, endYear:2009, endMonth:2, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Dan McCleary"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"The Servant of Two Masters"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Wittenberg", startYear:2010, startMonth:11, endYear:2010, endMonth: 12, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Rita Giomi"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Wittenberg"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"When Love Speaks", startYear:1992, startMonth:8, endYear:1992, endMonth:9, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Daniel Wilson"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"When Love Speaks"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"When Love Speaks", startYear:1994, startMonth:8, endYear:1994, endMonth:9, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Daniel Wilson"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"When Love Speaks"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Cyrano de Bergerac", startYear:2006, startMonth:3, endYear:2006, endMonth:4, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Stephanie Shine"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Cyrano de Bergerac"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Mrs. Warren's Profession", startYear:2016, startMonth:3, endYear:2016, endMonth:4, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Victor Pappas"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Mrs. Warren's Profession"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Pygmalion", startYear:2012, startMonth:2, endYear:2012, endMonth:3, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Jeff Steitzer"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Pygmalion"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"A Doll's House", startYear:2013, startMonth:1, endYear:2013, endMonth:1, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Russ Banham"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"A Doll's House"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"The Miser", startYear:2008, startMonth:3, endYear:2008, endMonth:4, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Robert Currier"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"The Miser"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"The Turn of the Screw", startYear:2009, startMonth:1, endYear:2009, endMonth:1, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Russ Banham"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"The Turn of the Screw"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Billy Bishop Goes to War", startYear:1992, startMonth:8, endYear:1992, endMonth:9, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Terry Edward Moore"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Billy Bishop Goes to War"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Wild Oats", startYear:2002, startMonth:1, endYear:2002, endMonth:2, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Stephanie Shine"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Wild Oats"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Tartuffe", startYear:2015, startMonth:3, endYear:2015, endMonth:4, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Makaela Pollock"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Tartuffe"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"The Importance of Being Earnest", startYear:2014, startMonth:3, endYear:2014, endMonth:4, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Victor Pappas"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"The Importance of Being Earnest"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Swansong", startYear:2008, startMonth:1, endYear:2008, endMonth:1, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Stephanie Shine"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Swansong"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"The School For Scandal", startYear:2007, startMonth:6, endYear:2007, endMonth:7, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Rod Ceballos"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"The School For Scandal"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Blood and Iron", startYear:1997, startMonth:10, endYear:1997, endMonth: 10, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Rita Giomi"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Blood and Iron"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Waiting for Godot", startYear:2014, startMonth:9, endYear:2014, endMonth:9, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"George Mount"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Waiting for Godot"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Electra", startYear:2010, startMonth:1, endYear:2010, endMonth:1, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Sheila Daniels"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Electra"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Twelfth Night", startYear:2009, startMonth:12, endYear:2009, endMonth: 12, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Stephanie Shine"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Twelfth Night"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Antony and Cleopatra", startYear:2012, startMonth:11, endYear:2012, endMonth: 11, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"John Langs"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Antony and Cleopatra"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"The Tempest", startYear:2002, startMonth:10, endYear:2002, endMonth: 11, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"David Quicksall"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"The Tempest"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Romeo and Juliet", startYear:2005, startMonth:10, endYear:2005, endMonth: 11, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"John Langs"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Romeo and Juliet"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Hamlet", startYear:2010, startMonth:10, endYear:2010, endMonth: 12, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"John Langs"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Hamlet"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"The Winter's Tale", startYear:2006, startMonth:10, endYear:2006, endMonth: 11, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Mark Harrison"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"The Winter's Tale"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Pericles", startYear:2007, startMonth:10, endYear:2007, endMonth: 11, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Sheila Daniels"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Pericles"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Much Ado About Nothing", startYear:2013, startMonth:10, endYear:2013, endMonth: 11, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"George Mount"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Much Ado About Nothing"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Henry IV", startYear:2008, startMonth:10, endYear:2008, endMonth: 11, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Stephanie Shine"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Henry IV"}) CREATE (prod)-[:STAGED]->(play)
+WITH prod MATCH (play:Play {name:"Henry IV Part I"}) CREATE (prod)-[:STAGED]->(play)
+WITH prod MATCH (play:Play {name:"Henry IV Part II"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Twelfth Night", startYear:2014, startMonth:10, endYear:2014, endMonth: 11, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Jon Kretzu"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Twelfth Night"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"A Midsummer Night's Dream", startYear:2011, startMonth:10, endYear:2011, endMonth: 11, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Sheila Daniels"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"A Midsummer Night's Dream"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"As You Like It", startYear:2004, startMonth:10, endYear:2004, endMonth: 11, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Stephanie Shine"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"As You Like It"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Macbeth", startYear:2001, startMonth:10, endYear:2001, endMonth: 11, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Michael Kevin"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Macbeth"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Macbeth", startYear:1996, startMonth:10, endYear:1996, endMonth: 10, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Terry Edward Moore"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Macbeth"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Hamlet", startYear:2000, startMonth:10, endYear:2000, endMonth: 10, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Stephanie Shine"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Hamlet"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Twelfth Night", startYear:1996, startMonth:9, endYear:1996, endMonth: 10, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Paul T. Mitri"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Twelfth Night"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Richard III", startYear:1997, startMonth:9, endYear:1997, endMonth: 10, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Jeff Steitzer"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Richard III"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Julius Caesar", startYear:1998, startMonth:9, endYear:1998, endMonth: 10, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Rita Giomi"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Julius Caesar"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Henry IV, Part 1", startYear:1995, startMonth:9, endYear:1995, endMonth: 10, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Stephanie Shine"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Henry IV Part 1"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Measure for Measure", startYear:2003, startMonth:9, endYear:2003, endMonth: 10, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Stephanie Shine"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Measure for Measure"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"The Comedy of Errors", startYear:2015, startMonth:9, endYear:2015, endMonth: 10, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Jane Nichols"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"The Comedy of Errors"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"As You Like It", startYear:1995, startMonth:9, endYear:1995, endMonth: 10, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Cal Winn"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"As You Like It"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Measure for Measure", startYear:1993, startMonth:9, endYear:1993, endMonth:9, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Todd Jamieson"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Measure for Measure"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Much Ado About Nothing", startYear:1993, startMonth:8, endYear:1993, endMonth:9, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Terry Edward Moore"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Much Ado About Nothing"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Richard III", startYear:1991, startMonth:8, endYear:1991, endMonth:8, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Terry Edward Moore"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Richard III"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Othello", startYear:1992, startMonth:8, endYear:1992, endMonth:9, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Mark Jenkins"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Othello"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Much Ado About Nothing", startYear:1994, startMonth:8, endYear:1994, endMonth:8, inParks:TRUE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"George Mount"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Much Ado About Nothing"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"The Comedy of Errors", startYear:1995, startMonth:7, endYear:1995, endMonth:7, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"George Mount"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"The Comedy of Errors"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Twelfth Night", startYear:1996, startMonth:7, endYear:1996, endMonth:7, inParks:TRUE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Jody Hahn"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Twelfth Night"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"A Midsummer Night's Dream", startYear:1997, startMonth:7, endYear:1997, endMonth:7, inParks:TRUE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"George Mount"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"A Midsummer Night's Dream"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"The Taming of the Shrew", startYear:1994, startMonth:7, endYear:1994, endMonth:8, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Paul T. Mitri"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"The Taming of the Shrew"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"The Taming of the Shrew", startYear:1996, startMonth:7, endYear:1996, endMonth:7, inParks:TRUE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Paul T. Mitri"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"The Taming of the Shrew"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"The Two Gentleman of Verona", startYear:2002, startMonth:7, endYear:2002, endMonth:7, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"George Mount"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"The Two Gentlemen of Verona"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"A Midsummer Night's Dream", startYear:2008, startMonth:7, endYear:2008, endMonth:8, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Vanessa Miller"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"A Midsummer Night's Dream"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"The Winter's Tale", startYear:2012, startMonth:7, endYear:2012, endMonth:8, inParks:TRUE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Mary Machala"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"The Winter's Tale"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"The Winter's Tale", startYear:2012, startMonth:7, endYear:2012, endMonth:8, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Mary Machala"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"The Winter's Tale"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Twelfth Night (or What You Will)", startYear:2012, startMonth:7, endYear:2012, endMonth:8, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Makaela Pollock"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Twelfth Night"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Twelfth Night", startYear:2012, startMonth:7, endYear:2012, endMonth:8, inParks:TRUE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Makaela Pollock"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Twelfth Night"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"The Merchant of Venice", startYear:2007, startMonth:7, endYear:2007, endMonth:8, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Russ Banham"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"The Merchant of Venice"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"As You Like It", startYear:2001, startMonth:7, endYear:2001, endMonth:8, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Amy Thone & Hans Altwies"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"As You Like It"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"The Merry Wives of Windsor", startYear:2007, startMonth:7, endYear:2007, endMonth:8, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Susanna Wilson-Lapan"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"The Merry Wives of Windsor"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"The Tempest", startYear:2013, startMonth:7, endYear:2013, endMonth:8, inParks:TRUE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Kelly Kitchens"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"The Tempest"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"The Tempest", startYear:2013, startMonth:7, endYear:2013, endMonth:8, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Kelly Kitchens"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"The Tempest"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Henry V", startYear:2013, startMonth:7, endYear:2013, endMonth:8, inParks:TRUE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"George Mount"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Henry V"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Henry V", startYear:2013, startMonth:7, endYear:2013, endMonth:8, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"George Mount"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Henry V"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"The Winter's Tale", startYear:2002, startMonth:7, endYear:2002, endMonth:8, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Vanessa Miller"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"The Winter's Tale"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"The Tempest", startYear:2001, startMonth:7, endYear:2001, endMonth:8, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"George Mount"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"The Tempest"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Much Ado About Nothing", startYear:2003, startMonth:7, endYear:2003, endMonth:8, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Dan Tierney"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Much Ado About Nothing"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Romeo and Juliet", startYear:2008, startMonth:7, endYear:2008, endMonth:8, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"George Mount"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Romeo and Juliet"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"The Two Gentlemen of Verona", startYear:2014, startMonth:7, endYear:2014, endMonth:8, inParks:TRUE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"David Quicksall"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"The Two Gentlemen of Verona"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Julius Caesar", startYear:2014, startMonth:7, endYear:2014, endMonth:8, inParks:TRUE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Vanessa Miller"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Julius Caesar"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Henry V", startYear:2003, startMonth:7, endYear:2003, endMonth:8, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Todd Jamieson"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Henry V"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Henry IV part 1", startYear:2015, startMonth:7, endYear:2015, endMonth:8, inParks:TRUE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"George Mount"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Henry IV part 1"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"As You Like It", startYear:2015, startMonth:7, endYear:2015, endMonth:8, inParks:TRUE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Annie Lareau"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"As You Like It"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"The Taming of the Shrew", startYear:2009, startMonth:7, endYear:2009, endMonth:8, inParks:TRUE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Aimee Bruneau"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"The Taming of the Shrew"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Richard III", startYear:2009, startMonth:7, endYear:2009, endMonth:8, inParks:TRUE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Stephanie Shine"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Richard III"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Richard III", startYear:2009, startMonth:7, endYear:2009, endMonth:8, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Stephanie Shine"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Richard III"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"The Taming of the Shrew", startYear:2009, startMonth:7, endYear:2009, endMonth:8, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Aimee Bruneau"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"The Taming of the Shrew"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Julius Caesar", startYear:2004, startMonth:7, endYear:2004, endMonth:8, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"George Mount"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Julius Caesar"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Macbeth", startYear:2005, startMonth:7, endYear:2005, endMonth:7, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Sheila Daniels"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Macbeth"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Love's Labour's Lost", startYear:2004, startMonth:7, endYear:2004, endMonth:8, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"James Lapan"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Love's Labour's Lost"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Othello", startYear:2010, startMonth:7, endYear:2010, endMonth:8, inParks:TRUE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Vanessa Miller"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Othello"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Much Ado About Nothing", startYear:2010, startMonth:7, endYear:2010, endMonth:8, inParks:TRUE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Sheila Daniels"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Much Ado About Nothing"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Much Ado About Nothing", startYear:2010, startMonth:7, endYear:2010, endMonth:8, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Sheila Daniels"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Much Ado About Nothing"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Othello", startYear:2010, startMonth:7, endYear:2010, endMonth:8, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Vanessa Miller"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Othello"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"As You Like It", startYear:2006, startMonth:7, endYear:2006, endMonth:7, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Carys Kresny"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"As You Like It"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Love's Labour's Lost", startYear:2016, startMonth:7, endYear:2016, endMonth:8, inParks:TRUE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Mary Machala"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Love's Labour's Lost"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Macbeth", startYear:2011, startMonth:7, endYear:2011, endMonth:8, inParks:TRUE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Tim Hyland"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Macbeth"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Macbeth", startYear:2011, startMonth:7, endYear:2011, endMonth:8, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Tim Hyland"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Macbeth"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"The Comedy of Errors", startYear:2011, startMonth:7, endYear:2011, endMonth:8, inParks:TRUE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"George Mount"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"The Comedy of Errors"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Hamlet", startYear:2016, startMonth:7, endYear:2016, endMonth:8, inParks:TRUE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"George Mount"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Hamlet"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"The Comedy of Errors", startYear:2011, startMonth:7, endYear:2011, endMonth:8, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"George Mount"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"The Comedy of Errors"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Twelfth Night", startYear:2005, startMonth:7, endYear:2005, endMonth:8, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Terry Edward Moore"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Twelfth Night"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Hamlet", startYear:2006, startMonth:7, endYear:2006, endMonth:8, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Mary Machala"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Hamlet"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"All's Well That Ends Well", startYear:2008, startMonth:6, endYear:2008, endMonth:6, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Stephanie Shine"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"All's Well That Ends Well"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"The Tempest", startYear:2009, startMonth:6, endYear:2009, endMonth:6, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"George Mount"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"The Tempest"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Much Ado About Nothing", startYear:2006, startMonth:6, endYear:2006, endMonth:6, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Rita Giomi"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Much Ado About Nothing"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"As You Like It", startYear:2012, startMonth:5, endYear:2012, endMonth:6, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"George Mount"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"As You Like It"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"The Taming of the Shrew", startYear:2005, startMonth:5, endYear:2005, endMonth:6, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Stephanie Shine"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"The Taming of the Shrew"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Romeo and Juliet", startYear:2016, startMonth:5, endYear:2016, endMonth:5, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Vanessa Miller"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Romeo and Juliet"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Othello", startYear:2015, startMonth:4, endYear:2015, endMonth:5, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"John Langs"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Othello"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"The Taming of the Shrew", startYear:2013, startMonth:4, endYear:2013, endMonth:5, inParks:TRUE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Aimee Bruneau"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"The Taming of the Shrew"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"King Lear", startYear:2014, startMonth:4, endYear:2014, endMonth:5, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Sheila Daniels"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"King Lear"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"The Merry Wives of Windsor", startYear:2011, startMonth:4, endYear:2011, endMonth:5, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Terry Edward Moore"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"The Merry Wives of Windsor"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"The Taming of the Shrew", startYear:2003, startMonth:4, endYear:2003, endMonth:5, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Stephanie Shine"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"The Taming of the Shrew"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Henry V", startYear:2010, startMonth:4, endYear:2010, endMonth:5, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Russ Banham"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Henry V"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"A Midsummer Night's Dream", startYear:2004, startMonth:4, endYear:2004, endMonth:5, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Arne Zaslove"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"A Midsummer Night's Dream"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Lovers & Madmen", startYear:2002, startMonth:4, endYear:2002, endMonth:5, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Amy Thone"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Lovers & Madmen"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"The Comedy of Errors", startYear:2000, startMonth:4, endYear:2000, endMonth:5, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Danny Scheie"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"The Comedy of Errors"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"The Comedy of Errors", startYear:2000, startMonth:4, endYear:2000, endMonth:5, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Danny Scheie"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"The Comedy of Errors"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Othello", startYear:2005, startMonth:4, endYear:2005, endMonth:5, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Russ Banham"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Othello"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"The Merry Wives of Windsor", startYear:2001, startMonth:4, endYear:2001, endMonth:4, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Rita Giomi"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"The Merry Wives of Windsor"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"A Midsummer Night's Dream", startYear:1998, startMonth:3, endYear:1998, endMonth:4, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Stephanie Shine"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"A Midsummer Night's Dream"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"The Two Gentlemen of Verona", startYear:2010, startMonth:3, endYear:2010, endMonth:4, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Marcus Goodwin"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"The Two Gentlemen of Verona"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"The Two Gentleman of Verona", startYear:1999, startMonth:3, endYear:1999, endMonth:4, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"M. Burke Walker"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"The Two Gentlemen of Verona"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Chamber Macbeth", startYear:2007, startMonth:3, endYear:2007, endMonth:4, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Russ Banham"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Macbeth"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Love's Labour's Lost", startYear:2013, startMonth:3, endYear:2013, endMonth:4, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Jon Kretzu"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Love's Labour's Lost"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"The Merchant of Venice", startYear:2009, startMonth:3, endYear:2009, endMonth:4, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"John Langs"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"The Merchant of Venice"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Romeo and Juliet (Tour 2016)", startYear:2016, startMonth:3, endYear:2016, endMonth:5, inParks:FALSE, onTour:TRUE}) 
+WITH prod MATCH (director:Person {name:"Annie Lareau"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Romeo and Juliet"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Romeo and Juliet (Tour 2015)", startYear:2015, startMonth:3, endYear:2015, endMonth:5, inParks:FALSE, onTour:TRUE}) 
+WITH prod MATCH (director:Person {name:"Annie Lareau"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Romeo and Juliet"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"The Tempest (Tour 2016)", startYear:2016, startMonth:3, endYear:2016, endMonth:5, inParks:FALSE, onTour:TRUE}) 
+WITH prod MATCH (director:Person {name:"Annie Lareau"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"The Tempest"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Macbeth (Tour 2015)", startYear:2015, startMonth:3, endYear:2015, endMonth:5, inParks:FALSE, onTour:TRUE}) 
+WITH prod MATCH (director:Person {name:"Annie Lareau"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Macbeth"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Romeo and Juliet (Tour 2011)", startYear:2011, startMonth:3, endYear:2011, endMonth:5, inParks:FALSE, onTour:TRUE}) 
+WITH prod MATCH (director:Person {name:"Mary Machala"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Romeo and Juliet"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Julius Caesar (Tour 2013)", startYear:2013, startMonth:3, endYear:2013, endMonth:5, inParks:FALSE, onTour:TRUE}) 
+WITH prod MATCH (director:Person {name:"Kelly Kitchens"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Julius Caesar"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Romeo and Juliet (Tour 2014)", startYear:2014, startMonth:3, endYear:2014, endMonth:5, inParks:FALSE, onTour:TRUE}) 
+WITH prod MATCH (director:Person {name:"Kelly Kitchens"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Romeo and Juliet"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Romeo and Juliet (Tour 2013)", startYear:2013, startMonth:3, endYear:2013, endMonth:5, inParks:FALSE, onTour:TRUE}) 
+WITH prod MATCH (director:Person {name:"Kelly Kitchens"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Romeo and Juliet"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Othello (Tour 2014)", startYear:2014, startMonth:3, endYear:2014, endMonth:5, inParks:FALSE, onTour:TRUE}) 
+WITH prod MATCH (director:Person {name:"Kelly Kitchens"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Othello"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"A Midsummer Night's Dream (Tour 2010)", startYear:2010, startMonth:3, endYear:2010, endMonth:5, inParks:FALSE, onTour:TRUE}) 
+WITH prod MATCH (director:Person {name:"George Mount"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"A Midsummer Night's Dream"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Macbeth (Tour 2011)", startYear:2011, startMonth:3, endYear:2011, endMonth:5, inParks:FALSE, onTour:TRUE}) 
+WITH prod MATCH (director:Person {name:"George Mount"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Macbeth"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Romeo and Juliet (Tour 2010)", startYear:2010, startMonth:3, endYear:2010, endMonth:5, inParks:FALSE, onTour:TRUE}) 
+WITH prod MATCH (director:Person {name:"George Mount"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Romeo and Juliet"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Romeo and Juliet (Tour 2012)", startYear:2012, startMonth:3, endYear:2012, endMonth:5, inParks:FALSE, onTour:TRUE}) 
+WITH prod MATCH (director:Person {name:"George Mount"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Romeo and Juliet"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Hamlet (Tour 2012)", startYear:2012, startMonth:3, endYear:2012, endMonth:5, inParks:FALSE, onTour:TRUE}) 
+WITH prod MATCH (director:Person {name:"George Mount"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Hamlet"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"The Merchant of Venice", startYear:2001, startMonth:2, endYear:2001, endMonth:3, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Paul T. Mitri"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"The Merchant of Venice"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Henry V", startYear:2000, startMonth:2, endYear:2000, endMonth:3, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Stephanie Shine"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Henry V"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Romeo & Juliet", startYear:1999, startMonth:2, endYear:1999, endMonth:3, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Stephanie Shine"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Romeo and Juliet"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"King Lear", startYear:2004, startMonth:1, endYear:2004, endMonth:2, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"John Langs"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"King Lear"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Love's Labour's Lost", startYear:2005, startMonth:1, endYear:2005, endMonth:2, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Aaron Levin"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Love's Labour's Lost"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Twelfth Night (Or What You Will)", startYear:2003, startMonth:1, endYear:2003, endMonth:2, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Russ Banham"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Twelfth Night"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Titus Andronicus", startYear:2016, startMonth:1, endYear:2016, endMonth:2, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"David Quicksall"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Titus Andronicus"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Richard II", startYear:2014, startMonth:1, endYear:2014, endMonth:2, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Rosa Joshi"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Richard II"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Measure for Measure", startYear:2015, startMonth:1, endYear:2015, endMonth:2, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Desdemona Chiang"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Measure for Measure"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Chamber Cymbeline", startYear:2011, startMonth:1, endYear:2011, endMonth:1, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Henry Woronicz"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Cymbeline"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Chamber Richard III", startYear:2006, startMonth:1, endYear:2006, endMonth:1, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Gregg Loughridge"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Richard III"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Coriolanus", startYear:2012, startMonth:1, endYear:2012, endMonth:1, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"David Quicksall"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Coriolanus"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"The Comedy of Errors", startYear:2007, startMonth:1, endYear:2007, endMonth:1, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Stephanie Shine"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"The Comedy of Errors"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"The Comedy of Errors", startYear:2007, startMonth:1, endYear:2007, endMonth:1, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Stephanie Shine"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"The Comedy of Errors"}) CREATE (prod)-[:STAGED]->(play);
+
+CREATE (prod:Production {title:"Chamber Julius Caesar", startYear:2008, startMonth:1, endYear:2008, endMonth:1, inParks:FALSE, onTour:FALSE}) 
+WITH prod MATCH (director:Person {name:"Gregg Loughridge"}) CREATE (director)-[:DIRECTED]->(prod) 
+WITH prod MATCH (play:Play {name:"Julius Caesar"}) CREATE (prod)-[:STAGED]->(play);
+----
+== Graph Visualization
+
+//graph
+
+
+== Queries
+
+=== Care to guess which play has been performed the most?
+
+[source,cypher]
+----
+MATCH (prod:Production)-->(play:Play)<-[WROTE]-(w:Person) 
+WHERE w.name = "William Shakespeare"
+RETURN play.name, count(prod.title) as n_productions
+order by n_productions desc
+----
+
+//table
+
+There have been 11 productions of Romeo and Juliet! Probably not a big surprise that this one tops the list - let's take a look at those productions:
+
+//hide
+//output
+[source,cypher]
+----
+MATCH (prod:Production)-->(play:Play) WHERE play.name = "Romeo and Juliet" RETURN DISTINCT prod
+----
+
+[%hardbreaks]
+[%hardbreaks]
+
+It looks like Romeo and Juliet is a reliable touring production. When I remove touring productions & park performances, how does the list of top plays change? 
+
+[source,cypher]
+----
+MATCH (prod:Production)-->(play:Play)<-[WROTE]-(w:Person) 
+WHERE w.name = "William Shakespeare"
+and (prod.onTour = False and prod.inParks = False)
+RETURN play.name, count(prod.title) as n_productions
+order by n_productions desc
+----
+
+//table
+
+[%hardbreaks]
+[%hardbreaks]
+
+=== For the Shakespeare plays, I'm also curious about genre - how often are comedies performed compared to histories? 
+
+link:http://www.infoplease.com/encyclopedia/entertainment/shakespeare-plays-table.html[(Genre designation source)]
+
+[source,cypher]
+----
+MATCH (prod:Production)-->(play:Play)<-[WROTE]-(w:Person) 
+WHERE w.name = "William Shakespeare"
+RETURN play.genre, count(prod.title) as n_productions
+order by n_productions desc
+----
+
+//table
+
+
+[%hardbreaks]
+[%hardbreaks]
+
+=== Which Shakespeare plays haven't yet been performed by the Seattle Shakespeare Company?
+
+[source,cypher]
+----
+MATCH (writer:Person)-[WROTE]->(play:Play) 
+WHERE writer.name = "William Shakespeare"
+WITH play
+MATCH (play)
+WHERE NOT (play)<-[:STAGED]-()
+RETURN play.name, play.genre
+----
+
+//table
+
+[%hardbreaks]
+[%hardbreaks]
+
+Only eight! 
+
+[%hardbreaks]
+
+=== Taking advantage of neo4j's flexible data model
+
+There are several cases where a production was "adapted", "conceived", or "compiled", rather than written - Henry IV parts I and II were combined into a single performance, scenes from several Shakespeare plays were peformed in a single production, etc - and flexible schema of neo4j allowed for unique relationship labels to preserve those edge cases:
+
+[source,cypher]
+----
+MATCH p=(person:Person)-[r]-(play:Play) 
+WHERE ANY(x in relationships(p) WHERE type(x) <> "WROTE")
+AND ANY (x in relationships(p) WHERE type(x) <> "DIRECTED")
+RETURN person.name, type(r), play.name;
+----
+
+//table
+
+

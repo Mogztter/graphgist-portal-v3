@@ -1,0 +1,215 @@
+= Product Catalog
+Aravind R. Yarram <yaravind@gmail.com>
+v1.0, 17-Sep-2013
+:neo4j-version: 2.0.0-RC1
+:author: Aravind R. Yarram
+:twitter: funpluscharity
+
+== Domain
+
+A product catalog is a collection of products, their categories, manufacturers with their pricing information. Products can be sold separately, included in one or more catalogs or used as substitute products
+
+You can perform the following operations on a product:
+Create, Update, Delete (Not recommended, deactivate instead), Deactivate (We should deactivate products that are no longer available instead of deleting them, because they are included in past orders, quotes, or opportunities.), Search etc.
+
+A store organizes its *Products* +OF_TYPE+ *Category* into one or more *Catalogs*. A Catalog thus becomes a hierarchy of Categories. A Category can be +PARENT+ of one or more child categories. This lending itself naturally to be modeled as a graph. Each Product and Category can have distinct set of attributes than others which also fit nicely into property graph model (otherwise would require a EAV - Entity Attribute Value relational model). 
+
+A Product can be +SUBSTITUTE_FOR+ another Product. A product can have one or more +MODELs+, each model has +PRICING+ associated with it. This is not a complete solution for all the product catalog use cases but provides a good starting point. I will slowly keep modelling more use cases.
+
+image::https://raw.github.com/funpluscharity/avleague/master/avleague/src/test/resources/product-catalog.jpg[Domain Model]
+
+
+== Setup
+
+The sample data set uses Bicycle catalog.
+
+//hide
+//setup
+[source,cypher]
+----
+CREATE (summerCatalog:Catalog{ name:'Summer Outdoor Bicycle Catalog' })
+
+CREATE (bikes:Category { name:'Bikes' })
+CREATE (accessories:Category { name:'Accessories' })
+CREATE (bikes)-[:PARENT]->(summerCatalog)
+CREATE (accessories)-[:PARENT]->(summerCatalog)
+
+CREATE (roadBikes:Category { name:'Road Bikes' })
+CREATE (kidsBikes:Category { name:'Kids Bikes' })
+CREATE (roadBikes)-[:PARENT]->(bikes)
+CREATE (kidsBikes)-[:PARENT]->(bikes)
+
+CREATE (roadWindBike:Product { name:'Road Wind Bike' })
+CREATE (chargeMixerBike:Product { name:'2013 Charge Mixer Street Road Bike' })
+CREATE (schwinnSlickerBike:Product { name:'2013 Schwinn Slicker Flat Bar Road Bike' })
+CREATE (fujiDeclarationBike:Product { name:'2013 Fuji Declaration Single Speed City Bike' })
+CREATE (schwinn4Bike:Product { name:'2013 Schwinn 4 One One 1 Urban Bike' })
+CREATE (kidsRoadBike:Product { name:'Kids Road Bike' })
+CREATE (kidsMountainBike:Product { name:'Kids Mountain Bike' })
+
+CREATE (roadWindBike)-[:OF_TYPE]->(roadBikes)
+CREATE (kidsRoadBike)-[:OF_TYPE]->(roadBikes)
+CREATE (kidsRoadBike)-[:OF_TYPE]->(kidsBikes)
+CREATE (chargeMixerBike)-[:OF_TYPE]->(roadBikes)
+CREATE (schwinnSlickerBike)-[:OF_TYPE]->(roadBikes)
+CREATE (fujiDeclarationBike)-[:OF_TYPE]->(roadBikes)
+CREATE (schwinn4Bike)-[:OF_TYPE]->(roadBikes)
+CREATE (kidsMountainBike)-[:OF_TYPE]->(kidsBikes)
+
+CREATE (cityBikes:Category { name:'City Bikes' })
+CREATE (enduranceBikes:Category { name:'Endurance Bikes' })
+CREATE (cityBikes)-[:PARENT]->(roadBikes)
+CREATE (enduranceBikes)-[:PARENT]->(roadBikes)
+
+CREATE (singleSpeedBike:Product { name:'Single Speed Bike' })
+CREATE (fujiGrandBike:Product { name:'Fuji Grand Fando' })
+CREATE (singleSpeedBike)-[:OF_TYPE]->(cityBikes)
+CREATE (fujiGrandBike)-[:OF_TYPE]->(enduranceBikes)
+
+CREATE (schwinn:Manufacturer{ name:'Schwinn' })
+CREATE (fuji:Manufacturer{ name:'Fuji' })
+CREATE (charge:Manufacturer{ name:'Charge Bikes' })
+
+CREATE (chargeMixerBike)-[:MANUFACTURED_BY]->(charge)
+CREATE (kidsMountainBike)-[:MANUFACTURED_BY]->(charge)
+CREATE (schwinnSlickerBike)-[:MANUFACTURED_BY]->(schwinn)
+CREATE (schwinn4Bike)-[:MANUFACTURED_BY]->(schwinn)
+CREATE (singleSpeedBike)-[:MANUFACTURED_BY]->(schwinn)
+CREATE (fujiDeclarationBike)-[:MANUFACTURED_BY]->(fuji)
+CREATE (roadWindBike)-[:MANUFACTURED_BY]->(fuji)
+CREATE (kidsRoadBike)-[:MANUFACTURED_BY]->(fuji)
+CREATE (fujiGrandBike)-[:MANUFACTURED_BY]->(fuji)
+
+//Substitutes
+CREATE (roadWindBike)-[:SUBSTITUTE_FOR]->(singleSpeedBike)
+
+//Models
+CREATE (small:Model {type:"Small", height:52, weight:23.98 })
+CREATE (large:Model {type:"Large", height:56, weight:15.23 })
+
+CREATE (fujiDeclarationBike)-[:MODEL]->(small)
+CREATE (fujiDeclarationBike)-[:MODEL]->(large)
+
+CREATE (smallPrice:Price {list: 1200, retail: 1100, validFrom:1380584607035, validUntil:1414641600000})
+CREATE (largePrice:Price {list: 1250, retail: 1150, validFrom:1380584607035, validUntil:1414641600000})
+
+CREATE (small)-[:PRICING]->(smallPrice)
+CREATE (large)-[:PRICING]->(largePrice)
+----
+ 
+=== Try other queries yourself!
+//console
+ 
+== Use Cases
+
+== All catalogs
+[source,cypher]
+----
+MATCH (c:Catalog) RETURN c.name AS Catalogs
+----
+//table
+ 
+== All categories by Depth
+[source,cypher]
+----
+MATCH p=(cats:Category)-[:PARENT|PARENT*]->(cat:Catalog) 
+WHERE cat.name='Summer Outdoor Bicycle Catalog' 
+RETURN LENGTH(p) AS Depth, COLLECT(cats.name) AS Categories 
+ORDER BY Depth ASC
+----
+//table
+
+== All categories of a given level
+[source,cypher]
+----
+MATCH p=(cats:Category)-[:PARENT*]->(cat:Catalog) 
+WHERE cat.name='Summer Outdoor Bicycle Catalog' AND length(p)=1
+RETURN cats.name AS CategoriesOfGivenLevel 
+ORDER BY CategoriesOfGivenLevel
+----
+//table
+ 
+== All sub-categories of a given category
+[source,cypher]
+----
+MATCH p=(cats:Category)-[:PARENT]->(parentCat:Category), (parentCat)-[:PARENT*]->(c:Catalog) 
+WHERE parentCat.name='Road Bikes' AND c.name='Summer Outdoor Bicycle Catalog' 
+RETURN collect(cats.name) AS SubCategories
+----
+//table
+ 
+== All Parent and their child categories
+[source,cypher]
+----
+MATCH p=(child:Category)-[:PARENT*]->(parent) 
+RETURN parent.name, collect(child.name)
+----
+//table
+ 
+== All parent and their IMMEDIATE children
+[source,cypher]
+----
+MATCH p=(child:Category)-[:PARENT]->(parent) 
+RETURN labels(parent), parent.name, collect(child.name)
+----
+//table
+ 
+== All products of a given category
+[source,cypher]
+----
+MATCH (p:Product)-[:OF_TYPE]->(c:Category) 
+WHERE c.name='Road Bikes' 
+RETURN p.name
+----
+
+== Running low on inventory? Recommend another substitute.
+[source,cypher]
+----
+MATCH (p:Product)-[:SUBSTITUTE_FOR]->(other:Product {name:"Single Speed Bike"})
+RETURN p.name
+----
+//table
+
+== Get various models of the selected product
+[source,cypher]
+----
+MATCH (p:Product)-[:MODEL]->(m:Model) 
+WHERE p.name="2013 Fuji Declaration Single Speed City Bike" 
+RETURN p AS Modles
+----
+//table
+
+== All Categories and their Products of a given catalog
+[source,cypher]
+----
+MATCH (p:Product)-[:OF_TYPE]->(c:Category)-[:PARENT*]->(ctl:Catalog) 
+WHERE ctl.name='Summer Outdoor Bicycle Catalog' 
+RETURN c.name AS Category, collect(p.name) AS Products
+----
+//table
+
+== Time to get the shipping and pricing info so as to calculate the total price to be charged
+[source,cypher]
+----
+MATCH (p:Product)-[:MODEL]->(m:Model)-[:PRICING]->(price:Price) 
+WHERE p.name="2013 Fuji Declaration Single Speed City Bike" AND m.type="Large" AND price.validFrom <= timestamp() AND price.validUntil >= timestamp() 
+RETURN price.list AS ListPrice, price.retail AS RetailPrice, m.height AS Height, m.weight AS Weight
+----
+//table
+ 
+== All the categories of a given product in the given catalog
+[source,cypher]
+----
+MATCH (p:Product)-[:OF_TYPE]->(c:Category)-[:PARENT*]->(ctl:Catalog) 
+WHERE p.name='Kids Road Bike' AND ctl.name='Summer Outdoor Bicycle Catalog' 
+RETURN c.name
+----
+//table
+
+== Manufacturers and their products
+[source,cypher]
+----
+MATCH (m:Manufacturer)<-[:MANUFACTURED_BY]-(p:Product) 
+RETURN m.name AS Manufacturer, collect(p.name) AS Products
+----
+//table

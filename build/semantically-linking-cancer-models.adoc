@@ -1,0 +1,554 @@
+[[TOP]]
+= Semantically Linking Cancer Models
+'''
+
+This graphgist provides a set of Cypher queries to use the property graph data model as a way of linking together cancer model descriptions with metadata.
+
+By a cancer 'model', we mean a 'mathematical' or 'computational' model that forms the basis for a 'simulation'. In this case, we refer to modeling cancer biology and therefore simulations of cancer function and progression (i.e. predicted processes of cancer). A 'model description' is an abstraction of a model that includes metadata as well as a reference to a model implementation (perhaps code or an executable). Models typically have some initial state, where a simulation produces some change or progressive changes in that state. In the case of cancer models, we might have some starting parameters and a 3D model of a tumor that when a simulation is run, the parameters are updated and the 3D model changes to reflect a prediction over time of the tumor's lifecycle. For an introduction to cancer biology, check out a free eBook here http://bookboon.com/en/introduction-to-cancer-biology-ebook
+
+We believe that representing a collection of cancer models in a property graph moves us towards creating queryable systems by which we can explore combinations of cancer model via semantic links with domain data. The idea behind using a property graph data model is to be able to link together different cancer models via domain-specific metadata, such as units, computational types, and biological terms and taxanommoic categorizations.
+
+With this database, we can ask questions such as:
+
+* What cancer models fall into the same categories?
+* What cancer models have common input and output parameters?
+* What cancer models are directly or indirectly linked together?
+
+== Data model
+=== Entities
+* `MODEL` - Represents an abstract model description
+* `PARAMETER` - Represents a model interface parameter
+* `CATEGORY` - Metadata representing a categorization of a cancer model
+* `TERM` - Metadata representing a controlled vocabulary term
+* `UNIT` - Metadata representing a unit of measurement
+* `PERSON` - Represents a person
+* `ORGANISATION` - Represents an organisation
+
+=== Relationships
+* `HAS_INPUT` - Connects a model with its input parameters
+* `HAS_OUTPUT` - Connects a model with its output parameters
+* `HAS_METADATA` - Connects models and parameters to metadata
+* `HAS_CATEGORY` - Connects categories with other categories (i.e. subcategories)
+* `CONTAINS` - Connects a model with other sub-models (to show model composition)
+* `SYNONYM_OF_TERM` - Connects terms with synonymous terms
+* `CREATED_BY` - Connects a model with a creator (or author) of the model
+* `CONTRIBUTED_BY` - Connects a model with a publisher of the model description (i.e. the database record)
+
+=== Query console
+//console
+
+=== Populate the graph <<TOP, ^Top^>>
+//hide
+
+//setup
+[source,cypher]
+----
+// Create DB
+// TUMOR taxonomy
+CREATE (TumorMetadata:Category {name:'Tumor Model Metadata'})
+CREATE (Math:Category {name:'Math'})
+CREATE (SingleScale:Category {name:'Single-scale'})
+CREATE (Multiscale:Category {name:'Multiscale'})
+CREATE (Approach:Category {name:'Modeling approach'})
+CREATE (Cancer:Category {name:'Cancer'})
+CREATE (Homogeneity:Category {name:'Homogeneity'})
+CREATE
+  (TumorMetadata)-[:HAS_CATEGORY]->(Math),
+  (TumorMetadata)-[:HAS_CATEGORY]->(SingleScale),
+  (TumorMetadata)-[:HAS_CATEGORY]->(Multiscale),
+  (TumorMetadata)-[:HAS_CATEGORY]->(Approach),
+  (TumorMetadata)-[:HAS_CATEGORY]->(Cancer),
+  (TumorMetadata)-[:HAS_CATEGORY]->(Homogeneity)
+CREATE (Discrete:Category {name:'Discrete'})
+CREATE (Continuous:Category {name:'Continuous'})
+CREATE (Hybrid:Category {name:'Hybrid'})
+CREATE
+  (Math)-[:HAS_CATEGORY]->(Discrete),
+  (Math)-[:HAS_CATEGORY]->(Continuous),
+  (Math)-[:HAS_CATEGORY]->(Hybrid)
+CREATE (Organ:Category {name:'Organ'})
+CREATE (Tissue:Category {name:'Tissue'})
+CREATE (Cell:Category {name:'Cell'})
+CREATE (Subcellular:Category {name:'Subcellular'})
+CREATE (Gene:Category {name:'Gene'})
+CREATE
+  (SingleScale)-[:HAS_CATEGORY]->(Organ),
+  (SingleScale)-[:HAS_CATEGORY]->(Tissue),
+  (SingleScale)-[:HAS_CATEGORY]->(Cell),
+  (SingleScale)-[:HAS_CATEGORY]->(Subcellular),
+  (SingleScale)-[:HAS_CATEGORY]->(Gene)
+  
+CREATE (TopDown:Category {name:'Top-down'})
+CREATE (BottomUp:Category {name:'Bottom-up'})
+CREATE (MiddleOut:Category {name:'Middle-out'})
+CREATE
+  (Approach)-[:HAS_CATEGORY]->(TopDown),
+  (Approach)-[:HAS_CATEGORY]->(BottomUp),
+  (Approach)-[:HAS_CATEGORY]->(MiddleOut)
+CREATE (Glioma:Category {name:'Glioma'})
+CREATE (Nephroblastoma:Category {name:'Nephroblastoma'})
+CREATE (Lung:Category {name:'Lung'})
+CREATE (Breast:Category {name:'Breast'})
+CREATE (Generic:Category {name:'Generic'})
+CREATE
+  (Cancer)-[:HAS_CATEGORY]->(Glioma),
+  (Cancer)-[:HAS_CATEGORY]->(Nephroblastoma),
+  (Cancer)-[:HAS_CATEGORY]->(Lung),
+  (Cancer)-[:HAS_CATEGORY]->(Breast),
+  (Cancer)-[:HAS_CATEGORY]->(Generic)  
+CREATE (Homogeneous:Category {name:'Homogeneous'})
+CREATE (NonHomogeneous:Category {name:'Non-homogeneous'})
+CREATE
+  (Homogeneity)-[:HAS_CATEGORY]->(Homogeneous),
+  (Homogeneity)-[:HAS_CATEGORY]->(NonHomogeneous)
+CREATE (TreatmentIncluded:Category {name:'Treatment included'})
+CREATE (NoTreatmentIncluded:Category {name:'No treatment included'})
+CREATE
+  (TumorMetadata)-[:HAS_CATEGORY]->(TreatmentIncluded),
+  (TumorMetadata)-[:HAS_CATEGORY]->(NoTreatmentIncluded)
+
+// Units metadata
+CREATE (SiBaseUnit:Unit {name:'SI base unit'})
+CREATE (Meter:Unit {name:'Meter'})
+CREATE (Kilogram:Unit {name:'Kilogram'})
+CREATE (Second:Unit {name:'Second'})
+CREATE (Ampere:Unit {name:'Ampere'})
+CREATE (Kelvin:Unit {name:'Kelvin'})
+CREATE (Mole:Unit {name:'Mole'})
+CREATE (Candela:Unit {name:'Candela'})
+CREATE
+  (SiBaseUnit)-[:HAS_CATEGORY]->(Meter),
+  (SiBaseUnit)-[:HAS_CATEGORY]->(Kilogram),
+  (SiBaseUnit)-[:HAS_CATEGORY]->(Second),
+  (SiBaseUnit)-[:HAS_CATEGORY]->(Ampere),
+  (SiBaseUnit)-[:HAS_CATEGORY]->(Kelvin),
+  (SiBaseUnit)-[:HAS_CATEGORY]->(Mole),
+  (SiBaseUnit)-[:HAS_CATEGORY]->(Candela)
+CREATE (TumorExtraUnit:Unit {name:'TUMOR extra unit'})
+CREATE (Item:Unit {name:'Item'})
+CREATE (Gray:Unit {name:'Gray'})
+CREATE (Unitless:Unit {name:'Unitless'})
+CREATE
+  (TumorExtraUnit)-[:HAS_CATEGORY]->(Item),
+  (TumorExtraUnit)-[:HAS_CATEGORY]->(Gray),
+  (TumorExtraUnit)-[:HAS_CATEGORY]->(Unitless)
+CREATE (ConversionFactor:Unit {name:'Conversion factor'})
+CREATE (Tera:Unit {name:'Tera'})
+CREATE (Giga:Unit {name:'Giga'})
+CREATE (Mega:Unit {name:'Mega'})
+CREATE (Kilo:Unit {name:'Kilo'})
+CREATE (Hecto:Unit {name:'Hecto'})
+CREATE (Deca:Unit {name:'Deca'})
+CREATE (Deci:Unit {name:'Deci'})
+CREATE (Centi:Unit {name:'Centi'})
+CREATE (Milli:Unit {name:'Milli'})
+CREATE (Micro:Unit {name:'Micro'})
+CREATE (Nano:Unit {name:'Nano'})
+CREATE (Pico:Unit {name:'Pico'})
+CREATE
+  (ConversionFactor)-[:HAS_CATEGORY]->(Tera),
+  (ConversionFactor)-[:HAS_CATEGORY]->(Giga),
+  (ConversionFactor)-[:HAS_CATEGORY]->(Mega),
+  (ConversionFactor)-[:HAS_CATEGORY]->(Kilo),
+  (ConversionFactor)-[:HAS_CATEGORY]->(Hecto),
+  (ConversionFactor)-[:HAS_CATEGORY]->(Deca),
+  (ConversionFactor)-[:HAS_CATEGORY]->(Deci),
+  (ConversionFactor)-[:HAS_CATEGORY]->(Centi),
+  (ConversionFactor)-[:HAS_CATEGORY]->(Milli),
+  (ConversionFactor)-[:HAS_CATEGORY]->(Micro),
+  (ConversionFactor)-[:HAS_CATEGORY]->(Nano),
+  (ConversionFactor)-[:HAS_CATEGORY]->(Pico)
+//CLI data types
+CREATE
+	(CLImetadata:Type { name : 'CLI metadata' }),
+	(CLImetadata)-[:HAS_CATEGORY]->(CLIdataType:Type { name :"CLI data type"}),
+	(int:Type { name : 'Integer' }),
+	(double:Type { name : 'Double precision floating point' }),
+	(filename:Type { name :'Filename' }),
+	(string:Type { name : 'String' }),
+	(CLIdataType)-[:HAS_CATEGORY]->(int),
+	(CLIdataType)-[:HAS_CATEGORY]->(double),
+	(CLIdataType)-[:HAS_CATEGORY]->(filename),
+	(CLIdataType)-[:HAS_CATEGORY]->(string)  
+  
+// Create Tom and Bill at CBML
+CREATE (Tom:Person {URN:'urn:orcid:tumor:0000-0003-2850-3614', fullname:'Thomas S. Deisboeck'})
+CREATE (Bill:Person {URN:'urn:tumorml.org:user:000001', fullname:'Zhihui Bill Wang'})
+CREATE (CBML:Organisation {URN:'urn:tumorml.org:organisation:000001', fullname:'Complex Biosystems Modeling Laboratory (CBML), Massachusetts General Hospital'})
+CREATE
+  (Tom)-[:MEMBER_OF]->(CBML),
+  (Bill)-[:MEMBER_OF]->(CBML)
+
+// Create EGFR-ERK Pathway
+CREATE (EgfrErkPathway:Model {URN:'urn:miriam:tumor:000001', title: 'EGFR-ERK Pathway'})
+CREATE (EGF:Parameter {name:'EGF'})
+CREATE (CellCycleTime1:Parameter {name:'Cell cycle time'})
+CREATE (PLCg:Parameter {name:'PLCg'})
+CREATE
+  (EgfrErkPathway)-[:HAS_INPUT]->(EGF),
+  (EgfrErkPathway)-[:HAS_OUTPUT]->(CellCycleTime1),
+  (EgfrErkPathway)-[:HAS_OUTPUT]->(PLCg)
+CREATE
+  (EgfrErkPathway)-[:CONTRIBUTED_TO_BY]->(Tom),
+  (EgfrErkPathway)-[:CREATED_BY]->(Bill),
+  (EgfrErkPathway)-[:PUBLISHED_BY]->(CBML)
+CREATE
+  (EgfrErkPathway)-[:HAS_METADATA]->(Subcellular),
+  (EgfrErkPathway)-[:HAS_METADATA]->(Continuous),
+  (EgfrErkPathway)-[:HAS_METADATA]->(BottomUp),
+  (EgfrErkPathway)-[:HAS_METADATA]->(Homogeneous),
+  (EgfrErkPathway)-[:HAS_METADATA]->(NoTreatmentIncluded),
+  (EgfrErkPathway)-[:HAS_METADATA]->(Lung)
+
+// Create David and Anthony
+CREATE (ImperialCollege:Organisation {URN:'urn:tumorml.org:organisation:000002', name:'Discovery Sciences Group, Imperial College London'})
+CREATE (David:Person {URN:'urn:orcid:tumor:0000-0002-2323-6847', name:'David Johnson'})
+CREATE 	(Anthony:Person {URN:'urn:tumorml.org:user:000002', name:'Anthony J. Connor'})
+CREATE (OxfordUniversity:Organisation {URN:'urn:tumorml.org:organisation:000003', name:'Computational Biology Group, University of Oxford'})
+
+CREATE	
+	(David)-[:MEMBER_OF]->(ImperialCollege),
+	(Anthony)-[:MEMBER_OF]->(OxfordUniversity)
+
+//Create model for VTG Framework
+CREATE
+	(model3:Model { URN : 'urn:miriam:tumor:000003', title : 'Vascular Tumour Growth Framework'}),
+	(model3)-[:HAS_CREATOR]->(Anthony),
+	(model3)-[:HAS_PUBLISHER]->(David),
+	(model3)-[:HAS_METADATA]->(Continuous),
+	(model3)-[:HAS_METADATA]->(BottomUp),
+	(model3)-[:HAS_METADATA]->(NonHomogeneous)
+	
+//Import term for VEGF from NCIt
+CREATE (C1272:Term { term : 'C1272', source : 'NCI Thesaurus' })
+CREATE (C1272_term1:Term { term : 'Recombinant Vascular Endothelial Growth Factor' })
+CREATE (C1272_term2:Term { term : 'rhuVEGF' })
+CREATE (C1272_term3:Term { term : 'vascular endothelial growth factor' })
+CREATE (C1272_term4:Term { term : 'Vascular Endothelial Growth Factor' })
+CREATE (C1272_term5:Term { term : 'Vascular Permeability Factor' })
+CREATE (C1272_term6:Term { term : 'VEGF' })
+CREATE (C1272_term7:Term { term : 'VPF' })
+CREATE 
+	(C1272)-[:PREFERRED_TERM]->(C1272_term1),
+	(C1272)-[:PREFERRED_TERM]->(C1272_term3),
+	(C1272)-[:ABBREVIATION]->(C1272_term2),
+	(C1272)-[:ABBREVIATION]->(C1272_term6),
+	(C1272)-[:ABBREVIATION]->(C1272_term7),
+	(C1272)-[:SYNONYM]->(C1272_term4),
+	(C1272)-[:SYNONYM]->(C1272_term5)
+
+//Import term for intracellular from NCIt
+CREATE (C28217:Term { term : 'C28217', source : 'NCI Thesaurus' })
+CREATE (C28217_term1:Term { term : 'Intracellular' })
+CREATE (C28217_term2:Term { term : 'intracellular' })
+CREATE 
+	(C28217)-[:PREFERRED_TERM]->(C28217_term1),
+	(C28217)-[:PREFERRED_TERM]->(C28217_term2)
+	
+//Import term for extracellular from NCIt
+CREATE (C26055:Term { term : 'C26055', source : 'NCI Thesaurus' })
+CREATE (C26055_term1:Term { term : 'Extracellular Space' })
+CREATE (C26055)-[:PREFERRED_TERM]->(C26055_term1)
+
+//Combine terms into single nodes
+CREATE (IntraCellVEGF:Term { term : 'Intracellular VEGF', source : 'User-defined' })
+CREATE 
+   (IntraCellVEGF)-[:HAS_METADATA]->(C1272),
+   (IntraCellVEGF)-[:HAS_METADATA]->(C28217)
+CREATE (ExtraCellVEGF:Term { term : 'Extracellular VEGF', source : 'User-defined' })
+CREATE 
+   (ExtraCellVEGF)-[:HAS_METADATA]->(C1272),
+   (ExtraCellVEGF)-[:HAS_METADATA]->(C26055)
+
+//Create model for Alarcon 2005 Subcellular
+CREATE (model4:Model {URN:'urn:miriam:tumor:000004', title:'Alarcon 2005 Subcellular model'})
+CREATE
+	(model4)-[:HAS_CREATOR]->(Anthony),
+	(model4)-[:HAS_PUBLISHER]->(David)
+CREATE (Oxygen:Parameter {name:'oxygen'})
+CREATE (CellDistribution:Parameter {name:'cell_distribution'})
+CREATE (VEGF:Parameter {name:'vegf'})
+CREATE (P53:Parameter {name:'p53'})
+CREATE (CellCycleTime2:Parameter {name:'cell_cycle_time'})
+CREATE (CellState:Parameter {name:'cell_state'})
+CREATE
+	(model4)-[:HAS_INPUT]->(Oxygen),
+	(model4)-[:HAS_INPUT]->(CellDistribution),
+	(model4)-[:HAS_OUTPUT]->(VEGF),
+	(model4)-[:HAS_OUTPUT]->(P53),
+	(model4)-[:HAS_OUTPUT]->(CellCycleTime2),
+	(model4)-[:HAS_OUTPUT]->(CellState),
+	(model4)-[:HAS_METADATA]->(Continuous),
+	(model4)-[:HAS_METADATA]->(BottomUp),
+	(model4)-[:HAS_METADATA]->(NonHomogeneous),
+	(model4)-[:HAS_METADATA]->(NoTreatmentIncluded),
+	(VEGF)-[:HAS_METADATA]->(IntraCellVEGF)
+
+//Create model for Owen 2011 Subcellular model
+CREATE (model5:Model {URN:'urn:miriam:tumor:000005', title:'Owen 2011 Subcellular model'})
+CREATE 
+	(model5)-[:HAS_CREATOR]->(Anthony),
+	(model5)-[:HAS_PUBLISHER]->(David),
+	(model5)-[:HAS_METADATA]->(Continuous),
+	(model5)-[:HAS_METADATA]->(BottomUp),
+	(model5)-[:HAS_METADATA]->(NonHomogeneous),
+	(model5)-[:HAS_METADATA]->(NoTreatmentIncluded)
+
+//Create model for Fixed Duration Subcellular model (Alarcon 2003)
+CREATE (model6:Model {URN:'urn:miriam:tumor:000006', title:'Fixed Duration Subcellular model'})
+CREATE 
+	(model6)-[:HAS_CREATOR]->(Anthony),
+	(model6)-[:HAS_PUBLISHER]->(David),
+	(model6)-[:HAS_METADATA]->(Continuous),
+	(model6)-[:HAS_METADATA]->(BottomUp),
+	(model6)-[:HAS_METADATA]->(NonHomogeneous),
+	(model6)-[:HAS_METADATA]->(NoTreatmentIncluded)
+
+//Create model for VEGF calculator (Alarcon 2005)
+CREATE (model7:Model {URN:'urn:miriam:tumor:000007', title:'Alarcon 2005 VEGF Calculator'})
+CREATE 
+	(model7)-[:HAS_CREATOR]->(Anthony),
+	(model7)-[:HAS_PUBLISHER]->(David)
+CREATE
+	(model7)-[:HAS_METADATA]->(Continuous),
+	(model7)-[:HAS_METADATA]->(BottomUp),
+	(model7)-[:HAS_METADATA]->(NonHomogeneous),
+	(model7)-[:HAS_METADATA]->(NoTreatmentIncluded)
+CREATE (VEGFin1:Parameter {name:'cellular_vegf'} )
+CREATE (VEGFout1:Parameter {name:'extracellular_vegf'} )
+CREATE
+	(model7)-[:HAS_INPUT]->(VEGFin1),
+	(model7)-[:HAS_OUTPUT]->(VEGFout1)
+CREATE
+	(VEGFin1)-[:HAS_CLIDATATYPE]->(double),
+	(VEGFin1)-[:HAS_UNIT]->(Mole),
+	(VEGFin1)-[:HAS_FACTOR]->(Nano),
+	(VEGFin1)-[:HAS_METADATA]->(IntraCellVEGF)
+CREATE
+	(VEGFout1)-[:HAS_CLIDATATYPE]->(double),
+	(VEGFout1)-[:HAS_UNIT]->(Mole),
+	(VEGFout1)-[:HAS_FACTOR]->(Nano),
+	(VEGFout1)-[:HAS_METADATA]->(ExtraCellVEGF)
+	
+//Create model for VEGF calculator (Alarcon 2006)
+CREATE (model8:Model {URN:'urn:miriam:tumor:000008', title:'Alarcon 2006 VEGF Calculator'})
+CREATE 
+	(model8)-[:HAS_CREATOR]->(Anthony),
+	(model8)-[:HAS_PUBLISHER]->(David)
+CREATE
+	(model8)-[:HAS_METADATA]->(Continuous),
+	(model8)-[:HAS_METADATA]->(BottomUp),
+	(model8)-[:HAS_METADATA]->(NonHomogeneous),
+	(model8)-[:HAS_METADATA]->(NoTreatmentIncluded)
+CREATE (VEGFin2:Parameter {name:'cellular_vegf'} )
+CREATE (VEGFout2:Parameter {name:'extracellular_vegf'} )
+CREATE
+	(model8)-[:HAS_INPUT]->(VEGFin2),
+	(model8)-[:HAS_OUTPUT]->(VEGFout2)
+CREATE
+	(VEGFin2)-[:HAS_CLIDATATYPE]->(double),
+	(VEGFin2)-[:HAS_UNIT]->(Mole),
+	(VEGFin2)-[:HAS_FACTOR]->(Nano),
+	(VEGFin2)-[:HAS_METADATA]->(IntraCellVEGF)
+CREATE
+	(VEGFout2)-[:HAS_CLIDATATYPE]->(double),
+	(VEGFout2)-[:HAS_UNIT]->(Mole),
+	(VEGFout2)-[:HAS_FACTOR]->(Nano),
+	(VEGFout2)-[:HAS_METADATA]->(ExtraCellVEGF)
+	
+//Create model for VEGF calculator (Owen 2011)
+CREATE (model9:Model {URN:'urn:miriam:tumor:000009', title:'Owen 2011 VEGF Calculator'})
+CREATE 
+	(model9)-[:HAS_CREATOR]->(Anthony),
+	(model9)-[:HAS_PUBLISHER]->(David)
+CREATE
+	(model9)-[:HAS_METADATA]->(Continuous),
+	(model9)-[:HAS_METADATA]->(BottomUp),
+	(model9)-[:HAS_METADATA]->(NonHomogeneous),
+	(model8)-[:HAS_METADATA]->(NoTreatmentIncluded)
+CREATE (VEGFin3:Parameter {name:'cellular_vegf'} )
+CREATE (VEGFout3:Parameter {name:'extracellular_vegf'} )
+CREATE
+	(model8)-[:HAS_INPUT]->(VEGFin3),
+	(model8)-[:HAS_OUTPUT]->(VEGFout3)
+CREATE
+	(VEGFin3)-[:HAS_CLIDATATYPE]->(double),
+	(VEGFin3)-[:HAS_UNIT]->(Mole),
+	(VEGFin3)-[:HAS_FACTOR]->(Nano),
+	(VEGFin3)-[:HAS_METADATA]->(IntraCellVEGF)
+CREATE
+	(VEGFout3)-[:HAS_CLIDATATYPE]->(double),
+	(VEGFout3)-[:HAS_UNIT]->(Mole),
+	(VEGFout3)-[:HAS_FACTOR]->(Nano),
+	(VEGFout3)-[:HAS_METADATA]->(ExtraCellVEGF)
+
+//Create model for Metabolic Stimulus Calculation (Alarcon 2005)
+CREATE (model10:Model {URN:'urn:miriam:tumor:000010', title:'Alarcon 2005 Metabolic Stimulus Calculation'})
+CREATE 
+	(model10)-[:HAS_CREATOR]->(Anthony),
+	(model10)-[:HAS_PUBLISHER]->(David)
+CREATE
+	(model10)-[:HAS_METADATA]->(Continuous),
+	(model10)-[:HAS_METADATA]->(BottomUp),
+	(model10)-[:HAS_METADATA]->(NonHomogeneous),
+	(model10)-[:HAS_METADATA]->(NoTreatmentIncluded)
+	
+//Create model for Angiogenesis Model (Owen 2009)
+CREATE (model11:Model {URN:'urn:miriam:tumor:000011', title:'Owen 2009 Angiogenesis Model'})
+CREATE 
+	(model11)-[:HAS_CREATOR]->(Anthony),
+	(model11)-[:HAS_PUBLISHER]->(David)
+CREATE
+	(model11)-[:HAS_METADATA]->(Continuous),
+	(model11)-[:HAS_METADATA]->(BottomUp),
+	(model11)-[:HAS_METADATA]->(NonHomogeneous),
+	(model11)-[:HAS_METADATA]->(NoTreatmentIncluded)
+	
+
+//Create model for Angiogenesis Model (Owen 2011)
+CREATE (model12:Model {URN:'urn:miriam:tumor:000012', title:'Owen 2011 Angiogenesis Model'})
+CREATE 
+	(model12)-[:HAS_CREATOR]->(Anthony),
+	(model12)-[:HAS_PUBLISHER]->(David)
+CREATE
+	(model12)-[:HAS_METADATA]->(Continuous),
+	(model12)-[:HAS_METADATA]->(BottomUp),
+	(model12)-[:HAS_METADATA]->(NonHomogeneous),
+	(model12)-[:HAS_METADATA]->(NoTreatmentIncluded)
+	
+//Create model for Alarcon 03 Subcellular Model
+CREATE (model14:Model {URN:'urn:miriam:tumor:000014', title:'Alarcon 03 Subcellular Model'})
+CREATE 
+	(model14)-[:HAS_CREATOR]->(Anthony),
+	(model14)-[:HAS_PUBLISHER]->(David)
+CREATE
+	(model14)-[:HAS_METADATA]->(Subcellular)
+
+//Create model for Alarcon 03 Cell Proliferation Model
+CREATE (model15:Model {URN:'urn:miriam:tumor:000015', title:'Alarcon 03 Cell Proliferation Model'})
+CREATE 
+	(model15)-[:HAS_CREATOR]->(Anthony),
+	(model15)-[:HAS_PUBLISHER]->(David)
+CREATE
+	(model15)-[:HAS_METADATA]->(Cell)
+
+//Create model for Alarcon 03 Oxygen Calculator
+CREATE (model16:Model {URN:'urn:miriam:tumor:000016', title:'Alarcon 03  Oxygen Calculator'})
+CREATE 
+	(model16)-[:HAS_CREATOR]->(Anthony),
+	(model16)-[:HAS_PUBLISHER]->(David)
+CREATE
+	(model16)-[:HAS_METADATA]->(Tissue)
+
+//Create model for Alarcon 03 Vascular Structural Adaptation Model
+CREATE (model17:Model {URN:'urn:miriam:tumor:000017', title:'Alarcon 03  Vascular Structural Adaptation Model'})
+CREATE 
+	(model17)-[:HAS_CREATOR]->(Anthony),
+	(model17)-[:HAS_PUBLISHER]->(David)
+CREATE
+	(model17)-[:HAS_METADATA]->(Tissue)	
+	
+//Create model for Alarcon 03 Model
+CREATE (model13:Model {URN:'urn:miriam:tumor:000013', title:'Alarcon 03 Model'})
+CREATE 
+	(model13)-[:HAS_CREATOR]->(Anthony),
+	(model13)-[:HAS_PUBLISHER]->(David)
+CREATE
+	(model13)-[:HAS_METADATA]->(Multiscale),
+	(model13)-[:CONTAINS]->(model14),
+	(model13)-[:CONTAINS]->(model15),
+	(model13)-[:CONTAINS]->(model16),
+	(model13)-[:CONTAINS]->(model17)
+----
+=== Visualize the graph <<TOP, ^Top^>>
+
+Below is a visualization of the whole property graph using a test dataset of cancer model descriptions. For more about the cancer models used, check out our paper 'Semantically Linking In Silico Cancer Models' http://www.la-press.com/semantically-linking-in-silico-cancer-models-article-a4552
+
+//graph
+
+The full graph is not particularly useful on its own. It does however provide the basis for more interesting queries such as those below.
+
+'''
+
+=== Cancer model descriptions
+This is how a model is visualized as a property graph. In this case this is an EGFR-ERK molecular pathway model by Z. Wang et al in 'Simulating non-small cell lung cancer with a multiscale agent-based model, Theor Biol Med Model, 4(1):50+, Dec. 2007'. http://dx.doi.org/10.1186/1742-4682-4-50
+
+image::https://www.dropbox.com/s/chrt0ikwf2ohx4a/egfr-erk-pathway.png?dl=1[EGFR-ERK Pathway as property graph]
+
+A model has metadata such as a creator, contributor, publisher, model categorizations (e.g. Lung cancer, Homogenous tumor mass, Subcellular scale), and input and output parameters (e.g. EGF concentration, cell cycle time). Parameters can be linked to other domain metadata represented in domain graphs.
+
+=== Domain metadata
+==== Categories
+* Taxanomic categorizations of cancer models.
+
+[source,cypher]
+----
+MATCH (n:Category)
+RETURN collect(n.name) AS Categories
+----
+//table
+'''
+
+==== Units
+* Numerical units that include SI units and some derived.
+
+[source,cypher]
+----
+MATCH (n:Unit)
+RETURN collect(n.name) AS Units
+----
+//table
+'''
+
+==== CLI datatypes
+* Command Line Interface datatypes, such as Strings, Filenames, and differently formatted numbers.
+
+[source,cypher]
+----
+MATCH (n:Type)
+RETURN collect(n.name) AS CLIdatatypes
+----
+//table
+'''
+
+==== People and organisations
+* Outside entities that have some ownership or contributorship to the model development or description.
+
+[source,cypher]
+----
+MATCH (n:Person)-[:MEMBER_OF]-(m:Organisation)
+RETURN n.name AS Name, m.name AS Organisation
+----
+//table
+'''
+
+=== What cancer models are modeled using continuous mathematics? <<TOP, ^Top^>>
+[source,cypher]
+----
+MATCH (n:Model)
+WHERE (n)-[:HAS_METADATA]-({ name:'Continuous'})
+RETURN n.title AS Model 
+----
+//table
+'''
+
+=== What cancer models have common and compatible input and output parameters? <<TOP, ^Top^>>
+[source,cypher]
+----
+MATCH (n:Model)-[:HAS_INPUT]-(p:Parameter)-[:HAS_METADATA]-(meta:Term)-[:HAS_METADATA]-(q:Parameter)-[:HAS_OUTPUT]-(m:Model)
+WHERE n<>m
+RETURN DISTINCT m.title AS ModelA, n.title AS ModelB, q.name AS OutputA, p.name AS InputB, meta.term 
+----
+//table
+'''
+
+=== In the multiscale Alarcon 2003 model, what are the component models and corresponding scales? <<TOP, ^Top^>>
+[source,cypher]
+----
+MATCH (n:Model {URN: 'urn:miriam:tumor:000013'})-[:HAS_METADATA]-(:Category {name: 'Multiscale'}), (m:Model) 
+MATCH (n)-[:CONTAINS]-(m)
+MATCH (m)-[:HAS_METADATA]-(scale:Category)-[:HAS_CATEGORY]-(:Category {name: 'Single-scale'})
+RETURN m.title AS ComponentModel, scale.name As Scale
+----
+//table
+'''

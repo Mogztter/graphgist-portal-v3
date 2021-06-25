@@ -1,0 +1,260 @@
+= The Belgian Sitcom Graph: Who's Hot in "Thuis" =
+
+This gist is going to show you how you can query the elaborate landscape of relationships in http://www.een.be/programmas/thuis/[Thuis]. It is based on this picture by https://twitter.com/pieter_vh[@pieter_vh]. Very well done actually. 
+
+image::http://qsdf.be/thuisopeen/infografiekthuis.png[scaledwidth="50%"]
+
+I took the picture and created a spreadsheet version of it - take a look https://docs.google.com/spreadsheets/d/1l1bfIU6qWvZpU0xeSjJoRBlKWxGCDdLaNlUjeR0r9V0/edit?usp=sharing[over here]. That allowed me to create the graph, which we will also setup in this Gist:
+//setup
+//hide
+[source,cypher]
+----
+create (_161:`FEMALE` {`gender`:"Female", `name`:"Ann"})
+create (_162:`FEMALE` {`gender`:"Female", `name`:"Mayra"})
+create (_163:`MALE` {`gender`:"Male", `name`:"Jean-Pierre"})
+create (_164:`FEMALE` {`gender`:"Female", `name`:"Marianne"})
+create (_165:`MALE` {`gender`:"Male", `name`:"Walter"})
+create (_166:`FEMALE` {`gender`:"Female", `name`:"Rosa"})
+create (_167:`MALE` {`gender`:"Male", `name`:"Frank"})
+create (_168:`FEMALE` {`gender`:"Female", `name`:"Jenny"})
+create (_169:`MALE` {`gender`:"Male", `name`:"Leo"})
+create (_170:`FEMALE` {`gender`:"Female", `name`:"Yvette"})
+create (_171:`FEMALE` {`gender`:"Female", `name`:"Simonne"})
+create (_172:`FEMALE` {`gender`:"Female", `name`:"Julia"})
+create (_173:`MALE` {`gender`:"Male", `name`:"Cois"})
+create (_174:`MALE` {`gender`:"Male", `name`:"Luc"})
+create (_175:`MALE` {`gender`:"Male", `name`:"Waldek"})
+create (_176:`FEMALE` {`gender`:"Female", `name`:"Kris"})
+create (_177:`FEMALE` {`gender`:"Female", `name`:"Veronique"})
+create (_178:`MALE` {`gender`:"Male", `name`:"Mo"})
+create (_179:`FEMALE` {`gender`:"Female", `name`:"Bianca"})
+create (_180:`MALE` {`gender`:"Male", `name`:"Tom"})
+create (_181:`MALE` {`gender`:"Male", `name`:"Kurt"})
+create (_182:`MALE` {`gender`:"Male", `name`:"Werner"})
+create (_183:`FEMALE` {`gender`:"Female", `name`:"Martine"})
+create (_184:`FEMALE` {`gender`:"Female", `name`:"Valerie"})
+create (_185:`FEMALE` {`gender`:"Female", `name`:"Eva"})
+create (_186:`FEMALE` {`gender`:"Female", `name`:"Peggy"})
+create (_187:`MALE` {`gender`:"Male", `name`:"Peter"})
+create (_188:`FEMALE` {`gender`:"Female", `name`:"Femke"})
+create (_189:`MALE` {`gender`:"Male", `name`:"Mike"})
+create (_190:`FEMALE` {`gender`:"Female", `name`:"Nancy"})
+create (_191:`MALE` {`gender`:"Male", `name`:"Youssef"})
+create (_192:`MALE` {`gender`:"Male", `name`:"Sam1"})
+create (_193:`MALE` {`gender`:"Male", `name`:"Tim"})
+create (_194:`MALE` {`gender`:"Male", `name`:"Rafael"})
+create (_195:`FEMALE` {`gender`:"Female", `name`:"Paulien"})
+create (_196:`MALE` {`gender`:"Male", `name`:"Jens"})
+create (_197:`FEMALE` {`gender`:"Female", `name`:"Katrien"})
+create (_198:`MALE` {`gender`:"Male", `name`:"Bram"})
+create (_199:`FEMALE` {`gender`:"Female", `name`:"Manon"})
+create (_200:`FEMALE` {`gender`:"Female", `name`:"Sandrine"})
+create (_201:`MALE` {`gender`:"Male", `name`:"John"})
+create (_202:`FEMALE` {`gender`:"Female", `name`:"Barbara"})
+create (_203:`MALE` {`gender`:"Male", `name`:"Lou"})
+create (_204:`MALE` {`gender`:"Male", `name`:"Guy"})
+create (_205:`MALE` {`gender`:"Male", `name`:"Geert"})
+create (_206:`MALE` {`gender`:"Male", `name`:"Ivo"})
+create (_207:`MALE` {`gender`:"Male", `name`:"Robert"})
+create (_208:`MALE` {`gender`:"Male", `name`:"David"})
+create (_209:`MALE` {`gender`:"Male", `name`:"Dré"})
+create (_210:`MALE` {`gender`:"Male", `name`:"Willy"})
+create (_211:`MALE` {`gender`:"Male", `name`:"Victor"})
+create (_212:`MALE` {`gender`:"Male", `name`:"Constant"})
+create (_213:`MALE` {`gender`:"Male", `name`:"André"})
+create (_214:`FEMALE` {`gender`:"Female", `name`:"Leontien"})
+create (_215:`MALE` {`gender`:"Male", `name`:"Herman"})
+create (_216:`MALE` {`gender`:"Male", `name`:"Jean-Marie"})
+create (_217:`MALE` {`gender`:"Male", `name`:"Piet"})
+create (_218:`FEMALE` {`gender`:"Female", `name`:"Angèle"})
+create (_219:`FEMALE` {`gender`:"Female", `name`:"Marie"})
+create (_220:`FEMALE` {`gender`:"Female", `name`:"Jelena"})
+create (_221:`FEMALE` {`gender`:"Female", `name`:"Lynn"})
+create (_222:`FEMALE` {`gender`:"Female", `name`:"Judith"})
+create (_223:`MALE` {`gender`:"Male", `name`:"Erik"})
+create (_224:`MALE` {`gender`:"Male", `name`:"Jan"})
+create (_225:`MALE` {`gender`:"Male", `name`:"Maarten"})
+create (_226:`MALE` {`gender`:"Male", `name`:"Frederique"})
+create (_227:`MALE` {`gender`:"Male", `name`:"Pierre"})
+create (_228:`MALE` {`gender`:"Male", `name`:"Yves"})
+create (_229:`MALE` {`gender`:"Male", `name`:"Benny"})
+create (_230:`MALE` {`gender`:"Male", `name`:"Robbe"})
+create (_231:`MALE` {`gender`:"Male", `name`:"Kristoff"})
+create (_232:`FEMALE` {`gender`:"Female", `name`:"Sofie"})
+create (_233:`FEMALE` {`gender`:"Female", `name`:"Nina"})
+create (_234:`MALE` {`gender`:"Male", `name`:"Eddy"})
+create (_235:`FEMALE` {`gender`:"Female", `name`:"Aïsha"})
+create (_236:`FEMALE` {`gender`:"Female", `name`:"Gitta"})
+create (_237:`FEMALE` {`gender`:"Female", `name`:"Sam2"})
+create (_238:`FEMALE` {`gender`:"Female", `name`:"Fien"})
+create (_239:`MALE` {`gender`:"Male", `name`:"Stijn"})
+create (_240:`MALE` {`gender`:"Male", `name`:"Filip"})
+create (_241:`FEMALE` {`gender`:"Female", `name`:"Jana"})
+create _161-[:`DID`]->_199
+create _161-[:`DID`]->_200
+create _161-[:`DID`]->_201
+create _161-[:`DID`]->_202
+create _161-[:`DID`]->_203
+create _161-[:`DID`]->_163
+create _161-[:`DOES`]->_162
+create _162-[:`DID`]->_204
+create _163-[:`DID`]->_164
+create _164-[:`DID`]->_206
+create _164-[:`DID`]->_207
+create _164-[:`DID`]->_208
+create _164-[:`DID`]->_165
+create _164-[:`DOES`]->_205
+create _165-[:`DID`]->_166
+create _166-[:`DID`]->_167
+create _166-[:`DOES`]->_175
+create _167-[:`DID`]->_168
+create _167-[:`DID`]->_177
+create _167-[:`DID`]->_172
+create _167-[:`DID`]->_214
+create _167-[:`DOES`]->_171
+create _168-[:`DID`]->_209
+create _168-[:`DID`]->_210
+create _168-[:`DID`]->_211
+create _168-[:`DOES`]->_169
+create _169-[:`DID`]->_170
+create _170-[:`DID`]->_212
+create _170-[:`DOES`]->_213
+create _171-[:`DID`]->_215
+create _171-[:`DID`]->_216
+create _172-[:`DID`]->_217
+create _172-[:`DID`]->_204
+create _172-[:`DID`]->_173
+create _172-[:`DOES`]->_174
+create _173-[:`DID`]->_218
+create _174-[:`DID`]->_171
+create _174-[:`DID`]->_219
+create _174-[:`DID`]->_214
+create _174-[:`DID`]->_166
+create _175-[:`DID`]->_220
+create _175-[:`DID`]->_176
+create _176-[:`DID`]->_178
+create _177-[:`DID`]->_178
+create _178-[:`DOES`]->_179
+create _179-[:`DID`]->_180
+create _179-[:`DID`]->_182
+create _180-[:`DID`]->_221
+create _180-[:`DID`]->_186
+create _180-[:`DOES`]->_222
+create _181-[:`DID`]->_222
+create _182-[:`DID`]->_183
+create _182-[:`DID`]->_184
+create _182-[:`DOES`]->_185
+create _183-[:`DOES`]->_223
+create _184-[:`DID`]->_201
+create _185-[:`DID`]->_224
+create _185-[:`DID`]->_225
+create _185-[:`DID`]->_226
+create _185-[:`DID`]->_227
+create _186-[:`DID`]->_228
+create _186-[:`DID`]->_229
+create _186-[:`DID`]->_230
+create _186-[:`DID`]->_187
+create _186-[:`DID`]->_231
+create _187-[:`DID`]->_232
+create _187-[:`DID`]->_233
+create _187-[:`DOES`]->_188
+create _188-[:`DID`]->_189
+create _188-[:`DID`]->_191
+create _188-[:`DID`]->_192
+create _188-[:`DID`]->_194
+create _188-[:`DID`]->_193
+create _189-[:`DID`]->_190
+create _190-[:`DOES`]->_234
+create _191-[:`DID`]->_235
+create _192-[:`DID`]->_235
+create _193-[:`DID`]->_236
+create _193-[:`DOES`]->_237
+create _194-[:`DID`]->_195
+create _195-[:`DID`]->_196
+create _195-[:`DID`]->_198
+create _196-[:`DID`]->_238
+create _196-[:`DID`]->_197
+create _197-[:`DID`]->_239
+create _197-[:`DID`]->_240
+create _197-[:`DID`]->_193
+create _198-[:`DID`]->_241
+create _198-[:`DID`]->_221
+;
+----
+It looks like this:
+//graph
+
+Let's take a look at the nodes that we have:
+[source,cypher]
+----
+match (n) 
+return labels(n) as TypeOfNode, count(n) as NrOfNodes;
+----
+//table
+
+And then take a look at the interesting relationship patterns:
+
+* Female Gay characters
+
+//hide
+[source,cypher]
+----
+match (n:FEMALE)-[r]->(m:FEMALE)
+return n.name,type(r),m.name;
+----
+//table
+
+Let's look at the same thing for the male characters:
+
+* Male Gay Characters
+
+//hide
+[source,cypher]
+----
+match (n:MALE)-[r]->(m:MALE)
+return n.name,type(r),m.name;
+----
+//table
+
+Strange that we have different numbers of gays, depending on whether they are male/female, right? And we can take that in any other direction that you would be interested in.
+
+Let's do two more queries:
+
+== Who is currently in a relationship but has not had any other relationships before ==
+
+[source,cypher]
+----
+match (n)-[r:DOES]-(p)
+where not((n)-[:DID]-())
+return n.name as Name, n.gender as Gender
+order by Name ASC;
+----
+//table
+
+or the opposite:
+
+== Who is currently NOT in a relationship but has had other relationships before ==
+
+[source,cypher]
+----
+match (n)-[r:DID]-(p)
+where not((n)-[:DOES]-())
+return distinct n.name as Name, n.gender as Gender
+order by Name ASC;
+----
+//table
+
+== Pathfinding: how are two characters connected? ==
+
+Let's see how two characters are "connected"?
+[source,cypher]
+----
+match (f:FEMALE {name:"Femke"}),(m:MALE {name:"Jean-Pierre"}),
+p = AllShortestPaths(f-[*]-m)
+return p;
+----
+
+You can click play and see the path in the console below:
+//console
+
+I am sure there are many other things we could do with this - or a similar sitcom dataset. But that's about enough for me :) ...

@@ -1,0 +1,174 @@
+= Plant Families
+
+:neo4j-version: 2.0.0
+:author: George Lesica
+:twitter: @glesica
+
+Plants, (and really every living thing, as anyone who took high school biology
+will recall), are divided and subdivided seemingly endlessly into groups. I
+thought it would be interesting to look at how this hierarchy could be
+represented as a graph database. As it turns out, even a fairly naive
+implementation is easy to understand and simple to query.
+
+Obviously, there really isn't anything here that couldn't be done with a SQL
+database (a document database would work as well, I'm sure, but an efficient
+implementation isn't as immediately obvious to me). So you can file this under
+"anything SQL can do a graph DB can do (as well as or) better".
+
+Disclaimer: I'm not a botanist, so please forgive any errors of ignorance.
+
+== Data
+
+The data model is pretty simple (incredibly simple, actually):
+
+image::http://i.imgur.com/YaTZ4T1.png[Data Model]
+
+There are several other properties beside the ones shown.
+
+First, let's take a look at some simple data. The data below relate to several
+families of wildflowers. Each family has certain identifying characteristics
+that can be used to determine which family a particular specimen likely belongs
+to, generally as a first step toward identifying the species.
+
+//hide
+//setup
+[source,cypher]
+----
+CREATE
+(dicot:Group { name: "Dicot" }),
+(monocot:Group { name: "Monocot" }),
+(united:PetalType { name: "Petals United" }),
+(separate:PetalType { name: "Petals Separate" }),
+(sup:OvaryType { name: "Superior" }),
+(inf:OvaryType { name: "Inferior" }),
+(bet:OvaryType { name: "Between" }),
+(rad:Symmetry { name: "Radial Symmetry" }),
+(bil:Symmetry { name: "Bilateral Symmetry" }),
+(alt:LeafType { name: "Alternating" }),
+(opp:LeafType { name: "Opposite" }),
+(rb:Family { name: "Ranunculaceae Buttercup" }),
+(rb)-[:HAS]->(dicot),
+(rb)-[:HAS { number: [5] }]->(separate),
+(rb)-[:HAS]->(sup),
+(rb)-[:HAS]->(rad),
+(rb)-[:HAS]->(bil),
+(rb)-[:HAS]->(alt),
+(cp:Family { name: "Caryophyllaceae Pink" }),
+(cp)-[:HAS]->(dicot),
+(cp)-[:HAS { number: [5] }]->(separate),
+(cp)-[:HAS]->(sup),
+(cp)-[:HAS]->(rad),
+(cp)-[:HAS]->(opp),
+(bm:Family { name: "Brassicaceae Mustard" }),
+(bm)-[:HAS]->(dicot),
+(bm)-[:HAS { number: [4] }]->(separate),
+(bm)-[:HAS]->(sup),
+(bm)-[:HAS]->(rad),
+(bm)-[:HAS]->(alt),
+(fp:Family { name: "Fabaceae Pea" }),
+(fp)-[:HAS]->(dicot),
+(fp)-[:HAS { number: [3] }]->(separate),
+(fp)-[:HAS {number: [2] }]->(united),
+(fp)-[:HAS]->(sup),
+(fp)-[:HAS]->(bil),
+(fp)-[:HAS]->(alt),
+(ss:Family { name: "Saxifragaceae Sacifrage" }),
+(ss)-[:HAS]->(dicot),
+(ss)-[:HAS { number: [5] }]->(separate),
+(ss)-[:HAS]->(bet),
+(ss)-[:HAS]->(rad),
+(ss)-[:HAS]->(alt),
+(rr:Family { name: "Rosaceae Rose" }),
+(rr)-[:HAS]->(dicot),
+(rr)-[:HAS { number: [5] }]->(separate),
+(rr)-[:HAS]->(bet),
+(rr)-[:HAS]->(rad),
+(rr)-[:HAS]->(alt),
+(op:Family { name: "Onagraceae Evening Primrose" }),
+(op)-[:HAS]->(dicot),
+(op)-[:HAS { number: [4] }]->(separate),
+(op)-[:HAS]->(inf),
+(op)-[:HAS]->(rad),
+(op)-[:HAS]->(alt),
+(op)-[:HAS]->(opp),
+(ac:Family { name: "Apiaceae Carrot" }),
+(ac)-[:HAS]->(dicot),
+(ac)-[:HAS { number: [5] }]->(separate),
+(ac)-[:HAS]->(inf),
+(ac)-[:HAS]->(rad),
+(ac)-[:HAS]->(alt),
+(bb:Family { name: "Boraginaceae Borage" }),
+(bb)-[:HAS]->(dicot),
+(bb)-[:HAS { number: [5] }]->(united),
+(bb)-[:HAS]->(sup),
+(bb)-[:HAS]->(rad),
+(bb)-[:HAS]->(alt),
+(sn:Family { name: "Scrophulariaceae Snapdragon" }),
+(sn)-[:HAS]->(dicot),
+(sn)-[:HAS { number: [4, 5] }]->(united),
+(sn)-[:HAS]->(sup),
+(sn)-[:HAS]->(bil),
+(sn)-[:HAS]->(alt),
+(sn)-[:HAS]->(opp),
+(aa:Family { name: "Asteraceae Aster" }),
+(aa)-[:HAS]->(dicot),
+(aa)-[:HAS { number: [5] }]->(united),
+(aa)-[:HAS]->(inf),
+(aa)-[:HAS]->(rad),
+(aa)-[:HAS]->(alt),
+(aa)-[:HAS]->(opp),
+(ll:Family { name: "Liliaceae Lily" }),
+(ll)-[:HAS]->(monocot),
+(ll)-[:HAS { number: [3] }]->(separate),
+(ll)-[:HAS]->(sup),
+(ll)-[:HAS]->(rad),
+(ll)-[:HAS]->(alt),
+(oo:Family { name: "Orchidaceae Orchid" }),
+(oo)-[:HAS]->(monocot),
+(oo)-[:HAS { number: [3] }]->(separate),
+(oo)-[:HAS]->(inf),
+(oo)-[:HAS]->(bil),
+(oo)-[:HAS]->(alt),
+(jr:Family { name: "Junaceae Rush" }),
+(jr)-[:HAS]->(monocot),
+(jr)-[:HAS]->(separate),
+(jr)-[:HAS]->(sup),
+(jr)-[:HAS]->(rad),
+(jr)-[:HAS]->(alt),
+(cs:Family { name: "Cyperaceae Sedge" }),
+(cs)-[:HAS]->(monocot),
+(cs)-[:HAS]->(separate),
+(cs)-[:HAS]->(sup),
+(cs)-[:HAS]->(alt),
+(pg:Family { name: "Poaceae Grass" }),
+(pg)-[:HAS]->(monocot),
+(pg)-[:HAS]->(separate),
+(pg)-[:HAS]->(sup),
+(pg)-[:HAS]->(bil),
+(pg)-[:HAS]->(alt)
+----
+
+Let's take a look at the structure of the graph we just created.
+
+[source,cypher]
+----
+MATCH (f:Family { name: "Poaceae Grass" })-[:HAS]-(p) RETURN f, p
+----
+
+Note that the family has several properties, but instead of property values
+being repeated throughout a table, they each have their own nodes and families
+are attached by edges (relationships) to the properties they possess.
+
+== Queries
+
+We can easily query to identify the family a plant specimen is in. Note that
+this would also work if we weren't quite sure about any number of properties
+(indeed, I've ommitted symmetry and group).
+
+[source,cypher]
+----
+MATCH (family)-[:HAS]->(lt:LeafType { name: "Alternating" }) WITH family
+MATCH (family)-[:HAS]->(pt:PetalType { name: "Petals United" }) WITH family
+MATCH (family)-[:HAS]->(ot:OvaryType { name: "Superior" }) WITH family
+RETURN family
+----

@@ -1,0 +1,214 @@
+= Whiplash for cash fraud detection
+:author: Jean Villedieu
+:twitter: @jvilledieu
+:tags: domain:finance, use-case:fraud-detection
+ 
+This http://gist.neo4j.org/?6bae1e799484267e3c60[interactive Neo4j graph tutorial] presents how whiplash for cash, a popular insurance fraud, can be identified with the help of Neo4j. All the ideas come from https://vimeo.com/91743128[the great presentation of Gorka Sadowski and Philip Rathle].
+ 
+'''
+ 
+*Table of Contents*
+ 
+* *Introduction*
+** <<_introduction_to_problem, Introduction to Problem>>
+* *Scenario*
+** <<_typical_scenario, Typical Scenario>>
+* *Solution*
+** <<_explanation_of_solution, Explanation of Solution>>
+* *Data Model*
+** <<_whiplash_for_cash_graph_data_model, Whiplash for Cash Graph Data Model>>
+* *Database Setup*
+** <<_sample_data_set, Sample Data Set>>
+* *Cypher Queries*
+** <<_what_are_the_cars_and_people_involved_in_a_given_accident, What are the cars and people involved in a given accident>>
+** <<_are_our_suspects_involved_in_other_accidents, Are our suspects involved in other accidents>>
+** <<_find_the_full_ring_of_fraudsters, Find the full ring of fraudsters>>
+** <<_detect_potential_fraud_cases, Detect potential fraud cases>>
+ 
+'''
+ 
+== Introduction to Problem
+ 
+A popular scheme around fraudsters is to use fake car accident to claim money to insurance companies. Properly executed the scheme can pay out handsomely. Everything about these accidents can be fake : fake driver, fake vehicle, fake witnesses. Everything but the money. It is estimated that fraud cost to US insurance companies up to $80 billion per year. That is a lot of money and consumers are paying for it. In the UK for example, each driver pays an additional $144 per year for his insurance because of fraud.
+
+
+The problem with scheme like whiplash for cash is that it targets the insurance companies weaknesses. Faced with thousands of claims they have a hard time finding suspicious behavior in the data they process. Luckily, like with stolen credit cards or loan fraud, whiplash for cash criminals can be identified with graph technologies.
+ 
+'''
+ 
+=== Typical Scenario
+In order to understand why, we need to see how criminals operate first. It all start with one or more ring leaders. Here is how they usually work :
+
+
+* the ring leaders recruit drivers, passengers, witnesses : these persons are the one that will claim money to insurance companies. These persons may or may not exist as it is possible to create synthetic identities ;
+the ring leaders find vehicles ;
+
+* the ring leaders, the drivers and the passengers organize an accident : this is where it all comes together. The accident may happen or may not happen but everything about it is scripted. Everyone has to agree on a time, a place, a scenario ;
+
+* the passengers, the drivers and the witnesses fill up insurance paperwork : in order to claim money, they have to fill an accident report and various forms. At this stage, the fraudsters may use a doctor as an accomplice to justify the claims ;
+
+* the company processes the claims : it may or may not investigate the claim. In any case, the preparation of the fraudsters shelter them from being easily unmasked ;
+ 
+'''
+ 
+== Explanation of Solution
+ 
+GInsurance companies face a few challenges when they want to fight back against whiplash for cash schemes. At the individual level, it is hard to spot a fake car accident. On paper it will look legitimate. Even if the investigators have a doubt, they will be hard pressed to build a solid case. Fraudsters work with lawyers and doctors who help strengthen their operation. They choose injuries that are hard to assess and disprove. In the end, the insurance company has a hard decision to make : taking legal action and fighting in court, with a chance of losing, or paying out a small sum.
+
+
+What's even worse, is that the scammers can repeat their scheme again and again without being caught. From one accident to the next, they change a name, drivers become passengers, vehicles are recycled. The insurance companies have a very hard time connecting all of these entities across multiple accidents. And if they do detect the scheme, it takes months and months to trace back every connection and assess the full impact of the scheme. No wonder that whiplash for cash is so popular among fraudsters!
+
+
+Fortunately, all these issues arise from a problem that can be fixed : how to identify and analyse connections in a large dataset? The answer? Graphs!
+
+
+'''
+
+== Whiplash for Cash Graph Data Model
+ 
+We are going to see that we can model the data the insurance company has about its accidents as a graph. In order to do that we'll use the work of Gorka Sadowski from Akalak and Philip Rathle from Neo Technology.
+
+As an insurance company we have data about insurance claims. In the insurance claims we find :
+
+* people ;
+
+* car ;
+
+* accidents ;
+
+People can drive or be passengers of cars. Cars can be involved in accidents. Lawyers and doctors can be linked to people they work for. It is a fairly simple graph. Here is a picture that sum it up :
+
+image::https://linkurio.us/wp-content/uploads/2014/06/Whiplash-for-cash-schema-v1.11-600x337.png[Credit Card Fraud]
+
+What is interesting about this schema is that it expresses the relationships between the different entities involved in our fraud scenario. As we have seen, these connections are key to identify fraudsters.
+
+
+I have prepared a small dataset based on the schema above and the presentation of Gorka Sadowski and Philip Rathle.
+ 
+'''
+ 
+== Sample Data Set
+ 
+//hide
+//setup
+[source,cypher]
+----
+ 
+// Create fraudsters
+CREATE (UdoHalstein:Person {first_name:'Udo', last_name:'Halstein'})
+CREATE (RobrechtMiloslav:Person {first_name:'Robrecht', last_name:'Miloslav'})
+CREATE (MonroeMaksymilian:Person {first_name:'Monroe', last_name:'Maksymilian'})
+CREATE (SkylerGavril:Person {first_name:'Skyler', last_name:'Gavril'})
+CREATE (EuantheRossana:Person {first_name:'Euanthe', last_name:'Rossana'})
+CREATE (JasmineRhea:Person {first_name:'Jasmine', last_name:'Rhea'})
+CREATE (SousannaPinar:Person {first_name:'Sousanna', last_name:'Pinar'})
+CREATE (ChelleJessie:Person {first_name:'Chelle', last_name:'Jessie'})
+
+// Create cars
+CREATE (Ford_Focus:Car {constructor:'Ford', model:'Focus'})
+CREATE (Toyota_Corolla:Car {constructor:'Toyota', model:'Corolla'})
+CREATE (Kia_Rio:Car {constructor:'Kia', model:'Rio'})
+CREATE (Hyundai_Elantra:Car {constructor:'Hyundai', model:'Elantra'})
+CREATE (Ford_Fiesta:Car {constructor:'Ford', model:'Fiesta'})
+CREATE (Renault_Clio:Car {constructor:'Renault', model:'Clio'})
+
+//Create accidents
+CREATE (Accident1:Accident {date:'19/05/2014', location:'New Jersey'})
+CREATE (Accident2:Accident {date:'23/05/2014', location:'Florida'})
+CREATE (Accident3:Accident {date:'27/05/2014', location:'Florida'})
+
+// Create relationships
+CREATE (Ford_Focus)-[:IS_INVOLVED {claim_total:'4817'}]->(Accident1)
+CREATE (Toyota_Corolla)-[:IS_INVOLVED {claim_total:'4693'}]->(Accident1)
+CREATE (Kia_Rio)-[:IS_INVOLVED {claim_total:'4157'}]->(Accident2)
+CREATE (Hyundai_Elantra)-[:IS_INVOLVED {claim_total:'4001'}]->(Accident2)
+CREATE (Ford_Fiesta)-[:IS_INVOLVED {claim_total:'4513'}]->(Accident3)
+CREATE (Renault_Clio)-[:IS_INVOLVED {claim_total:'4307'}]->(Accident3)
+CREATE (UdoHalstein)-[:DRIVER {claim_total:'19068'}]->(Ford_Focus)
+CREATE (UdoHalstein)-[:PASSENGER {claim_total:'19447'}]->(Kia_Rio)
+CREATE (UdoHalstein)-[:PASSENGER {claim_total:'19346'}]->(Ford_Fiesta)
+CREATE (RobrechtMiloslav)-[:DRIVER {claim_total:'19359'}]->(Toyota_Corolla)
+CREATE (RobrechtMiloslav)-[:PASSENGER {claim_total:'19658'}]->(Hyundai_Elantra)
+CREATE (RobrechtMiloslav)-[:PASSENGER {claim_total:'19282'}]->(Renault_Clio)
+CREATE (MonroeMaksymilian)-[:DRIVER {claim_total:'19425'}]->(Kia_Rio)
+CREATE (MonroeMaksymilian)-[:PASSENGER {claim_total:'19535'}]->(Ford_Focus)
+CREATE (MonroeMaksymilian)-[:PASSENGER {claim_total:'19779'}]->(Renault_Clio)
+CREATE (SkylerGavril)-[:DRIVER {claim_total:'19010'}]->(Hyundai_Elantra)
+CREATE (SkylerGavril)-[:PASSENGER {claim_total:'19423'}]->(Ford_Fiesta)
+CREATE (SkylerGavril)-[:PASSENGER {claim_total:'19971'}]->(Toyota_Corolla)
+CREATE (EuantheRossana)-[:DRIVER {claim_total:'19940'}]->(Ford_Fiesta)
+CREATE (EuantheRossana)-[:PASSENGER {claim_total:'19474'}]->(Hyundai_Elantra)
+CREATE (EuantheRossana)-[:PASSENGER {claim_total:'19762'}]->(Ford_Focus)
+CREATE (JasmineRhea)-[:DRIVER {claim_total:'19558'}]->(Renault_Clio)
+CREATE (JasmineRhea)-[:PASSENGER {claim_total:'19224'}]->(Toyota_Corolla)
+CREATE (JasmineRhea)-[:PASSENGER {claim_total:'19520'}]->(Kia_Rio)
+CREATE (SousannaPinar)-[:IS_DOCTOR]->(UdoHalstein)
+CREATE (SousannaPinar)-[:IS_DOCTOR]->(MonroeMaksymilian)
+CREATE (SousannaPinar)-[:IS_DOCTOR]->(EuantheRossana)
+CREATE (ChelleJessie)-[:IS_LAWYER]->(RobrechtMiloslav)
+CREATE (ChelleJessie)-[:IS_LAWYER]->(MonroeMaksymilian)
+CREATE (ChelleJessie)-[:IS_LAWYER]->(SkylerGavril)
+CREATE (ChelleJessie)-[:IS_LAWYER]->(EuantheRossana)
+ 
+RETURN *
+----
+//graph
+ 
+'''
+You can download the complete dataset here : https://www.dropbox.com/s/6ipfn4paaggughv/Whiplash%20for%20cash.zip
+
+== What are the cars and people involved in a given accident
+Let's start with a simple example. As a fraud investigator, we want to get all the entities that are linked to a particular accident.
+[source,cypher]
+----
+MATCH (accident)<-[]-(cars)<-[r]-(people)
+WHERE accident.location = 'New Jersey'
+RETURN DISTINCT people.first_name as first_name, type(r) as relationship, accident.location as location, cars.model
+----
+//table
+
+== Are our suspects involved in other accidents
+We can see who are the person involved in a single accident. But that information alone is not sufficient to identify a fraud. The question we need to ask is are the cars and people of the first accident involved in other accidents.
+[source,cypher]
+----
+MATCH (accident)<-[]-(cars)<-[]-(people)-[]->(othercars)-[]->(otheraccidents:Accident)
+WHERE accident.location = 'New Jersey'
+RETURN DISTINCT otheraccidents.location as location, otheraccidents.date as date
+----
+//table
+
+We get two results : one accident in Florida on May the 23th and another accident in Florida on May the 27th. Suddenly, this simple accident is looking for suspicious as its participants are also connected to two other accidents. It's time to investigate further.
+
+== Find the full ring of fraudsters
+We started with one accidents and found the cars and people involved in it. We checked to see if they were involved in other accidents. They were and that is suspect. What we want to know now is to uncover the whole ring of fraudsters, all the people and cars involved in the fraud. That means following a trail : we start from one accident, look for a connection with other accidents, look again for connections with other accident, etc. That kind of query is taxing for a relational database : it means performing joins between table. It is not easy to write and takes time to execute.
+
+With a graph database, the same query is very easy.
+[source,cypher]
+----
+MATCH (accident)<-[*]-(potentialfraudtser:Person)
+WHERE accident.location = 'New Jersey'
+RETURN DISTINCT potentialfraudtser.first_name as first_name, potentialfraudtser.last_name as last_name
+----
+//table
+
+image::https://linkurio.us/wp-content/uploads/2014/06/linkurious-full-ring-600x405.png[Credit Card Fraud]
+A look at the full ring of fraudsters
+
+image::https://linkurio.us/wp-content/uploads/2014/06/linkurious-full-ring-udo-zoom-600x405.png[Credit Card Fraud]
+Focusing on a single fraudster
+
+== Detect potential fraud cases
+Graph technologies allow to ask sophisticated questions about the connections in your data. But sometimes it is not enough to be able to investigate the data ex ante. The damage may have already been done. What is better is detecting suspicious patterns in real-time. But how to do so?
+
+We model what we consider suspicious and Cypher can help us detect it. In our use case, there are various patterns we could use. For example, we could look for chains of people involved in different accidents. If someone is involved in an accident with someone who is involved in an accident with someone who is involved in an accident...we might be looking at a fraud ring. It is quite rare to have 3 people involved in 3 accidents, especially if one of the "accidentee" is linked with the other 2 victims.
+[source,cypher]
+----
+MATCH (person1:Person)-[*..2]->(accident1:Accident)<-[*..2]-(person2:Person)-[*..2]->(accident2:Accident)<-[*..2]-(person3:Person)-[*..2]->(accident3:Accident)
+RETURN DISTINCT person1, person2, person3
+----
+
+That query should warn us when a group of fraudsters strike. To implement it, we'd simply have to trigger the query at key moments of the customer lifecycle : when a new customer subscribe to a policy, when a new car is registered by a customer, when an accident happen. Graph analytics are great for pattern matching in connected data : this unique ability could allow insurance company to identify fraudsters faster and fight back efficiently.
+
+To complement any fraud detection system, it is important to use data analysis tools like Linkurious. These tools are important because they empower fraud analysts : faced with an alert, they can investigate it. Based on this they can take an informed decision. They can confidently decide between doing nothing or launching a full-on investigation with legal action.
+
+For more graph-related use cases, make sure to check the blog of Linkurious : http://linkurio.us/blog 

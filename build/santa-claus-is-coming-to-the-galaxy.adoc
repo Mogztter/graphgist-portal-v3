@@ -1,0 +1,515 @@
+= SANTA CLAUS IS COMING TO... THE GALAXY
+:author: Jorge Albarrán
+:neo4j-version: 3.5
+
+== The mission
+_A long time ago... Santa wasn't really busy at Earth, and, as we may imagine, the force is strong in Santa.
+He therefore had the time to transport himself to a Galaxy Far Far away around the year 14 BBY (Before the link:http://starwars.wikia.com/wiki/Battle_of_Yavin[Battle of Yavin])._
+
+_His mission was to deliver presents to two 5 year old twins for whom the force ran strong in their family: Leia Organa in Alderaan and Luke Skywalker in Tatooine._
+
+_Unfortunately, there was only one map of The Galaxy stored in an android. After a thorough search, Santa found the android, but it wasn't the android he was looking for, this android only possesed a Graph Database of the Galaxy._
+
+== The model
+
+_After a brief analysis, Santa was able to infere the model used to create the Database, which is depicted in the following picture:_
+
+image::https://drive.google.com/file/d/0B17R8cRB8tsoSmNUbW5qYUVQT0k/view[]
+
+_This model allowed Santa to grasp a lot of intellingence about his mission._
+
+== Motivation ==
+Plot aside, I would like to explain my main motivation for this Graphgist. Gathering data isn't quite difficult in modern times. Gathering usable data takes more work but can be done. However, finding relationships among data is sometimes quite hard and it is harder to exploit these relationships once they've been found. Not all relationships are obvious and computers aren't better than humans to spot new patterns and behaviours (at least for now).
+
+We need to team up with computers in order to really gather useful intelligence and profit of the relationships among data. Graph databases are a natural way to model data and to allow people to effectively profit of computers for both visualization and data analysis. My main goal here is to show how much can we do with a very simple model and basic Cypher queries.
+
+What if you see a map differently? And what if you navigate through it with different metrics and different approaches to explore not only the topology but the dynamics of the dataset?
+
+== The data ==
+The data was gathered from the link:http://starwars.wikia.com/wiki/Main_Page[Wookiepedia] and the link:https://hbernberg.cartodb.com/viz/76e286d4-fbab-11e3-b014-0e73339ffa50/public_map[Galaxy Map] (an excelent job by link:https://twitter.com/Gorrrgoth[@gorrrgoth]). For demonstration purposes I took a subset of 46 planets that provide some interesting dynamics. The graph is the following:
+
+//setup
+//hide
+[source,cypher]
+----
+CREATE
+  (Core:Region {name: 'Core'}),
+  (Colonies:Region {name: 'Colonies'}),
+  (Outer_rim:Region {name: 'Outer Rim'}),
+  (Expansion_region:Region {name: 'Expansion Region'}),
+  (Inner_rim:Region {name: 'Inner Rim'}),
+  (Mid_rim:Region {name: 'Mid Rim'}),
+  (Deep_core:Region {name: 'Deep Core'}),
+  (Arkanis_sector:Sector {name: 'Arkanis'}),
+  (TransNebular_sector:Sector {name: 'Trans-Nebular'}),
+  (Karthakk_sector:Sector {name: 'Karthakk'}),
+  (Lambda_sector:Sector {name: 'Lambda'}),
+  (Doldur_sector:Sector {name: 'Doldur'}),
+  (Abrion_sector:Sector {name: 'Abrion'}),
+  (Tynna_sector:Sector {name: 'Tynna'}),
+  (Manda_sector:Sector {name: 'Manda'}),
+  (Herdessa_sector:Sector {name: 'Herdessa'}),
+  (BothanSpace_sector:Sector {name: 'Bothan Space'}),
+  (Daalang_sector:Sector {name: 'Daalang'}),
+  (Chaykin_sector:Sector {name: 'Chaykin'}),
+  (Narvath_sector:Sector {name: 'Narvath'}),
+  (tatooine:Planet{name: 'Tatooine'}),
+  (piroket:Planet{name: 'Piroket'}),
+  (arkanis:Planet{name: 'Arkanis'}),
+  (pii:Planet{name: 'Pii'}),
+  (herdessa:Planet{name: 'Herdessa'}),
+  (llanic:Planet{name: 'Llanic'}),
+  (molavar:Planet{name: 'Molavar'}),
+  (manda:Planet{name: 'Manda'}),
+  (daalang:Planet{name:'Daalang'}),
+  (bothawui:Planet{name: 'Bothawui'}),
+  (aridus:Planet{name: 'Aridus'}),
+  (milagro:Planet{name: 'Milagro'}),
+  (iktotchon:Planet{name: 'Iktotchon'}),
+  (mon_gazza:Planet{name: 'Mon Gazza'}),
+  (druckenwell:Planet{name: 'Druckenwell'}),
+  (denon:Planet{name: 'Denon'}),
+  (corellia:Planet{name: 'Corellia'}),
+  (coruscant:Planet{name: 'Coruscant'}),
+  (brentaal:Planet{name: 'Brentaal'}),
+  (alderaan:Planet{name: 'Alderaan'}),
+  (fedalle:Planet{name: 'Fedalle'}),
+  (commenor:Planet{name: 'Commenor'}),
+  (trellen:Planet{name: 'Trellen'}),
+  (exodeen:Planet{name: 'Exodeen'}),
+  (allanteen:Planet{name: 'Allanteen'}),
+  (chardaan:Planet{name: 'Chardaan'}),
+  (foless:Planet{name: 'Foless'}),
+  (empress_teta:Planet{name: 'Empress Teta'}),
+  (byss:Planet{name: 'Byss'}),
+  (quellor:Planet{name: 'Quellor'}),
+  (goroth:Planet{name: 'Goroth'}),
+  (habassa:Planet{name: 'Habassa'}),
+  (monor:Planet{name: 'Monor'}),
+  (gendrah_narvin:Planet{name: 'Gendrah-Narvin'}),
+  (devaron:Planet{name: 'Devaron'}),
+  (duro:Planet{name: 'Duro'}),
+  (sacorria:Planet{name: 'Sacorria'}),
+  (samaria:Planet{name: 'Samaria'}),
+  (puul:Planet{name: 'Puul'}),
+  (perma:Planet{name: 'Perma'}),
+  (goorla:Planet{name: 'Goorla'}),
+  (pria:Planet{name: 'Pria'}),
+  (xorth:Planet{name: 'Xorth'}),
+  (palawa:Planet{name: 'Palawa'}),
+  (aldraig:Planet{name: 'Aldraig'}),
+  (vanjervalis:Planet{name: 'Vanjervalis'}),
+  (galactic_empire:Political_System{system: 'Galactic Empire'}),
+  (hutt_clan:Political_System{system: 'Hutt Clan'}),
+  (jedi_order:Political_System{system: 'Jedi Order'}),
+  (galactic_republic:Political_System{system: 'Galactic Republic'}),
+  (confederacy:Political_System{system: 'Confederacy of Independent Systems'}),
+  (neutral:Political_System{system: 'Neutral'}),
+  (Arkanis_sector)-[:CONTAINS]->(tatooine)-[:BELONGS_TO]->(Outer_rim),
+  (Arkanis_sector)-[:CONTAINS]->(piroket)-[:BELONGS_TO]->(Outer_rim),
+  (Arkanis_sector)-[:CONTAINS]->(arkanis)-[:BELONGS_TO]->(Outer_rim),
+  (Arkanis_sector)-[:CONTAINS]->(pii)-[:BELONGS_TO]->(Outer_rim),
+  (Herdessa_sector)-[:CONTAINS]->(herdessa)-[:BELONGS_TO]->(Mid_rim),
+  (Karthakk_sector)-[:CONTAINS]->(llanic)-[:BELONGS_TO]->(Outer_rim),
+  (Lambda_sector)-[:CONTAINS]->(mon_gazza)-[:BELONGS_TO]->(Mid_rim),
+  (Abrion_sector)-[:CONTAINS]->(molavar)-[:BELONGS_TO]->(Mid_rim),
+  (Manda_sector)-[:CONTAINS]->(manda)-[:BELONGS_TO]->(Mid_rim),
+  (Doldur_sector)-[:CONTAINS]->(druckenwell)-[:BELONGS_TO]->(Mid_rim),
+  (Doldur_sector)-[:CONTAINS]->(monor)-[:BELONGS_TO]->(Mid_rim),
+  (BothanSpace_sector)-[:CONTAINS]->(bothawui)-[:BELONGS_TO]->(Mid_rim),
+  (Daalang_sector)-[:CONTAINS]->(daalang)-[:BELONGS_TO]->(Mid_rim),
+  (Narvath_sector)-[:CONTAINS]->(aridus)-[:BELONGS_TO]->(Expansion_region),
+  (Narvath_sector)-[:CONTAINS]->(iktotchon)-[:BELONGS_TO]->(Expansion_region),  
+  (Tynna_sector)-[:CONTAINS]->(allanteen)-[:BELONGS_TO]->(Expansion_region),
+  (Chaykin_sector)-[:CONTAINS]->(milagro)-[:BELONGS_TO]->(Expansion_region),  
+  (TransNebular_sector)-[:CONTAINS]->(goroth)-[:BELONGS_TO]->(Mid_rim),
+  (Herdessa_sector)-[:CONTAINS]->(habassa)-[:BELONGS_TO]->(Mid_rim),
+  (chardaan)-[:BELONGS_TO]->(Inner_rim),
+  (foless)-[:BELONGS_TO]->(Inner_rim),
+  (denon)-[:BELONGS_TO]->(Inner_rim),
+  (gendrah_narvin)-[:BELONGS_TO]->(Inner_rim),
+  (corellia)-[:BELONGS_TO]->(Inner_rim),
+  (exodeen)-[:BELONGS_TO]->(Colonies),
+  (vanjervalis)-[:BELONGS_TO]->(Colonies),
+  (devaron)-[:BELONGS_TO]->(Colonies),
+  (commenor)-[:BELONGS_TO]->(Colonies),
+  (quellor)-[:BELONGS_TO]->(Colonies),
+  (duro)-[:BELONGS_TO]->(Core),
+  (sacorria)-[:BELONGS_TO]->(Core),
+  (goorla)-[:BELONGS_TO]->(Core),
+  (coruscant)-[:BELONGS_TO]->(Core),
+  (trellen)-[:BELONGS_TO]->(Core),
+  (pria)-[:BELONGS_TO]->(Core),
+  (fedalle)-[:BELONGS_TO]->(Core),
+  (brentaal)-[:BELONGS_TO]->(Core),
+  (alderaan)-[:BELONGS_TO]->(Core),
+  (puul)-[:BELONGS_TO]->(Core),
+  (perma)-[:BELONGS_TO]->(Core),
+  (samaria)-[:BELONGS_TO]->(Core),
+  (xorth)-[:BELONGS_TO]->(Core),
+  (palawa)-[:BELONGS_TO]->(Core),
+  (aldraig)-[:BELONGS_TO]->(Core),
+  (empress_teta)-[:BELONGS_TO]->(Deep_core),
+  (byss)-[:BELONGS_TO]->(Deep_core),
+  (goroth)-[:NEIGHBOR_OF]->(pii),
+  (habassa)-[:NEIGHBOR_OF]->(herdessa),
+  (monor)-[:NEIGHBOR_OF]->(druckenwell),  
+  (gendrah_narvin)-[:NEIGHBOR_OF]->(denon),
+  (devaron)-[:NEIGHBOR_OF]->(foless),
+  (duro)-[:NEIGHBOR_OF]->(corellia),
+  (sacorria)-[:NEIGHBOR_OF]->(corellia),
+  (goorla)-[:NEIGHBOR_OF]->(corellia),
+  (vanjervalis)-[:NEIGHBOR_OF]->(exodeen),
+  (vanjervalis)-[:NEIGHBOR_OF]->(quellor),
+  (pria)-[:NEIGHBOR_OF]->(trellen),
+  (pria)-[:NEIGHBOR_OF]->(fedalle),
+  (aridus)-[:NEIGHBOR_OF]->(milagro),
+  (iktotchon)-[:NEIGHBOR_OF]->(allanteen),
+  (iktotchon)-[:NEIGHBOR_OF]->(aridus),
+  (palawa)-[:NEIGHBOR_OF]->(xorth),
+  (palawa)-[:NEIGHBOR_OF]->(aldraig),
+  (aldraig)-[:NEIGHBOR_OF]->(alderaan),
+  (samaria)-[:NEIGHBOR_OF]->(corellia),
+  (samaria)-[:NEIGHBOR_OF]->(exodeen),
+  (perma)-[:NEIGHBOR_OF]->(puul),
+  (perma)-[:NEIGHBOR_OF]->(trellen),
+  (tatooine)-[:AFFILIATED_TO]->(galactic_empire),
+  (tatooine)-[:AFFILIATED_TO]->(hutt_clan),
+  (piroket)-[:AFFILIATED_TO]->(galactic_empire),
+  (piroket)-[:AFFILIATED_TO]->(hutt_clan),
+  (pii)-[:AFFILIATED_TO]->(galactic_empire),
+  (pii)-[:AFFILIATED_TO]->(galactic_republic),
+  (goroth)-[:AFFILIATED_TO]->(galactic_empire),
+  (goroth)-[:AFFILIATED_TO]->(galactic_republic),
+  (arkanis)-[:AFFILIATED_TO]->(galactic_empire),
+  (arkanis)-[:AFFILIATED_TO]->(hutt_clan),
+  (herdessa)-[:AFFILIATED_TO]->(galactic_empire),
+  (herdessa)-[:AFFILIATED_TO]->(galactic_republic),
+  (habassa)-[:AFFILIATED_TO]->(neutral),
+  (druckenwell)-[:AFFILIATED_TO]->(galactic_empire),
+  (druckenwell)-[:AFFILIATED_TO]->(galactic_republic),
+  (druckenwell)-[:AFFILIATED_TO]->(confederacy),
+  (daalang)-[:AFFILIATED_TO]->(confederacy),
+  (monor)-[:AFFILIATED_TO]->(galactic_empire),  
+  (molavar)-[:AFFILIATED_TO]->(hutt_clan),
+  (molavar)-[:AFFILIATED_TO]->(confederacy),
+  (manda)-[:AFFILIATED_TO]->(galactic_empire),
+  (manda)-[:AFFILIATED_TO]->(galactic_republic),
+  (denon)-[:AFFILIATED_TO]->(galactic_empire),
+  (gendrah_narvin)-[:AFFILIATED_TO]->(galactic_republic),
+  (corellia)-[:AFFILIATED_TO]->(galactic_empire),
+  (samaria)-[:AFFILIATED_TO]->(galactic_empire),
+  (duro)-[:AFFILIATED_TO]->(galactic_republic),
+  (duro)-[:AFFILIATED_TO]->(galactic_empire),
+  (sacorria)-[:AFFILIATED_TO]->(galactic_republic),
+  (sacorria)-[:AFFILIATED_TO]->(galactic_empire),
+  (goorla)-[:AFFILIATED_TO]->(galactic_republic),
+  (goorla)-[:AFFILIATED_TO]->(galactic_empire),
+  (coruscant)-[:AFFILIATED_TO]->(galactic_empire),
+  (coruscant)-[:AFFILIATED_TO]->(galactic_republic),
+  (coruscant)-[:AFFILIATED_TO]->(jedi_order),
+  (devaron)-[:AFFILIATED_TO]->(galactic_empire),
+  (devaron)-[:AFFILIATED_TO]->(galactic_republic),
+  (devaron)-[:AFFILIATED_TO]->(jedi_order),
+  (devaron)-[:AFFILIATED_TO]->(confederacy),
+  (exodeen)-[:AFFILIATED_TO]->(galactic_empire),
+  (vanjervalis)-[:AFFILIATED_TO]->(galactic_empire),
+  (vanjervalis)-[:AFFILIATED_TO]->(galactic_republic),
+  (milagro)-[:AFFILIATED_TO]->(galactic_empire),
+  (milagro)-[:AFFILIATED_TO]->(galactic_republic),
+  (iktotchon)-[:AFFILIATED_TO]->(galactic_empire),
+  (iktotchon)-[:AFFILIATED_TO]->(galactic_republic),
+  (aridus)-[:AFFILIATED_TO]->(galactic_empire),
+  (aridus)-[:AFFILIATED_TO]->(galactic_republic),
+  (trellen)-[:AFFILIATED_TO]->(galactic_empire),
+  (trellen)-[:AFFILIATED_TO]->(galactic_republic),
+  (aldraig)-[:AFFILIATED_TO]->(galactic_empire),
+  (aldraig)-[:AFFILIATED_TO]->(galactic_republic),
+  (puul)-[:AFFILIATED_TO]->(galactic_republic),
+  (palawa)-[:AFFILIATED_TO]->(galactic_empire),
+  (palawa)-[:AFFILIATED_TO]->(galactic_republic),
+  (xorth)-[:AFFILIATED_TO]->(galactic_empire),
+  (xorth)-[:AFFILIATED_TO]->(galactic_republic),
+  (perma)-[:AFFILIATED_TO]->(galactic_republic),
+  (pria)-[:AFFILIATED_TO]->(galactic_empire),
+  (pria)-[:AFFILIATED_TO]->(galactic_republic),
+  (fedalle)-[:AFFILIATED_TO]->(galactic_empire),
+  (fedalle)-[:AFFILIATED_TO]->(galactic_republic),
+  (brentaal)-[:AFFILIATED_TO]->(galactic_empire),
+  (brentaal)-[:AFFILIATED_TO]->(galactic_republic),
+  (brentaal)-[:AFFILIATED_TO]->(confederacy),
+  (quellor)-[:AFFILIATED_TO]->(galactic_empire),
+  (quellor)-[:AFFILIATED_TO]->(galactic_republic),
+  (commenor)-[:AFFILIATED_TO]->(galactic_empire),
+  (alderaan)-[:AFFILIATED_TO]->(galactic_empire),
+  (alderaan)-[:AFFILIATED_TO]->(galactic_republic),
+  (allanteen)-[:AFFILIATED_TO]->(galactic_empire),
+  (allanteen)-[:AFFILIATED_TO]->(galactic_republic),
+  (foless)-[:AFFILIATED_TO]->(galactic_republic),
+  (empress_teta)-[:AFFILIATED_TO]->(galactic_empire),
+  (empress_teta)-[:AFFILIATED_TO]->(galactic_republic),
+  (byss)-[:AFFILIATED_TO]->(galactic_empire),
+  (tatooine)-[:ADJACENT_TO {hyperspaceroute: 'Triellus Trade Route'}]->(arkanis),
+  (tatooine)-[:ADJACENT_TO {hyperspaceroute: 'Triellus Trade Route'}]->(piroket),
+  (tatooine)-[:ADJACENT_TO {hyperspaceroute: 'Old Corellian Run'}]->(pii),
+  (pii)-[:ADJACENT_TO {hyperspaceroute: 'Old Corellian Run'}]->(herdessa),
+  (piroket)-[:ADJACENT_TO {hyperspaceroute: 'Triellus Trade Route'}]->(molavar),
+  (arkanis)-[:ADJACENT_TO {hyperspaceroute: 'Corellian Run'}]->(herdessa),
+  (arkanis)-[:ADJACENT_TO {hyperspaceroute: 'Triellus Trade Route'}]->(llanic),
+  (llanic)-[:ADJACENT_TO {hyperspaceroute: 'Llanic Spice Run'}]->(mon_gazza),
+  (herdessa)-[:ADJACENT_TO {hyperspaceroute: 'Corellian Run'}]->(mon_gazza),
+  (molavar)-[:ADJACENT_TO {hyperspaceroute: 'Manda Merchant Route'}]->(manda),
+  (manda)-[:ADJACENT_TO {hyperspaceroute: 'Manda Merchant Route'}]->(mon_gazza),
+  (manda)-[:ADJACENT_TO {hyperspaceroute: 'Bothan Run'}]->(bothawui),
+  (bothawui)-[:ADJACENT_TO {hyperspaceroute: 'Bothan Run'}]->(daalang),
+  (daalang)-[:ADJACENT_TO {hyperspaceroute: 'Gamor Run'}]->(aridus),
+  (aridus)-[:ADJACENT_TO {hyperspaceroute: 'Gamor Run'}]->(milagro),  
+  (bothawui)-[:ADJACENT_TO {hyperspaceroute: 'Reena Trade Route'}]->(druckenwell),
+  (mon_gazza)-[:ADJACENT_TO {hyperspaceroute: 'Corellian Run'}]->(druckenwell),
+  (druckenwell)-[:ADJACENT_TO {hyperspaceroute: 'Corellian Run'}]->(milagro),
+  (milagro)-[:ADJACENT_TO {hyperspaceroute: 'Corellian Run'}]->(allanteen),  
+  (allanteen)-[:ADJACENT_TO {hyperspaceroute: 'Corellian Run'}]->(denon),
+  (allanteen)-[:ADJACENT_TO {hyperspaceroute: 'Shipwrights Trace'}]->(chardaan),
+  (chardaan)-[:ADJACENT_TO {hyperspaceroute: 'Shipwrights Trace'}]->(foless),
+  (foless)-[:ADJACENT_TO {hyperspaceroute: 'Corellian Trade Spine'}]->(corellia),
+  (denon)-[:ADJACENT_TO {hyperspaceroute: 'Corellian Run'}]->(corellia),
+  (corellia)-[:ADJACENT_TO {hyperspaceroute: 'Corellian Run'}]->(perma),
+  (perma)-[:ADJACENT_TO {hyperspaceroute: 'Corellian Run'}]->(xorth),
+  (xorth)-[:ADJACENT_TO {hyperspaceroute: 'Corellian Run'}]->(coruscant),
+  (denon)-[:ADJACENT_TO {hyperspaceroute: 'Hydian Way'}]->(exodeen),
+  (exodeen)-[:ADJACENT_TO {hyperspaceroute: 'Nanth ri Route'}]->(quellor),
+  (exodeen)-[:ADJACENT_TO {hyperspaceroute: 'Hydian Way'}]->(trellen),
+  (quellor)-[:ADJACENT_TO {hyperspaceroute: 'Quellor Run'}]->(commenor),
+  (trellen)-[:ADJACENT_TO {hyperspaceroute: 'Hydian Way'}]->(fedalle),
+  (fedalle)-[:ADJACENT_TO {hyperspaceroute: 'Hydian Way'}]->(aldraig),
+  (aldraig)-[:ADJACENT_TO {hyperspaceroute: 'Hydian Way'}]->(brentaal),
+  (coruscant)-[:ADJACENT_TO {hyperspaceroute: 'Perlimian Trade Route'}]->(brentaal),
+  (trellen)-[:ADJACENT_TO {hyperspaceroute: 'Trellen Trade Route'}]->(commenor),
+  (fedalle)-[:ADJACENT_TO {hyperspaceroute: 'Fedalle Run'}]->(commenor),
+  (commenor)-[:ADJACENT_TO {hyperspaceroute: 'Commenor Run'}]->(alderaan),
+  (brentaal)-[:ADJACENT_TO {hyperspaceroute: 'Commenor Run'}]->(alderaan),
+  (coruscant)-[:ADJACENT_TO {hyperspaceroute: 'Byss Run'}]->(empress_teta),
+  (empress_teta)-[:ADJACENT_TO {hyperspaceroute: 'Byss Run'}]->(byss)
+----
+//graph
+
+The following three sections will explain how can Santa find the best path through the Galaxy to accomplish his mission by teaming with the Graph Database power and the force...
+
+== Exploring the Galaxy ==
+Just by looking at the model, Santa knows that a Planet BELONGS_TO a region, that a sector CONTAINS planets, that a Planet is AFFILIATED_TO a Political System and that planets are NEIGHBOR_OR or are ADJACENT_TO other planets via plain space or link:http://starwars.wikia.com/wiki/Hyperspace[Hyperspace] Routes, respectively. However, he also knows that these relationships don't necesarily exist among all the entities in the data set.
+
+The first thing to explore is the topology of the galaxy.
+
+=== The Topology ===
+
+Santa can know basic things as the number of planets, sectors an regions with very simple and basic queries as:
+[source,cypher]
+----
+MATCH (p:Planet) RETURN count(p) as Planets
+----
+//table
+
+In the same way he can know there are 13 Sectors, 7 Regions and 6 Political Systems.
+
+The next interesting thing he can ask himself is if there are any isolated planets:
+[source,cypher]
+----
+MATCH (p:Planet) WHERE NOT ()-[:ADJACENT_TO|NEIGHBOR_OF]-(p)
+RETURN p as IsolatedPlanets
+----
+//table
+
+There aren't. Therefore, every planet is attainable via hyperspace or a reasonable short route via plain space. Next, he can know the five most populated sectors:
+
+[source,cypher]
+----
+MATCH (s:Sector)-[:CONTAINS]->(p:Planet) 
+RETURN s.name as Sector, count (p) as No_of_Planets 
+ORDER BY No_of_Planets DESC LIMIT 5
+----
+//table
+
+And the 5 longer Hyperspace Routes:
+[source,cypher]
+----
+MATCH ()-[r:ADJACENT_TO]->()  WITH r.hyperspaceroute AS routes
+RETURN DISTINCT(routes) as HyperSpaceroute, count(routes) as length 
+ORDER BY length DESC LIMIT 5
+----
+//table
+
+Which planets belong to the same Sector as Tatooine's?
+[source,cypher]
+----
+MATCH (s:Sector)-[:CONTAINS]->(p:Planet{name: 'Tatooine'})
+MATCH (p1:Planet)<-[:CONTAINS]-(s) WHERE p<>p1 
+RETURN p1.name as Planet
+----
+//table
+
+Santa can easily discover that evey planet belongs to a region, but not all planets are contained in a Sector. In which regions are these planets located?
+
+[source,cypher]
+----
+MATCH (p:Planet)-[:BELONGS_TO]->(r:Region)
+WHERE NOT ()-[:CONTAINS]->(p)
+RETURN DISTINCT r.name as Region, count(p) as Number_of_Planets 
+ORDER BY Number_of_Planets DESC
+----
+//table
+
+Which are the best connected planets?
+[source,cypher]
+----
+MATCH (p:Planet)-[rels:ADJACENT_TO|NEIGHBOR_OF*1]->()
+RETURN p.name as Planet, count(rels) as Number_of_Connections ORDER BY Number_of_Connections DESC LIMIT 5
+----
+//table
+
+_Since Tatooine is highly connected, and belong to the most populated sector Santa decides to start in Tatooine and then to find its way to Alderaan_
+
+The shortest path from Tatooine to Alderaan using either the Hyperspace or plain Space is the following:
+[source,cypher]
+----
+MATCH p=shortestPath((p1:Planet{name: 'Tatooine'})-[r:ADJACENT_TO|NEIGHBOR_OF*]-(p2:Planet{name:'Alderaan'}))
+RETURN p
+----
+//graph
+
+=== The Dynamics ===
+
+Once Santa has a grasp of the topology of the Galaxy, he can start understanding its dynamics. With similar queries he can easily know that there are different Political Systems in the Galaxy. Here the power of graph databases can help us to know, for example, which is the dominating political force?
+[source,cypher]
+----
+MATCH (p:Planet)-[:AFFILIATED_TO]->(ps:Political_System)
+RETURN distinct ps.system as Political_System, count(p) as Affiliated_Planets 
+ORDER BY Affiliated_Planets DESC
+----
+//table
+
+Which are the most politicaly stable/diverse regions?
+[source,cypher]
+----
+MATCH (r:Region)<-[:BELONGS_TO]-()-[:AFFILIATED_TO]->(ps:Political_System)
+RETURN r.name as Region, count(DISTINCT ps) as No_of_Political_Systems
+ORDER BY No_of_Political_Systems 
+----
+//table
+
+In which sectors and regions is the Galactic Empire better stablished?
+[source,cypher]
+----
+MATCH (r:Region)<-[:BELONGS_TO]-(p:Planet)<-[:CONTAINS]-(s:Sector)
+WHERE (p)-[:AFFILIATED_TO]->(:Political_System {system: 'Galactic Empire'})
+RETURN distinct r.name as Region, s.name as Sector, count(distinct p) as Planets ORDER BY Planets DESC
+----
+//table
+
+=== Interacting with the graph ===
+
+_Now that Santa has a basic knowledge of the can now interact with the graph using Cypher. However, everything indicates he will have to deal with the Galactic Empire. After a little research he finds out he has to pay a tax of 100 link:http://starwars.wikia.com/wiki/Galactic_Credit_Standard[Imperial Credits] for every planet affiliated to the Galactic Empire he find in his path._
+
+Which is the smallest path using the total taxes as the main metric?
+
+First he can set the "tax" property in every planet according to their political affiliation.
+
+[source,cypher]
+----
+MATCH (p:Planet) SET p.tax=0
+----
+
+[source,cypher]
+----
+MATCH (p:Planet)-[:AFFILIATED_TO]->(:Political_System {system:'Galactic Empire'})
+SET p.tax=100
+----
+
+And now calculate the shortest path according to the tax metric:
+[source,cypher]
+----
+MATCH path=(p1:Planet{name: 'Tatooine'})-[r:ADJACENT_TO|NEIGHBOR_OF*1..15]-(p2:Planet{name:'Alderaan'})
+RETURN reduce(tax=0, p in nodes(path) | tax+p.tax) AS TotalTax, [p in nodes(path) | p.name] as Planet, [p in nodes(path) | p.tax] as Tax
+    ORDER BY TotalTax ASC
+    LIMIT 1
+----
+//table
+
+(I limited this query for paths of length 15 or smaller due to the Gist server limitations)
+
+Santa can note that the path is longer (14 planets compared to 12 he found above) but total tax is smaller. He can easily verify this by calculating the total tax for the shortest path queried before:
+[source,cypher]
+----
+MATCH path=shortestpath((p1:Planet{name: 'Tatooine'})-[r:ADJACENT_TO|NEIGHBOR_OF*]-(p2:Planet{name:'Alderaan'}))
+RETURN reduce(tax=0, p in nodes(path) | tax+p.tax) AS TotalTax, [p in nodes(path) | p.name] as Planet, [p in nodes(path) | p.tax] as Tax
+    ORDER BY TotalTax ASC
+    LIMIT 1
+----
+//table
+
+These metrics can be set in the relationships as well, for example. The amont of fuel needed. We can assume that fuel needed for hyperspace jumps among adjacent planets is 10 times larger than for nearby planets in plain space.
+
+He can therefore set the following properties in relationships:
+[source,cypher]
+----
+MATCH ()-[r:ADJACENT_TO]->() SET r.fuel=10
+----
+[source,cypher]
+----
+MATCH ()-[r:NEIGHBOR_OF]->() SET r.fuel=1
+----
+
+And to use this new property to find shortest paths according to the fuel metric but keeping in mind the tax as well:
+[source,cypher]
+----
+MATCH path=(p1:Planet{name: 'Tatooine'})-[r:ADJACENT_TO|NEIGHBOR_OF*1..15]-(p2:Planet{name:'Alderaan'})
+RETURN reduce(fuel = 0, r in relationships(path)| fuel+r.fuel) AS TotalFuel, reduce(tax=0, p in nodes(path) | tax+p.tax) AS TotalTax, [p in nodes(path) | p.name] as Planet
+    ORDER BY TotalTax ASC
+    LIMIT 3
+----
+//table
+
+For some paths Santa would have to pay the same amount of tax, but he can easily make up his mind one according to the one where the amount of fuel is the smallest.
+
+Now, he can be prepared to sudden changes in the Galaxy dynamics. For example, if the Empire suddenly discovers that Commenor doesn't tax for the system and stablishes a blockage to it. Santa can find his way around Commenor with the following query and always keeping in mind to keep the tax at its smallest:
+[source,cypher]
+----
+MATCH (commenor:Planet {name:'Commenor'}), path=(p1:Planet{name: 'Tatooine'})-[r:ADJACENT_TO|NEIGHBOR_OF*1..15]-(p2:Planet{name:'Alderaan'})
+WHERE NONE(p IN nodes(path) WHERE p=commenor)
+RETURN reduce(fuel = 0, r in relationships(path)| fuel+r.fuel) AS TotalFuel, reduce(tax=0, p in nodes(path) | tax+p.tax) AS TotalTax, [p in nodes(path) | p.name] as Planet
+    ORDER BY TotalTax ASC
+    LIMIT 1
+----
+//table
+
+Let's suppose Santa has some friends in the Jedi Order, and that he wants to visit a planet affiliated to this Political System, he can still optimize his way adding this condition with the following query:
+[source,cypher]
+----
+MATCH path=(p1:Planet{name: 'Tatooine'})-[r:ADJACENT_TO|NEIGHBOR_OF*1..15]-(p2:Planet{name:'Alderaan'})
+WHERE ANY(p IN nodes(path) WHERE (p)-[:AFFILIATED_TO]-(:Political_System{system: 'Jedi Order'}))
+RETURN reduce(fuel = 0, r in relationships(path)| fuel+r.fuel) AS TotalFuel, reduce(tax=0, p in nodes(path) | tax+p.tax) AS TotalTax, [p in nodes(path) | p.name] as Planet
+    ORDER BY TotalTax ASC
+    LIMIT 3
+----
+//table
+
+Santa can keep playing around with very simple queries to gather intelligence about his trip. Using metrics as time travel through hyperspace and plain space, if he has any friends that can help him with Imperial Credits at some planets, etc. May the Graph be with him.
+
+An image of the portion of the Galaxy found in Santa's Graph Database is the following:
+
+image::https://drive.google.com/thumbnail?id=0B17R8cRB8tsoRHVPUVBza2hkRTg[]
+
+== Application ==
+As a physical security professional I am interested in tomorrow's security systems. We cannot longer ignore the fact that physical and cyber world are getting closer and that security specialists must think holistically. Graph databases is an excelent way of doing this.
+
+I recently found a great thesis authored by Carmen Cheh called link:https://www.ideals.illinois.edu/bitstream/handle/2142/72850/Carmen_Cheh.pdf?sequence=1[The Cyber-Physical Topology Language: Definition and Operations] where she develops an ontology for the modeling of cyber-physical systems. My galaxy model is a baby example of her work, where you have cyber paths (hyperspace routes) and physical paths (plain space). These objects have properties and are related with other objects in a similar way as the model depicted in this Gist.
+
+Buildings and organizations have different systems that can be modeled as a graph, but these systems aren't standardized enough as to model the in a unique way. Teaming up with computers we can find critical assets, penetration times, attack metrics, etc. Without being a computer expert I find Neo4j the most useful tool for achieving good security designs.
+
+---
+
+I would like to leave you with an image of the early planning of this gist...
+
+image::https://drive.google.com/thumbnail?id=0B17R8cRB8tsoTmpLMW5OMmZtUEp1Z0pYZzFzcFhfOXJ0SUpF[]
+
+
+May the Force be with you.

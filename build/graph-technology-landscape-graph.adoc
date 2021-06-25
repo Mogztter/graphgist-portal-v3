@@ -1,0 +1,810 @@
+= Graph Technology Landscape
+:neo4j-version:3.4
+:author: Rik Van Bruggen
+:twitter: @rvanbruggen
+:style: #54A835/#1078B5/white:Colorized(name)
+
+Here's the Graph Technology Landscape Graph, based on the amazing work from link:https://twitter.com/szenyo[Janos Szendi-Varga]. I took his basic link:https://github.com/graphaware/graph-technology-landscape/blob/master/GraphTechnologyLandscape.csv[CSV file], and imported it into a link:https://docs.google.com/spreadsheets/d/17WuC_B8RWzsSS8pw-NtY8qWeFFQGCGnCR5uXmENOFUI/edit?usp=sharing[Google Sheet]. Then I did some minor modelling changes and some data cleanup, and ended up with a model like this:
+
+image::https://lh3.googleusercontent.com/UySQjng34upRrB_vOtVroFkSNQvyw4j-gVDg9Slpg5kz9e-KF7i00nQ4Dt4ZHh5CXkVado4pwV1_IIrAng9z0RRNDXN5bF_HIj0ThJy8AxYKmjEcEs2lv9wL8YzMor7iw6pztsXA7g=w1920-h1080[Datamodel]
+Once I had that, I was able to load the data pretty easily, using link:https://gist.github.com/rvanbruggen/e0d81b6d64c52803dec1135723abd352#file-graphtechnologygraph_import-cypher[this import script], but because that import script uses link:https://neo4j-contrib.github.io/neo4j-apoc-procedures/[APOC], I cannot use that mechanism in here. Suffice to say that I exported the data into a "cypher-only" import script, which is what we will use on this graphgist.
+
+= Let's load the data
+
+I will load the data with a cypher-only import script, and it's about 700 lines (215 nodes, 496 relationships) that needs to get created. Here it goes:
+
+//setup
+//hide
+[source,cypher]
+----
+CREATE (:`Product`:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://www.7vortex.com", `name`:"7vortex", `UNIQUE IMPORT ID`:0});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"https://bitnine.net/agensgraph-2/", `name`:"AgensGraph", `UNIQUE IMPORT ID`:1});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"http://graphalchemist.github.io/Alchemy/#/", `name`:"Alchemy.js", `UNIQUE IMPORT ID`:2});
+CREATE (:`Product`:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://franz.com/agraph/allegrograph/", `name`:"AllegroGraph", `UNIQUE IMPORT ID`:3});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://www.amazon.com", `name`:"Amazon", `UNIQUE IMPORT ID`:4});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"https://aws.amazon.com/neptune/", `name`:"Amazon Neptune", `UNIQUE IMPORT ID`:5});
+CREATE (:`Service`:`UNIQUE IMPORT LABEL` {`link`:"https://aws.amazon.com", `name`:"Amazon Web Services", `UNIQUE IMPORT ID`:6});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"https://www.cambridgesemantics.com/product/anzograph/", `name`:"AnzoGraph", `UNIQUE IMPORT ID`:7});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"http://giraph.apache.org", `name`:"Apache Giraph", `UNIQUE IMPORT ID`:8});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"http://marmotta.apache.org", `name`:"Apache Marmotta", `UNIQUE IMPORT ID`:9});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"https://github.com/neo4j-contrib/neo4j-apoc-procedures", `name`:"APOC", `UNIQUE IMPORT ID`:10});
+CREATE (:`Product`:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://www.arangodb.com", `name`:"ArangoDB", `UNIQUE IMPORT ID`:11});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://arcadeanalytics.com", `name`:"Arcade Analytics", `UNIQUE IMPORT ID`:12});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://www.ayasdi.com", `name`:"Ayasdi", `UNIQUE IMPORT ID`:13});
+CREATE (:`Information resource`:`UNIQUE IMPORT LABEL` {`link`:"https://www.oreilly.com/library/view/beginning-neo4j/9781484212271/", `name`:"Beginning Neo4j", `UNIQUE IMPORT ID`:14});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://bitnine.net", `name`:"Bitnine", `UNIQUE IMPORT ID`:15});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"https://www.blazegraph.com", `name`:"Blazegraph", `UNIQUE IMPORT ID`:16});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"http://brightstardb.com", `name`:"BrightstarDB", `UNIQUE IMPORT ID`:17});
+CREATE (:`Information resource`:`UNIQUE IMPORT LABEL` {`link`:"https://www.packtpub.com/application-development/building-web-applications-python-and-neo4j/?utm_source=POD&utm_medium=referral&utm_campaign=1783983981", `name`:"Building Web Applications with Python and Neo4j", `UNIQUE IMPORT ID`:18});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://cambridge-intelligence.com/", `name`:"Cambridge Intelligence", `UNIQUE IMPORT ID`:19});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"http://cayley.io", `name`:"Cayley", `UNIQUE IMPORT ID`:20});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://cleargraph.io", `name`:"ClearGraph", `UNIQUE IMPORT ID`:21});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"http://confluent.io", `name`:"Confluent", `UNIQUE IMPORT ID`:22});
+CREATE (:`Conference`:`UNIQUE IMPORT LABEL` {`link`:"https://www.meetup.com/Connected-Data-London/", `name`:"Connected Data London", `UNIQUE IMPORT ID`:23});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"https://cytoscape.org", `name`:"Cytoscape", `UNIQUE IMPORT ID`:24});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"https://d3js.org", `name`:"D3.js", `UNIQUE IMPORT ID`:25});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"http://datatovalue.co.uk", `name`:"Data To Value", `UNIQUE IMPORT ID`:26});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"https://graphaware.com/products/", `name`:"Databridge", `UNIQUE IMPORT ID`:27});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://www.datafactz.com", `name`:"DataFactZ", `UNIQUE IMPORT ID`:28});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://www.datameer.com", `name`:"Datameer", `UNIQUE IMPORT ID`:29});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"https://www.datastax.com", `name`:"Datastax Enterprise", `UNIQUE IMPORT ID`:30});
+CREATE (:`Product`:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://dgraph.io", `name`:"Dgraph", `UNIQUE IMPORT ID`:31});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://www.elastic.co/", `name`:"Elastic", `UNIQUE IMPORT ID`:32});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"https://www.elastic.co/products/stack/graph", `name`:"ElasticSearch Graph", `UNIQUE IMPORT ID`:33});
+CREATE (:`Service`:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://elastx.se/en", `name`:"Elastx", `UNIQUE IMPORT ID`:34});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://emcien.com", `name`:"Emicien", `UNIQUE IMPORT ID`:35});
+CREATE (:`Service`:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://www.engineyard.com", `name`:"EngineYard", `UNIQUE IMPORT ID`:36});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://www.experoinc.com", `name`:"Expero", `UNIQUE IMPORT ID`:37});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://factgem.com", `name`:"FactGem", `UNIQUE IMPORT ID`:38});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"https://fauna.com", `name`:"FaunaDB", `UNIQUE IMPORT ID`:39});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"https://github.com/twitter-archive/flockdb", `name`:"FlockDB", `UNIQUE IMPORT ID`:40});
+CREATE (:`Conference`:`UNIQUE IMPORT LABEL` {`link`:"https://fosdem.org/", `name`:"FOSDEM", `UNIQUE IMPORT ID`:41});
+CREATE (:`Graph Query Language`:`UNIQUE IMPORT LABEL` {`link`:"http://g-core.org", `name`:"G-CORE", `UNIQUE IMPORT ID`:42});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"https://gephi.org", `name`:"Gephi", `UNIQUE IMPORT ID`:43});
+CREATE (:`Information resource`:`UNIQUE IMPORT LABEL` {`link`:"http://www.lulu.com/shop/michael-hunger-and-david-montag-and-andreas-kollegger/good-relationships-the-spring-data-neo4j-guide-book/paperback/product-20201195.html", `name`:"Good Relationships - The Spring Data Neo4j Guide Book", `UNIQUE IMPORT ID`:44});
+CREATE (:`Service`:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://cloud.google.com", `name`:"Google Cloud Platform", `UNIQUE IMPORT ID`:45});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://www.governorsoftware.com", `name`:"Governor", `UNIQUE IMPORT ID`:46});
+CREATE (:`Graph Query Language`:`UNIQUE IMPORT LABEL` {`link`:"https://gql.today", `name`:"GQL", `UNIQUE IMPORT ID`:47});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"http://gra.fo", `name`:"Grafo", `UNIQUE IMPORT ID`:48});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"http://grakn.ai", `name`:"GRAKN.AI", `UNIQUE IMPORT ID`:49});
+CREATE (:`Information resource`:`UNIQUE IMPORT LABEL` {`link`:"https://www.oreilly.com/library/view/graph-algorithms/9781492047674/", `name`:"Graph Algorithms", `UNIQUE IMPORT ID`:50});
+CREATE (:`Information resource`:`UNIQUE IMPORT LABEL` {`link`:"https://www.amazon.com/Graph-Analysis-Visualization-Discovering-Opportunity-ebook/dp/B00T1JQUQE", `name`:"Graph Analysis and Visualization: Discovering Business Opportunity in Linked Data", `UNIQUE IMPORT ID`:51});
+CREATE (:`Information resource`:`UNIQUE IMPORT LABEL` {`link`:"https://www.oreilly.com/library/view/graph-data-modeling/9781634621236/", `name`:"Graph Data Modeling for NoSQL and SQL: Visualize Structure and Meaning", `UNIQUE IMPORT ID`:52});
+CREATE (:`Information resource`:`UNIQUE IMPORT LABEL` {`link`:"https://www.oreilly.com/library/view/graph-databases-2nd/9781491930885/", `name`:"Graph Databases", `UNIQUE IMPORT ID`:53});
+CREATE (:`Information resource`:`UNIQUE IMPORT LABEL` {`link`:"https://www.manning.com/books/graph-databases-in-action", `name`:"Graph Databases in Action", `UNIQUE IMPORT ID`:54});
+CREATE (:`Information resource`:`UNIQUE IMPORT LABEL` {`link`:"https://www.manning.com/books/graph-powered-machine-learning", `name`:"Graph-Powered Machine Learning", `UNIQUE IMPORT ID`:55});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"http://graphaware.com", `name`:"GraphAware", `UNIQUE IMPORT ID`:56});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"https://github.com/graphaware/neo4j-framework", `name`:"GraphAware Neo4j Framework", `UNIQUE IMPORT ID`:57});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"https://graphbase.ai", `name`:"GraphBase", `UNIQUE IMPORT ID`:58});
+CREATE (:`Conference`:`UNIQUE IMPORT LABEL` {`link`:"https://graphconnect.com", `name`:"GraphConnect", `UNIQUE IMPORT ID`:59});
+CREATE (:`Conference`:`UNIQUE IMPORT LABEL` {`link`:"http://graphday.com", `name`:"GraphDay", `UNIQUE IMPORT ID`:60});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"http://graphdb.ontotext.com", `name`:"GraphDB", `UNIQUE IMPORT ID`:61});
+CREATE (:`Service`:`Company`:`UNIQUE IMPORT LABEL` {`link`:"http://graphenedb.com", `name`:"GrapheneDB", `UNIQUE IMPORT ID`:63});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"http://grapheverywhere.com", `name`:"GraphEverywhere", `UNIQUE IMPORT ID`:64});
+CREATE (:`Service`:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://www.graphgrid.com", `name`:"GraphGrid", `UNIQUE IMPORT ID`:65});
+CREATE (:`Product`:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://graphileon.com/", `name`:"Graphileon", `UNIQUE IMPORT ID`:66});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://www.graphistry.com/", `name`:"Graphistry", `UNIQUE IMPORT ID`:67});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://graphlytic.biz", `name`:"Graphlytic", `UNIQUE IMPORT ID`:68});
+CREATE (:`Graph Query Language`:`UNIQUE IMPORT LABEL` {`link`:"https://graphql.org", `name`:"GraphQL", `UNIQUE IMPORT ID`:69});
+CREATE (:`Service`:`Company`:`UNIQUE IMPORT LABEL` {`link`:"http://graphstory.com", `name`:"GraphStory", `UNIQUE IMPORT ID`:70});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"https://spark.apache.org/graphx/", `name`:"GraphX", `UNIQUE IMPORT ID`:71});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"https://www.kineviz.com/graphxr/", `name`:"GraphXR", `UNIQUE IMPORT ID`:72});
+CREATE (:`Graph Query Language`:`UNIQUE IMPORT LABEL` {`link`:"http://tinkerpop.apache.org/gremlin.html", `name`:"Gremlin", `UNIQUE IMPORT ID`:73});
+CREATE (:`Service`:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://www.heroku.com", `name`:"Heroku", `UNIQUE IMPORT ID`:74});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"https://github.com/rayokota/hgraphdb", `name`:"HGraphDB", `UNIQUE IMPORT ID`:75});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"https://www.huaweicloud.com/en-us/product/ges.html", `name`:"Huawei Graph Engine Service", `UNIQUE IMPORT ID`:76});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"http://hubscope.com", `name`:"Hubscope", `UNIQUE IMPORT ID`:77});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"http://hume.ga", `name`:"Hume", `UNIQUE IMPORT ID`:78});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"http://hypergraphdb.org", `name`:"HyperGraphDB", `UNIQUE IMPORT ID`:79});
+CREATE (:`Product`:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://www.objectivity.com/products/infinitegraph/", `name`:"InfiniteGraph", `UNIQUE IMPORT ID`:80});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"http://infogrid.org", `name`:"InfoGrid", `UNIQUE IMPORT ID`:81});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"http://innointel.com", `name`:"Innointel", `UNIQUE IMPORT ID`:82});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://www.intelligenttag.com", `name`:"intelligentTag", `UNIQUE IMPORT ID`:83});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://www.intellipeaksolutions.com", `name`:"IntelliPeak Solutions,Inc.", `UNIQUE IMPORT ID`:84});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"http://janusgraph.org", `name`:"JanusGraph", `UNIQUE IMPORT ID`:85});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"https://www.confluent.io/product/confluent-platform/", `name`:"Kafka", `UNIQUE IMPORT ID`:86});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://www.kernix.com", `name`:"Kernix", `UNIQUE IMPORT ID`:87});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"https://cambridge-intelligence.com/keylines/", `name`:"KeyLines", `UNIQUE IMPORT ID`:88});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://www.kineviz.com/", `name`:"Kineviz", `UNIQUE IMPORT ID`:89});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://kubrickgroup.com/", `name`:"Kubrick", `UNIQUE IMPORT ID`:90});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"http://larus-ba.it", `name`:"LARUS Business Automation", `UNIQUE IMPORT ID`:91});
+CREATE (:`Information resource`:`UNIQUE IMPORT LABEL` {`link`:"https://www.packtpub.com/hardware-and-creative/learning-cypher", `name`:"Learning Cypher", `UNIQUE IMPORT ID`:92});
+CREATE (:`Information resource`:`UNIQUE IMPORT LABEL` {`link`:"https://www.packtpub.com/big-data-and-business-intelligence/learning-neo4j-3x-second-edition", `name`:"Learning Neo4j 3.x – Second Edition", `UNIQUE IMPORT ID`:93});
+CREATE (:`Product`:`Company`:`UNIQUE IMPORT LABEL` {`link`:"http://linkurio.us", `name`:"Linkurious", `UNIQUE IMPORT ID`:94});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://marionete.co.uk", `name`:"Marionete", `UNIQUE IMPORT ID`:95});
+CREATE (:`Product`:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://www.marklogic.com", `name`:"Marklogic", `UNIQUE IMPORT ID`:96});
+CREATE (:`Information resource`:`UNIQUE IMPORT LABEL` {`link`:"https://www.amazon.com/Mastering-Gephi-Network-Visualization-Cherven/dp/1783987340", `name`:"Mastering Gephi Network Visualization", `UNIQUE IMPORT ID`:97});
+CREATE (:`Product`:`Company`:`UNIQUE IMPORT LABEL` {`link`:"http://memgraph.com", `name`:"Memgraph", `UNIQUE IMPORT ID`:98});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://www.menome.com", `name`:"Menome", `UNIQUE IMPORT ID`:99});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"http://www.microsoft.com", `name`:"Microsoft", `UNIQUE IMPORT ID`:100});
+CREATE (:`Service`:`UNIQUE IMPORT LABEL` {`link`:"http://azure.microsoft.com", `name`:"Microsoft Azure", `UNIQUE IMPORT ID`:101});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"https://azure.microsoft.com/en-us/services/cosmos-db/", `name`:"Microsoft Azure Cosmos DB", `UNIQUE IMPORT ID`:102});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"https://www.graphengine.io", `name`:"Microsoft Graph Engine", `UNIQUE IMPORT ID`:103});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"https://docs.microsoft.com/en-us/sql/relational-databases/graphs/sql-graph-architecture?view=sql-server-2017", `name`:"Microsoft SQL Server 2017 Graph", `UNIQUE IMPORT ID`:104});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://www.millersoft.ltd.uk", `name`:"Millersoft", `UNIQUE IMPORT ID`:105});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://muutto.de", `name`:"muutto®", `UNIQUE IMPORT ID`:106});
+CREATE (:`Product`:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://neo4j.com", `name`:"Neo4j", `UNIQUE IMPORT ID`:107});
+CREATE (:`Information resource`:`UNIQUE IMPORT LABEL` {`link`:"https://www.amazon.com/gp/product/B0786LZL6Y/ref=dbs_a_def_rwt_bibl_vppi_i0", `name`:"Neo4j : des données et des graphes - II. Déploiement", `UNIQUE IMPORT ID`:108});
+CREATE (:`Information resource`:`UNIQUE IMPORT LABEL` {`link`:"https://neo4j.com/neo4j-graphdatenbank-book/", `name`:"Neo4j 2.0 – Eine Graphdatenbank für alle", `UNIQUE IMPORT ID`:109});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"https://neo4j.com/bloom/", `name`:"Neo4j Bloom", `UNIQUE IMPORT ID`:110});
+CREATE (:`Information resource`:`UNIQUE IMPORT LABEL` {`link`:"https://www.oreilly.com/library/view/neo4j-cookbook/9781783287253/", `name`:"Neo4j Cookbook", `UNIQUE IMPORT ID`:120});
+CREATE (:`Information resource`:`UNIQUE IMPORT LABEL` {`link`:"https://www.oreilly.com/library/view/neo4j-essentials/9781783555178/", `name`:"Neo4j Essentials", `UNIQUE IMPORT ID`:121});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"https://neo4j.com/developer/neo4j-etl/", `name`:"Neo4j ETL", `UNIQUE IMPORT ID`:122});
+CREATE (:`Information resource`:`UNIQUE IMPORT LABEL` {`link`:"https://www.oreilly.com/library/view/neo4j-graph-data/9781784393441/", `name`:"Neo4j Graph Data Modeling", `UNIQUE IMPORT ID`:123});
+CREATE (:`Information resource`:`UNIQUE IMPORT LABEL` {`link`:"https://www.oreilly.com/library/view/neo4j-high-performance/9781783555154/", `name`:"Neo4j High Performance", `UNIQUE IMPORT ID`:124});
+CREATE (:`Information resource`:`UNIQUE IMPORT LABEL` {`link`:"https://www.goodreads.com/book/show/15743991-neo4j-in-action", `name`:"Neo4j in Action", `UNIQUE IMPORT ID`:125});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://www.netconsult.se", `name`:"NetConsult", `UNIQUE IMPORT ID`:126});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"https://www.norconex.com", `name`:"Norconex", `UNIQUE IMPORT ID`:127});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://www.novencia.com", `name`:"Novencia", `UNIQUE IMPORT ID`:128});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"http://objectivity.com", `name`:"Objectivity", `UNIQUE IMPORT ID`:130});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"http://www.omen.sg", `name`:"Omen", `UNIQUE IMPORT ID`:131});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://www.onepointltd.com", `name`:"OnePoint", `UNIQUE IMPORT ID`:132});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://opencredo.com", `name`:"OpenCredo", `UNIQUE IMPORT ID`:133});
+CREATE (:`Graph Query Language`:`UNIQUE IMPORT LABEL` {`link`:"http://www.opencypher.org", `name`:"OpenCypher", `UNIQUE IMPORT ID`:134});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"http://www.oracle.com", `name`:"Oracle", `UNIQUE IMPORT ID`:135});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"https://www.oracle.com/technetwork/oracle-labs/parallel-graph-analytix/overview/index.html", `name`:"Oracle Parallel Graph AnalytiX (PGX)", `UNIQUE IMPORT ID`:136});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"https://www.oracle.com/technetwork/database/options/spatialandgraph/overview/index.html", `name`:"Oracle Spatial and Graph", `UNIQUE IMPORT ID`:137});
+CREATE (:`Product`:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://orientdb.com", `name`:"OrientDB", `UNIQUE IMPORT ID`:138});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"http://palantir.com", `name`:"Palantir", `UNIQUE IMPORT ID`:139});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://www.paterva.com/", `name`:"Paterva", `UNIQUE IMPORT ID`:141});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"https://github.com/pentaho/pentaho-kettle", `name`:"Pentaho Kettle", `UNIQUE IMPORT ID`:142});
+CREATE (:`Graph Query Language`:`UNIQUE IMPORT LABEL` {`link`:"http://pgql-lang.org", `name`:"PGQL", `UNIQUE IMPORT ID`:143});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://www.pitneybowes.com/", `name`:"Pitney Bowes", `UNIQUE IMPORT ID`:144});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"https://plot.ly/javascript/", `name`:"Plotly.js", `UNIQUE IMPORT ID`:145});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://www.ponderasolutions.com", `name`:"Pondera Solutions", `UNIQUE IMPORT ID`:146});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"http://poolparty.biz", `name`:"PoolParty", `UNIQUE IMPORT ID`:147});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"http://www.popotojs.com", `name`:"Popoto.js", `UNIQUE IMPORT ID`:148});
+CREATE (:`Information resource`:`UNIQUE IMPORT LABEL` {`link`:"https://www.oreilly.com/library/view/practical-neo4j/9781484200223/", `name`:"Practical Neo4j", `UNIQUE IMPORT ID`:149});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://www.prodyna.com", `name`:"Prodyna", `UNIQUE IMPORT ID`:150});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"http://quantumanalytics.ch", `name`:"Quantum Analytics AG", `UNIQUE IMPORT ID`:151});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://www.quantyca.it", `name`:"Quantyca", `UNIQUE IMPORT ID`:152});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"http://redisgraph.io", `name`:"RedisGraph", `UNIQUE IMPORT ID`:153});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://redislabs.com/", `name`:"RedisLabs", `UNIQUE IMPORT ID`:154});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"http://www.sap.com", `name`:"SAP", `UNIQUE IMPORT ID`:155});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"https://https://blogs.sap.com/2016/08/01/what-s-new-in-sap-hana-sps12-sap-hana-graph-engine/open.sap.com/courses/hsgra1", `name`:"Sap Hana Graph", `UNIQUE IMPORT ID`:156});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"http://www.semspect.de", `name`:"SemSpect", `UNIQUE IMPORT ID`:157});
+CREATE (:`Information resource`:`UNIQUE IMPORT LABEL` {`link`:"http://www.amazon.com/gp/product/1934356921/ref=as_li_tf_tl?ie=UTF8&camp=1789&creative=9325&creativeASIN=1934356921&linkCode=as2&tag=neotech05-20", `name`:"Seven Databases in Seven Weeks", `UNIQUE IMPORT ID`:158});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"http://sigmajs.org", `name`:"Sigma.js", `UNIQUE IMPORT ID`:159});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://skillsmatter.com", `name`:"Skills Matter", `UNIQUE IMPORT ID`:160});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://www.softlinkinformation.com", `name`:"Softlink", `UNIQUE IMPORT ID`:161});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"http://sparsity-technologies.com", `name`:"Sparksee", `UNIQUE IMPORT ID`:162});
+CREATE (:`Graph Query Language`:`UNIQUE IMPORT LABEL` {`link`:"https://www.w3.org/TR/rdf-sparql-query/", `name`:"SparQL", `UNIQUE IMPORT ID`:163});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"http://spring.io", `name`:"Spring", `UNIQUE IMPORT ID`:164});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"http://www.sqhtech.com/", `name`:"SQH Tech", `UNIQUE IMPORT ID`:165});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"https://sqrrl.com", `name`:"Sqrrl", `UNIQUE IMPORT ID`:166});
+CREATE (:`Product`:`Company`:`UNIQUE IMPORT LABEL` {`link`:"http://stardog.com", `name`:"Stardog", `UNIQUE IMPORT ID`:167});
+CREATE (:`Product`:`Company`:`UNIQUE IMPORT LABEL` {`link`:"http://structr.com", `name`:"Structr", `UNIQUE IMPORT ID`:169});
+CREATE (:`Information resource`:`UNIQUE IMPORT LABEL` {`link`:"https://entwickler.de/press/structr-126647.html", `name`:"Structr-Quelloffenes Daten-CMS auf Neo4j-Basis", `UNIQUE IMPORT ID`:170});
+CREATE (:`Product`:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://www.talend.com", `name`:"Talend", `UNIQUE IMPORT ID`:171});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://talkingraph.com/en-EN.html", `name`:"TalkingGraph", `UNIQUE IMPORT ID`:172});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"https://www.tibco.com/products/tibco-graph-database", `name`:"Tibco Graph Database", `UNIQUE IMPORT ID`:173});
+CREATE (:`Product`:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://www.tigergraph.com", `name`:"TigerGraph", `UNIQUE IMPORT ID`:174});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"https://github.com/tinkerpop/blueprints/wiki/tinkergraph", `name`:"TinkerGraph", `UNIQUE IMPORT ID`:175});
+CREATE (:`Product`:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://www.tomsawyer.com", `name`:"Tom Sawyer Software", `UNIQUE IMPORT ID`:176});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://trifork.com", `name`:"Trifork", `UNIQUE IMPORT ID`:177});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"https://turi.com", `name`:"Turi", `UNIQUE IMPORT ID`:178});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://unigraph.io", `name`:"UniGraph.io", `UNIQUE IMPORT ID`:179});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://uti-inc.com/", `name`:"UTI Inc.", `UNIQUE IMPORT ID`:180});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://va-worldwide.com/", `name`:"VA Worldwide", `UNIQUE IMPORT ID`:181});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"http://velocitydb.com", `name`:"VelocityDB", `UNIQUE IMPORT ID`:182});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"https://virtuoso.openlinksw.com", `name`:"Virtuoso", `UNIQUE IMPORT ID`:183});
+CREATE (:`Product`:`UNIQUE IMPORT LABEL` {`link`:"http://visjs.org", `name`:"vis.js", `UNIQUE IMPORT ID`:184});
+CREATE (:`Information resource`:`UNIQUE IMPORT LABEL` {`link`:"https://www.manning.com/books/visualizing-graph-data", `name`:"Visualizing Graph Data", `UNIQUE IMPORT ID`:185});
+CREATE (:`Company`:`UNIQUE IMPORT LABEL` {`link`:"http://we-yun.com", `name`:"We Yun", `UNIQUE IMPORT ID`:186});
+CREATE (:`Product`:`Company`:`UNIQUE IMPORT LABEL` {`link`:"https://www.yworks.com", `name`:"yWorks", `UNIQUE IMPORT ID`:187});
+CREATE (:`Tag`:`UNIQUE IMPORT LABEL` {`name`:"Analytics", `UNIQUE IMPORT ID`:188});
+CREATE (:`Tag`:`UNIQUE IMPORT LABEL` {`name`:"Analytic applications", `UNIQUE IMPORT ID`:189});
+CREATE (:`Tag`:`UNIQUE IMPORT LABEL` {`name`:"Visualization", `UNIQUE IMPORT ID`:190});
+CREATE (:`Tag`:`UNIQUE IMPORT LABEL` {`name`:"Infrastructure", `UNIQUE IMPORT ID`:192});
+CREATE (:`Tag`:`UNIQUE IMPORT LABEL` {`name`:"Database", `UNIQUE IMPORT ID`:193});
+CREATE (:`Tag`:`UNIQUE IMPORT LABEL` {`name`:"Graph DBMS", `UNIQUE IMPORT ID`:199});
+CREATE (:`Tag`:`UNIQUE IMPORT LABEL` {`name`:"Visualisation", `UNIQUE IMPORT ID`:200});
+CREATE (:`Tag`:`UNIQUE IMPORT LABEL` {`name`:"Knowledge Graph Solutions", `UNIQUE IMPORT ID`:201});
+CREATE (:`Tag`:`UNIQUE IMPORT LABEL` {`name`:"RDF", `UNIQUE IMPORT ID`:202});
+CREATE (:`Tag`:`UNIQUE IMPORT LABEL` {`name`:"Platform", `UNIQUE IMPORT ID`:203});
+CREATE (:`Tag`:`UNIQUE IMPORT LABEL` {`name`:"IaaS", `UNIQUE IMPORT ID`:204});
+CREATE (:`Tag`:`UNIQUE IMPORT LABEL` {`name`:"Multi-model", `UNIQUE IMPORT ID`:205});
+CREATE (:`Tag`:`UNIQUE IMPORT LABEL` {`name`:"Computing Engines", `UNIQUE IMPORT ID`:206});
+CREATE (:`Tag`:`UNIQUE IMPORT LABEL` {`name`:"Services", `UNIQUE IMPORT ID`:207});
+CREATE (:`Tag`:`UNIQUE IMPORT LABEL` {`name`:"Application frameworks and libraries", `UNIQUE IMPORT ID`:208});
+CREATE (:`Tag`:`UNIQUE IMPORT LABEL` {`name`:"Information resource", `UNIQUE IMPORT ID`:209});
+CREATE (:`Tag`:`UNIQUE IMPORT LABEL` {`name`:"Book", `UNIQUE IMPORT ID`:210});
+CREATE (:`Tag`:`UNIQUE IMPORT LABEL` {`name`:"Integration", `UNIQUE IMPORT ID`:211});
+CREATE (:`Tag`:`UNIQUE IMPORT LABEL` {`name`:"Information resources", `UNIQUE IMPORT ID`:212});
+CREATE (:`Tag`:`UNIQUE IMPORT LABEL` {`name`:"Conferences", `UNIQUE IMPORT ID`:213});
+CREATE (:`Tag`:`UNIQUE IMPORT LABEL` {`name`:"library", `UNIQUE IMPORT ID`:214});
+CREATE (:`Tag`:`UNIQUE IMPORT LABEL` {`name`:"fat client", `UNIQUE IMPORT ID`:215});
+CREATE (:`Tag`:`UNIQUE IMPORT LABEL` {`name`:"Professional Services", `UNIQUE IMPORT ID`:216});
+CREATE (:`Tag`:`UNIQUE IMPORT LABEL` {`name`:" Graph DBMS", `UNIQUE IMPORT ID`:217});
+CREATE (:`Tag`:`UNIQUE IMPORT LABEL` {`name`:"PaaS", `UNIQUE IMPORT ID`:218});
+CREATE (:`Tag`:`UNIQUE IMPORT LABEL` {`name`:"Graph Query Language", `UNIQUE IMPORT ID`:219});
+CREATE (:`Tag`:`UNIQUE IMPORT LABEL` {`name`:"Declarative", `UNIQUE IMPORT ID`:220});
+CREATE (:`Tag`:`UNIQUE IMPORT LABEL` {`name`:"Application", `UNIQUE IMPORT ID`:221});
+CREATE (:`Tag`:`UNIQUE IMPORT LABEL` {`name`:"Governance", `UNIQUE IMPORT ID`:222});
+CREATE (:`Tag`:`UNIQUE IMPORT LABEL` {`name`:"API", `UNIQUE IMPORT ID`:223});
+CREATE (:`Tag`:`UNIQUE IMPORT LABEL` {`name`:"Imperative", `UNIQUE IMPORT ID`:224});
+CREATE (:`Tag`:`UNIQUE IMPORT LABEL` {`name`:"Streaming", `UNIQUE IMPORT ID`:225});
+CREATE (:`Tag`:`UNIQUE IMPORT LABEL` {`name`:"Object database", `UNIQUE IMPORT ID`:226});
+CREATE (:`Tag`:`UNIQUE IMPORT LABEL` {`name`:"ETL", `UNIQUE IMPORT ID`:227});
+CREATE (:`Tag`:`UNIQUE IMPORT LABEL` {`name`:"Key-Value", `UNIQUE IMPORT ID`:228});
+CREATE (:`Tag`:`UNIQUE IMPORT LABEL` {`name`:"Library", `UNIQUE IMPORT ID`:229});
+CREATE (:`Tag`:`UNIQUE IMPORT LABEL` {`name`:"Resources", `UNIQUE IMPORT ID`:230});
+CREATE (:`Tag`:`UNIQUE IMPORT LABEL` {`name`:"Training", `UNIQUE IMPORT ID`:231});
+CREATE (:`Tag`:`UNIQUE IMPORT LABEL` {`name`:"Venue", `UNIQUE IMPORT ID`:232});
+CREATE (:`Tag`:`UNIQUE IMPORT LABEL` {`name`:"Fraud detection", `UNIQUE IMPORT ID`:233});
+CREATE INDEX ON :`Tag`(`name`);
+CREATE INDEX ON :`Information resource`(`name`);
+CREATE INDEX ON :`Graph Query Language`(`name`);
+CREATE INDEX ON :`Conference`(`name`);
+CREATE INDEX ON :`Company`(`name`);
+CREATE INDEX ON :`Service`(`name`);
+CREATE INDEX ON :`Product`(`name`);
+CREATE CONSTRAINT ON (node:`UNIQUE IMPORT LABEL`) ASSERT node.`UNIQUE IMPORT ID` IS UNIQUE;
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:0}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:188}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:0}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:189}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:0}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:190}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:1}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:1}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:1}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:199}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:2}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:188}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:2}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:200}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:3}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:188}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:3}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:3}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:201}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:3}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:3}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:202}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:4}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:4}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:203}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:4}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:204}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:5}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:5}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:5}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:199}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:5}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:205}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:6}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:6}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:6}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:199}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:6}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:205}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:7}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:7}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:7}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:199}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:8}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:8}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:206}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:9}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:9}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:9}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:202}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:10}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:207}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:10}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:208}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:11}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:11}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:11}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:205}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:12}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:188}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:12}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:200}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:13}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:188}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:13}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:189}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:14}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:209}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:14}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:210}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:15}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:15}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:16}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:16}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:16}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:199}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:17}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:17}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:17}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:202}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:18}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:209}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:18}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:210}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:19}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:188}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:19}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:200}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:20}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:188}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:20}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:20}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:201}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:20}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:21}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:188}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:21}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:201}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:22}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:22}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:211}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:23}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:212}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:23}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:213}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:24}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:188}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:24}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:200}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:24}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:214}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:24}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:215}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:25}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:188}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:25}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:200}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:25}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:214}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:26}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:207}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:26}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:216}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:27}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:27}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:211}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:28}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:207}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:28}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:216}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:29}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:188}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:29}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:189}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:30}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:30}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:30}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:205}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:30}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:217}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:31}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:31}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:31}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:199}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:32}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:32}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:32}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:205}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:32}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:33}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:33}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:33}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:205}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:33}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:34}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:34}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:203}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:34}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:34}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:218}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:35}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:188}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:35}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:189}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:36}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:207}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:36}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:208}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:37}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:188}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:37}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:189}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:37}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:216}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:38}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:188}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:38}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:189}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:38}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:216}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:39}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:39}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:39}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:205}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:40}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:40}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:40}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:199}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:41}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:212}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:41}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:213}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:42}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:219}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:42}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:220}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:43}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:188}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:43}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:200}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:43}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:215}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:44}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:209}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:44}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:210}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:45}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:45}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:203}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:45}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:204}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:46}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:188}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:46}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:189}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:46}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:221}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:46}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:222}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:47}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:219}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:47}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:220}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:48}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:188}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:48}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:189}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:49}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:188}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:49}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:49}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:201}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:49}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:49}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:221}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:50}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:209}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:50}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:210}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:51}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:209}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:51}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:210}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:52}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:209}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:52}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:210}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:53}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:209}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:53}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:210}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:54}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:209}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:54}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:210}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:55}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:209}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:55}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:210}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:56}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:207}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:56}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:216}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:57}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:207}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:57}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:208}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:58}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:58}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:58}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:199}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:59}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:212}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:59}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:213}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:60}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:212}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:60}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:213}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:61}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:61}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:61}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:199}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:63}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:63}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:203}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:63}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:218}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:64}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:207}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:64}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:216}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:65}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:65}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:203}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:65}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:218}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:66}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:207}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:66}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:208}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:66}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:216}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:66}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:190}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:67}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:188}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:67}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:200}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:68}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:188}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:68}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:189}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:69}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:219}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:69}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:223}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:70}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:70}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:203}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:70}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:218}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:71}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:71}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:206}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:72}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:188}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:72}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:200}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:73}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:219}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:73}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:224}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:74}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:74}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:203}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:74}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:204}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:75}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:75}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:75}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:199}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:76}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:76}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:76}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:199}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:77}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:188}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:77}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:189}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:78}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:188}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:78}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:201}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:79}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:79}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:79}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:199}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:80}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:80}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:80}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:199}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:81}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:81}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:81}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:199}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:82}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:188}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:82}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:189}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:83}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:188}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:83}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:189}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:84}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:188}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:84}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:189}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:85}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:85}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:85}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:199}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:86}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:225}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:86}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:211}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:86}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:87}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:188}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:87}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:189}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:88}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:188}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:88}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:200}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:89}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:188}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:89}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:200}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:90}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:207}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:90}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:216}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:91}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:207}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:91}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:216}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:92}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:209}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:92}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:210}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:93}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:209}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:93}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:210}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:94}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:188}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:94}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:200}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:95}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:207}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:95}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:216}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:96}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:96}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:96}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:205}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:96}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:202}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:97}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:209}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:97}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:210}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:98}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:98}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:98}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:199}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:99}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:207}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:99}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:216}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:100}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:100}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:203}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:100}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:204}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:101}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:101}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:101}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:205}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:102}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:102}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:102}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:205}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:103}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:103}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:103}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:189}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:104}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:104}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:104}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:205}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:105}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:188}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:105}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:189}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:106}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:188}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:106}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:189}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:107}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:107}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:107}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:199}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:108}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:209}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:108}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:210}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:109}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:209}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:109}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:210}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:110}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:188}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:110}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:200}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:120}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:209}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:120}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:210}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:121}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:209}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:121}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:210}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:122}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:122}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:211}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:123}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:209}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:123}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:210}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:124}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:209}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:124}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:210}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:125}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:209}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:125}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:210}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:126}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:207}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:126}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:216}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:127}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:127}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:211}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:128}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:207}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:128}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:216}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:130}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:130}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:130}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:226}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:131}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:207}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:131}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:216}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:132}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:207}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:132}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:216}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:133}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:207}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:133}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:216}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:134}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:219}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:134}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:220}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:135}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:135}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:136}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:136}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:206}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:137}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:137}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:138}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:138}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:138}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:205}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:139}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:188}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:139}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:189}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:139}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:221}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:141}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:188}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:141}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:189}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:142}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:142}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:211}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:142}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:227}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:143}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:219}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:143}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:220}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:144}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:188}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:144}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:189}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:145}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:188}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:145}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:200}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:146}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:188}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:146}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:189}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:147}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:188}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:147}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:201}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:148}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:188}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:148}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:200}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:149}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:209}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:149}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:210}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:150}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:207}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:150}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:216}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:151}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:207}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:151}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:216}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:152}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:207}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:152}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:216}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:153}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:153}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:153}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:228}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:154}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:154}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:154}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:228}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:155}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:155}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:156}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:156}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:156}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:228}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:157}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:188}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:157}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:189}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:158}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:209}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:158}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:210}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:159}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:188}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:159}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:200}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:159}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:229}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:160}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:230}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:160}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:231}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:160}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:232}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:161}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:207}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:161}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:216}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:162}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:162}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:162}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:199}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:162}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:202}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:163}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:219}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:163}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:220}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:164}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:207}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:164}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:208}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:165}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:188}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:165}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:189}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:166}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:166}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:166}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:221}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:166}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:233}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:166}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:205}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:167}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:167}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:188}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:167}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:167}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:201}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:167}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:202}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:169}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:207}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:169}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:208}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:170}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:209}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:170}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:210}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:171}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:171}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:211}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:171}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:227}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:172}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:188}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:172}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:189}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:173}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:173}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:199}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:174}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:174}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:174}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:199}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:175}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:175}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:175}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:199}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:176}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:188}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:176}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:200}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:177}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:207}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:177}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:216}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:178}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:178}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:206}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:179}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:188}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:179}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:201}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:180}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:207}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:180}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:216}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:181}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:207}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:181}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:216}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:182}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:182}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:182}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:205}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:182}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:226}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:183}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:192}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:183}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:193}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:183}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:202}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:184}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:188}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:184}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:200}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:184}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:229}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:185}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:209}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:185}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:210}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:186}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:207}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:186}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:216}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:187}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:188}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:187}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:200}) CREATE (n1)-[r:`HAS_TAG`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:0}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:0}) CREATE (n1)-[r:`MARKETS_PRODUCT`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:3}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:3}) CREATE (n1)-[r:`MARKETS_PRODUCT`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:11}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:11}) CREATE (n1)-[r:`MARKETS_PRODUCT`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:31}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:31}) CREATE (n1)-[r:`MARKETS_PRODUCT`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:66}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:66}) CREATE (n1)-[r:`MARKETS_PRODUCT`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:80}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:80}) CREATE (n1)-[r:`MARKETS_PRODUCT`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:94}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:94}) CREATE (n1)-[r:`MARKETS_PRODUCT`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:96}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:96}) CREATE (n1)-[r:`MARKETS_PRODUCT`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:98}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:98}) CREATE (n1)-[r:`MARKETS_PRODUCT`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:107}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:107}) CREATE (n1)-[r:`MARKETS_PRODUCT`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:138}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:138}) CREATE (n1)-[r:`MARKETS_PRODUCT`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:167}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:167}) CREATE (n1)-[r:`MARKETS_PRODUCT`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:169}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:169}) CREATE (n1)-[r:`MARKETS_PRODUCT`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:171}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:171}) CREATE (n1)-[r:`MARKETS_PRODUCT`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:174}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:174}) CREATE (n1)-[r:`MARKETS_PRODUCT`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:176}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:176}) CREATE (n1)-[r:`MARKETS_PRODUCT`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:187}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:187}) CREATE (n1)-[r:`MARKETS_PRODUCT`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:34}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:34}) CREATE (n1)-[r:`MARKETS_SERVICE`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:36}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:36}) CREATE (n1)-[r:`MARKETS_SERVICE`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:45}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:45}) CREATE (n1)-[r:`MARKETS_SERVICE`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:63}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:63}) CREATE (n1)-[r:`MARKETS_SERVICE`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:65}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:65}) CREATE (n1)-[r:`MARKETS_SERVICE`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:70}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:70}) CREATE (n1)-[r:`MARKETS_SERVICE`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:74}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:74}) CREATE (n1)-[r:`MARKETS_SERVICE`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:4}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:5}) CREATE (n1)-[r:`MARKETS_PRODUCT`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:15}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:1}) CREATE (n1)-[r:`MARKETS_PRODUCT`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:32}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:33}) CREATE (n1)-[r:`MARKETS_PRODUCT`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:56}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:57}) CREATE (n1)-[r:`MARKETS_PRODUCT`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:89}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:72}) CREATE (n1)-[r:`MARKETS_PRODUCT`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:19}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:88}) CREATE (n1)-[r:`MARKETS_PRODUCT`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:100}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:102}) CREATE (n1)-[r:`MARKETS_PRODUCT`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:100}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:103}) CREATE (n1)-[r:`MARKETS_PRODUCT`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:100}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:104}) CREATE (n1)-[r:`MARKETS_PRODUCT`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:100}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:101}) CREATE (n1)-[r:`MARKETS_SERVICE`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:4}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:6}) CREATE (n1)-[r:`MARKETS_SERVICE`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:22}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:86}) CREATE (n1)-[r:`MARKETS_PRODUCT`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:135}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:136}) CREATE (n1)-[r:`MARKETS_PRODUCT`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:135}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:137}) CREATE (n1)-[r:`MARKETS_PRODUCT`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:154}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:153}) CREATE (n1)-[r:`MARKETS_PRODUCT`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:155}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:156}) CREATE (n1)-[r:`MARKETS_PRODUCT`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:14}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:107}) CREATE (n1)-[r:`COVERS`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:18}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:107}) CREATE (n1)-[r:`COVERS`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:44}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:107}) CREATE (n1)-[r:`COVERS`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:53}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:107}) CREATE (n1)-[r:`COVERS`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:54}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:107}) CREATE (n1)-[r:`COVERS`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:92}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:107}) CREATE (n1)-[r:`COVERS`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:93}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:107}) CREATE (n1)-[r:`COVERS`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:97}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:43}) CREATE (n1)-[r:`COVERS`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:108}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:107}) CREATE (n1)-[r:`COVERS`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:109}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:107}) CREATE (n1)-[r:`COVERS`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:120}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:107}) CREATE (n1)-[r:`COVERS`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:121}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:107}) CREATE (n1)-[r:`COVERS`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:123}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:107}) CREATE (n1)-[r:`COVERS`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:124}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:107}) CREATE (n1)-[r:`COVERS`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:125}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:107}) CREATE (n1)-[r:`COVERS`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:149}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:107}) CREATE (n1)-[r:`COVERS`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:158}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:107}) CREATE (n1)-[r:`COVERS`]->(n2);
+MATCH (n1:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:170}), (n2:`UNIQUE IMPORT LABEL`{`UNIQUE IMPORT ID`:169}) CREATE (n1)-[r:`COVERS`]->(n2);
+MATCH (n:`UNIQUE IMPORT LABEL`)  WITH n LIMIT 20000 REMOVE n:`UNIQUE IMPORT LABEL` REMOVE n.`UNIQUE IMPORT ID`;
+DROP CONSTRAINT ON (node:`UNIQUE IMPORT LABEL`) ASSERT node.`UNIQUE IMPORT ID` IS UNIQUE;
+----
+
+Now we have the data in here, but we need to take a look.
+
+
+= Let's look at the graph
+
+Here's the full graph as we have it now:
+
+//graph
+
+= Now let's do some simple querying
+
+== Find companies with "graph" in their name and their neighbours
+Here's the query:
+[source,cypher]
+----
+match path = (n:Company)--()
+where n.name contains "Graph"
+return path
+----
+
+And look at the results:
+//graph_result
+
+== Find Neo4j and the neighbours of the neighbours
+Here's the query:
+[source,cypher]
+----
+match path = (c:Company {name:"Neo4j"})-[*..2]-(n) return path
+----
+
+And look at the results:
+//graph_result
+
+And last but not least, let's look at some pathfinding.
+
+== Paths between link:http://www.neo4j.com[Neo4j] and link:http://www.graphaware.com[GraphAware].
+
+Here's the query:
+[source,cypher]
+----
+match (c1:Company {name:"Neo4j"}), (c2:Company {name:"GraphAware"}),
+path = allshortestpaths ((c1)-[*]-(c2))
+return path
+----
+Lets look at the results:
+//graph_result
+
+Hopefully this was interesting.
+
+= Just a start...
+There are so many other things that we could look at. Use the console below to explore if you are interested in more.
+
+//console
+
+I hope this gist was interesting for you, and that we will see each other soon.
+
+This gist was created by link:mailto:rik@neo4j.com[Rik Van Bruggen]
+
+* link:http://blog.bruggen.com[My Blog]
+* link:http://blog.bruggen.com/p/podcast_13.html[the Graphistania Neo4j Graph Database Podcast]
+* link:http://learningneo4j.net[My Book]
+* link:http://twitter.com/rvanbruggen[On Twitter]
+* link:http://be.linkedin.com/in/rikvanbruggen/[On LinkedIn]
+
+
+Cheers
+
+Rik

@@ -1,0 +1,55 @@
+= Boosting Recommendation Results
+:neo4j-version: 3.5
+
+//hide
+//setup
+[source,cypher]
+----
+create (clark {name: "Clark Kent"}),
+(lois {name:"Lois Lane"}),
+(jimmy {name:"Jimmy Olsen"}),
+(perry {name:"Perry White"}),
+(cooper {name:"Anderson Cooper"}),
+(dailyplanet {name:"Daily Planet"}),
+(cnn {name:"CNN"}),
+(clark)-[:KNOWS {weight: 4}]->(lois),
+(clark)-[:KNOWS {weight: 4}]->(jimmy),
+(lois)-[:KNOWS {weight: 4}]->(perry),
+(jimmy)-[:KNOWS {weight: 4}]->(perry),
+(lois)-[:KNOWS {weight: 4}]->(cooper),
+(clark)-[:WORKS_AT {weight: 2, activity: 45}]->(dailyplanet),
+(jimmy)-[:WORKS_AT {weight: 2, activity: 10}]->(dailyplanet),
+(perry)-[:WORKS_AT {weight: 2, activity: 6}]->(dailyplanet),
+(lois)-[:WORKS_AT {weight: 2, activity: 56}]->(dailyplanet),
+(cooper)-[:WORKS_AT {weight: 2, activity: 2}]->(cnn),
+(perry)-[:WORKS_AT {weight: 2, activity: 3}]->(cnn)
+----
+//graph
+
+The query below finds the recommended friends for the origin that are working at the same place as the origin (in this example, `Clark Kent`).
+The recommended friend knows a person that the origin knows and doesn't already know the origin.
+
+[source,cypher]
+----
+MATCH (origin)-[r1:KNOWS|WORKS_AT]-(c)-[r2:KNOWS|WORKS_AT]-(candidate)
+WHERE origin.name = "Clark Kent"
+AND type(r1)=type(r2) AND NOT (origin)-[:KNOWS]-(candidate)
+RETURN origin.name AS origin, candidate.name AS candidate, collect(r2.activity) AS activity, collect(r2.weight) AS weight
+----
+//table
+
+This recommendation is weighted for the weight of the relationship `r2`, and boosted with a factor of 2, if there is an `activity`-property on that relationship.
+
+[source,cypher]
+----
+MATCH (origin)-[r1:KNOWS|WORKS_AT]-(c)-[r2:KNOWS|WORKS_AT]-(candidate)
+WHERE origin.name = "Clark Kent"
+AND type(r1)=type(r2) AND NOT (origin)-[:KNOWS]-(candidate)
+RETURN origin.name AS origin, candidate.name AS candidate,
+    SUM(ROUND(r2.weight + (COALESCE(r2.activity, 0) * 2))) AS boost
+ORDER BY boost DESC LIMIT 10
+----
+
+This returns the recommended friends for the origin nodes and their recommendation score.
+
+//table

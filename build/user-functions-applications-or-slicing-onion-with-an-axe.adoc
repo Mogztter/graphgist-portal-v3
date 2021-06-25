@@ -1,0 +1,480 @@
+= User, Functions, Applications, or "Slicing onion with an axe"
+
+:neo4j-version: 2.0.0
+:author: Karol Brejna
+:twitter: @karol_brejna
+:tags: domain:other
+
+Some time ago I had to gather information about the users of some system and the applications they are allowed to run.
+
+Doing this got me thinking how "unnatural" we (software developers) tended to do things before we had graph databases at our disposal. And how easy and straightforward some solutions can be when using the right tool, such as Neo4j. 
+
+Let me explain.
+
+
+== The domain
+I wanted to query the information about the users, their privileges and the applications' functions. First, I needed to understand how the system in question handles these aspects.
+
+It turns out, the access logic is pretty straightforward:
+
+* Application provides some functions (the other way looking at it is: application requires certain privileges)
+* User is assigned to a certain organizational unit
+* Units can consist of smaller units
+* Unit is entitled with certain permissions (can conduct certain functions)
+* Functions can be grouped (for example, in roles)
+* The user is given all the privileges of his organizational unit AND the privileges of the units it consists of
+
+This can be illustrated by the following UML diagram:
+
+image::https://yuml.me/diagram/scruffy;dir:LR;/class/%5BGroup%5D-%3EALLOWED_TO%5BFunction%5D,%20%5BFunction%5DBELONGS_TO%3C%3E-%5BFunction%5D,%20%5BGroup%5D-%3C%3EBELONGS_TO%5BGroup%5D,%20%5BUser%5D-%3EASSIGNED_TO%5BGroup%5D,%20%5BApplication%5D-%3EPROVIDES%5BFunction%5D[]
+
+Let's "model" some example data. 
+
+****  
+  organization          Func1    Func2    Func3   Func4      Func5
+       ^                  +        +        +       +          +
+       |                  +---+----+        +---+---+          |
+ +->---+--<-+                 v                 v              |
+ |          |               FuncA             FuncB            |
+ +          +                                   +              |
+Unit B     Unit A                               +-------+------+
+             ^                                          |
+       +->---+---<-+                                    v
+       |           |                                  FuncX
+       +           +
+     Unit A1    Unit A2
+       ^
+    +--+--------+
+    +           +
+Unit A1a    Unit A1b
+
+****  
+
+
+We have a hierarchy of organizational units: smaller teams (_A1a_, _A1b_) belonging to bigger ones (_A1_), the bigger belonging to other units (_A_), departments etc. etc.
+
+Similarly, we have "atomic" functions (or: permissions, _Func1_ -- _Func5_), grouped together for convenience into functional groups (_FuncA_, _FuncB_), which can be combined even further (_FuncX_).
+
+So far, so good.
+
+Now we are coming to the essence of the problem, which is: how the data are represented in the system.
+
+
+== The legacy
+The information I wanted to query is stored in relational database (Microsoft SQL Server). 
+
+There is the table that holds a list of all users (_Users_), the table that holds a list of organizational units (departments, units, teams -  _Groups_), the list of functional privlileges (rights, permissions - _Privileges_), and the list of applications (_Applications_).
+
+*All the relations* (unit belongs to other unit, function included in other function, user assigned to a unit, unit's function list) *are stored in a single table.* Basically, the table (_Membership_) holds two keys: _parent identifier_ and _child identifier_.
+
+So, if we had _Unit A_, that consist of _A1_ and _A2_, _A1_ has _A1a_ and _A1b_ sub-units, the table would hold something like this:
+
+[options="header",format="csv",grid="all"]
+|=======
+row,child,parent
+1 ,unit A1 ,unit A
+2 ,unit A2 ,unit A
+3 ,unit A1a,unit A1
+4 ,unit A1b,unit A1
+|=======
+
+If we wanted to indicate, that _User 1_ is assigned to _Unit A2_, there would be another record:
+[options="header",format="csv",grid="all"]
+|=======
+row,child,parent
+5 ,User 1 ,Unit A2
+|=======
+
+To show that _Unit A2_ is allowed to do _Function B2_, we'd put the following:
+[options="header",format="csv",grid="all"]
+|=======
+row,child,parent
+6 ,Unit A2 ,Function 2
+|=======
+
+*Beautifully simple*, isn't it? Well... It's not. Not, if you have to query the data, anyway.
+
+(I draw a merciful veil of silence on how the table is organized itself: in one column there are references to different tables, there is no way to put any constraints on it, there is no easy telling which  table is referenced by particular key.)
+
+The thing is, you need to join _Membership_ table multiple times to get the information. Let us look at some examples (in pseudo-sql code).
+
+
+Listing the unit is the user assigned to is simple:
+
+[source,sql]
+----
+select u.name, g.name 
+from users u, membership m_ug, groups g
+where u.id  = m_ug.child_id and g.id = m_ug.parent_id
+----
+
+Remember, the user is given the privileges of his unit and all the units "under it" in the organizational hierarchy. We should consider them, too.
+
+Let's try searching direct subunits of a unit:
+
+[source,sql]
+----
+select g1.name, g2.name
+from membership m_gg, groups g1, groups g2
+where g1.id = m_gg.parent_id
+  and g2.id = m_gg.child_id 
+----
+
+But wait, the sub-units can also have their children!  We should "broaden" the query even further - or, more probably, resort to hierarchical (recursive) queries (as we don't know how deep the query should dive into the hierarchy).
+
+Oh, another thing. The user's unit can already be the lowest in the hierarchy. The last query wouldn't work then. So we have to combine the two last queries (use union, outer join, etc.).
+
+When we finally deal with organizational units, we have the similar challenge with functions. 
+To remind: functions can be grouped together. If a unit has a function assigned to it, all the privileges grouped to this function are also automatically granted.
+
+Please, don't make me go there.
+
+Let's be honest. The task can be completed with SQL. Actually, I did it myself as the first attempt to the problem.
+
+But it didn't feel right. It was like slicing onion with an axe (forgive me my culinary analogies). Of course you could do that. But there must be a better way...
+
+== The better way
+What we have here, in my opinion, is data squeezed into relational tables where they don't really belong.
+
+As the data are highly connected, the better fit for them are graphs.
+
+Let me confirm this by looking again at the description of access logic, and trying to express it in Neo4j terms (with Cypher).
+
+
+*"Units can consist of smaller units"*
+
+I'll put it the other way around: a unit _belongs to_ other unit.
+
+Luckily, Cypher syntax for creating this relation is almost as much human readable as the original:
+
+//hide
+[source, cypher]
+----
+MATCH (n)  OPTIONAL 
+MATCH (n)-[r]-() 
+DELETE n, r
+----
+
+[source, cypher]
+----
+
+CREATE (org:Org{name:"organization"})
+CREATE (orgA:Org{name:"unit A"})-[:BELONGS_TO]->(org)
+CREATE (orgA1:Org{name:"unit A1"})-[:BELONGS_TO]->(orgA)
+CREATE (orgA2:Org{name:"unit A2"})-[:BELONGS_TO]->(orgA)
+CREATE (orgA3:Org{name:"unit A3"})-[:BELONGS_TO]->(orgA)
+CREATE (orgB:Org{name:"unit B"})-[:BELONGS_TO]->(org)
+CREATE (orgB1:Org{name:"unit B1"})-[:BELONGS_TO]->(orgB)
+CREATE (orgB2:Org{name:"unit B2"})-[:BELONGS_TO]->(orgB)
+CREATE (orgA1a:Org{name:"unit A1a"})-[:BELONGS_TO]->(orgA1)
+CREATE (orgA1b:Org{name:"unit A1b"})-[:BELONGS_TO]->(orgA1)
+CREATE (orgA2a:Org{name:"unit A2a"})-[:BELONGS_TO]->(orgA2)
+CREATE (orgA2b:Org{name:"unit A2b"})-[:BELONGS_TO]->(orgA2)
+----
+
+In the first line Neo4j creates a node representing whole organization (root node for the hierarchy) with property _name_ set to _organization_. Its type is _Org_ (more precisely: label _Org_ is set for the node). The resulting node reference is stored in variable org.
+
+Second line creates _Unit A_ and indicates, that it belongs to the _organization_ node. And so on.
+
+We can see the results below.
+
+//graph
+
+There is no option for automatic layouting of the graph in GraphGist, yet. But if there was (or if you'd dragged the nodes around), you would see they form a tree-like structure. (BTW, please do try dragging them. Personally I find watching the nodes slowly flocking on the screen quite relaxing. ;-) )
+
+*"Functions can be grouped"* 
+
+Once more, we have a graph of nodes where one _belongs to_ another.
+
+
+//hide
+[source, cypher]
+----
+MATCH (n)  OPTIONAL 
+MATCH (n)-[r]-() 
+DELETE n, r
+----
+
+[source, cypher]
+----
+CREATE (funcA:Func{name:"FuncA"})
+CREATE (funcB:Func{name:"FuncB"})
+CREATE (funcX:Func{name:"FuncX"})
+
+CREATE (func1:Func{name:"Func1"})-[:BELONGS_TO]->(funcA)
+CREATE (func2:Func{name:"Func2"})-[:BELONGS_TO]->(funcA)
+CREATE (func3:Func{name:"Func3"})-[:BELONGS_TO]->(funcB)
+CREATE (func4:Func{name:"Func4"})-[:BELONGS_TO]->(funcB)
+CREATE (func5:Func{name:"Func5"})-[:BELONGS_TO]->(funcX)
+CREATE funcB-[:BELONGS_TO]->(funcX)
+
+----
+//graph
+
+{empty} +
+
+*"User is assigned to a certain organizational unit"*
+
+Again, cypher here is almost "pure" English:
+
+[source]
+create (user:Person{name:"User 1"})-[:ASSIGNED_TO]->(orgB)
+
+
+//hide
+[source, cypher]
+----
+
+CREATE (org:Org{name:"organization"})
+CREATE (orgA:Org{name:"unit A"})-[:BELONGS_TO]->(org)
+CREATE (orgA1:Org{name:"unit A1"})-[:BELONGS_TO]->(orgA)
+CREATE (orgA2:Org{name:"unit A2"})-[:BELONGS_TO]->(orgA)
+CREATE (orgA3:Org{name:"unit A3"})-[:BELONGS_TO]->(orgA)
+CREATE (orgB:Org{name:"unit B"})-[:BELONGS_TO]->(org)
+CREATE (orgB1:Org{name:"unit B1"})-[:BELONGS_TO]->(orgB)
+CREATE (orgB2:Org{name:"unit B2"})-[:BELONGS_TO]->(orgB)
+CREATE (orgA1a:Org{name:"unit A1a"})-[:BELONGS_TO]->(orgA1)
+CREATE (orgA1b:Org{name:"unit A1b"})-[:BELONGS_TO]->(orgA1)
+CREATE (orgA2a:Org{name:"unit A2a"})-[:BELONGS_TO]->(orgA2)
+CREATE (orgA2b:Org{name:"unit A2b"})-[:BELONGS_TO]->(orgA2)
+
+----
+
+//hide
+[source, cypher]
+----
+MATCH (orgB:Org{name:"unit B"}) 
+create (user:Person{name:"User 1"})-[:ASSIGNED_TO]->(orgB)
+----
+
+//graph
+
+The resulting graph shows a user (in my case [blue]*blue* node) connected to _Unit B_ ([aqua]*aqua* nodes represent organizational units). The only reason you see function nodes ([yellow]*yellow*) is that I don't know how to get rid of them from the graph ;-).
+
+
+*"Unit is entitled with certain permissions"*
+
+Let's give _Unit B_ the function _FuncX_ and _Unit B1_ function _Func1_.
+
+
+`CREATE (orgB)-[:ALLOWED_TO]->funcX, orgB1-[:ALLOWED_TO]->(func1)`
+
+//hide
+[source, cypher]
+----
+MATCH (orgB:Org{name:"unit B"}), (orgB1:Org{name:"unit B1"}), (funcX:Func{name:"FuncX"}), (func1:Func{name:"Func1"})
+create (orgB)-[:ALLOWED_TO]->(funcX), (orgB1)-[:ALLOWED_TO]->(func1)
+----
+
+{empty} +
+
+*"Application provides some functions"*
+
+I'll add some applications and their functions:
+[source, cypher]
+----
+create (app1:App{name:"App 1"})-[:PROVIDES]->(func1)
+create (app1)-[:PROVIDES]->(func2)
+create (app1)-[:PROVIDES]->(func5)
+create (app2:App{name:"App 2"})-[:PROVIDES]->(func4)
+create (app3:App{name:"App 3"})-[:PROVIDES]->(func3)
+----
+
+//hide
+[source, cypher]
+----
+MATCH (func1:Func{name:"Func1"}), (func2:Func{name:"Func2"}),
+      (func3:Func{name:"Func3"}), (func4:Func{name:"Func4"}),
+      (func5:Func{name:"Func5"})
+create (app1:App{name:"App 1"})-[:PROVIDES]->(func1)
+create (app1)-[:PROVIDES]->(func2)
+create (app1)-[:PROVIDES]->(func5)
+create (app2:App{name:"App 2"})-[:PROVIDES]->(func4)
+create (app3:App{name:"App 3"})-[:PROVIDES]->(func3)
+----
+
+
+A bit of sanity check - let's see what functions are provided by what application:
+
+//output
+[source, cypher]
+----
+MATCH (function:Func)<-[:PROVIDES]-(app:App) 
+RETURN *
+----
+
+Everything is fine. We see a table with functions and applications with values reflecting _create_ statements above.
+
+{empty} +
+
+== "It's pretty, but is it Art" 
+
+Everything in it seems to be obvious and self-explanatory.
+By reflecting with Neo4j how things are "in nature", we received an elegant data model.
+
+Well, it may be elegant. But is it efficient? 
+
+Let's find out by dissecting the key sentence of security mechanism description I gave earlier:
+
+
+[quote]
+____
+The user is given all the privileges of his organizational unit AND the privileges of the units it consists of
+____
+
+I'll try to see how each portion of information can be retrieved from the model.
+
+First, I'll cleanup, recreate the database and feed it to the Live Console (bottom of the page), so we can freely experiment with new queries on it.
+
+//hide
+[source, cypher]
+----
+MATCH (n)
+OPTIONAL MATCH (n)-[r]-() 
+DELETE n, r
+----
+
+
+//setup
+//hide
+[source, cypher]
+----
+CREATE (org:Org{name:"organization"})
+CREATE (orgA:Org{name:"unit A"})-[:BELONGS_TO]->(org)
+CREATE (orgA1:Org{name:"unit A1"})-[:BELONGS_TO]->(orgA)
+CREATE (orgA2:Org{name:"unit A2"})-[:BELONGS_TO]->(orgA)
+CREATE (orgA3:Org{name:"unit A3"})-[:BELONGS_TO]->(orgA)
+CREATE (orgB:Org{name:"unit B"})-[:BELONGS_TO]->(org)
+CREATE (orgB1:Org{name:"unit B1"})-[:BELONGS_TO]->(orgB)
+CREATE (orgB2:Org{name:"unit B2"})-[:BELONGS_TO]->(orgB)
+CREATE (orgA1a:Org{name:"unit A1a"})-[:BELONGS_TO]->(orgA1)
+CREATE (orgA1b:Org{name:"unit A1b"})-[:BELONGS_TO]->(orgA1)
+CREATE (orgA2a:Org{name:"unit A2a"})-[:BELONGS_TO]->(orgA2)
+CREATE (orgA2b:Org{name:"unit A2b"})-[:BELONGS_TO]->(orgA2)
+
+CREATE (funcA:Func{name:"FuncA"})
+CREATE (funcB:Func{name:"FuncB"})
+CREATE (funcX:Func{name:"FuncX"})
+CREATE (func1:Func{name:"Func1"})-[:BELONGS_TO]->(funcA)
+CREATE (func2:Func{name:"Func2"})-[:BELONGS_TO]->(funcA)
+CREATE (func3:Func{name:"Func3"})-[:BELONGS_TO]->(funcB)
+CREATE (func4:Func{name:"Func4"})-[:BELONGS_TO]->(funcB)
+CREATE (func5:Func{name:"Func5"})-[:BELONGS_TO]->(funcX)
+CREATE (funcB)-[:BELONGS_TO]->(funcX)
+
+create (user:Person{name:"User 1"})-[:ASSIGNED_TO]->(orgB)
+create (orgB)-[:ALLOWED_TO]->(funcX), (orgB1)-[:ALLOWED_TO]->(func1)
+
+create (app1:App{name:"App 1"})-[:PROVIDES]->(func1)
+create (app1)-[:PROVIDES]->(func2)
+create (app1)-[:PROVIDES]->(func5)
+create (app2:App{name:"App 2"})-[:PROVIDES]->(func4)
+create (app3:App{name:"App 3"})-[:PROVIDES]->(func3)
+----
+
+Let's get the information one piece at a time and then combine it.
+
+*Get organizational unit the user is assigned to*
+
+//output
+[source, cypher]
+----
+match (u:Person)-[:ASSIGNED_TO]->(n:Org) 
+return u, n
+----
+
+
+The query is very simple. In the output, we should see that in our database _User 1_ is assigned to _Unit B_.
+
+
+*Get all the units that belong to certain unit*
+
+This one has one interesting bit:
+
+//output
+[source, cypher]
+----
+match (u:Person)-[:ASSIGNED_TO]->(o:Org)<-[ro:BELONGS_TO*0..]-(o1:Org)
+return u, o, ro, o1 
+----
+
+I am talking about the pattern:
+
+[quote]
+----
+()<-[ro:BELONGS_TO*0..]-()
+----
+
+This is a way to make cypher find variable length paths. In general, it takes the form of:
+[quote]
+----
+-[:TYPE*minHops..maxHops]->
+----
+Which basically means: match nodes that nodes that are _minHops_ to _maxHops_ relationships (of type _TYPE_) away.
+
+In our case we say: match nodes (_o1_) that are *from zero to infinity* relations (_BELONGS_TO_) away from node _o_ (the unit the user is assigned to). 
+
+The "*to infinity*" part is simple. It means: find nodes that belong to (_BELONGS_TO_) this one (let's call them children), and then find nodes that belong to them (children of children). Continue (go deeper in the organizational structure) until you find all of them.
+
+"*From zero*" becomes easy once you get a grasp of it. 
+Firstly, it can be treated as an _optional relationship_ (it may not occur in the graph).
+Secondly, from formal point of view _minHops_ is the minimum http://en.wikipedia.org/wiki/Distance_(graph_theory)[_distance_] between the nodes. By definition, "if the distance between two nodes is zero, they are the same node". 
+But I prefer this illustration: if you start with a node and traverse 0 hops (edges, ralationships) away from it, you end up `in the same node.
+
+In this light, the following query:
+[source]
+----
+match (u:Person)-[:ASSIGNED_TO]->(o:Org)<-[ro:BELONGS_TO*0..]-(o1:Org)
+return u, o, ro, o1 
+----
+
+reads as:
+
+[quote]
+----
+For a user find a organizational unit he is assigned to, and (if there are any) all the units it consists of.
+----
+
+
+
+*Get the privileges of an organizational unit*
+
+Remembering, that the privileges (functions) can be grouped (this, plus the optional relationship "trick"), the query would look like this:
+
+
+//output
+[source, cypher]
+----
+match (o1:Org)-[rf:ALLOWED_TO]->(f:Func)<-[:BELONGS_TO*0..]-(f2:Func) 
+return o1, f2 
+----
+
+
+*Finally, all together*
+
+Combining the queries together...
+
+//output
+[source, cypher]
+----
+MATCH (u:Person)-[:ASSIGNED_TO]->(o:Org)<-[ro:BELONGS_TO*0..]-(o1:Org)-[rf:ALLOWED_TO]->(f:Func)<-[rf2:BELONGS_TO*0..]-(f2:Func)<-[:PROVIDES]-(a:App)
+RETURN distinct u.name, a.name
+----
+
+&#8230; I get the information I was looking for, in one go.
+
+== In conclusion
+
+I'd like to sum up this gist in few sentences.
+
+The system I've described was not designed with graphs in mind. I can't change that. 
+But still, by exporting the data to Neo4j and storing them in "more covninient" way, I get to understand them better.
+I am also able to get the information I want with one simple query (one-liner, actually).
+
+Then there is the question of performance. Our example database was too small to base some definite judgement on it. That's why I created "more realistic" database with 5000 nodes and 9000 relations. On my laptop - not a speed demon, running Windows - the queries I've tried took 300-400ms. And I issued them from web console, without any optymalizations (problably most of the reported time is http traffic). I even tried GrapheneDB's (DB as a service) free instance - which is shared, with 256MB RAM and 512MB storage. The response times were very decent. 
+
+It shows there is a big chance that Noe4j will deal with huge graphs on commodity hardware.
+
+And finally, working with Neo4j is just fun.
+
+Isn't it all we strive for: being paid for having fun?! ;-)

@@ -1,0 +1,95 @@
+= Find the best NoSQL distribution
+
+== Motivation
+
+The NoSQL movement began early 2009 and is growing rapidly. As there are many NoSQL categories and distributions around, this application provides an interactive way to find the best distribution that fits, for instance, students homeworks specs.
+
+=== An example subset of the Graph
+
+image::http://yuml.me/diagram/scruffy;/class/%5BNeo4j%7Bbg:orange%7D%5D-based_on%3E%5BJava%5D,%20%5BNeo4j%5D-is_a%3E%5BGraph%20DB%5D,%20%5BNeo4j%5D-has_api_for%3E%5BC%23%5D,%20%5BNeo4j%5D-is_licensed_under%3E%5BGPL%20v3%5D,%20%5BNeo4j%5D-current_release%3E%5B2.0.0-RC1%5D,%20%5B2.0.0-RC1%5D-previous_release%3E%5B1.9.5%5D.png[]
+
+== The Graph
+
+//hide
+//setup
+[source,cypher]
+----
+CREATE 
+(l1:Language {name : 'Java'}), (l2:Language {name : '.NET'}), (l3:Language {name : 'C++'}),
+(db1:Database {type : 'Graph DB'}), (db2:Database {type : 'Document DB'}),
+(i1:Licence {name : 'GPL v3'}), (i2:Licence {name : 'AGPL v3'}), (i3:Licence {name : 'Commercial'}),
+(y12:Date { year : '2012'}), (y13:Date { year : '2013'}),
+(f1:Feature {type : 'ACID transactions'}), (f2:Feature {type : 'Map-Reduce operations'}),
+
+(d1:Distribution { name : 'Neo4j'})-[:BASED_ON]->(l1), 
+(d1)-[:IS_A]->(db1),
+(d1)-[:HAS_API_FOR]->(l1),(d1)-[:HAS_API_FOR]->(l2),(d1)-[:HAS_API_FOR]->(l3),
+(d1)-[:IS_LICENSED_UNDER]->(i1),
+(d1)-[:CURRENT_RELEASE]->(r1:Release { version : '2.0.0-RC1'})-[:PREVIOUS_RELEASE]->(r2:Release { version : '1.9.5'})-[:PREVIOUS_RELEASE]->(r3:Release { version : '1.8.3'})-[:PREVIOUS_RELEASE]->(r4:Release { version : '1.7.2'}),
+(r1)-[:RELEASED_ON]->(y13), (r2)-[:RELEASED_ON]->(y13), (r3)-[:RELEASED_ON]->(y12), (r4)-[:RELEASED_ON]->(y12),
+(d1)-[:ALLOWS]->(f1),
+
+(d2:Distribution { name : 'MongoDB'})-[:BASED_ON]->(l3), 
+(d2)-[:IS_A]->(db2),
+(d2)-[:HAS_API_FOR]->(l1),(d2)-[:HAS_API_FOR]->(l2),(d2)-[:HAS_API_FOR]->(l3),
+(d2)-[:IS_LICENSED_UNDER]->(i2),
+(d2)-[:CURRENT_RELEASE]->(r5:Release { version : '2.4.8'})-[:PREVIOUS_RELEASE]->(r6:Release { name : '2.2.6'}),
+(r5)-[:RELEASED_ON]->(y13), (r6)-[:RELEASED_ON]->(y13),
+(d2)-[:ALLOWS]->(f2),
+
+(d3:Distribution { name : 'InfiniteGraph'})-[:BASED_ON]->(l1), 
+(d3)-[:IS_A]->(db1),
+(d3)-[:HAS_API_FOR]->(l1),
+(d3)-[:IS_LICENSED_UNDER]->(i3),
+(d3)-[:CURRENT_RELEASE]->(r7:Release { version : '3.1'})-[:PREVIOUS_RELEASE]->(r8:Release { version : '3.0'}),
+(r7)-[:RELEASED_ON]->(y13), (r8)-[:RELEASED_ON]->(y12),
+(d3)-[:ALLOWS]->(f1)
+----
+//graph
+
+
+== Use cases
+
+*Find all the distributions with a current version released on 2013 (we want to be sure to use an updated product)*
+[source,cypher]
+----
+MATCH (year:Date)<-[:RELEASED_ON]-(release:Release)<-[:CURRENT_RELEASE]-(distribution:Distribution)
+WHERE year.year = '2013'
+RETURN distribution.name, release.version
+ORDER BY distribution.name
+----
+//table
+
+*Find all the distributions with a particular license (we love open-source)*
+[source,cypher]
+----
+MATCH (distribution:Distribution)-[:IS_LICENSED_UNDER]->(licence:Licence)
+WHERE licence.name =~ '.*GPL.*'
+RETURN distribution.name, licence.name
+ORDER BY distribution.name
+----
+//table
+
+*Find all the distributions that support Java, .NET and ACID transactions (we need these features)*
+[source,cypher]
+----
+START java=node:node_auto_index(name='Java'), NET=node:node_auto_index(name='.NET'), AT=node:node_auto_index(type='ACID transactions') 
+MATCH p=AllShortestPaths(java-[:HAS_API_FOR]-NET) 
+WITH head(tail(nodes(p))) AS distribution, AT 
+MATCH (distribution)-[:ALLOWS]->(AT) 
+RETURN distribution.name
+----
+//table
+
+*Find all the Neo4j's releases (at this point we are thinking about using Neo4j, but we want to be sure that the project is actively updated)*
+[source,cypher]
+----
+MATCH (neo:Distribution)-[:CURRENT_RELEASE|:PREVIOUS_RELEASE*..5]->(release:Release)
+WHERE neo.name = 'Neo4j'
+WITH release
+MATCH (release)-[:RELEASED_ON]->(date)
+RETURN release.version, date.year
+----
+//table
+
+Thanks for reading!

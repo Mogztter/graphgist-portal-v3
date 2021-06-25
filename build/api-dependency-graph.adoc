@@ -1,0 +1,83 @@
+= Code API dependency
+:neo4j-version: 3.5
+:author: D Scott
+:tags:
+:domain: web api usage
+:use-case: api depdendency
+
+Neo4j graph to show API dependencies
+
+== Introduction
+
+Application developers rely on public apis for their code to function.  This model is to show how updates of public apis can be flagged as impacting code.  With these relationships defined between custom client in-house code and the api methods they rely on, you can look quickly and see which api changes could impact existing code. 
+
+
+'''
+
+== Sample Data Loaded
+
+//setup
+[source,cypher]
+----
+// Create code clients
+CREATE (Email:Client {id:'1', description:'email client', repo:'localgit:emailClient'})
+CREATE (Text:Client {id:'2', description:'sms client', repo:'localgit:textClient'})
+CREATE (Invoice:Client {id:'3', description:'produce invoice client', repo:'localgit:invoiceClient'})
+
+// Create Public Api methods
+CREATE (MailCh:Vendor {id:'11', name:'mailCh', apiDoc:'http://github.com/mailch/api'})
+CREATE (Twil:Vendor {id:'12', name:'twil', apiDoc:'http://github.com/twil/api'})
+CREATE (Invoiceapi:Vendor {id:'13', name:'mailCh', apiDoc:'http://github.com/Invoiceapi/api'})
+
+// Create consumes relationship
+CREATE (Email)-[:CONSUMES {method:'getServer', version:'1.7', status:'Changed'}]->(MailCh)
+CREATE (Text)-[:CONSUMES {method:'getSmsCarrier', version:'3.2', status:'Removed'}]->(Twil)
+CREATE (Email)-[:CONSUMES {method:'getEmailServer', version:'1.7', status:'Removed'}]->(MailCh)
+CREATE (Invoice)-[:CONSUMES {method:'getInvoiceNumer', version:'2.3', status:'Same'}]->(Invoiceapi)
+
+RETURN *
+----
+//graph
+
+== Identify Dependencies
+
+We collect all of our dependencies
+
+[source,cypher]
+----
+MATCH (client:Client)-[r:CONSUMES]->(vendor)
+RETURN client.description AS `Client Description`, client.repo AS `Code Location`, r.method AS `API Method`, r.status AS `Details`
+ORDER BY `Details` DESC
+----
+//output
+//table
+
+== Identify Changes for Removal
+
+Look for api changes that require code changes.  Api methods being removed that you depend on would require your attention to fix.
+
+[source,cypher]
+----
+MATCH (client:Client)-[r:CONSUMES]->(vendor)
+WHERE r.status = "Removed"
+RETURN client.description AS `Client Description`, client.repo AS `Code Location To Update`, r.method AS `API Method`, r.status AS `Details`, r.version AS `VERSION`
+ORDER BY `Details` DESC
+----
+//output
+//table
+
+== Identify Changes to Test
+
+Look for api changes that should flag testing.  Changes in existing methods could cause slient issues->code might function but might not be the same results as before.
+
+[source,cypher]
+----
+MATCH (client:Client)-[r:CONSUMES]->(vendor)
+WHERE r.status = "Changed"
+RETURN client.description AS `Client Description`, client.repo AS `Code Location`, r.method AS `API Method`, r.status AS `Details`, r.version AS `VERSION`
+ORDER BY `Details` DESC
+----
+//output
+//table
+
+//console

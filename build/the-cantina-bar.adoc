@@ -1,0 +1,359 @@
+= The Cantina Bar
+:author: Jonathan Freeman
+:twitter: @freethejazz
+
+The universe of cocktails is huge. Cocktails are tasty. Let's learn about them, and help build out your own bar!
+
+Our basic domain model is very simple. Nodes only have a single property: name. 
+Any node can have one or more of the following labels: Cocktail, Spirit, Ingredient, or Garnish. In this example, I've only used a single label per ingredient.
+Our only relationship type, :CONTAINS, has quantity and unit properties, which 
+we'll use to define how much of a certain ingredient goes into a cocktail. Part of a manhattan would look something like this:
+
+image::https://gist.githubusercontent.com/freethejazz/67e88fda47bb1f635c68/raw/8830314f68a415d51c6b86346ea43503cc3adbc6/model.png[]
+
+Let's get some data in:
+
+//setup
+//hide
+[source,cypher]
+----
+create
+  (gin:Spirit {name: "gin"}),
+
+  (bourbon:Spirit {name: "bourbon"}),
+  (rye:Spirit {name: "rye"}),
+  (whiskey:Spirit {name: "whiskey"}),
+
+  (whiteRum:Spirit {name: "whiteRum"}),
+
+  (vodka:Spirit {name: "vodka"}),
+
+  (brandy:Ingredient {name: "brandy"}),
+
+  (champagne:Ingredient {name: "champagne"}),
+
+  (cognac:Ingredient {name: "cognac"}),
+
+  (benedictine:Ingredient {name: "benedictine"}),
+
+  (amaretto:Ingredient {name: "amaretto"}),
+
+  (amerPicon:Ingredient {name: "amer picon"}),
+
+  (maraschino:Ingredient {name: "maraschino"}),
+
+  (cherryHeering:Ingredient {name: "cherry heering"}),
+
+  (kahlua:Ingredient {name: "kahlua"}),
+
+  (cremeCacao:Ingredient {name: "creme de cacao"}),
+
+  (soco:Ingredient {name: "southern comfort"}),
+
+  (vermouth:Ingredient {name: "vermouth"}),
+  (redVermouth:Ingredient {name: "red vermouth"}),
+
+  (campari:Ingredient {name: "campari"}),
+
+  (cointreau:Ingredient {name: "cointreau"}),
+
+  (peachSchnapps:Ingredient {name: "peach schnapps"}),
+
+  (bitters:Ingredient {name: "bitters"}),
+  (ango:Ingredient {name: "angostura"}),
+  (peychauds:Ingredient {name: "peychaud"}),
+  (regans:Ingredient {name: "regan's No. 6"}),
+
+  (limeJuice:Ingredient {name: "lime juice"}),
+  (cranberryJuice:Ingredient {name: "cranberry juice"}),
+  (lemonJuice:Ingredient {name: "lemon juice"}),
+  (orangeJuice:Ingredient {name: "orange juice"}),
+  (tomatoJuice:Ingredient {name: "tomato juice"}),
+
+  (lemonade:Ingredient {name: "lemonade"}),
+
+  (lemonPeel:Ingredient {name: "lemon peel"}),
+
+  (cherry:Garnish {name: "cherry"}),
+  (orange:Garnish {name: "orange"}),
+  (lime:Garnish {name: "lime"}),
+  (lemon:Garnish {name: "lemon"}),
+
+  (soda:Ingredient {name: "soda water"}),
+  (tonic:Ingredient {name: "tonic water"}),
+  (cola:Ingredient {name: "cola"}),
+
+  (simple:Ingredient {name: "simple syrup"}),
+  (worcestershire:Ingredient {name: "worcestershire sauce"}),
+  (tobasco:Ingredient {name: "tobasco sauce"}),
+  (cream:Ingredient {name: "cream"}),
+
+  //Associate base ingredients with their types
+  (ango)-[:TYPE_OF]->(bitters),
+  (regans)-[:TYPE_OF]->(bitters),
+
+  (redVermouth)-[:TYPE_OF]->(vermouth),
+
+  //Make cocktails!
+
+
+
+  // Alabama Slammer
+  (alabamaSlammer:Cocktail {name: "alabamaSlammer"}),
+  (alabamaSlammer)-[:CONTAINS {quantity: .75, unit: "ounces"}]->(gin),
+  (alabamaSlammer)-[:CONTAINS {quantity: .75, unit: "ounces"}]->(amaretto),
+  (alabamaSlammer)-[:CONTAINS {quantity: .75, unit: "ounces"}]->(soco),
+  (alabamaSlammer)-[:CONTAINS {quantity: 3, unit: "ounces"}]->(orangeJuice),
+
+  // Amaretto Sour
+  (amarettoSour:Cocktail {name: "Amaretto Sour"}),
+  (amarettoSour)-[:CONTAINS {quantity: 1.5, unit: "ounces"}]->(amaretto),
+  (amarettoSour)-[:CONTAINS {quantity: .75, unit: "ounces"}]->(lemonJuice),
+  (amarettoSour)-[:CONTAINS {quantity: 1, unit: "ounces"}]->(simple),
+  (amarettoSour)-[:GARNISHED_WITH]->(cherry),
+  (amarettoSour)-[:GARNISHED_WITH]->(orange),
+
+  // Americano
+  (americano:Cocktail {name: "Americano"}),
+  (americano)-[:CONTAINS {quantity: 1, unit: "ounces"}]->(campari),
+  (americano)-[:CONTAINS {quantity: 1, unit: "ounces"}]->(redVermouth),
+  (americano)-[:CONTAINS {quantity: 1, unit: "ounces"}]->(soda),
+  (americano)-[:GARNISHED_WITH]->(orange),
+
+  // Black Russian
+  (blackRussian:Cocktail {name: "Black Russian"}),
+  (blackRussian)-[:CONTAINS {quantity: .66, unit: "ounces"}]->(kahlua),
+  (blackRussian)-[:CONTAINS {quantity: 1.66, unit: "ounces"}]->(vodka),
+
+  // BnB
+  (bnb:Cocktail {name: "B&B"}),
+  (bnb)-[:CONTAINS {quantity: 1, unit: "ounces"}]->(brandy),
+  (bnb)-[:CONTAINS {quantity: 1, unit: "ounces"}]->(benedictine),
+
+  // Bloody Mary
+  (bloodyMary:Cocktail {name: "bloody mary"}),
+  (bloodyMary)-[:CONTAINS {quantity: 1.5, unit: "ounces"}]->(vodka),
+  (bloodyMary)-[:CONTAINS {quantity: 3, unit: "ounces"}]->(tomatoJuice),
+  (bloodyMary)-[:CONTAINS {quantity: 1, unit: "dashes"}]->(lemonJuice),
+  (bloodyMary)-[:CONTAINS {quantity: .5, unit: "tsp"}]->(worcestershire),
+  (bloodyMary)-[:CONTAINS {quantity: 3, unit: "drops"}]->(tobasco),
+  (bloodyMary)-[:CONTAINS {quantity: 1, unit: "wedge"}]->(lime),
+
+  // Blood and Sand
+  (bloodAndSand:Cocktail {name: "blood and sand"}),
+  (bloodAndSand)-[:CONTAINS {quantity: 1, unit: "ounces"}]->(scotch),
+  (bloodAndSand)-[:CONTAINS {quantity: .75, unit: "ounces"}]->(redVermouth),
+  (bloodAndSand)-[:CONTAINS {quantity: .75, unit: "ounces"}]->(orangeJuice),
+  (bloodAndSand)-[:CONTAINS {quantity: .75, unit: "ounces"}]->(cherryHeering),
+
+  // Boulevardier
+  (boulevardier:Cocktail {name: "boulevardier"}),
+  (boulevardier)-[:CONTAINS {quantity: 1, unit: "ounces"}]->(campari),
+  (boulevardier)-[:CONTAINS {quantity: 1, unit: "ounces"}]->(redVermouth),
+  (boulevardier)-[:CONTAINS {quantity: 1.25, unit: "ounces"}]->(rye),
+
+
+  // Brandy Alexander
+  (brandyAlexander:Cocktail {name: "brandy alexander"}),
+  (brandyAlexander)-[:CONTAINS {quantity: 1, unit: "ounces"}]->(cream),
+  (brandyAlexander)-[:CONTAINS {quantity: 1, unit: "ounces"}]->(cognac),
+  (brandyAlexander)-[:CONTAINS {quantity: 1, unit: "ounces"}]->(cremeCacao),
+
+  // Brooklyn
+  (brooklyn:Cocktail {name: "brooklyn"}),
+  (brooklyn)-[:CONTAINS {quantity: 2, unit: "ounces"}]->(whiskey),
+  (brooklyn)-[:CONTAINS {quantity: 1, unit: "ounces"}]->(vermouth),
+  (brooklyn)-[:CONTAINS {quantity: .25, unit: "ounces"}]->(maraschino),
+  (brooklyn)-[:CONTAINS {quantity: .25, unit: "ounces"}]->(amerPicon),
+
+  // Cosmopolitan
+  (cosmo:Cocktail {name: "cosmopolitan"}),
+  (cosmo)-[:CONTAINS {quantity: 1.5, unit: "ounces"}]->(vodka),
+  (cosmo)-[:CONTAINS {quantity: 1, unit: "ounces"}]->(cranberryJuice),
+  (cosmo)-[:CONTAINS {quantity: .5, unit: "ounces"}]->(limeJuice),
+  (cosmo)-[:CONTAINS {quantity: .5, unit: "ounces"}]->(cointreau),
+
+  // Cuba Libre
+  (cubaLibre:Cocktail {name: "cuba libre"}),
+  (cubaLibre)-[:CONTAINS {quantity: 4, unit: "ounces"}]->(cola),
+  (cubaLibre)-[:CONTAINS {quantity: 1.66, unit: "ounces"}]->(whiteRum),
+  (cubaLibre)-[:CONTAINS {quantity: .33, unit: "ounces"}]->(limeJuice),
+
+  // Daiquiri
+  (daiquiri:Cocktail {name: "daiquiri"}),
+  (daiquiri)-[:CONTAINS {quantity: 1.5, unit: "ounces"}]->(whiteRum),
+  (daiquiri)-[:CONTAINS {quantity: 1, unit: "ounces"}]->(limeJuice),
+  (daiquiri)-[:CONTAINS {quantity: .5, unit: "ounces"}]->(simple),
+
+  // French 75
+  (french75:Cocktail {name: "french 75"}),
+  (french75)-[:CONTAINS {quantity: 2, unit: "ounces"}]->(champagne),
+  (french75)-[:CONTAINS {quantity: 1, unit: "ounces"}]->(gin),
+  (french75)-[:CONTAINS {quantity: .5, unit: "ounces"}]->(lemonJuice),
+  (french75)-[:CONTAINS {quantity: 2, unit: "dashes"}]->(simple),
+
+
+  // Fuzzy Navel
+  (fuzzyNavel:Cocktail {name: "fuzzy navel"}),
+  (fuzzyNavel)-[:CONTAINS {quantity: .66, unit: "ounces"}]->(peachSchnapps),
+  (fuzzyNavel)-[:CONTAINS {quantity: .66, unit: "ounces"}]->(lemonade),
+  (fuzzyNavel)-[:CONTAINS {quantity: .66, unit: "ounces"}]->(orangeJuice),
+
+  // Gibson
+  (gibson:Cocktail {name: "gibson"}),
+  (gibson)-[:CONTAINS {quantity: 2, unit: "ounces"}]->(gin),
+  (gibson)-[:CONTAINS {quantity: .66, unit: "ounces"}]->(vermouth),
+
+  // Gimlet
+  (gimlet:Cocktail {name: "gimlet"}),
+  (gimlet)-[:CONTAINS {quantity: 1.5, unit: "ounces"}]->(gin),
+  (gimlet)-[:CONTAINS {quantity: 1, unit: "ounces"}]->(limeJuice),
+  (gimlet)-[:CONTAINS {quantity: 1, unit: "tsp"}]->(simple),
+
+  // Gin and Tonic
+  (ginTonic:Cocktail {name: "gin and tonic"}),
+  (ginTonic)-[:CONTAINS {quantity: 2, unit: "ounces"}]->(gin),
+  (ginTonic)-[:CONTAINS {quantity: 6, unit: "ounces"}]->(tonic),
+
+  // Manhattan
+  (manhattan:Cocktail {name: "manhattan"}),
+  (manhattan)-[:CONTAINS { quantity: 1.5, unit: "ounces"}]->(bourbon),
+  (manhattan)-[:CONTAINS { quantity: 0.75, unit: "ounces"}]->(vermouth),
+  (manhattan)-[:CONTAINS { quantity: 6, unit: "dashes"}]->(ango),
+
+  // Old Fashioned
+  (oldFashioned:Cocktail {name: "old fashioned"}),
+  (oldFashioned)-[:CONTAINS { quantity: 1.5, unit: "ounces"}]->(bourbon),
+  (oldFashioned)-[:CONTAINS { quantity: 0.5, unit: "ounces"}]->(simple),
+  (oldFashioned)-[:CONTAINS { quantity: 6, unit: "dashes"}]->(bitters),
+
+  // Sazerac
+  (sazerac:Cocktail {name:"sazerac"}),
+  (sazerac)-[:CONTAINS { quantity: 1.5, unit: "ounces"}]->(rye),
+  (sazerac)-[:CONTAINS { quantity: 1, unit: "dashes"}]->(absinthe),
+  (sazerac)-[:CONTAINS { quantity: 2, unit: "dashes"}]->(peychauds),
+  (sazerac)-[:CONTAINS { quantity: 2, unit: "dashes"}]->(ango),
+  (sazerac)-[:CONTAINS { quantity: 1, unit: "swath"}]->(lemonPeel)
+----
+
+Here's an example of what a cocktail might look like:
+
+[source,cypher]
+----
+MATCH (manhattan:Cocktail {name: "manhattan"})-[r:CONTAINS]->(ingredient)
+RETURN manhattan, ingredient
+----
+//graph
+
+==== What's in Sazerac again?
+
+Sometimes you just want to know what's in a drink. Here's a quick query to pull up
+all the ingredients by quantity and name, using a sazerac as an example.
+[source,cypher]
+----
+MATCH (sazerac:Cocktail {name: "sazerac"})-[r:CONTAINS]->(ingredient)
+RETURN collect(r.quantity + ' ' + r.unit + ' ' + ingredient.name)
+----
+//table
+
+==== What drinks have vodka in them?
+If you're trying to explore the types of drinks a certain ingredient can contribute
+to, you'll want to list all the cocktails that have that ingredient.
+
+[source,cypher]
+----
+MATCH (cocktails:Cocktail)-[r:CONTAINS]->(ingredient {name: "vodka"}),
+  (cocktails)-[:CONTAINS]->(otherIngredient)
+WHERE otherIngredient <> ingredient
+RETURN cocktails, collect(otherIngredient.name) as otherIngredients
+----
+//table
+
+==== How about multiple ingredients?
+Sometimes it's interesting to see which drinks pairs of ingredients show up in, say,
+bourbon and angostura bitters. We can use the UNWIND operator to group all of our desired
+ingredients at the top of the query and use them in our MATCH pattern.
+
+[source,cypher]
+----
+UNWIND ["bourbon", "angostura"] as ingredientName
+MATCH (cocktail:Cocktail)-[:CONTAINS]->(ingredient {name: ingredientName})
+RETURN cocktail, collect(ingredient.name) as otherIngredients
+----
+//table
+
+==== Most/Least useful
+In the given dataset, what are the 5 most useful ingredients to have?
+
+[source,cypher]
+----
+MATCH (cocktail:Cocktail)-[:CONTAINS]->(ingredient)
+RETURN ingredient, count(*) AS numCocktails
+ORDER BY numCocktails DESC
+LIMIT 5
+----
+//table
+
+How about the 5 least useful ingredients?
+
+[source,cypher]
+----
+MATCH (cocktail:Cocktail)-[:CONTAINS]->(ingredient)
+RETURN ingredient, count(*) AS numCocktails
+ORDER BY numCocktails
+LIMIT 5
+----
+//table
+
+==== What's most similar to a manhattan
+This is a twist on the typical friend of a friend query, where cocktails are
+"friends" with the ingredients they contain. We'll order the results by the
+number of ingredients that are similar.
+
+[source,cypher]
+----
+MATCH (cocktail:Cocktail {name: 'manhattan'})-[:CONTAINS]->(ingredient),
+(ingredient)<-[:CONTAINS]-(otherCocktail:Cocktail)
+WHERE cocktail <> otherCocktail
+RETURN otherCocktail, collect(ingredient) AS commonIngredients
+ORDER BY size(commonIngredients) DESC
+----
+//table
+
+==== What should I get next?
+When you're building your own cantina, it's hard to know what's the next bottle
+you should pick up. Given a list of ingredients you currently have, this query will recommend
+the single ingredients that will enable you to mix the most new cocktails, in order of impact. (I'm using a fairly
+trivial set of input ingredients since the cocktail list is relatively small.)
+
+[source,cypher]
+----
+MATCH (cocktail:Cocktail)-[:CONTAINS]->(ingredient)
+WHERE NOT ingredient.name IN ["vermouth", "angostura", "simple syrup", "bitters"]
+WITH cocktail, collect(ingredient) AS ingredients
+WHERE size(ingredients) = 1
+WITH cocktail, head(ingredients) AS missingIngredient
+RETURN missingIngredient, count(*) AS numDrinks, collect(cocktail.name) AS cocktails
+ORDER BY numDrinks DESC
+----
+//table
+
+
+=== What's a drink I should try?
+[source,cypher]
+----
+MATCH (cocktail:Cocktail)-[:CONTAINS]->(ingredient)
+RETURN cocktail, ingredient, ':p'
+----
+//graph
+
+== Thirsty?
+
+With graphs, it's easy to add more dimensions of information on existing data.
+We could easily add time period and location associated with the origins of certain cocktails.
+Then, we could start exploring cocktails across those time periods, or find cocktails that were created near our current location.
+Or we could add functions to our ingredients corresponding to their flavors: Alcohol, Bitter, Sweet, Sour, Salty.
+Then we can look at a particular drink recipe in a more generic form. A margarita might be represented as 7 parts alchohol, 4 parts sweet, 3 parts sour, .25 part salty.
+Using those ratios, you could substitute (or write a cypher query to substitute) alternative recipes that fit some abstract build of a drink.
+
+In any case, a graph is a great way to explore the world of drinks, where relationships between ingredients are key.

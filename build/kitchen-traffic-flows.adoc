@@ -1,0 +1,44 @@
+= GraphGist
+:neo4j-version:
+:author:
+:twitter:
+:style: #54A835/#1078B5/white:Colorized(name)
+
+//setup
+//hide
+[source,cypher]
+----
+CREATE
+  (fs:Station {name: 'Food scraps'}),
+  (ds:Station {name: 'Dish sink'}),
+  (dt:Station {name: 'Dining table'}),
+  (ph:Station {name: 'Pan hooks'}),
+  (ps:Station {name: 'Prep sink'}),
+  (c:Station  {name: 'Counter'}),
+  (s:Station  {name: 'Stove'}),
+  (dw:Station {name: 'Dishwasher'}),
+  (dr:Station {name: 'Drying rack'}),
+  (wb:Station {name: 'Wastebasket'}),
+  (o:Station  {name: 'Outside'}),
+  (bs:Station {name: 'Bulk storage'}),
+  (p:Station  {name: 'Pantry'}),
+
+
+  (fs)-[:TRAFFIC_TO]->(ds),
+  (dt)-[:TRAFFIC_TO]->(fs),
+  (ph)-[:TRAFFIC_TO]->(ps),
+  (ph)-[:TRAFFIC_TO]->(c),
+  (ph)-[:TRAFFIC_TO]->(s),
+  (c)-[:TRAFFIC_TO]->(ds),
+  (dt)-[:TRAFFIC_TO]->(ds),
+  (s)-[:TRAFFIC_TO]->(ds),
+  (ds)-[:TRAFFIC_TO]->(dw),
+  (ds)-[:TRAFFIC_TO]->(dr),
+  (dw)-[:TRAFFIC_TO]->(c),
+  (dr)-[:TRAFFIC_TO]->(c),
+  (dr)-[:TRAFFIC_TO]->(ph)
+
+
+----
+
+//graph

@@ -1,0 +1,106 @@
+= Eras and Schools
+
+:neo4j-version: 3.5
+
+== Initialize Graph
+
+//hide
+[source,cypher]
+----
+CREATE ( socrates:Philosopher  {name:'Socrates', uri: 'http://dbpedia.org/resource/Socrates' })
+, ( plato:Philosopher     {name:'Plato', uri: 'http://dbpedia.org/resource/Plato' })
+, ( aristotle:Philosopher { name: 'Aristotle' , uri: 'http://dbpedia.org/resource/Aristotle' })
+, ( ancient_era:Era       { name: 'Ancient philosophy', uri: 'http://dbpedia.org/resource/Ancient_philosophy' }) 
+, ( platonism_school:School { name: 'Platonism', uri: 'http://dbpedia.org/resource/Platonism' }) 
+, ( peripatetic_school:School { name: 'Peripatetic school', uri: 'http://dbpedia.org/resource/Peripatetic_school' }) 
+, ( ancient_greek_school:School { name: 'Ancient Greek philosophy', uri: 'http://dbpedia.org/resource/Ancient_Greek_philosophy' })
+, ( philo_tradition:SchoolType { name: 'Philosophical traditions', uri: 'http://dbpedia.org/class/yago/PhilosophicalTraditions' })
+, ( philo_movement:SchoolType { name: 'Philosophical movements', uri: 'http://dbpedia.org/class/yago/PhilosophicalMovements' })
+, ( philo_ancient_school:SchoolType { name: 'Ancient philosophical schools and traditions', uri: 'http://dbpedia.org/class/yago/AncientPhilosophicalSchoolsAndTraditions' })
+, ( tradition:SchoolType { name: 'tradition', uri: 'http://dbpedia.org/class/yago/Tradition105809745' })
+, ( movement:SchoolType { name: 'movement', uri: 'http://dbpedia.org/class/yago/Motion100331950' })
+, ( school:SchoolType { name: 'school', uri: 'http://dbpedia.org/class/yago/School108276720' })
+, ( content:SchoolType { name: 'content', uri: 'http://dbpedia.org/class/yago/Content105809192' })
+, ( knowledge:SchoolType { name: 'knowledge', uri: 'http://dbpedia.org/class/yago/Cognition100023271' })
+, ( change:SchoolType { name: 'change', uri: 'http://dbpedia.org/class/yago/Change100191142' })
+, (socrates)-[:INFLUENCES]->(plato)
+, (socrates)-[:INFLUENCES]->(aristotle)
+, (plato)-[:INFLUENCES]->(aristotle)
+, (socrates)-[:MEMBER_OF]->(ancient_greek_school)
+, (plato)-[:MEMBER_OF]->(platonism_school)
+, (aristotle)-[:MEMBER_OF]->(peripatetic_school)
+, (socrates)-[:MEMBER_OF]->(ancient_era)
+, (plato)-[:MEMBER_OF]->(ancient_era)
+, (aristotle)-[:MEMBER_OF]->(ancient_era)
+, (platonism_school)-[:TYPE_OF]->(philo_tradition)
+, (platonism_school)-[:TYPE_OF]->(philo_movement)
+, (peripatetic_school)-[:TYPE_OF]->(philo_movement)
+, (peripatetic_school)-[:TYPE_OF]->(philo_ancient_school)
+, (philo_ancient_school)-[:SUBCLASS_OF]->(school)
+, (philo_movement)-[:SUBCLASS_OF]->(movement)
+, (philo_tradition)-[:SUBCLASS_OF]->(tradition)
+, (tradition)-[:SUBCLASS_OF]->(content)
+, (content)-[:SUBCLASS_OF]->(knowledge)
+, (movement)-[:SUBCLASS_OF]->(change)
+----
+
+//graph
+
+== Return all nodes with label philosopher
+[source,cypher]
+----
+MATCH (p:Philosopher)
+RETURN p.name as PhilosopherNames
+ORDER BY p.name
+----
+
+//table
+
+== Return all ancient philosophers 
+[source,cypher]
+----
+MATCH (p:Philosopher)-[]->(e:Era)
+WHERE e.name = 'Ancient philosophy' 
+RETURN p.name as PhilosopherNames
+----
+
+//table
+
+== Return all school type philosophers
+[source,cypher]
+----
+MATCH (p:Philosopher)-[:MEMBER_OF]->(s:School)-[:TYPE_OF]->(st:SchoolType)
+RETURN DISTINCT p.name as PhilosopherNames
+----
+
+//table
+
+== Return all school type philosophers
+[source,cypher]
+----
+MATCH (p:Philosopher)-[:MEMBER_OF]->(s:School)-[:TYPE_OF]->(st:SchoolType)
+WHERE st.name = 'Philosophical movements'
+RETURN p.name as PhilosopherName, s.name as SchoolName
+----
+
+//table
+
+== Return all movement school type philosophers
+[source,cypher]
+----
+MATCH (p:Philosopher)-[r:MEMBER_OF]->(s:School)-[:TYPE_OF]->(st:SchoolType)-[:SUBCLASS_OF]->(st2:SchoolType)
+WHERE st2.name = 'movement'
+RETURN p.name as pName , type(r) as rType , s.name as sName
+----
+
+//table
+
+== Influential philosophers from the same school type class
+[source,cypher]
+----
+MATCH p=(st2:SchoolType)<-[:TYPE_OF]-(s2:School)<-[:MEMBER_OF]-(p2:Philosopher)<-[:INFLUENCES]-(p1:Philosopher)-[:MEMBER_OF]->(s1:School)-[:TYPE_OF]->(st1:SchoolType)-[:SUBCLASS_OF]->(stc:SchoolType)
+WHERE (stc)<-[:SUBCLASS_OF]-(st2)
+RETURN p1.name as p1Name, s1.name as s1Name, st1.name as st1Name, p2.name as p2Name, s2.name as s2Name, st2.name as st2Name, stc.name as stcName
+----
+
+//table

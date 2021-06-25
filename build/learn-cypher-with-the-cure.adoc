@@ -1,0 +1,155 @@
+All informations are from wikipedia : http://en.wikipedia.org/wiki/The_Cure
+
+//hide
+//setup
+[source,cypher]
+----
+CREATE (theCure:Artist { name:'The Cure' })
+
+CREATE (theCure)-[:RELEASED { year: 1979, label : 'Fiction' }]->(threeImaginaryBoys:Album { title: 'Three Imaginary Boys' }),
+(threeImaginaryBoys)-[:TRACK { rank : 'A-1' }]->(saturdayNight:Song { title: '10:15 Saturday Night' }),
+(threeImaginaryBoys)-[:TRACK { rank : 'A-2' }]->(accuracy:Song { title : 'Accuracy' }),
+(threeImaginaryBoys)-[:TRACK { rank : 'A-3' }]->(grindingAlt:Song { title : 'Grinding Halt' }),
+(threeImaginaryBoys)-[:TRACK { rank : 'A-4' }]->(anotherDay:Song { title : 'Another Day' }),
+(threeImaginaryBoys)-[:TRACK { rank : 'A-5' }]->(object:Song { title : 'Object' }),
+(threeImaginaryBoys)-[:TRACK { rank : 'A-6' }]->(subwaySong:Song { title : 'Subway Song' }),
+(threeImaginaryBoys)-[:TRACK { rank : 'B-1' }]->(foxyLady:Song { title : 'Foxy Lady' }),
+(threeImaginaryBoys)-[:TRACK { rank : 'B-2' }]->(meathook:Song { title : 'Meathook' }),
+(threeImaginaryBoys)-[:TRACK { rank : 'B-3' }]->(soWhat:Song { title : 'So What' }),
+(threeImaginaryBoys)-[:TRACK { rank : 'B-4' }]->(fireInCaire:Song { title : 'Fire in Cairo' }),
+(threeImaginaryBoys)-[:TRACK { rank : 'B-5' }]->(itsNotYou:Song { title : 'It\'s not you' }),
+(threeImaginaryBoys)-[:TRACK { rank : 'B-6' }]->(threeImaginaryBoysSong:Song { title : 'Three Imaginary Boys' })
+
+CREATE (theCure)-[:RELEASED { year: 1980, label : 'Fiction' }]->(seventeenSeconds:Album { title: 'Seventeen Seconds' }),
+(seventeenSeconds)-[:TRACK { rank : 'A-1' }]->(aReflection:Song { title : 'A Reflection' }),
+(seventeenSeconds)-[:TRACK { rank : 'A-2' }]->(playForToday:Song { title : 'Play For Today' }),
+(seventeenSeconds)-[:TRACK { rank : 'A-3' }]->(secrets:Song { title : 'Secrets' }),
+(seventeenSeconds)-[:TRACK { rank : 'A-4' }]->(inYourHouse:Song { title : 'In Your House' }),
+(seventeenSeconds)-[:TRACK { rank : 'A-5' }]->(three:Song { title : 'three' }),
+(seventeenSeconds)-[:TRACK { rank : 'B-1' }]->(theFinalSound:Song { title : 'The Final Sound' }),
+(seventeenSeconds)-[:TRACK { rank : 'B-2' }]->(aForest:Song { title : 'A Forrest' }),
+(seventeenSeconds)-[:TRACK { rank : 'B-3' }]->(m:Song { title : 'M' }),
+(seventeenSeconds)-[:TRACK { rank : 'B-4' }]->(atNight:Song { title : 'At Night' }),
+(seventeenSeconds)-[:TRACK { rank : 'B-5' }]->(:Song {title : 'Seventeen Seconds' })
+
+CREATE (theCure)-[:RELEASED { year : 1981, label : 'Fiction, Polydor' }]->(faith:Album { title : 'Faith' }),
+(faith)-[:TRACK { rank : 'A-1' }]->(theHolyHour:Song { title : 'The Holy Hour' }),
+(faith)-[:TRACK { rank : 'A-2' }]->(primary:Song { title : 'Primary' }),
+(faith)-[:TRACK { rank : 'A-3' }]->(otherVoices:Song { title : 'Other Voices' }),
+(faith)-[:TRACK { rank : 'A-4' }]->(allCatsAreGrey:Song { title : 'All Cats Are Grey'}),
+(faith)-[:TRACK { rank : 'B-1' }]->(theFuneralParty:Song { title : 'The Funeral Party'}),
+(faith)-[:TRACK { rank : 'B-2' }]->(doubt:Song { title : 'Doubt' }),
+(faith)-[:TRACK { rank : 'B-3' }]->(theDrowningMan:Song { title : 'The Drowing Man' }),
+(faith)-[:TRACK { rank : 'B-4' }]->(faithSong:Song { title : 'Faith' }) 
+
+CREATE (theCure)-[:RELEASED { year : 1982, label: 'Rak Studios' }]->(pornography:Album { title : 'Pornography' }),
+(pornography)-[:TRACK { rank : 'A-1' }]->(oneHundredYears:Song { title : 'One Hundred Years' }),
+(pornography)-[:TRACK { rank : 'A-2' }]->(aShortTermEffect:Song { title : 'A Short Term Effect' }),
+(pornography)-[:TRACK { rank : 'A-3' }]->(theHangingGarden:Song { title : 'The Hanging Garden' }),
+(pornography)-[:TRACK { rank : 'A-4' }]->(siameseTwins:Song { title : 'Siamese Twins' }),
+(pornography)-[:TRACK { rank : 'B-1' }]->(theFigurehead:Song { title : 'The Figurehead' }),
+(pornography)-[:TRACK { rank : 'B-2' }]->(aStrangeDay:Song { title : 'A Strange Day' }),
+(pornography)-[:TRACK { rank : 'B-3' }]->(cold:Song { title : 'Cold' }),
+(pornography)-[:TRACK { rank : 'B-4' }]->(pornographySong:Song { title : 'Pornography' })
+
+CREATE (theCure)-[:RELEASED { year : 1984, label : 'Fiction' }]->(theTop:Album { title : 'The Top' }),
+(theTop)-[:TRACK { rank : 'A-1' }]->(shakeDogShake:Song { title : 'Shake Dog Shake' }),
+(theTop)-[:TRACK { rank : 'A-2' }]->(birdMadGirl:Song { title : 'Bird Mad Girl' }),
+(theTop)-[:TRACK { rank : 'A-3' }]->(wailingWall:Song { title : 'Wailing Wall' }),
+(theTop)-[:TRACK { rank : 'A-4' }]->(giveMeIt:Song { title : 'Give Me It' }),
+(theTop)-[:TRACK { rank : 'A-5' }]->(dressingUp:Song { title : 'Dressing Up' }),
+(theTop)-[:TRACK { rank : 'B-1' }]->(theCaterpillar:Song { title : 'The Caterpillar' }),
+(theTop)-[:TRACK { rank : 'B-2' }]->(piggyInTheMirror:Song { title : 'Piggy in the Mirror' }),
+(theTop)-[:TRACK { rank : 'B-3' }]->(theEmptyWorld:Song { title : 'The Empty World' }),
+(theTop)-[:TRACK { rank : 'B-4' }]->(bananafishbones:Song { title : 'Bananafishbones' }),
+(theTop)-[:TRACK { rank : 'B-5' }]->(theTopSong:Song { title : 'The Top' })
+
+
+CREATE (theCure)-[:RELEASED { year:1985, label: 'Fiction' }]->(theHeadOnTheDoor:Album { title :'The head On the door' }),
+(theHeadOnTheDoor)-[:TRACK { rank : 1 }]->(inBetweenDays:Song { title : 'In Between Days' }),
+(theHeadOnTheDoor)-[:TRACK { rank : 2 }]->(kyotoSong:Song { title : 'Kyoto Song' }),
+(theHeadOnTheDoor)-[:TRACK { rank : 3 }]->(theBlood:Song { title : 'The Blood' }),
+(theHeadOnTheDoor)-[:TRACK { rank : 4 }]->(sixDifferentWays:Song { title : 'Six Different Ways' }),
+(theHeadOnTheDoor)-[:TRACK { rank : 5 }]->(push { title : 'Push' }),
+(theHeadOnTheDoor)-[:TRACK { rank : 6 }]->(theBabyScreams { title : 'The Baby Screams' }),
+(theHeadOnTheDoor)-[:TRACK { rank : 7 }]->(closeToMe { title : 'Close to Me' }),
+(theHeadOnTheDoor)-[:TRACK { rank : 8 }]->(aNightLikeThis { title : 'A Night Like This' }),
+(theHeadOnTheDoor)-[:TRACK { rank : 9 }]->(screw { title : 'Screw' }),
+(theHeadOnTheDoor)-[:TRACK { rank : 10 }]->(sinking { title : 'Sinking' })
+
+
+----
+//console
+
+= Queries
+
+== Get "THE CURE"
+
+ Simple one get "The Cure" artist.
+
+[source, cypher]
+----
+MATCH (theCure:Artist) 
+WHERE theCure.name = 'The Cure' 
+RETURN theCure;
+----
+
+== Get all relations 
+
+This query permit to list all relations in the database
+
+[source, cypher] 
+----
+START n=node(*)
+MATCH (n)-[r]->(m)
+RETURN n as from, r as `->`, m as to;
+----
+
+== The Cure first album is 
+
+[source, cypher]
+---- 
+MATCH (theCure:Artist), (theCure) -[released:RELEASED]-> (album:Album)
+WHERE theCure.name = 'The Cure'
+RETURN album.title, released.year
+ORDER BY released.year ASC
+LIMIT 1
+----
+//table
+
+== All song and side from "Three Imaginary Boys" album
+We can use alias to return values.
+[source, cypher]
+----
+MATCH (threeImaginaryBoys:Album),(threeImaginaryBoys)-[track:TRACK]->(song:Song) 
+WHERE threeImaginaryBoys.title = 'Three Imaginary Boys' 
+RETURN song.title as title, SUBSTRING(track.rank,0,1) as side
+----
+//table
+
+== Song eponym of the album
+
+Very simple and elegant way to find eponym songs.
+
+[source, cypher]
+----
+MATCH (a:Album) - [:TRACK] -> (s:Song)
+WHERE a.title = s.title
+return a;
+----
+//table
+
+== Album with at least one song started with "s" 
+
+Query using regular expression, and DISTINCT key word.
+
+[source, cypher]
+----
+MATCH (album:Album)-[:TRACK]-(song)
+WHERE song.title =~ "S.*"
+RETURN DISTINCT album.title;
+----
+//table
+
+
+There is a lot more that we can seek in our knowledge of this band. 

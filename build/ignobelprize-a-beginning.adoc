@@ -1,0 +1,310 @@
+= Ig Nobel Prize Winners
+:author: Gauthier Mueller
+
+
+== Introduction
+
+Simple example of a graph with the Ig Nobel Prize Winners.
+
+Person, Ig Nobel Prize, Country, Domain
+
+image::http://i.imgur.com/GzVI7yh.png[width=600]
+
+////
+Provide an introduction to your domain and what you are trying to accomplish, link to http://a.source.com[sources] as needed.
+
+Provide a domain model image - using something like http://www.apcjones.com/arrows/# or https://www.gliffy.com/ or a readable screenshot from Neo4j-Browser.
+
+You can run this query to get an overview of entities and how they are related:
+MATCH (a)-[r]->(b) WHERE labels(a) <> [] AND labels(b) <> []
+RETURN DISTINCT head(labels(a)) AS This, type(r) as To, head(labels(b)) AS That LIMIT 10
+////
+
+== Setup
+
+//setup
+//hide
+[source,cypher]
+----
+CREATE
+  (paolo_livrea:Person {name: 'Paolo Livrea'}),
+  (michele_sardaro:Person {name: 'Michele Saradaro'}),
+  (marina_de_tommaso:Person {name: 'Marina de Tommaso'}),
+
+  (amy_jones:Person {name: 'Amy Jones'}),
+  (peter_k_jonason:Person {name: 'Peter K.Jonason'}),
+  (minna_lyons:Person {name: 'Minna Lyons'}),
+
+  (rina_sakai:Person {name: 'Rina Sakai'}),
+  (kiyoshi_mabuchi:Person {name: 'Kiyoshi Mabuchi'}),
+  (kensei_tanaki:Person {name: 'Kensei Tanak'}),
+  (daichi_uchijima:Person {name: 'Daichi Uchijima'}),
+
+  (james_dworkin:Person {name: 'James Dworkin'}),
+  (walter_belenky:Person {name: 'Walter Belenky'}),
+  (sonal_saraiya:Person {name: 'Sonal Saraiya'}),
+  (ian_humphreys:Person {name: 'Ian Humphreys'}),
+
+  (xiangyuan_jin:Person {name: 'Xiangyuan Jin'}),
+  (toshihito_hirai:Person {name: 'Toshihito Hirai'}),
+  (qi_zhang:Person {name: 'Qi Zhang'}),
+  (masateru_uchiyama:Person {name: 'Masateru Uchiyama'}),
+  (masanori_niimi:Person {name: 'Masanori Niimi'}),
+  (hisashi_bashuda:Person {name: 'Hisashi Bashuda'}),
+  (atsushi_amano:Person {name: 'Atsushi Amano'}),
+
+  (yuri_ivanenko:Person {name: 'Yuri Ivanenko'}),
+  (nadia_dominici:Person {name: 'Nadia Dominici'}),
+  (germana_cappellini:Person {name: 'Germana Cappellini'}),
+  (francesco_lacquaniti:Person {name: 'Francesco Lacquaniti'}),
+  (alberto_minetti:Person {name: 'Alberto Minetti'}),
+
+  (oulmann_zerhouni:Person {name: 'Oulmann Zerhouni'}),
+  (medhi_ourabah:Person {name: 'Medhi Ourabah'}),
+  (laurent_begue:Person {name: 'Laurant Bégue'}),
+  (brad_bushman:Person {name: 'Brad Bushman'}),
+  (baptiste_subra:Person {name: 'Baptiste Subra'}),
+
+  (joseph_keller: Person {name: 'Joseph Keller'}),
+  (robin_ball: Person{name: 'Robin Ball'}),
+  (raymond_goldstein: Person {name: 'Raymond Goldstein' }),
+  (patrick_warren: Person {name: 'Patrick Warren'}),
+
+  (tulio_guadalupe: Person{name: 'Tulio Guadalupe'}),
+  (rolf_zwaan: Person {name:'Rolf Zwaan'}),
+  (anita_eerland: Person {name: 'Anita Eerland'}),
+
+  (michel_antonietti: Person {name:'Michel Antonietti'}),
+  (emmanuel_ben_soussan: Person {name: 'Emmanuel Ben-Soussan'}),
+
+
+
+  (igp_psychology_2012:IgNobelPrize {name: 'Ig Nobel Price', year:'2012'}),
+  (igp_medicine_2012:IgNobelPrize {name: 'Ig Nobel Price', year: '2012'}),
+  (igp_physics_2012:IgNobelPrize {name: 'Ig Nobel Price', year: '2012'}),
+
+  (igp_psychology_2013:IgNobelPrize {name: 'Ig Nobel Price', year:'2013'}),
+  (igp_medicine_2013:IgNobelPrize {name: 'Ig Nobel Price', year: '2013'}),
+  (igp_physics_2013:IgNobelPrize {name: 'Ig Nobel Price', year: '2013'}),
+
+  (igp_art_2014:IgNobelPrize {name: 'Ig Nobel Price', year:'2014'}),
+  (igp_psychology_2014:IgNobelPrize {name: 'Ig Nobel Price', year:'2014'}),
+  (igp_medicine_2014:IgNobelPrize {name: 'Ig Nobel Price', year:'2014'}),
+  (igp_physics_2014:IgNobelPrize {name: 'Ig Nobel Price', year:'2014'}),
+
+  (art: Domain {domain: 'Art'}),
+  (pyschology: Domain {domain: 'Psychology'}),
+  (physics: Domain {domain: 'Physics'}),
+  (medicine: Domain {domain: 'Medicine'}),
+
+  (it:Country {name: 'Italy'}),
+  (uk:Country {name: 'United Kingdom'}),
+  (au:Country{name: 'Australia'}),
+  (usa:Country{name: 'United States'}),
+  (jp:Country{name:'Japan'}),
+  (id:Country {name:'India'}),
+  (china:Country {name:'China'}),
+  (ch:Country {name: 'Switzerland'}),
+  (f:Country {name: 'France'}),
+  (ru: Country {name: 'Russia'}),
+  (dk: Country {name: 'Denmark'}),
+  (nl: Country {name: 'Netherland'}),
+  (pl: Country {name: 'Poland'}),
+  (peru: Country {name: 'Peru'}),
+
+  (igp_psychology_2012)-[:in]->(pyschology),
+  (igp_medicine_2012)-[:in]->(medicine),
+  (igp_physics_2012)-[:in]->(physics),
+
+  (igp_psychology_2013)-[:in]->(pyschology),
+  (igp_medicine_2013)-[:in]->(medicine),
+  (igp_physics_2013)-[:in]->(physics),
+
+  (igp_art_2014)-[:in]->(art),
+  (igp_psychology_2014)-[:in]->(pyschology),
+  (igp_medicine_2014)-[:in]->(medicine),
+  (igp_physics_2014)-[:in]->(physics),
+
+  (paolo_livrea)-[:WON]->(igp_art_2014),
+  (michele_sardaro)-[:WON]->(igp_art_2014),
+  (marina_de_tommaso)-[:WON]->(igp_art_2014),
+
+  (amy_jones)-[:WON]->(igp_psychology_2014),
+  (peter_k_jonason)-[:WON]->(igp_psychology_2014),
+  (minna_lyons)-[:WON]->(igp_psychology_2014),
+
+  (rina_sakai)-[:WON]->(igp_physics_2014),
+  (kiyoshi_mabuchi)-[:WON]->(igp_physics_2014),
+  (kensei_tanaki)-[:WON]->(igp_physics_2014),
+  (daichi_uchijima)-[:WON]->(igp_physics_2014),
+
+  (james_dworkin)-[:WON]->(igp_medicine_2014),
+  (walter_belenky)-[:WON]->(igp_medicine_2014),
+  (sonal_saraiya)-[:WON]->(igp_medicine_2014),
+  (ian_humphreys)-[:WON]->(igp_medicine_2014),
+
+  (xiangyuan_jin)-[:WON]->(igp_medicine_2013),
+  (toshihito_hirai)-[:WON]->(igp_medicine_2013),
+  (qi_zhang)-[:WON]->(igp_medicine_2013),
+  (masateru_uchiyama)-[:WON]->(igp_medicine_2013),
+  (masanori_niimi)-[:WON]->(igp_medicine_2013),
+  (hisashi_bashuda)-[:WON]->(igp_medicine_2013),
+  (atsushi_amano)-[:WON]->(igp_medicine_2013),
+
+  (yuri_ivanenko)-[:WON]->(igp_physics_2013),
+  (nadia_dominici)-[:WON]->(igp_physics_2013),
+  (germana_cappellini)-[:WON]->(igp_physics_2013),
+  (francesco_lacquaniti)-[:WON]->(igp_physics_2013),
+  (alberto_minetti)-[:WON]->(igp_physics_2013),
+
+  (oulmann_zerhouni)-[:WON]->(igp_psychology_2013),
+  (medhi_ourabah)-[:WON]->(igp_psychology_2013),
+  (laurent_begue)-[:WON]->(igp_psychology_2013),
+  (brad_bushman)-[:WON]->(igp_psychology_2013),
+  (baptiste_subra)-[:WON]->(igp_psychology_2013),
+
+  (joseph_keller)-[:WON]->(igp_physics_2012),
+  (robin_ball)-[:WON]->(igp_physics_2012),
+  (raymond_goldstein)-[:WON]->(igp_physics_2012),
+  (patrick_warren)-[:WON]->(igp_physics_2012),
+
+  (tulio_guadalupe)-[:WON]->(igp_psychology_2012),
+  (rolf_zwaan)-[:WON]->(igp_psychology_2012),
+  (anita_eerland)-[:WON]->(igp_psychology_2012),
+
+  (michel_antonietti)-[:WON]->(igp_medicine_2012),
+  (emmanuel_ben_soussan)-[:WON]->(igp_medicine_2012),
+
+  (michel_antonietti)-[:IS_FROM]->(f),
+  (emmanuel_ben_soussan)-[:IS_FROM]->(f),
+
+  (tulio_guadalupe)-[:IS_FROM]->(peru),
+  (tulio_guadalupe)-[:IS_FROM]->(ru),
+  (tulio_guadalupe)-[:IS_FROM]->(nl),
+  (rolf_zwaan)-[:IS_FROM]->(nl),
+  (anita_eerland)-[:IS_FROM]->(nl),
+
+  (joseph_keller)-[:IS_FROM]->(usa),
+  (robin_ball)-[:IS_FROM]->(uk),
+  (raymond_goldstein)-[:IS_FROM]->(usa),
+  (raymond_goldstein)-[:IS_FROM]->(uk),
+  (patrick_warren)-[:IS_FROM]->(uk),
+
+  (paolo_livrea)-[:IS_FROM]->(it),
+  (michele_sardaro)-[:IS_FROM]->(it),
+  (marina_de_tommaso)-[:IS_FROM]->(it),
+
+  (amy_jones)-[:IS_FROM]->(uk),
+  (peter_k_jonason)-[:IS_FROM]->(uk),
+  (peter_k_jonason)-[:IS_FROM]->(usa),
+  (peter_k_jonason)-[:IS_FROM]->(au),
+  (minna_lyons)-[:IS_FROM]->(uk),
+
+  (rina_sakai)-[:IS_FROM]->(jp),
+  (kiyoshi_mabuchi)-[:IS_FROM]->(jp),
+  (kensei_tanaki)-[:IS_FROM]->(jp),
+  (daichi_uchijima)-[:IS_FROM]->(jp),
+
+  (james_dworkin)-[:IS_FROM]->(usa),
+  (walter_belenky)-[:IS_FROM]->(usa),
+  (sonal_saraiya)-[:IS_FROM]->(usa),
+  (sonal_saraiya)-[:IS_FROM]->(id),
+  (ian_humphreys)-[:IS_FROM]->(usa),
+
+  (xiangyuan_jin)-[:IS_FROM]->(jp),
+  (xiangyuan_jin)-[:IS_FROM]->(china),
+  (toshihito_hirai)-[:IS_FROM]->(jp),
+  (qi_zhang)-[:IS_FROM]->(jp),
+  (masateru_uchiyama)-[:IS_FROM]->(jp),
+  (masanori_niimi)-[:IS_FROM]->(jp),
+  (hisashi_bashuda)-[:IS_FROM]->(jp),
+  (atsushi_amano)-[:IS_FROM]->(jp),
+
+  (yuri_ivanenko)-[:IS_FROM]->(it),
+  (yuri_ivanenko)-[:IS_FROM]->(ru),
+  (yuri_ivanenko)-[:IS_FROM]->(f),
+  (nadia_dominici)-[:IS_FROM]->(it),
+  (nadia_dominici)-[:IS_FROM]->(ch),
+  (germana_cappellini)-[:IS_FROM]->(it),
+  (francesco_lacquaniti)-[:IS_FROM]->(it),
+  (alberto_minetti)-[:IS_FROM]->(it),
+  (alberto_minetti)-[:IS_FROM]->(ch),
+  (alberto_minetti)-[:IS_FROM]->(uk),
+  (alberto_minetti)-[:IS_FROM]->(dk),
+
+  (oulmann_zerhouni)-[:IS_FROM]->(f),
+  (medhi_ourabah)-[:IS_FROM]->(f),
+  (laurent_begue)-[:IS_FROM]->(f),
+  (brad_bushman)-[:IS_FROM]->(uk),
+  (brad_bushman)-[:IS_FROM]->(usa),
+  (brad_bushman)-[:IS_FROM]->(nl),
+  (brad_bushman)-[:IS_FROM]->(pl),
+  (baptiste_subra)-[:IS_FROM]->(f)
+
+
+
+----
+
+//graph
+
+== Find winners from United States
+
+[source,cypher]
+----
+MATCH (p:Person)-[:IS_FROM]->(c:Country)
+WHERE c.name = 'United States' 
+RETURN p.name;
+----
+
+//table
+
+
+== Find Paths between Paolo Livrea and Alberto Minetti
+
+[source,cypher]
+----
+MATCH p =(:Person { name: "Paolo Livrea" })-[:IS_FROM*0..5]-(:Person { name: "Alberto Minetti" })
+RETURN extract(n IN nodes(p)| coalesce(n.name)) AS `names`, length(p)
+ORDER BY length(p)
+LIMIT 10;
+----
+
+//table
+
+== Find All Shortest Paths Between Baptiste Subra and Brad Bushman
+
+[source,cypher]
+----
+MATCH (p1:Person { name:"Baptiste Subra" }),(p2:Person { name:"Brad Bushman" }),
+  p = allShortestPaths((p1)-[*]-(p2))
+RETURN p
+----
+
+//table
+
+== Find Year with most winners
+
+[source,cypher]
+----
+MATCH (igp:IgNobelPrize)<-[WON]-(Person)
+RETURN igp.name AS Prize, igp.year AS year, count(*) AS Winners
+ORDER BY Winners DESC LIMIT 10;
+----
+
+//table
+
+== Find Country with most winners
+
+Some have more than one nationality.
+
+[source,cypher]
+----
+MATCH (c:Country)<-[IS_FROM]-(Person)-[WON]->(i:IgNobelPrize)
+RETURN c.name AS Country, count(*) AS Winners
+ORDER BY Winners DESC LIMIT 10;
+----
+
+//table
+
+
+

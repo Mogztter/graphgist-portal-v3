@@ -1,0 +1,257 @@
+= ClimbingDB (social network climbing database)
+
+== Introduction:
+
+Climbing is a sport that is growing in its popularity with every passing year and it surely is a great way to spend quality time in the outdoors and it also provides a great way of challenging oneself. To me it provides constant source of motivation and relaxation and I am sure that goes for many climbers across the world. 
+
+In this gist I concentrated on the most popular type of climbing, that is sport climbing. It its essence we could say that sport climbing is a vertically oriented movement with the objective to push the limit of individuals through the use of a grading system (http://www.alpinist.com/p/online/grades). Sport climbing can further be derived into bouldering and lead climbing. The later is probably better known in the general public than bouldering. In bouldering no protection, except for a pad, is used while in lead climbing rope and other protection equipment is used.
+
+Without doubt we can say that climbing will continue to grow as a sport for enthusiasts like myself and professionals (hopefully in future Olympic games)
+
+== Motivation:
+
+This gist provides an outline or a model of application that combines a database for routes and climbing sites as well as a social point where climbers could meet and interact with one-another. Data about routes, climbing sites and countries containing them is highly connected and like a perfect job for a graph database such as Neo4j. The social aspect of it only adds to that thought. 
+
+In further chapters a description of the data model is given along with some explanation of the terms to make thing more clear to the reader. With accordance to the rules of the challenge, some use cases and examples are provided (on sample data).
+
+== Data model:
+
+image::http://shrani.si/f/3P/5M/32CbIm3A/capture.png[]
+
+=== Description of nodes:
+
+* *ROUTE* is the way up the rock :), with attributes: _name_, _grade_ (see the grading system above)
+* *CRAG*, sometimes referred as climbing site or just the wall, with attributes: _name_, _orientation_ (east, west, south, north)
+* *COUNTRY* represents the country (English name), with attribute: _name_
+* *CLUB* represents a climbing club, with attribute: _name_
+* *CLIMBER* is the individual climber (the social aspect of this model), with attributes: _first_ _name_, _last name_, _date_ _of_ _birth_
+
+=== Description of relationships:
+
+Crags (climbing sites) are a summary of routes. Crags contain routes and routes are a part of crags. One route can be a part of only one crag but different routes have the same names (pretty common actually, but no two routes have the same name in one crag.
+
+Usually crags are managed by clubs and clubs are responsible for crags (sometimes this is not true but in majority of cases it is). Clubs originate from different countries and have members, climbers.
+
+As do clubs, so do climbers come from different countries and are part of (or not) clubs. Routes are climbed by climbers (obviously). This provides a sort of diary for individual climbers as well as some statistics for routes. Many climbers have a favorite climbing site which they like to visit the most.
+
+The social aspect of the model is shown below:
+
+image::http://shrani.si/f/C/114/2nn93E8o/capture2.png[]
+
+== Sample data import:
+
+For better understanding of the model and the domain we should import some sample data and populate the graph with a few representatives of all entities. Here are the cypher queries fo sample data import:
+
+First some  nodes:
+
+[source,cypher]
+----
+CREATE (:CLIMBER{name:'Alice', last_name:'Wonderland', Dob:'12.12.2000'})
+CREATE (:CLIMBER{name:'Bob', last_name:'Missy', Dob:'3.3.1989'})
+CREATE (:CLIMBER{name:'Jack', last_name:'Chan', Dob:'5.6.2004'})
+CREATE (:CLIMBER{name:'Hilary', last_name:'Hope', Dob:'8.5.1995'})
+CREATE (:CLIMBER{name:'Annie', last_name:'Hork', Dob:'8.8.1945'})
+
+CREATE (:ROUTE{name:'Hoax', grade:'6a'})
+CREATE (:ROUTE{name:'Hooking', grade:'8b'})
+CREATE (:ROUTE{name:'Banana', grade:'7c'})
+CREATE (:ROUTE{name:'Pork_and_Beans', grade:'5a'})
+CREATE (:ROUTE{name:'Traversal', grade:'4c+'})
+
+CREATE (:CRAG{name:'Kamnitnik', orientation:'East'})
+CREATE (:CRAG{name:'Rocky', orientation:'West'})
+CREATE (:CRAG{name:'Big_Wall', orientation:'North'})
+CREATE (:CRAG{name:'Jungle_Tree', orientation:'South'})
+CREATE (:CRAG{name:'Beach_sunset', orientation:'South'})
+
+CREATE (:CLUB{name:'AO_Kranj'})
+CREATE (:CLUB{name:'Pensilvania_CC'})
+CREATE (:CLUB{name:'Ljubljana_CC'})
+CREATE (:CLUB{name:'Best_Climbing_Club_Ever'})
+CREATE (:CLUB{name:'SUDOSK'})
+
+CREATE (:COUNTRY{name:'Pakistan'})
+CREATE (:COUNTRY{name:'Turkey'})
+CREATE (:COUNTRY{name:'Slovenia'})
+CREATE (:COUNTRY{name:'France'})
+CREATE (:COUNTRY{name:'USA'})
+----
+
+Now lets add some relationships:
+
+* members of clubs:
+
+[source, cypher]
+----
+MATCH (a:CLIMBER),(b:CLUB), (c:CLIMBER),(d:CLUB), (e:CLIMBER),(f:CLUB) 
+WHERE a.name = 'Jack' AND b.name = 'AO_Kranj' AND c.name = 'Hilary' AND d.name = 'SUDOSK' AND e.name = 'Annie' AND f.name = 'Best_Climbing_Club_Ever' 
+CREATE (a)-[r:is_member]->(b), (c)-[s:is_member]->(d), (e)-[t:is_member]->(f)
+RETURN r, s, t;
+----
+
+* which crags are clubs responsible for:
+
+[source, cypher]
+----
+MATCH (a:CLUB),(c:CLUB),(b:CRAG),(d:CRAG) 
+WHERE a.name = 'AO_Kranj' AND b.name = 'Kamnitnik' AND c.name = 'SUDOSK' AND d.name = 'Rocky' 
+CREATE (a)-[r:is_responsible_for]->(b), (c)-[s:is_responsible_for]->(d) 
+----
+
+* part of which crags are different routes:
+
+[source, cypher]
+
+----
+MATCH (a:ROUTE),(b:CRAG),(c:ROUTE),(d:CRAG),(e:ROUTE),(f:CRAG), (g:ROUTE),(h:CRAG), (k:ROUTE),(j:CRAG) 
+WHERE a.name = 'Hoax' AND b.name = 'Kamnitnik' AND c.name = 'Hooking' AND d.name = 'Kamnitnik' AND e.name = 'Banana' AND f.name = 'Rocky' AND g.name = 'Pork_and_Beans' AND h.name = 'Rocky' AND k.name = 'Traversal' AND j.name = 'Jungle_Tree'
+CREATE (a)-[r:is_part_of]->(b),(c)-[s:is_part_of]->(d), (e)-[v:is_part_of]->(f), (g)-[t:is_part_of]->(h), (k)-[z:is_part_of]->(j) 
+----
+
+* in which country can we find the crags:
+
+[source, cypher]
+
+----
+MATCH (a:CRAG),(b:COUNTRY), (c:CRAG),(d:COUNTRY), (e:CRAG),(f:COUNTRY), (g:CRAG),(h:COUNTRY), (k:CRAG),(j:COUNTRY) 
+WHERE a.name = 'Kamnitnik' AND b.name = 'Slovenia' AND c.name = 'Rocky' AND d.name = 'Turkey' AND e.name = 'Big_Wall' AND f.name = 'USA' AND g.name = 'Jungle_Tree' AND h.name = 'France' AND k.name = 'Beach_sunset' AND j.name = 'Pakistan' 
+CREATE (a)-[r:is_in]->(b), (c)-[s:is_in]->(d), (e)-[t:is_in]->(f), (g)-[w:is_in]->(h), (k)-[q:is_in]->(j)
+----
+
+* which crags are favored by different climbers:
+
+[source, cypher]
+
+----
+MATCH (a:CLIMBER),(b:CRAG), (c:CLIMBER),(d:CRAG), (e:CLIMBER),(f:CRAG) 
+WHERE a.name = 'Annie' AND b.name = 'Kamnitnik' AND c.name = 'Bob' AND d.name = 'Kamnitnik' AND e.name = 'Jack' AND f.name = 'Kamnitnik'
+CREATE (a)-[r:favours]->(b), (c)-[s:favours]->(d), (e)-[t:favours]->(f)
+----
+
+* where do climbers come from:
+
+[source, cypher]
+
+----
+MATCH (a:CLIMBER),(b:COUNTRY), (c:CLIMBER),(d:COUNTRY), (e:CLIMBER),(f:COUNTRY), (g:CLIMBER),(h:COUNTRY), (k:CLIMBER),(j:COUNTRY) WHERE a.name = 'Alice' AND b.name = 'Pakistan' AND c.name = 'Bob' AND d.name = 'Turkey' AND e.name = 'Jack' AND f.name = 'Slovenia' AND g.name = 'Hilary' AND h.name = 'France' AND k.name = 'Annie' AND j.name = 'USA'
+CREATE (a)-[r:comes_from]->(b), (d)-[s:comes_from]->(c), (e)-[t:comes_from]->(f), (g)-[w:comes_from]->(h), (k)-[q:comes_from]->(j) 
+----
+
+* from which countries do clubs originate:
+
+[source, cypher]
+
+----
+MATCH (a:CLUB),(b:COUNTRY),(c:CLUB),(d:COUNTRY), (e:CLUB),(f:COUNTRY), (g:CLUB),(h:COUNTRY), (j:CLUB),(k:COUNTRY) 
+WHERE a.name = 'AO_Kranj' AND b.name = 'Slovenia' AND c.name = 'SUDOSK' AND d.name = 'France' AND e.name = 'Pensilvania_CC' AND f.name = 'USA' AND g.name = 'Ljubljana_CC' AND h.name = 'Slovenia' AND j.name = 'Best_Climbing_Club_Ever' AND k.name = 'USA' 
+CREATE (a)-[r:originates_from]->(b), (c)-[s:originates_from]->(d), (e)-[t:originates_from]->(f), (g)-[w:originates_from]->(h), (j)-[q:originates_from]->(k)
+----
+
+* who climbed what:
+
+[source, cypher]
+
+----
+MATCH (a:CLIMBER),(b:ROUTE),(c:CLIMBER),(d:ROUTE), (e:CLIMBER),(f:ROUTE), (g:CLIMBER),(h:ROUTE), (j:CLIMBER),(k:ROUTE), (l:CLIMBER),(m:ROUTE) 
+WHERE a.name = 'Alice' AND b.name = 'Hoax' AND c.name = 'Jack' AND d.name = 'Hoax' AND e.name = 'Annie' AND f.name = 'Banana' AND g.name = 'Hilary' AND h.name = 'Banana' AND j.name = 'Bob' AND k.name = 'Banana' AND l.name = 'Alice' AND m.name = 'Pork_and_Beans'
+CREATE (a)-[r:climbed]->(b),(c)-[s:climbed]->(d), (e)-[t:climbed]->(f), (g)-[v:climbed]->(h), (j)-[z:climbed]->(k),(l)-[q:climbed]->(m) 
+----
+
+* who knows who:
+
+[source,cypher]
+
+----
+MATCH (a:CLIMBER),(b:CLIMBER),(c:CLIMBER),(d:CLIMBER), (e:CLIMBER),(f:CLIMBER), (g:CLIMBER),(h:CLIMBER), (j:CLIMBER),(k:CLIMBER), (m:CLIMBER),(n:CLIMBER) 
+WHERE a.name = 'Alice' AND b.name = 'Jack' AND c.name = 'Alice' AND d.name = 'Jack' AND e.name = 'Alice' AND f.name = 'Hilary' AND g.name = 'Annie' AND h.name = 'Bob' AND j.name = 'Alice' AND k.name = 'Annie' AND m.name = 'Jack' AND n.name = 'Annie'   
+CREATE (a)-[r:is_friends_with]->(b), (c)-[s:is_friends_with]->(d), (e)-[t:is_friends_with]->(f), (g)-[v:is_friends_with]->(h), (j)-[q:is_friends_with]->(k), (m)-[z:is_friends_with]->(n)
+----
+
+Now that we have populated our database and we have a graph on which we can perform some queries and and use cases presented in next part. For better visualisation please refer to the graph representation below:
+//graph
+
+== Use cases:
+
+In this part we present some possible use cases that can be applied to our graph/data. As mentioned before we combined the functionalities of a database and social media. This gives us broad scope of possible use cases (from usual investigative queries to some complex social graph analysis). Here we present some with Cypher snippets and also some ideas that are possible in a broader scenario (more and actual data).
+
+Some possible queries might include:
+
+* who climbs the most:
+
+[source, cypher]
+
+----
+MATCH (climber)-[r:climbed]->(route)
+RETURN climber.name AS WHO, count(r) AS HOW_MUCH, collect(route.name) AS WHAT
+ORDER BY count(r) DESC
+----
+
+//table
+
+* where do climbers climb (most visited climbing site) and who already visited it:
+
+[source, cypher]
+
+----
+MATCH (climber)-[s:climbed]->(route)-[r:is_part_of]->(crag)-[:is_in]->(country)
+RETURN crag.name AS CRAG, country.name AS COUNTRY , COUNT(r) AS NUMBER_OF_VISITS, collect(climber.name) AS WHO
+----
+
+//table
+
+* who is responsible for the most popular (most favored) climbing site:
+
+[source, cypher]
+
+----
+MATCH (climber)-[s:favours]->(crag)<-[:is_responsible_for]-(club)
+RETURN crag.name AS CRAG, count(s) AS FAVOURED, club.name AS RESPONSIBILITY_OF
+----
+
+//table
+
+These are just some possible queries that might be asked by someone interested in the sport or some functionalities of an application. Since here we only have some sample data the queries and results are not very interesting.
+
+Lets check an example scenario involving the social network dimension of the graph, some investigative data science as someone might call it. We already discovered the climbing site that most climbers favor with the query. Also included is the list of climbers that have favored it:
+
+[source,cypher]
+----
+MATCH (climber)-[s:favours]->(crag)-[:is_in]->(country) 
+RETURN crag.name AS CRAG, count(s) AS COUNT, collect(climber.name) AS WHO
+----
+
+//table
+
+By doing that we discover that Annie, Jack, Bob favor the same crag. With the following query we can discover where these three come from:
+
+[source,cypher]
+----
+MATCH (country1)-[t:comes_from]-(climber)-[s:favours]->(crag)-[r:is_in]->(country2)
+WHERE climber.name IN ['Annie','Bob','Jack']
+RETURN climber.name AS CLIMBER, country1.name AS COMING_FROM, crag.name AS LIKED , country2.name AS FROM
+----
+
+//table
+
+It turns out that only one of the three comes from the same country as the favored crag resides in. One might ask why would someone from USA (Annie) and/or from Turkey (Bob) like a climbing site in a small country like Slovenia.
+
+Lets check the social graph of our Slovenian climber jack. We might get some info about it. We obtain friends of Jack (plus friends of Jacks friends) with the following query:
+
+[source,cypher]
+----
+MATCH (country)<-[t:comes_from]-(climber)-[z:is_friends_with]->(others)-[r:is_friends_with]-(some_others) WITH country, climber, others, some_others, t, z, r
+WHERE country.name = 'Slovenia'
+RETURN climber.name AS CLIMBER, collect(distinct others.name) AS ONE , collect(some_others.name) AS TWO
+----
+
+//table
+
+Or we could just return the whole social dimension of the graph (our data is small so we can do that).*By observing this we can discover that amongst the climbers that favored the same crag in Slovenia only one actually comes from Slovenia. The other two are connected with him in first (Annie) or second degree(Bob).*
+
+== Conclusion:
+
+The combination of a social network and highly connected data is a perfect opportunity to use Neo4j. In this gist we explored just a fraction of possibilities that one might encounter in such application. The sample data is small and results might not be interesting to everybody but as the data would grow so would the possibilities of exploration and application of ideas. I hope this gist provides some useful information about climbing and maybe someone might actually join our ranks.
+
+*As always its was super fun to work with Neo4j, Cypher and graphs in general.*
+
+

@@ -1,0 +1,68 @@
+= Connected Artists for Bandtrace - Neo4j GraphGist
+:neo4j-version: 3.5
+
+http://bandtrace.com[Bandtrace] is a music encyclopedia that is based on http://neo4j.org[Neo4j]. This GraphGist illustrates how to find _Connected Artists_ i.e. artists that are not directly linked.
+
+== Setup the artists
+First, let's create some artists using the _CREATE_ statement. Each node has a name (e.g. _Kurt Cobain_) and a http://docs.neo4j.org/chunked/stable/graphdb-neo4j-labels.html[label] of type _Artist_:
+[source,cypher]
+----
+CREATE 
+    (kurt:Artist { name:"Kurt Cobain" }),
+    (dave:Artist { name:"Dave Grohl" }),
+    (nirvana:Artist { name:"Nirvana" }),
+    (foo:Artist { name:"Foo Fighters" }),
+    (qotsa:Artist { name:"Queens of the Stone Age" })
+----
+
+If we look at the graph we can see that the artist nodes have all been created but there are no relationships between them. 
+// graph
+
+So, let's map _Kurt Cobain_ and _Nirvana_ to each other via a _MEMBER_OF_ relationship. Here we first _MATCH_ two nodes in the graph and then _CREATE_ a named relationship between them.
+
+[source,cypher]
+----
+MATCH 
+    (kurt:Artist { name:"Kurt Cobain" }), 
+    (nirvana:Artist { name:"Nirvana" })
+CREATE
+    (kurt)-[:MEMBER_OF]->(nirvana)
+----
+
+Then we can link _Dave Grohl_ to the other bands
+[source,cypher]
+----
+MATCH 
+    (dave:Artist { name:"Dave Grohl" }), 
+    (nirvana:Artist { name:"Nirvana" }), 
+    (foo:Artist { name:"Foo Fighters" }), 
+    (qotsa:Artist { name:"Queens of the Stone Age" })
+CREATE
+    (dave)-[:MEMBER_OF]->(nirvana),
+    (dave)-[:MEMBER_OF]->(foo),
+    (dave)-[:MEMBER_OF]->(qotsa)
+----
+
+Now the graph looks a bit nicer!
+// graph
+
+== Find connected artists
+_Connected Artists_ are artists that is not directly linked to each other. E.g. _Dave Grohl_ and _Kurt Cobain_ are _Connected Artists_ via _Nirvana_ (for social graphs this is commonly known as _friend-of-a-friend_).
+
+So, to find the artists that are connected to _Nirvana_ the following query can be used:
+// output
+[source,cypher]
+----
+MATCH 
+    (nirvana:Artist { name:"Nirvana" })-[:MEMBER_OF]-()-[:MEMBER_OF]-(connected)
+RETURN 
+    connected
+----
+
+Voila!
+
+P.S. If you want to query the graph yourself simply type Cypher queries below:
+// console
+
+
+

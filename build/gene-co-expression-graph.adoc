@@ -1,0 +1,96 @@
+= Gene Co-expression graph
+:neo4j-version: 2.3.0
+:author: Kai Wang
+:twitter: @kaiwang2009
+
+We are building a Gene Co-expression network and neo4j is ued to store graph data and backbone support of drawing graph on the web
+
+
+image::https://pbs.twimg.com/media/CZEH6d6UkAAPz2y.png:large[]
+
+//A Cypher query to setup the database
+//setup
+//hide
+[source,cypher]
+----
+CREATE
+	(a1:Gene{GeneName:'LOC_Os01g01010',Species:'rice',Annotation:'TBC%20domain%20containing%20protein%2C%20expressed'}),
+	(a2:Gene{GeneName:'LOC_Os11g39710',Species:'rice',Annotation:'retrotransposon%20protein%2C%20putative%2C%20Ty3-gypsy%20subclass%2C%20expressed'}),
+	(a3:Gene{GeneName:'LOC_Os11g06580',Species:'rice',Annotation:'OsFBX397%20-%20F-box%20domain%20containing%20protein%2C%20expressed'}),
+	(a4:Gene{GeneName:'LOC_Os09g39240',Species:'rice',Annotation:'expressed%20protein'}),
+	(a5:Gene{GeneName:'LOC_Os08g02180',Species:'rice',Annotation:'expressed%20protein'}),
+	(a6:Gene{GeneName:'LOC_Os06g15550',Species:'rice',Annotation:'ubiquitin%20carboxyl-terminal%20hydrolase%2C%20family%201%2C%20putative%2C%20expressed'}),
+	(a7:Gene{GeneName:'LOC_Os05g26870',Species:'rice',Annotation:'CAMK_KIN1%2FSNF1%2FNim1_like.21%20-%20CAMK%20includes%20calcium%2Fcalmodulin%20depedent%20protein%20kinases%2C%20expressed'}),
+	(a8:Gene{GeneName:'LOC_Os04g58210',Species:'rice',Annotation:'N-acetylglucosaminyl-phosphatidylinositol%20de-N-acetylase%2C%20putative%2C%20expressed'}),
+	(a9:Gene{GeneName:'LOC_Os04g08340',Species:'rice',Annotation:'OsSigP3%20-%20Putative%20Type%20I%20Signal%20Peptidase%20homologue%3B%20employs%20a%20putative%20Ser%2FLys%20catalytic%20dyad%2C%20expressed'}),
+	(a10:Gene{GeneName:'LOC_Os02g39060',Species:'rice',Annotation:'RNA%20recognition%20motif%20containing%20protein%2C%20putative%2C%20expressed'}),
+	(a11:Gene{GeneName:'LOC_Os01g60250',Species:'rice',Annotation:'pentatricopeptide%2C%20putative%2C%20expressed'}),
+	(a12:Gene{GeneName:'LOC_Os01g31940',Species:'rice',Annotation:'purine%20permease%2C%20putative%2C%20expressed'}),
+	(a13:Gene{GeneName:'LOC_Os01g26080',Species:'rice',Annotation:'expressed%20protein'}),
+	(a14:Gene{GeneName:'LOC_Os01g01030',Species:'rice',Annotation:'monocopper%20oxidase%2C%20putative%2C%20expressed'}),
+	(a15:Gene{GeneName:'LOC_Os05g42270',Species:'rice',Annotation:'acyltransferase%2C%20putative%2C%20expressed'}),
+	(a16:Gene{GeneName:'LOC_Os03g22960',Species:'rice',Annotation:'expressed%20protein'}),
+	(a17:Gene{GeneName:'LOC_Os03g17170',Species:'rice',Annotation:'zinc%20finger%2C%20C3HC4%20type%20domain%20containing%20protein%2C%20expressed'}),
+	(a18:Gene{GeneName:'LOC_Os01g01040',Species:'rice',Annotation:'expressed%20protein'}),
+	(a19:Gene{GeneName:'LOC_Os12g16490',Species:'rice',Annotation:'transposon%20protein%2C%20putative%2C%20unclassified%2C%20expressed'}),
+	(a20:Gene{GeneName:'LOC_Os11g41600',Species:'rice',Annotation:'expressed%20protein'}),
+	(a21:Gene{GeneName:'LOC_Os11g26900',Species:'rice',Annotation:'expressed%20protein'}),
+	(a22:Gene{GeneName:'LOC_Os11g11050',Species:'rice',Annotation:'initiation%20factor%202%20subunit%20family%20domain%20containing%20protein%2C%20expressed'}),
+	(a23:Gene{GeneName:'LOC_Os11g05690',Species:'rice',Annotation:'amino%20acid%20permease%20family%20protein%2C%20putative%2C%20expressed'}),
+	(a24:Gene{GeneName:'LOC_Os11g02760',Species:'rice',Annotation:'histidine%20triad%20family%20protein%2C%20putative%2C%20expressed'}),
+	(a25:Gene{GeneName:'LOC_Os11g01420',Species:'rice',Annotation:'ribosomal%20protein%20L10%2C%20putative%2C%20expressed'}),
+	(a26:Gene{GeneName:'LOC_Os10g28690',Species:'rice',Annotation:'expressed%20protein'}),
+	(a27:Gene{GeneName:'LOC_Os09g39594',Species:'rice',Annotation:'expressed%20protein'}),
+	(a1)-[:COEXPRESS{SCORE:0.079329}]->(a2),
+	(a1)-[:COEXPRESS{SCORE:0.077299}]->(a3),
+	(a1)-[:COEXPRESS{SCORE:0.070923}]->(a4),
+	(a1)-[:COEXPRESS{SCORE:0.074086}]->(a5),
+	(a1)-[:COEXPRESS{SCORE:0.094865}]->(a6),
+	(a1)-[:COEXPRESS{SCORE:0.070355}]->(a7),
+	(a1)-[:COEXPRESS{SCORE:0.081508}]->(a8),
+	(a1)-[:COEXPRESS{SCORE:0.044456}]->(a9),
+	(a1)-[:COEXPRESS{SCORE:0.075488}]->(a10),
+	(a1)-[:COEXPRESS{SCORE:0.072876}]->(a11),
+	(a1)-[:COEXPRESS{SCORE:0.060132}]->(a12),
+	(a1)-[:COEXPRESS{SCORE:0.066166}]->(a13),
+	(a14)-[:COEXPRESS{SCORE:0.057100}]->(a15),
+	(a14)-[:COEXPRESS{SCORE:0.079074}]->(a16),
+	(a14)-[:COEXPRESS{SCORE:0.078053}]->(a17),
+	(a18)-[:COEXPRESS{SCORE:0.059965}]->(a19),
+	(a18)-[:COEXPRESS{SCORE:0.106168}]->(a20),
+	(a18)-[:COEXPRESS{SCORE:0.069690}]->(a21),
+	(a18)-[:COEXPRESS{SCORE:0.084286}]->(a22),
+	(a18)-[:COEXPRESS{SCORE:0.085629}]->(a23),
+	(a18)-[:COEXPRESS{SCORE:0.096186}]->(a24),
+	(a18)-[:COEXPRESS{SCORE:0.105337}]->(a25),
+	(a18)-[:COEXPRESS{SCORE:0.085612}]->(a26),
+	(a18)-[:COEXPRESS{SCORE:0.116786}]->(a27),
+	(a18)-[:COEXPRESS{SCORE:0.062686}]->(a4)
+
+----
+
+Display the whole graph:
+
+//graph
+
+ take a glance of the network
+
+// A Cypher query to give table output
+[source,cypher]
+----
+MATCH (n:Gene)-[r:COEXPRESS]->(m:Gene) RETURN n.GeneName as gene1,r.SCORE as CO_EXPRESSION_VALUE,m.GeneName as gene2 LIMIT 10;
+----
+
+//table
+
+ Find genes that co-express with a target gene
+
+// A Cypher query to give graph visualization output
+[source,cypher]
+----
+MATCH (n:Gene{GeneName:"LOC_Os01g01040"})-[r:COEXPRESS*..2]->(m:Gene) WHERE all(x in r WHERE x.SCORE > 0.1) return n,r,m
+----
+
+//graph_result
+
+ neo4j can be used to rapidly build a model and fit our case beautifully

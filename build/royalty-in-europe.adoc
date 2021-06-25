@@ -1,0 +1,163 @@
+= Royalty in Europe
+
+The Royal families generaly have long histories and are often closely related. This link:http://en.wikipedia.org/wiki/Nicholas_II_of_Russia[citation from wikipedia] can give you better idea:
+
+[quote]
+Maternally, Nicholas was the nephew of several monarchs, including King Frederick VIII of Denmark, Queen Alexandra of the United Kingdom (queen consort of King Edward VII), and King George I of Greece. Nicholas, his wife, Alexandra, and Kaiser Wilhelm II of Germany were all first cousins of King George V of the United Kingdom. Nicholas was also a first cousin of both King Haakon VII and Queen Maud of Norway, as well as King Constantine I of Greece. While not first cousins, Nicholas and Kaiser Wilhelm II were second cousins, once removed, as each descended from King Frederick William III of Prussia, as well as third cousins, as they were both great-great-grandsons of Emperor Paul I of Russia.
+
+The rulers of Great Britain, Germany and Russia at the beginning of World War I were actually cousins!
+
+== Model
+
+Simple family relationships may be represented by following model
+
+image::https://docs.google.com/drawings/d/1iJxIliqLzj9-LWVtj1bZorr90Ulr5s3H_fACQpi2ImQ/pub?w=960&amp;h=720[Model]
+
+== Sample data
+This sample data set is far from complete but it allows to demonstrate the main point. It contains monarch of Great Britain, Sweden, Denmark and Norway in 18th century.
+
+//hide
+//setup
+[source,cypher]
+----
+create (britain {name:"Great Britain"})
+create (hanover {name:"Hanover"})
+create (denmark {name:"Denmark and Norway"})
+create (sweden {name:"Sweden"})
+
+create (houseOfSstuart {name:"House of Stuart"})
+create (houseOfHanover {name:"House of Hanover"})
+create (houseOfOldenburg {name: "House of Oldenburg"})
+
+
+create (anne {name:"Anne"})
+create (georgeI {name:"George I"})
+create (georgeII {name:"George II"})
+create (georgeIII {name:"George III"})
+
+create (frederickWales {name:"Frederick"})
+create (carolineMatilda {name:"Caroline Matilda"})
+
+create georgeII-[:HAD_SON]->frederickWales
+create frederickWales-[:HAD_SON]->georgeIII
+create frederickWales-[:HAD_DAUGHTER]->carolineMatilda
+
+create anne-[:MEMBER_OF]->houseOfSstuart
+create anne-[:REIGNED]->britain
+
+create georgeI-[:MEMBER_OF]->houseOfHanover
+create georgeI-[:SUCCEEDED]->anne
+create georgeI-[:REIGNED]->britain
+
+create georgeII-[:MEMBER_OF]->houseOfHanover
+create georgeII-[:SUCCEEDED]->georgeI
+create georgeII-[:REIGNED]->britain
+create georgeII-[:REIGNED]->hanover
+
+create georgeIII-[:MEMBER_OF]->houseOfHanover
+create georgeIII-[:SUCCEEDED]->georgeII
+create georgeIII-[:REIGNED]->britain
+create georgeIII-[:REIGNED]->hanover
+
+
+create (frederickIV {name:"Frederick IV"})
+create (christianVI {name:"Christian VI"})
+create (frederickV {name:"Frederick V"})
+create (christianVII {name:"Christian VII"})
+
+create frederickIV-[:MEMBER_OF]->houseOfOldenburg
+create frederickIV-[:REIGNED]->denmark
+
+create christianVI-[:MEMBER_OF]->houseOfOldenburg
+create christianVI-[:REIGNED]->denmark
+create christianVI-[:SUCCEEDED]->frederickIV
+
+create frederickV-[:MEMBER_OF]->houseOfOldenburg
+create frederickV-[:REIGNED]->denmark
+create frederickV-[:SUCCEEDED]->christianVI
+
+
+create christianVII-[:MEMBER_OF]->houseOfOldenburg
+create christianVII-[:REIGNED]->denmark
+create christianVII-[:SUCCEEDED]->frederickV
+
+create christianVII-[:MARRIED]->carolineMatilda
+
+
+create (louise {name:"Louise of Great Britain"})
+create georgeII-[:HAD_DAUGHTER]->louise
+create frederickV-[:MARRIED]->louise
+
+create (sophia {name: "Sophia Magdalena"})
+create louise-[:HAD_DAUGHTER]->sophia
+create frederickV-[:HAD_DAUGHTER]->sophia
+
+create (charlesII {name:"Charles XII"})
+create (ulrika {name:"Ulrika Eleonora"})
+create (frederick {name:"Frederick I"})
+create (adolfF {name:"Adolf Frederick"})
+create (gustavIII {name:"Gustav_III_of_Sweden"})
+create (gustavIV {name:"Gustav IV Adolf"})
+
+create charlesII<-[:SUCEEDED]-ulrika
+create ulrika<-[:SUCEEDED]-frederick
+create frederick<-[:SUCEEDED]-adolfF
+create adolfF<-[:SUCEEDED]-gustavIII
+create gustavIII<-[:SUCEEDED]-gustavIV
+
+create charlesII-[:REIGNED]->sweden
+create ulrika-[:REIGNED]->sweden
+create frederick-[:REIGNED]->sweden
+create adolfF-[:REIGNED]->sweden
+create gustavIII-[:REIGNED]->sweden
+create gustavIV-[:REIGNED]->sweden
+
+create gustavIII-[:MARRIED]->sophia
+
+
+----
+
+== Country relations
+
+How were the countries related through royal families?
+[source,cypher]
+----
+START c1=node(*),c2=node(*) 
+MATCH path =(c1<-[:REIGNED]-r1-[:HAD_DAUGHTER|MARRIED*0..]-r2-[:REIGNED]->c2) 
+WHERE c1.name="Great Britain" AND c2.name = 'Denmark and Norway' 
+RETURN path
+----
+
+//graph
+
+There are also other posibilities to query.
+
+== Successors
+
+This query will get all successors on the throne
+//output
+[source,cypher]
+----
+start anne=node(*)
+match anne<-[:SUCCEEDED*0..]-suc
+where anne.name="Anne"
+return suc
+----
+
+== Predecessor
+
+This retrieves just one predecessor.
+
+//output
+[source,cypher]
+----
+start g=node(*)
+match g-[:SUCCEEDED]->pre
+where g.name="George II"
+return pre
+----
+
+= Improvements
+
+* index names for better performance
+* crawl wikipedia (or wikidata) to get comprehensive database

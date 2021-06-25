@@ -1,0 +1,43 @@
+= Duplicate Check in Cypher
+
+:author: Michael Hunger
+:twitter: @mesirii
+:tags: cypher:workaround
+
+I answered a question on http://stackoverflow.com/questions/21042820/neo4j-visit-inner-circle-nodes-only-once/21073832#21073832[StackOverflow] that required a duplicate check for a collection. 
+
+This would be easy with an `isUnique(coll)` in cypher or a `to_set(coll)` / `uniq(coll)` function to allow an expression like `size(to_set(coll)) = size(coll)`.
+
+But neither is there, so we need a tiny algorithm to solve it.
+
+One solution is: Iterate over a collection and check if the current element is contained in the rest of the collection.
+
+With Cypher we can use `reduce` and `CASE` expressions.
+
+The accumulator holds the *rest* of the collection and x is the current element. We shortcut the execution by returning `NULL` in the duplicate case. Otherwise when
+the `IN` check does not succeed we return the rest of the collection to be the new accumulator.
+
+// output
+[source,cypher]
+----
+WITH [1,2,3] AS coll 
+RETURN reduce(a=coll, x IN coll | 
+              CASE WHEN a IS NULL OR x IN tail(a) THEN NULL ELSE tail(a) END ) IS NOT NULL as is_unique
+----
+
+// output
+[source,cypher]
+----
+WITH [1,2,3,1] AS coll 
+RETURN reduce(a=coll, x IN coll | 
+              CASE WHEN a IS NULL OR x IN tail(a) THEN NULL ELSE tail(a) END ) IS NOT NULL as is_unique
+----
+
+https://twitter.com/cleishm[Chris Leishman] posted a nice solution for simulating the +unique+ function:
+
+// output
+[source,cypher]
+----
+WITH [1,2,3,1] AS coll
+RETURN reduce(a=[], x IN coll | CASE WHEN x IN a THEN a ELSE a + x END) as unique
+----

@@ -1,0 +1,91 @@
+= The starwars universe
+
+== May the force be with you
+
+//console
+
+//setup
+//hide
+[source,cypher]
+----
+CREATE
+(LUKE {name:"Luke Skywalker"}),
+(HAN {name:"Han Solo"}),
+(LEIA {name:"Princess Leia Organa"}),
+(OBI_WAN {name:"Obi Wan Kenobi"}),
+(YODA {name : "Yoda"}),
+(TARKIN {name:"Grand Moff Tarkin"}),
+(VADER {name:"Darth Vader"}),
+(C3PO {name:"C3PO", droid:true}),
+(R2D2 {name:"R2D2", droid:true}),
+(BOBA_FETT {name:"Boba Fett"}),
+(JABBA {name:"Jabba the Hut"}),
+(GREEDO {name:"Greedo"}),
+(CHEWBACCA {name:"Chewbacca"}),
+(TATOOINE {name:"Tatooine", distance:13184}),
+(DAGOBAH {name:"Dagobah", distance:15407}),
+(ALDERAAN {name:"Alderaan", distance:1502}),
+(CORUSCANT {name:"Coruscant", distance:3066}),
+(CORELLIA {name:"Corellia", distance:2453}),
+(KASHYYYK {name:"Kashyyyk", distance:9811}),
+(JEDI {name:"Jedi"}),
+(SITH {name:"Sith"}),
+(REBELLION {name:"Rebellion"}),
+(EMPIRE {name:"Empire"}),
+(HIGHEST_BIDDER {name:"Highest Bidder"}),
+(DARK_SIDE {name:"Dark Side"}),
+(LIGHT_SIDE {name:"Light Side"}),
+(LUKE)-[:FRIENDS_WITH]->(HAN),
+(LUKE)-[:FRIENDS_WITH]->(LEIA),
+(HAN)-[:FRIENDS_WITH]->(CHEWBACCA),
+(YODA)-[:TEACHES]->(OBI_WAN),
+(YODA)-[:TEACHES]->(LUKE),
+(OBI_WAN)-[:TEACHES]->(LUKE),
+(OBI_WAN)-[:KNOWS]->(VADER),
+(TARKIN)-[:KNOWS]->(VADER),
+(VADER)-[:KNOWS]->(YODA),
+(VADER)-[:KNOWS]->(LEIA),
+(LEIA)-[:KNOWS]->(LUKE),
+(LUKE)-[:KNOWS]->(YODA),
+(TARKIN)-[:KNOWS]->(BOBA_FETT),
+(BOBA_FETT)-[:KNOWS]->(JABBA),
+(JABBA)-[:KNOWS]->(GREEDO),
+(LUKE)-[:KNOWS]->(R2D2),
+(R2D2)-[:KNOWS]->(C3PO),
+(VADER)-[:KNOWS]->(C3PO),
+(LUKE)-[:LIVED_ON]->(TATOOINE),
+(HAN)-[:LIVED_ON]->(CORELLIA),
+(LEIA)-[:LIVED_ON]->(ALDERAAN),
+(YODA)-[:LIVED_ON]->(DAGOBAH),
+(VADER)-[:LIVED_ON]->(TATOOINE),
+(CHEWBACCA)-[:LIVED_ON]->(KASHYYYK),
+(OBI_WAN)-[:LIVED_ON]->(TATOOINE),
+(TARKIN)-[:LIVED_ON]->(CORUSCANT),
+(LUKE)-[:DEVOTED_TO]->(JEDI),
+(LUKE)-[:DEVOTED_TO]->(REBELLION),
+(LUKE)-[:DEVOTED_TO]->(LIGHT_SIDE),
+(VADER)-[:DEVOTED_TO]->(SITH),
+(VADER)-[:DEVOTED_TO]->(EMPIRE),
+(VADER)-[:DEVOTED_TO]->(DARK_SIDE),
+(LEIA)-[:DEVOTED_TO]->(REBELLION),
+(HAN)-[:DEVOTED_TO]->(REBELLION),
+(TARKIN)-[:DEVOTED_TO]->(EMPIRE),
+(BOBA_FETT)-[:DEVOTED_TO]->(HIGHEST_BIDDER),
+(OBI_WAN)-[:DEVOTED_TO]->(JEDI),
+(OBI_WAN)-[:DEVOTED_TO]->(REBELLION),
+(OBI_WAN)-[:DEVOTED_TO]->(LIGHT_SIDE),
+(YODA)-[:DEVOTED_TO]->(JEDI),
+(YODA)-[:DEVOTED_TO]->(REBELLION),
+(YODA)-[:DEVOTED_TO]->(LIGHT_SIDE)
+----
+
+== Find all of Yodas Connections
+
+[source,cypher]
+----
+MATCH y-[r]-other
+WHERE y.name='Yoda'
+return y.name, type(r), other.name
+----
+
+//table

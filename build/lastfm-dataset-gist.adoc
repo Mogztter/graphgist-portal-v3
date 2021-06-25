@@ -1,0 +1,129 @@
+= Last.fm Dataset Gist =
+
+Earlier this month, I published http://blog.neo4j.org/2013/07/fun-with-music-neo4j-and-talend.html[a blog post] about my fun with some self-exported http://last.fm[Last.fm] data. With this Gist, I would like to provide a bit more practical detail on the dataset and how you could use it.
+
+Let's first create an overview graph of the model.
+
+image::http://2.bp.blogspot.com/-uNPggNP9A3c/Ud7HDhwpkbI/AAAAAAAAAK4/AZd25Q0h-j4/s640/Screen+Shot+2013-07-11+at+16.52.59.png[]
+
+[source,cypher]
+----
+// creating the nodes 
+CREATE 
+	(rvb:listener{name:'RVB'}),
+	(scrobble1:scrobble{name:'Scrobble1'}),
+	(date1:date{name:'Date1'})-[:PRECEDES]->(date2:date{name:'Date2'})-[:PRECEDES]->(date3:date{name:'Date3'}),
+	(track1:track{name:'This is the last time'}),
+	(artist:artist{name:'The National'}),
+	(album1:album{name:'Trouble will find me'}),
+// create the relationships
+	(rvb)-[:LOGS]->(scrobble1),
+	(scrobble1)-[:ON_DATE]->(date2),
+	(scrobble1)-[:FEATURES]->(track1),
+	(artist)-[:CREATES_TRACK]->(track1),
+	(artist)-[:CREATES_ALBUM]->(album1),
+	(track1)-[:APPEARS_ON]->(album1);
+----
+
+This looks like this:
+
+//graph1
+
+Then, with the following query, we can create the a more complex version of this graph (with some additional listeners, tracks, albums - but keeping to just one artist). See below:
+ 
+[source,cypher]
+----
+// creating the additional nodes 
+MATCH
+	(rvb:listener), (scrobble1:scrobble), (date1:date), (date2:date), (date3:date), (track1:track), (artist:artist), (album1:album)
+WHERE
+	rvb.name = 'RVB' and
+	scrobble1.name = 'Scrobble1' and
+	date1.name = 'Date1' and
+	date2.name = 'Date2' and
+	date3.name = 'Date3' and
+	track1.name = 'This is the last time' and
+	artist.name = 'The National' and
+	album1.name = 'Trouble will find me'
+CREATE
+// create the nodes
+	(sno:listener{name:'SNO'}), (sta:listener{name:'STA'}), 
+	(scrobble2:scrobble{name:'Scrobble2'}), (scrobble3:scrobble{name:'Scrobble3'}),
+	(track2:track{name:'Vanderlyle Crybaby Geeks'}),
+	(album2:album{name:'High Violet'}),
+// create the relationships
+	(sno)-[:LOGS]->(scrobble2),
+	(sta)-[:LOGS]->(scrobble3),
+	(scrobble2)-[:ON_DATE]->(date1),
+	(scrobble3)-[:ON_DATE]->(date2),
+	(scrobble2)-[:FEATURES]->(track2),
+	(scrobble3)-[:FEATURES]->(track2),
+	(artist)-[:CREATES_TRACK]->(track2),
+	(artist)-[:CREATES_ALBUM]->(album2),
+	(track2)-[:APPEARS_ON]->(album2);
+----
+ 
+Visually, this updated graph looks like this:
+ 
+//graph2
+ 
+Hover over the nodes to see the +name+ node property in the Graph above. 
+
+Next, what you can do is run some queries that can yield some interesting data - and data that can be of real value when making things like music recommendations. Let's see if we can find the artists that any two listeners have been listening to:
+
+[source,cypher]
+MATCH
+	(anylistener:listener)-[:LOGS]->(anyscrobble:scrobble)-[:FEATURES]->(anytrack:track)<-[:CREATES_TRACK]-(anyartist:artist),
+	(anylistener2:listener)-[:LOGS]->(anyscrobble2:scrobble)-[:FEATURES]->(anytrack2:track)<-[:CREATES_TRACK]-(anyartist:artist)
+RETURN
+	distinct anyartist.name as Artist;
+
+//table
+
+
+Or let's say that I would like to find the "paths" between a scrobble and its artist - things on the path could very well be interesting to us:
+
+[source, cypher]
+----
+MATCH
+	p = allshortestpaths((scrobble:scrobble)-[*]-(artist:artist))
+RETURN p;
+----
+
+//graph
+
+You can play around with this some more in the console below.
+ 
+//setup
+//hide
+
+[source,cypher]
+----
+// creating the nodes 
+CREATE (rvb:listener{name:'RVB'}), (sno:listener{name:'SNO'}), (sta:listener{name:'STA'}), 
+(scrobble1:scrobble{name:'Scrobble1'}), (scrobble2:scrobble{name:'Scrobble2'}), (scrobble3:scrobble{name:'Scrobble3'}),
+(date1:date{name:'Date1'})-[:PRECEDES]->(date2:date{name:'Date2'})-[:PRECEDES]->(date3:date{name:'Date3'}),
+(track1:track{name:'This is the last time'}), (track2:track{name:'Vanderlyle Crybaby Geeks'}),
+(artist:artist{name:'The National'}),
+(album1:album{name:'Trouble will find me'}), (album2:album{name:'High Violet'}),
+// create the relationships
+(rvb)-[:LOGS]->(scrobble1),
+(sno)-[:LOGS]->(scrobble2),
+(sta)-[:LOGS]->(scrobble3),
+(scrobble1)-[:ON_DATE]->(date2),
+(scrobble2)-[:ON_DATE]->(date1),
+(scrobble3)-[:ON_DATE]->(date2),
+(scrobble1)-[:FEATURES]->(track1),
+(scrobble2)-[:FEATURES]->(track2),
+(scrobble3)-[:FEATURES]->(track2),
+(artist)-[:CREATES_TRACK]->(track1),
+(artist)-[:CREATES_TRACK]->(track2),
+(artist)-[:CREATES_ALBUM]->(album1),
+(artist)-[:CREATES_ALBUM]->(album2),
+(track1)-[:APPEARS_ON]->(album1),
+(track2)-[:APPEARS_ON]->(album2);
+----
+ 
+//console
+ 
+Hope this example is useful. Enjoy!

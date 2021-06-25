@@ -1,0 +1,271 @@
+= Base de datos inicial
+:neo4j-version:
+:author:
+:style: #54A835/#1078B5/white:Colorized(name)
+
+
+== Script de creación
+//setup
+//hide
+[source,cypher]
+----
+create   
+
+ //PERSONAS 
+
+(julia:Empleado:Persona{name:"Julia", edad:46, puesto:"Jefa de cuidadores"}),
+(pedro:Empleado:Persona{name:"Pedro",edad:30, puesto:"Cuidador"}),
+(ana:Empleado:Persona{name:"Ana", edad:34, puesto: "Cuidador"}),
+(clara:Empleado:Persona{name:"Clara", edad:23, puesto:"Cuidador"}),
+(roberto:Empleado:Persona{name:"Roberto", edad:31, puesto:"Cuidador"}),
+(javier:Empleado:Persona{name:"Javier",edad:25, puesto:"Cuidador"}),
+(sara:Empleado:Persona{name:"Sara",edad:26, puesto:"Cuidador"}),  
+
+(alejandra:Empleado:Persona{name:"Alejandra", edad:33, puesto:"Veterinario"}),  
+(alejandro:Empleado:Persona{name:"Alejandro",edad:42,puesto:"Veterinario"}),  
+
+(antonio:Persona:Visitante{name:"Antonio", edad:47}),  
+(marta:Persona:Visitante{name:"Marta", edad:51}),  
+
+  
+
+ //RECINTOS 
+
+(sabana1:Recinto{estado:"Disponible", name:"Sabana hervíboros"}),  
+(sabana2:Recinto{estado:"Disponible", name:"Guepardos"}),  
+(desierto:Recinto{estado:"Disponible", name:"Desierto"}),  
+(artico:Recinto{estado:"En mantenimiento", name:"Artico"}),  
+(pinguinosAzules:Recinto{estado:"Reforma", name:"Pinguinos azules"}),  
+(selva:Recinto{estado:"En construccion", name:"Selva"}),  
+(pandasRojos:Recinto{estado:"Disponible", name:"Pandas rojos"}),  
+
+  
+
+//ANIMALES 
+
+(tadala:Animal:Guepardo{name:"Tadala", edad:9, sexo:"Hembra"}),  
+(lesedi:Animal:Guepardo{name:"Lesedi", edad:8, sexo:"Macho"}),  
+(jabula:Animal:Guepardo{name:"Jabula", edad:4, sexo:"Hembra"}),  
+
+(artemisa:Animal:Gacela{name:"Artemisa", edad:5, sexo:"Hembra"}),  
+(ares:Animal:Gacela{name:"Ares", edad:8, sexo:"Macho"}),  
+(eros:Animal:Gacela{name:"Eros", edad:5, sexo:"Macho"}),  
+
+(olga:Animal:Foca{name:"Olga", edad: 11, sexo: "Hembra"}),  
+(algo:Animal:Foca{name:"Algo", edad: 9, sexo: "Macho"}),  
+(alga:Animal:Foca{name:"Alga", edad: 5, sexo: "Hembra"}),  
+
+(pepa:Animal:PinguinoAzul{name:"Pepa", edad:3, sexo:"Hembra"}),  
+(pepe:Animal:PinguinoAzul{name:"Pepe", edad:4, sexo:"Macho"}),  
+(pepina:Animal:PinguinoAzul{name:"Pepina", edad:1, sexo:"Hembra"}),  
+(grape:Animal:PinguinoAzul{name:"Grape", edad:5, sexo:"Macho"}), 
+
+(sonika:Animal:PandaRojo{name:"Sonika", edad:7,sexo:"Hembra"}),  
+(oolong:Animal:PandaRojo{name:"Oolong", edad:9,sexo:"Macho"}),  
+(piya:Animal:PandaRojo{name:"Piya", edad:11,sexo:"Hembra"}),  
+
+(abulabbas:Animal:ElefanteAfricano{name:"Abul-Abbas",edad:48,sexo:"Macho"}),  
+(drona:Animal:ElefanteAfricano{name:"Drona",edad:42,sexo:"Hembra"}),  
+(hanno:Animal:ElefanteAfricano{name:"Hanno",edad:13,sexo:"Macho"}),  
+
+(eevee:Animal:Fenec{name:"Eevee",edad:6,sexo:"Hembra"}),  
+(canela:Animal:Fenec{name:"Canela",edad:2,sexo:"Hembra"}),  
+(fennekin:Animal:Fenec{name:"Fennekin", edad:7, sexo:"Macho"}),  
+
+
+ //RELACIONES 
+(pedro)<-[:ES_JEFE_DE]-(julia)-[:ES_JEFE_DE]->(roberto),  
+(ana)-[:ES_AMIGO_DE{desde:2009}]->(roberto)-[:ES_AMIGO_DE{desde:2010}]->(ana),  
+(clara)-[:ES_AMIGO_DE{desde:2017}]->(javier)-[:ES_AMIGO_DE{desde:2017}]->(clara),  
+(clara)-[:ES_AMIGO_DE{desde:2019}]->(sara)-[:ES_AMIGO_DE{desde:2019}]->(clara),  
+(sara)-[:ES_AMIGO_DE{desde:2019}]->(javier)-[:ES_AMIGO_DE{desde:2018}]->(sara),  
+(antonio)-[:ES_AMIGO_DE{desde:1999}]->(julia)-[:ES_AMIGO_DE{desde:1999}]->(antonio),  
+(marta)-[:ES_AMIGO_DE{desde:2000}]->(julia)-[:ES_AMIGO_DE{desde:2000}]->(marta),  
+
+
+//ASIGANCIONES 
+(javier)-[:SE_ENCARGA_DE]->(sabana1),  
+(javier)-[:SE_ENCARGA_DE]->(sabana2),  
+(sara)-[:SE_ENCARGA_DE]->(sabana2),  
+(sara)-[:SE_ENCARGA_DE]->(desierto),  
+(clara)-[:SE_ENCARGA_DE]->(desierto),  
+(clara)-[:SE_ENCARGA_DE]->(pinguinosAzules),  
+(roberto)-[:SE_ENCARGA_DE]->(artico),  
+(roberto)-[:SE_ENCARGA_DE]->(pandasRojos),  
+(ana)-[:SE_ENCARGA_DE]->(pinguinosAzules),  
+(ana)-[:SE_ENCARGA_DE]->(artico),  
+(pedro)-[:SE_ENCARGA_DE]->(pandasRojos),  
+(pedro)-[:SE_ENCARGA_DE]->(sabana1),  
+
+(alejandra)-[:SE_ENCARGA_DE]->(alga),  
+(alejandra)-[:SE_ENCARGA_DE]->(pepina),  
+(alejandra)-[:SE_ENCARGA_DE]->(piya),  
+
+(alejandro)-[:SE_ENCARGA_DE]->(tadala),  
+(alejandro)-[:SE_ENCARGA_DE]->(ares),  
+(alejandro)-[:SE_ENCARGA_DE]->(abulabbas),  
+
+
+//HABITATS ASIGNADOS 
+(sonika)-[:HABITA]->(pandasRojos),  
+(oolong)-[:HABITA]->(pandasRojos),  
+(piya)-[:HABITA]->(pandasRojos),  
+
+(ares)-[:HABITA]->(sabana1),  
+(artemisa)-[:HABITA]->(sabana1),  
+(eros)-[:HABITA]->(sabana1),  
+
+(abulabbas)-[:HABITA]->(sabana1),  
+(drona)-[:HABITA]->(sabana1),  
+(hanno)-[:HABITA]->(sabana1),  
+
+(tadala)-[:HABITA]->(sabana2),  
+(lesedi)-[:HABITA]->(sabana2),  
+(jabula)-[:HABITA]->(sabana2),  
+
+(olga)-[:HABITA]->(artico),  
+(algo)-[:HABITA]->(artico),  
+(alga)-[:HABITA]->(artico),  
+
+(pepa)-[:HABITA]->(pinguinosAzules),  
+(pepe)-[:HABITA]->(pinguinosAzules),  
+(pepina)-[:HABITA]->(pinguinosAzules),  
+(grape)-[:HABITA]->(pinguinosAzules),  
+
+(eevee)-[:HABITA]->(desierto),  
+(canela)-[:HABITA]->(desierto),  
+(fennekin)-[:HABITA]->(desierto), 
+  
+
+//RELACIONES ANIMALES 
+(pepa)-[:ES_PAREJA_DE]->(pepe)-[:ES_PAREJA_DE]-> (pepa),  
+(pepe)<-[:ES_HIJO_DE]-(pepina)-[:ES_HIJO_DE]->(pepa),  
+
+(eevee)-[:ES_PAREJA_DE]->(fennekin)-[:ES_PAREJA_DE]->(eevee),  
+(eevee)<-[:ES_HIJO_DE]-(canela)-[:ES_HIJO_DE]->(fennekin),  
+
+(sonika)-[:ES_PAREJA_DE]->(oolong)-[:ES_PAREJA_DE]->(sonika),  
+(piya)-[:ES_PAREJA_DE]->(oolong)-[:ES_PAREJA_DE]->(piya),  
+
+(artemisa)<-[:ES_PAREJA_DE]-(ares)<-[:ES_PAREJA_DE]-(artemisa),  
+(eros)<-[:ES_HERMANO_DE]-(ares)<-[:ES_HERMANO_DE]-(eros),  
+
+(olga)-[:ES_PAREJA_DE]->(algo)-[:ES_PAREJA_DE]->(olga),  
+(alga)-[:ES_PAREJA_DE]->(algo)-[:ES_PAREJA_DE]->(alga),  
+(olga)<-[:ES_HERMANO_DE]-(alga)<-[:ES_HERMANO_DE]-(olga),  
+
+(abulabbas)<-[:ES_PAREJA_DE]-(drona)<-[:ES_PAREJA_DE]-(abulabbas),  
+(abulabbas)<-[:ES_HIJO_DE]-(hanno)-[:ES_HIJO_DE]->(drona),  
+
+(tadala)-[:ES_PAREJA_DE]->(lesedi)-[:ES_PAREJA_DE]->(tadala),  
+(jabula)-[:ES_PAREJA_DE]->(lesedi)-[:ES_PAREJA_DE]->(jabula) 
+----
+
+
+Grafo completo:
+
+//graph
+
+
+== Consultas
+=== Consultas elementales
+- Devuelve todos los animales macho del zoológico.
+//setup
+[source,cypher]
+----
+match (n:Animal{sexo:"Macho"}) 
+return n 
+----
+
+Resultado:
+//graph_result
+
+- Devuelve la cantidad de empleados que tengan más de 40 años.
+//setup
+[source,cypher]
+----
+match(empleado:Empleado) 
+where empleado.edad > 40          
+return count(empleado) as `Cantidad empleados`
+----
+
+Resultado:
+//table
+
+
+=== Consultas intermedias
+- Devuelve todos los animales que compartan el mismo veterinario que Tadala.
+//setup
+[source,cypher]
+----
+Match(animal:Animal{name:"Tadala"})<-[:SE_ENCARGA_DE]-(veterinario:Empleado{puesto:"Veterinario"}) 
+With veterinario 
+Match (veterinario)-[:SE_ENCARGA_DE]->(animal2:Animal) 
+Where animal2.name <> "Tadala" 
+Return animal2
+----
+
+Resultado:
+//graph_result
+
+
+- Devuelve las crías de animales de las cuales se encarga la empleada llamada Clara.
+//setup
+[source,cypher]
+----
+Match (cuidador:Empleado{name:"Clara"})-[:SE_ENCARGA_DE]->(recinto:Recinto)<-[:HABITA]-(cria:Animal)-[:ES_HIJO_DE]->(animal:Animal) 
+Return distinct(cria)
+----
+
+Resultado:
+//graph_result
+
+
+- Devuelve las crías que no tienen un veterinario asignado.
+//setup
+[source,cypher]
+----
+Match (animal:Animal)<-[:ES_HIJO_DE]-(cria:Animal) 
+Where not (:Empleado{puesto:"Veterinario"})-[:SE_ENCARGA_DE]->(cria) 
+Return distinct(cria)
+----
+
+Resultado:
+//graph_result
+
+
+== Consultas avanzadas
+
+- Devuelve los animales que son cuidados por los mismos cuidadores que se encargan de Canela y que, además, pertenezcan a un recinto diferente. También devuelven los recintos en los que habitan.
+//setup
+[source,cypher]
+----
+match (animal:Animal{name:"Canela"})-[:HABITA]->(recinto:Recinto)<-[:SE_ENCARGA_DE]-(cuidador:Empleado{puesto:"Cuidador"})   
+with animal, recinto, cuidador   
+match (animal2:Animal)-[:HABITA]->(recinto2:Recinto)<-[:SE_ENCARGA_DE]-(cuidador)   
+where animal2.name <> "Canela"  
+and recinto <> recinto2 
+return distinct(animal2), recinto2 
+----
+
+Resultado:
+//graph_result
+
+
+- Devuelve la media de edad de los animales agrupados en especies que tengan pareja, con un veterinario asignado cuyo nombre contenga la letra 'o' y que, además, habiten en un recinto en estado disponible.
+//setup
+[source,cypher]
+----
+match (recinto:Recinto)<-[:HABITA]-(animal:Animal)-[:ES_PAREJA_DE]->(animal2:Animal)-[:HABITA]->(recinto:Recinto) 
+where recinto.estado = "Disponible" 
+with animal, animal2 
+match (veterinario:Empleado{puesto:"Veterinario"}) 
+where((animal)<-[:SE_ENCARGA_DE]-(veterinario) 
+or (animal2)<-[:SE_ENCARGA_DE]-(veterinario)) 
+and veterinario.name CONTAINS 'o' 
+return distinct labels(animal)[1] as Especie, avg(animal.edad) as `Edad media`
+----
+
+Resultado:
+//table
+

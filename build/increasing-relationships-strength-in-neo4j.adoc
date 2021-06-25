@@ -1,0 +1,35 @@
+= Increasing relationships strength in Neo4j
+
+In order to count occurences of traversals/lookups, the `MERGE` way is a good pattern
+
+//console
+
+== Initial path setup
+
+//setup
+[source,cypher]
+----
+CREATE path = (a{name:'A'})-[rel:HAS_INFO{weight:0}]->(b{name:'Info'})
+RETURN path, rel.weight
+----
+
+//table
+
+Now, when finding this path, with a `CASE` statement the properties can be set to increasing values.
+
+== Next increment
+
+[source,cypher]
+----
+MATCH path=(a)-[rel:HAS_INFO]->(b)
+WHERE a.name='A' AND b.name='Info' 
+SET rel.weight = (
+    CASE 
+       WHEN not(has(rel.weight)) 
+          THEN 0 
+       ELSE rel.weight + 1 
+    END)
+RETURN DISTINCT rel;
+----
+
+//table

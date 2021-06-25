@@ -1,0 +1,2010 @@
+= HR analytics & finding candidates.adoc
+:neo4j-version: 2.1
+:author: Jean Villedieu
+:twitter: @jvilledieu
+:tags: domain:organization, use-case:recruiting
+ 
+This http://gist.neo4j.org/?94e1a2e66a34bd2a5ee0[interactive Neo4j graph tutorial] shows how human resources professionals can use graphs to match people and positions.
+ 
+'''
+
+*Table of Contents*
+ 
+* *Introduction*
+** <<_introduction_to_problem, Introduction to Problem>>
+* *Data Model*
+** <<_our_data_model_for_hr_analytics, Our data model for HR analytics>>
+* *Database Setup*
+** <<_sample_data_set, Sample Data Set>>
+* *Cypher Query*
+** <<_what_kinds_of_competencies_are_in_my_company, What kinds of competencies are in my company>>
+** <<_siliconfind_wants_to_hire_a_software_engineer, Siliconfind wants to hire a software engineer>>
+** <<_looking_into_the_personal_network_of_siliconfind's_employees, Looking into the personal network of Siliconfind's employees>>
+** <<_matching_the_requirements_of_a_job_ad, Matching the requirements of a job ad>>
+* *Conclusion*
+ 
+'''
+ 
+== Introduction to Problem
+
+The basic problem of a Human Resource (HR) function is to find, retain and empower persons. Good HR professionals are able to provide their organization with people who have the skills to match their company's ambitions.
+
+Today, via Linkedin and web job boards, it is probably easier for an HR professional to know about the people outside his/her organization than about the people inside. Linkedin has managed to build a powerful data platform about the skills, relationships, job histories, interests and contact information of >300M persons.
+
+With Neo4j it is now possible to make that kind of recommendations. Let's see how.
+ 
+'''
+
+== Our data model for HR analytics
+
+we are going to use data and queries prepared by Rik van Bruggen from Neo Technology. In our dataset we are going to have people, competencies and companies :
+
+image::https://linkurio.us/wp-content/uploads/2014/10/Data-model-hr-analytics-600x337.png[A graph data model for recruitment.]
+
+People can be linked together by a friendship relationship. People have competencies and work or have worked for companies. In the picture above, we see that James works for Acme and that Paul has worked for the same company. They are friends and share a knowledge of general management. James knows financial management whereas Paul knows Python.
+ 
+'''
+ 
+== Sample Data Set
+
+Let's setup the data.
+
+One way to do that is to use amazing http://graphgen.neoxygen.io/[Graphgen] from Neoxygen.io. All it takes is a few lines of code to describe my dataset :
+
+(p:Person {firstname: firstName, lastname: lastName } *35)-[:FRIEND_OF *n..n]->(p)
+
+(p)-[:HAS_COMPETENCY *n..n]->(s:Skill *20)
+
+(p)-[:WORKS_FOR *n..n]->(c:Company {name: company, desc: catchPhrase} *20)
+
+(p)-[:WORKED_FOR *n..n]->(c)
+
+(s)-[:IS_REQUIRED *n..n]->(d:Job *5)
+
+//hide
+//setup
+[source,cypher]
+----
+ 
+//create the person nodes
+create (n1:Person {id:1, first_name:'Ellis', last_name:'Blair', gender:'Male'})
+create (n2:Person {id:2, first_name:'Mike', last_name:'Houston', gender:'Male'})
+create (n3:Person {id:3, first_name:'Chad', last_name:'Gardner', gender:'Male'})
+create (n4:Person {id:4, first_name:'Francisco', last_name:'Morales', gender:'Male'})
+create (n5:Person {id:5, first_name:'Wilbur', last_name:'Ford', gender:'Male'})
+create (n6:Person {id:6, first_name:'Drew', last_name:'Gill', gender:'Male'})
+create (n7:Person {id:7, first_name:'Kyle', last_name:'Kelly', gender:'Male'})
+create (n8:Person {id:8, first_name:'Jon', last_name:'Jackson', gender:'Male'})
+create (n9:Person {id:9, first_name:'Rafael', last_name:'Fowler', gender:'Male'})
+create (n10:Person {id:10, first_name:'Casey', last_name:'Murray', gender:'Male'})
+create (n11:Person {id:11, first_name:'Angelo', last_name:'Bowman', gender:'Male'})
+create (n12:Person {id:12, first_name:'James', last_name:'Todd', gender:'Male'})
+create (n13:Person {id:13, first_name:'Rodolfo', last_name:'Gregory', gender:'Male'})
+create (n14:Person {id:14, first_name:'Raymond', last_name:'Wong', gender:'Male'})
+create (n15:Person {id:15, first_name:'Ross', last_name:'Olson', gender:'Male'})
+create (n16:Person {id:16, first_name:'Duane', last_name:'Chavez', gender:'Male'})
+create (n17:Person {id:17, first_name:'Adam', last_name:'Hunter', gender:'Male'})
+create (n18:Person {id:18, first_name:'Darryl', last_name:'Brown', gender:'Male'})
+create (n19:Person {id:19, first_name:'Alberto', last_name:'Boone', gender:'Male'})
+create (n20:Person {id:20, first_name:'Kelly', last_name:'Newton', gender:'Male'})
+create (n21:Person {id:21, first_name:'Courtney', last_name:'Clark', gender:'Male'})
+create (n22:Person {id:22, first_name:'Eduardo', last_name:'Owen', gender:'Male'})
+create (n23:Person {id:23, first_name:'Norman', last_name:'Adams', gender:'Male'})
+create (n24:Person {id:24, first_name:'Earl', last_name:'Swanson', gender:'Male'})
+create (n25:Person {id:25, first_name:'Lonnie', last_name:'Hale', gender:'Male'})
+create (n26:Person {id:26, first_name:'Aubrey', last_name:'Snyder', gender:'Male'})
+create (n27:Person {id:27, first_name:'Carlos', last_name:'Burke', gender:'Male'})
+create (n28:Person {id:28, first_name:'Mark', last_name:'Payne', gender:'Male'})
+create (n29:Person {id:29, first_name:'Frank', last_name:'Logan', gender:'Male'})
+create (n30:Person {id:30, first_name:'Jan', last_name:'Bryan', gender:'Male'})
+create (n31:Person {id:31, first_name:'Perry', last_name:'Butler', gender:'Male'})
+create (n32:Person {id:32, first_name:'Caleb', last_name:'Baker', gender:'Male'})
+create (n33:Person {id:33, first_name:'Frankie', last_name:'Garcia', gender:'Male'})
+create (n34:Person {id:34, first_name:'Kirk', last_name:'Mills', gender:'Male'})
+create (n35:Person {id:35, first_name:'Karl', last_name:'Erickson', gender:'Male'})
+create (n36:Person {id:36, first_name:'Terrell', last_name:'Anderson', gender:'Male'})
+create (n37:Person {id:37, first_name:'Troy', last_name:'Maldonado', gender:'Male'})
+create (n38:Person {id:38, first_name:'Damon', last_name:'Cruz', gender:'Male'})
+create (n39:Person {id:39, first_name:'Brendan', last_name:'Bass', gender:'Male'})
+create (n40:Person {id:40, first_name:'Salvador', last_name:'Schultz', gender:'Male'})
+create (n41:Person {id:41, first_name:'Justin', last_name:'Hammond', gender:'Male'})
+create (n42:Person {id:42, first_name:'Tyler', last_name:'Perez', gender:'Male'})
+create (n43:Person {id:43, first_name:'Marty', last_name:'Sharp', gender:'Male'})
+create (n44:Person {id:44, first_name:'Terry', last_name:'Sanchez', gender:'Male'})
+create (n45:Person {id:45, first_name:'Clifton', last_name:'Mcdonald', gender:'Male'})
+create (n46:Person {id:46, first_name:'Danny', last_name:'Watkins', gender:'Male'})
+create (n47:Person {id:47, first_name:'Kerry', last_name:'Silva', gender:'Male'})
+create (n48:Person {id:48, first_name:'Warren', last_name:'Delgado', gender:'Male'})
+create (n49:Person {id:49, first_name:'Frederick', last_name:'Frank', gender:'Male'})
+create (n50:Person {id:50, first_name:'Bennie', last_name:'Malone', gender:'Male'})
+create (n51:Person {id:51, first_name:'Garry', last_name:'Hines', gender:'Male'})
+create (n52:Person {id:52, first_name:'Clark', last_name:'Edwards', gender:'Male'})
+create (n53:Person {id:53, first_name:'Emanuel', last_name:'Burton', gender:'Male'})
+create (n54:Person {id:54, first_name:'Jaime', last_name:'Rogers', gender:'Male'})
+create (n55:Person {id:55, first_name:'Grady', last_name:'Harmon', gender:'Male'})
+create (n56:Person {id:56, first_name:'Blake', last_name:'Dunn', gender:'Male'})
+create (n57:Person {id:57, first_name:'Lyle', last_name:'Daniel', gender:'Male'})
+create (n58:Person {id:58, first_name:'Marco', last_name:'Russell', gender:'Male'})
+create (n59:Person {id:59, first_name:'Leslie', last_name:'Wilkins', gender:'Male'})
+create (n60:Person {id:60, first_name:'Ernesto', last_name:'Sutton', gender:'Male'})
+create (n61:Person {id:61, first_name:'Lowell', last_name:'Rodriquez', gender:'Male'})
+create (n62:Person {id:62, first_name:'Joey', last_name:'Santos', gender:'Male'})
+create (n63:Person {id:63, first_name:'Christopher', last_name:'Little', gender:'Male'})
+create (n64:Person {id:64, first_name:'Glenn', last_name:'Flowers', gender:'Male'})
+create (n65:Person {id:65, first_name:'Reginald', last_name:'Kim', gender:'Male'})
+create (n66:Person {id:66, first_name:'John', last_name:'Marshall', gender:'Male'})
+create (n67:Person {id:67, first_name:'Dean', last_name:'Stanley', gender:'Male'})
+create (n68:Person {id:68, first_name:'Richard', last_name:'Mckenzie', gender:'Male'})
+create (n69:Person {id:69, first_name:'Jason', last_name:'King', gender:'Male'})
+create (n70:Person {id:70, first_name:'Steven', last_name:'Goodwin', gender:'Male'})
+create (n71:Person {id:71, first_name:'Roger', last_name:'Walker', gender:'Male'})
+create (n72:Person {id:72, first_name:'Roy', last_name:'Ramos', gender:'Male'})
+create (n73:Person {id:73, first_name:'Ron', last_name:'White', gender:'Male'})
+create (n74:Person {id:74, first_name:'Pat', last_name:'Vega', gender:'Male'})
+create (n75:Person {id:75, first_name:'Theodore', last_name:'Berry', gender:'Male'})
+create (n76:Person {id:76, first_name:'Sergio', last_name:'Shelton', gender:'Male'})
+create (n77:Person {id:77, first_name:'Emilio', last_name:'Miller', gender:'Male'})
+create (n78:Person {id:78, first_name:'Lance', last_name:'Henry', gender:'Male'})
+create (n79:Person {id:79, first_name:'Clarence', last_name:'Dennis', gender:'Male'})
+create (n80:Person {id:80, first_name:'Terence', last_name:'Barton', gender:'Male'})
+create (n81:Person {id:81, first_name:'Jim', last_name:'Welch', gender:'Male'})
+create (n82:Person {id:82, first_name:'Rick', last_name:'Carpenter', gender:'Male'})
+create (n83:Person {id:83, first_name:'Bernard', last_name:'Allen', gender:'Male'})
+create (n84:Person {id:84, first_name:'Matthew', last_name:'Thornton', gender:'Male'})
+create (n85:Person {id:85, first_name:'Curtis', last_name:'Powell', gender:'Male'})
+create (n86:Person {id:86, first_name:'Micheal', last_name:'Soto', gender:'Male'})
+create (n87:Person {id:87, first_name:'Jeremy', last_name:'Copeland', gender:'Male'})
+create (n88:Person {id:88, first_name:'Ian', last_name:'Freeman', gender:'Male'})
+create (n89:Person {id:89, first_name:'Homer', last_name:'Wheeler', gender:'Male'})
+create (n90:Person {id:90, first_name:'Gerald', last_name:'Mccoy', gender:'Male'})
+create (n91:Person {id:91, first_name:'Rene', last_name:'Hoffman', gender:'Male'})
+create (n92:Person {id:92, first_name:'Eric', last_name:'Arnold', gender:'Male'})
+create (n93:Person {id:93, first_name:'Chris', last_name:'Cook', gender:'Male'})
+create (n94:Person {id:94, first_name:'Arthur', last_name:'Tucker', gender:'Male'})
+create (n95:Person {id:95, first_name:'Ray', last_name:'Turner', gender:'Male'})
+create (n96:Person {id:96, first_name:'Hector', last_name:'Townsend', gender:'Male'})
+create (n97:Person {id:97, first_name:'Felipe', last_name:'Gonzalez', gender:'Male'})
+create (n98:Person {id:98, first_name:'Darin', last_name:'Santiago', gender:'Male'})
+create (n99:Person {id:99, first_name:'Tommie', last_name:'Holland', gender:'Male'})
+create (n100:Person {id:100, first_name:'Philip', last_name:'Crawford', gender:'Male'})
+create (n101:Person {id:101, first_name:'Carla', last_name:'Cannon', gender:'Female'})
+create (n102:Person {id:102, first_name:'Lucy', last_name:'Hampton', gender:'Female'})
+create (n103:Person {id:103, first_name:'Lorene', last_name:'Lloyd', gender:'Female'})
+create (n104:Person {id:104, first_name:'Cathy', last_name:'Delgado', gender:'Female'})
+create (n105:Person {id:105, first_name:'Audrey', last_name:'Carter', gender:'Female'})
+create (n106:Person {id:106, first_name:'Mabel', last_name:'Cook', gender:'Female'})
+create (n107:Person {id:107, first_name:'Lynda', last_name:'Willis', gender:'Female'})
+create (n108:Person {id:108, first_name:'Sherri', last_name:'Thornton', gender:'Female'})
+create (n109:Person {id:109, first_name:'Harriet', last_name:'Kennedy', gender:'Female'})
+create (n110:Person {id:110, first_name:'Lindsey', last_name:'Lawson', gender:'Female'})
+create (n111:Person {id:111, first_name:'Ann', last_name:'Blake', gender:'Female'})
+create (n112:Person {id:112, first_name:'Anna', last_name:'Marsh', gender:'Female'})
+create (n113:Person {id:113, first_name:'Billie', last_name:'Robbins', gender:'Female'})
+create (n114:Person {id:114, first_name:'Sandra', last_name:'Brown', gender:'Female'})
+create (n115:Person {id:115, first_name:'Kendra', last_name:'Murray', gender:'Female'})
+create (n116:Person {id:116, first_name:'Nancy', last_name:'Peterson', gender:'Female'})
+create (n117:Person {id:117, first_name:'Opal', last_name:'Howard', gender:'Female'})
+create (n118:Person {id:118, first_name:'Crystal', last_name:'Schwartz', gender:'Female'})
+create (n119:Person {id:119, first_name:'Sharon', last_name:'Frank', gender:'Female'})
+create (n120:Person {id:120, first_name:'Whitney', last_name:'Ryan', gender:'Female'})
+create (n121:Person {id:121, first_name:'Angie', last_name:'King', gender:'Female'})
+create (n122:Person {id:122, first_name:'Francis', last_name:'Curtis', gender:'Female'})
+create (n123:Person {id:123, first_name:'Doris', last_name:'Hansen', gender:'Female'})
+create (n124:Person {id:124, first_name:'Phyllis', last_name:'Spencer', gender:'Female'})
+create (n125:Person {id:125, first_name:'Deanna', last_name:'Barnes', gender:'Female'})
+create (n126:Person {id:126, first_name:'Elsie', last_name:'Moreno', gender:'Female'})
+create (n127:Person {id:127, first_name:'Judy', last_name:'Strickland', gender:'Female'})
+create (n128:Person {id:128, first_name:'Angela', last_name:'Stanley', gender:'Female'})
+create (n129:Person {id:129, first_name:'Lillian', last_name:'Lindsey', gender:'Female'})
+create (n130:Person {id:130, first_name:'Bernadette', last_name:'Vasquez', gender:'Female'})
+create (n131:Person {id:131, first_name:'Christine', last_name:'Burton', gender:'Female'})
+create (n132:Person {id:132, first_name:'Charlotte', last_name:'Rose', gender:'Female'})
+create (n133:Person {id:133, first_name:'Willie', last_name:'Jacobs', gender:'Female'})
+create (n134:Person {id:134, first_name:'Gina', last_name:'Jenkins', gender:'Female'})
+create (n135:Person {id:135, first_name:'Geraldine', last_name:'Campbell', gender:'Female'})
+create (n136:Person {id:136, first_name:'Eileen', last_name:'Weber', gender:'Female'})
+create (n137:Person {id:137, first_name:'Bonnie', last_name:'Phelps', gender:'Female'})
+create (n138:Person {id:138, first_name:'Kate', last_name:'Simpson', gender:'Female'})
+create (n139:Person {id:139, first_name:'Marilyn', last_name:'Bailey', gender:'Female'})
+create (n140:Person {id:140, first_name:'Juana', last_name:'Parks', gender:'Female'})
+create (n141:Person {id:141, first_name:'Delia', last_name:'Farmer', gender:'Female'})
+create (n142:Person {id:142, first_name:'Leah', last_name:'Bishop', gender:'Female'})
+create (n143:Person {id:143, first_name:'Theresa', last_name:'Munoz', gender:'Female'})
+create (n144:Person {id:144, first_name:'Jenna', last_name:'Bates', gender:'Female'})
+create (n145:Person {id:145, first_name:'Christie', last_name:'Figueroa', gender:'Female'})
+create (n146:Person {id:146, first_name:'Jane', last_name:'Alvarez', gender:'Female'})
+create (n147:Person {id:147, first_name:'Tara', last_name:'Mitchell', gender:'Female'})
+create (n148:Person {id:148, first_name:'Olga', last_name:'Dennis', gender:'Female'})
+create (n149:Person {id:149, first_name:'Tabitha', last_name:'Andrews', gender:'Female'})
+create (n150:Person {id:150, first_name:'Frances', last_name:'Allen', gender:'Female'})
+create (n151:Person {id:151, first_name:'Elsa', last_name:'Becker', gender:'Female'})
+create (n152:Person {id:152, first_name:'Ashley', last_name:'Roberts', gender:'Female'})
+create (n153:Person {id:153, first_name:'Debra', last_name:'Bush', gender:'Female'})
+create (n154:Person {id:154, first_name:'Kristy', last_name:'Gordon', gender:'Female'})
+create (n155:Person {id:155, first_name:'Ana', last_name:'Daniels', gender:'Female'})
+create (n156:Person {id:156, first_name:'Dianna', last_name:'Jones', gender:'Female'})
+create (n157:Person {id:157, first_name:'Molly', last_name:'Holmes', gender:'Female'})
+create (n158:Person {id:158, first_name:'Holly', last_name:'Turner', gender:'Female'})
+create (n159:Person {id:159, first_name:'Veronica', last_name:'Wells', gender:'Female'})
+create (n160:Person {id:160, first_name:'Lillie', last_name:'Peters', gender:'Female'})
+create (n161:Person {id:161, first_name:'Gloria', last_name:'Padilla', gender:'Female'})
+create (n162:Person {id:162, first_name:'Georgia', last_name:'Pope', gender:'Female'})
+create (n163:Person {id:163, first_name:'Tiffany', last_name:'Castro', gender:'Female'})
+create (n164:Person {id:164, first_name:'Pat', last_name:'Adkins', gender:'Female'})
+create (n165:Person {id:165, first_name:'Shelly', last_name:'Medina', gender:'Female'})
+create (n166:Person {id:166, first_name:'Jill', last_name:'Hughes', gender:'Female'})
+create (n167:Person {id:167, first_name:'Jean', last_name:'Stokes', gender:'Female'})
+create (n168:Person {id:168, first_name:'Shannon', last_name:'Welch', gender:'Female'})
+create (n169:Person {id:169, first_name:'Rosa', last_name:'Richards', gender:'Female'})
+create (n170:Person {id:170, first_name:'Becky', last_name:'Moody', gender:'Female'})
+create (n171:Person {id:171, first_name:'Helen', last_name:'Bowers', gender:'Female'})
+create (n172:Person {id:172, first_name:'Jackie', last_name:'Nguyen', gender:'Female'})
+create (n173:Person {id:173, first_name:'Carrie', last_name:'Buchanan', gender:'Female'})
+create (n174:Person {id:174, first_name:'Bethany', last_name:'Roy', gender:'Female'})
+create (n175:Person {id:175, first_name:'Beulah', last_name:'Conner', gender:'Female'})
+create (n176:Person {id:176, first_name:'Bobbie', last_name:'Moran', gender:'Female'})
+create (n177:Person {id:177, first_name:'Kristina', last_name:'Soto', gender:'Female'})
+create (n178:Person {id:178, first_name:'Jeannie', last_name:'Kim', gender:'Female'})
+create (n179:Person {id:179, first_name:'Danielle', last_name:'Pearson', gender:'Female'})
+create (n180:Person {id:180, first_name:'Brandi', last_name:'Castillo', gender:'Female'})
+create (n181:Person {id:181, first_name:'Cheryl', last_name:'Lamb', gender:'Female'})
+create (n182:Person {id:182, first_name:'Brandy', last_name:'Francis', gender:'Female'})
+create (n183:Person {id:183, first_name:'Esther', last_name:'Doyle', gender:'Female'})
+create (n184:Person {id:184, first_name:'Vanessa', last_name:'Fletcher', gender:'Female'})
+create (n185:Person {id:185, first_name:'Nadine', last_name:'Harrington', gender:'Female'})
+create (n186:Person {id:186, first_name:'Victoria', last_name:'Alvarado', gender:'Female'})
+create (n187:Person {id:187, first_name:'Cindy', last_name:'Duncan', gender:'Female'})
+create (n188:Person {id:188, first_name:'Peggy', last_name:'Holland', gender:'Female'})
+create (n189:Person {id:189, first_name:'Marsha', last_name:'Fuller', gender:'Female'})
+create (n190:Person {id:190, first_name:'Erma', last_name:'Wood', gender:'Female'})
+create (n191:Person {id:191, first_name:'Candice', last_name:'Nichols', gender:'Female'})
+create (n192:Person {id:192, first_name:'Pauline', last_name:'Price', gender:'Female'})
+create (n193:Person {id:193, first_name:'Joanna', last_name:'Barber', gender:'Female'})
+create (n194:Person {id:194, first_name:'Pam', last_name:'Mclaughlin', gender:'Female'})
+create (n195:Person {id:195, first_name:'Margarita', last_name:'Daniel', gender:'Female'})
+create (n196:Person {id:196, first_name:'Traci', last_name:'Sims', gender:'Female'})
+create (n197:Person {id:197, first_name:'Shawna', last_name:'Luna', gender:'Female'})
+create (n198:Person {id:198, first_name:'Kimberly', last_name:'Abbott', gender:'Female'})
+create (n199:Person {id:199, first_name:'Nina', last_name:'Carroll', gender:'Female'})
+create (n200:Person {id:200, first_name:'Valerie', last_name:'French', gender:'Female'})
+ 
+//create the competencies
+create (n300:Competency {id:300, name:'Java Programming'})
+create (n301:Competency {id:301, name:'Python Programming'})
+create (n302:Competency {id:302, name:'Scala Programming'})
+create (n303:Competency {id:303, name:'Visual Basic Programming'})
+create (n304:Competency {id:304, name:'Project Management'})
+create (n305:Competency {id:305, name:'People Management'})
+create (n306:Competency {id:306, name:'Financial Management'})
+create (n307:Competency {id:307, name:'Product Management'})
+create (n308:Competency {id:308, name:'General Management'})
+create (n309:Competency {id:309, name:'Carpenter'})
+ 
+//create the companies
+create (n400:Company {id:400, name:'Inchplus'})
+create (n401:Company {id:401, name:'Bamlam'})
+create (n402:Company {id:402, name:'Siliconfind'})
+create (n403:Company {id:403, name:'Joykeybase'})
+create (n404:Company {id:404, name:'Vivastreet'})
+create (n405:Company {id:405, name:'hot-dex'})
+create (n406:Company {id:406, name:'Saltice'})
+create (n407:Company {id:407, name:'Lexiice'})
+create (n408:Company {id:408, name:'Zooholdings'})
+create (n409:Company {id:409, name:'Isis'})
+create (n410:Company {id:410, name:'Doublein'})
+create (n411:Company {id:411, name:'Lamtex'})
+create (n412:Company {id:412, name:'Dingnix'})
+create (n413:Company {id:413, name:'Zimelectrics'})
+create (n414:Company {id:414, name:'Ontotechno'})
+create (n415:Company {id:415, name:'Viadrill'})
+create (n416:Company {id:416, name:'Zummajob'})
+create (n417:Company {id:417, name:'Y-trax'})
+create (n418:Company {id:418, name:'Namtom'})
+create (n419:Company {id:419, name:'Caretom'})
+create (n420:Company {id:420, name:'Tresmedia'})
+create (n421:Company {id:421, name:'Indilane'})
+create (n422:Company {id:422, name:'Greentone'})
+create (n423:Company {id:423, name:'Kayhatzap'})
+create (n424:Company {id:424, name:'Lanelex'})
+create (n425:Company {id:425, name:'Qvosoltrax'})
+create (n426:Company {id:426, name:'D-trans'})
+create (n427:Company {id:427, name:'ganzelectronics'})
+create (n428:Company {id:428, name:'statcane'})
+create (n429:Company {id:429, name:'Zamtexon'})
+
+//create the job openings
+create (n430:Job {id:430, name:'Software Engineer'})
+create (n431:Job {id:431, name:'Product Manager'})
+
+//person works for Company
+CREATE n1-[:WORKS_FOR]->n409
+CREATE n2-[:WORKS_FOR]->n405
+CREATE n3-[:WORKS_FOR]->n405
+CREATE n4-[:WORKS_FOR]->n425
+CREATE n5-[:WORKS_FOR]->n420
+CREATE n6-[:WORKS_FOR]->n402
+CREATE n7-[:WORKS_FOR]->n421
+CREATE n8-[:WORKS_FOR]->n427
+CREATE n9-[:WORKS_FOR]->n410
+CREATE n10-[:WORKS_FOR]->n405
+CREATE n11-[:WORKS_FOR]->n414
+CREATE n12-[:WORKS_FOR]->n429
+CREATE n13-[:WORKS_FOR]->n407
+CREATE n14-[:WORKS_FOR]->n413
+CREATE n15-[:WORKS_FOR]->n403
+CREATE n16-[:WORKS_FOR]->n410
+CREATE n17-[:WORKS_FOR]->n421
+CREATE n18-[:WORKS_FOR]->n412
+CREATE n19-[:WORKS_FOR]->n428
+CREATE n20-[:WORKS_FOR]->n421
+CREATE n21-[:WORKS_FOR]->n429
+CREATE n22-[:WORKS_FOR]->n408
+CREATE n23-[:WORKS_FOR]->n410
+CREATE n24-[:WORKS_FOR]->n418
+CREATE n25-[:WORKS_FOR]->n423
+CREATE n26-[:WORKS_FOR]->n404
+CREATE n27-[:WORKS_FOR]->n414
+CREATE n28-[:WORKS_FOR]->n412
+CREATE n29-[:WORKS_FOR]->n423
+CREATE n30-[:WORKS_FOR]->n408
+CREATE n31-[:WORKS_FOR]->n418
+CREATE n32-[:WORKS_FOR]->n429
+CREATE n33-[:WORKS_FOR]->n422
+CREATE n34-[:WORKS_FOR]->n426
+CREATE n35-[:WORKS_FOR]->n426
+CREATE n36-[:WORKS_FOR]->n409
+CREATE n37-[:WORKS_FOR]->n417
+CREATE n38-[:WORKS_FOR]->n407
+CREATE n39-[:WORKS_FOR]->n422
+CREATE n40-[:WORKS_FOR]->n412
+CREATE n41-[:WORKS_FOR]->n404
+CREATE n42-[:WORKS_FOR]->n420
+CREATE n43-[:WORKS_FOR]->n417
+CREATE n44-[:WORKS_FOR]->n422
+CREATE n45-[:WORKS_FOR]->n427
+CREATE n46-[:WORKS_FOR]->n418
+CREATE n47-[:WORKS_FOR]->n427
+CREATE n48-[:WORKS_FOR]->n405
+CREATE n49-[:WORKS_FOR]->n418
+CREATE n50-[:WORKS_FOR]->n400
+CREATE n51-[:WORKS_FOR]->n400
+CREATE n52-[:WORKS_FOR]->n406
+CREATE n53-[:WORKS_FOR]->n429
+CREATE n54-[:WORKS_FOR]->n405
+CREATE n55-[:WORKS_FOR]->n410
+CREATE n56-[:WORKS_FOR]->n417
+CREATE n57-[:WORKS_FOR]->n415
+CREATE n58-[:WORKS_FOR]->n417
+CREATE n59-[:WORKS_FOR]->n410
+CREATE n60-[:WORKS_FOR]->n422
+CREATE n61-[:WORKS_FOR]->n429
+CREATE n62-[:WORKS_FOR]->n416
+CREATE n63-[:WORKS_FOR]->n407
+CREATE n64-[:WORKS_FOR]->n415
+CREATE n65-[:WORKS_FOR]->n413
+CREATE n66-[:WORKS_FOR]->n407
+CREATE n67-[:WORKS_FOR]->n412
+CREATE n68-[:WORKS_FOR]->n418
+CREATE n69-[:WORKS_FOR]->n405
+CREATE n70-[:WORKS_FOR]->n400
+CREATE n71-[:WORKS_FOR]->n416
+CREATE n72-[:WORKS_FOR]->n418
+CREATE n73-[:WORKS_FOR]->n408
+CREATE n74-[:WORKS_FOR]->n401
+CREATE n75-[:WORKS_FOR]->n421
+CREATE n76-[:WORKS_FOR]->n412
+CREATE n77-[:WORKS_FOR]->n428
+CREATE n78-[:WORKS_FOR]->n411
+CREATE n79-[:WORKS_FOR]->n402
+CREATE n80-[:WORKS_FOR]->n400
+CREATE n81-[:WORKS_FOR]->n419
+CREATE n82-[:WORKS_FOR]->n417
+CREATE n83-[:WORKS_FOR]->n427
+CREATE n84-[:WORKS_FOR]->n400
+CREATE n85-[:WORKS_FOR]->n427
+CREATE n86-[:WORKS_FOR]->n410
+CREATE n87-[:WORKS_FOR]->n407
+CREATE n88-[:WORKS_FOR]->n403
+CREATE n89-[:WORKS_FOR]->n404
+CREATE n90-[:WORKS_FOR]->n423
+CREATE n91-[:WORKS_FOR]->n417
+CREATE n92-[:WORKS_FOR]->n412
+CREATE n93-[:WORKS_FOR]->n406
+CREATE n94-[:WORKS_FOR]->n424
+CREATE n95-[:WORKS_FOR]->n400
+CREATE n96-[:WORKS_FOR]->n427
+CREATE n97-[:WORKS_FOR]->n427
+CREATE n98-[:WORKS_FOR]->n409
+CREATE n99-[:WORKS_FOR]->n424
+CREATE n100-[:WORKS_FOR]->n416
+CREATE n101-[:WORKS_FOR]->n426
+CREATE n102-[:WORKS_FOR]->n417
+CREATE n103-[:WORKS_FOR]->n412
+CREATE n104-[:WORKS_FOR]->n429
+CREATE n105-[:WORKS_FOR]->n413
+CREATE n106-[:WORKS_FOR]->n415
+CREATE n107-[:WORKS_FOR]->n427
+CREATE n108-[:WORKS_FOR]->n410
+CREATE n109-[:WORKS_FOR]->n410
+CREATE n110-[:WORKS_FOR]->n414
+CREATE n111-[:WORKS_FOR]->n422
+CREATE n112-[:WORKS_FOR]->n417
+CREATE n113-[:WORKS_FOR]->n413
+CREATE n114-[:WORKS_FOR]->n420
+CREATE n115-[:WORKS_FOR]->n417
+CREATE n116-[:WORKS_FOR]->n427
+CREATE n117-[:WORKS_FOR]->n419
+CREATE n118-[:WORKS_FOR]->n420
+CREATE n119-[:WORKS_FOR]->n424
+CREATE n120-[:WORKS_FOR]->n420
+CREATE n121-[:WORKS_FOR]->n410
+CREATE n122-[:WORKS_FOR]->n419
+CREATE n123-[:WORKS_FOR]->n407
+CREATE n124-[:WORKS_FOR]->n407
+CREATE n125-[:WORKS_FOR]->n418
+CREATE n126-[:WORKS_FOR]->n412
+CREATE n127-[:WORKS_FOR]->n408
+CREATE n128-[:WORKS_FOR]->n428
+CREATE n129-[:WORKS_FOR]->n412
+CREATE n130-[:WORKS_FOR]->n412
+CREATE n131-[:WORKS_FOR]->n403
+CREATE n132-[:WORKS_FOR]->n404
+CREATE n133-[:WORKS_FOR]->n418
+CREATE n134-[:WORKS_FOR]->n419
+CREATE n135-[:WORKS_FOR]->n415
+CREATE n136-[:WORKS_FOR]->n422
+CREATE n137-[:WORKS_FOR]->n419
+CREATE n138-[:WORKS_FOR]->n409
+CREATE n139-[:WORKS_FOR]->n428
+CREATE n140-[:WORKS_FOR]->n421
+CREATE n141-[:WORKS_FOR]->n408
+CREATE n142-[:WORKS_FOR]->n425
+CREATE n143-[:WORKS_FOR]->n405
+CREATE n144-[:WORKS_FOR]->n424
+CREATE n145-[:WORKS_FOR]->n418
+CREATE n146-[:WORKS_FOR]->n424
+CREATE n147-[:WORKS_FOR]->n414
+CREATE n148-[:WORKS_FOR]->n405
+CREATE n149-[:WORKS_FOR]->n408
+CREATE n150-[:WORKS_FOR]->n417
+CREATE n151-[:WORKS_FOR]->n404
+CREATE n152-[:WORKS_FOR]->n421
+CREATE n153-[:WORKS_FOR]->n425
+CREATE n154-[:WORKS_FOR]->n405
+CREATE n155-[:WORKS_FOR]->n412
+CREATE n156-[:WORKS_FOR]->n409
+CREATE n157-[:WORKS_FOR]->n420
+CREATE n158-[:WORKS_FOR]->n425
+CREATE n159-[:WORKS_FOR]->n427
+CREATE n160-[:WORKS_FOR]->n406
+CREATE n161-[:WORKS_FOR]->n424
+CREATE n162-[:WORKS_FOR]->n401
+CREATE n163-[:WORKS_FOR]->n418
+CREATE n164-[:WORKS_FOR]->n427
+CREATE n165-[:WORKS_FOR]->n425
+CREATE n166-[:WORKS_FOR]->n419
+CREATE n167-[:WORKS_FOR]->n419
+CREATE n168-[:WORKS_FOR]->n428
+CREATE n169-[:WORKS_FOR]->n400
+CREATE n170-[:WORKS_FOR]->n401
+CREATE n171-[:WORKS_FOR]->n407
+CREATE n172-[:WORKS_FOR]->n400
+CREATE n173-[:WORKS_FOR]->n403
+CREATE n174-[:WORKS_FOR]->n416
+CREATE n175-[:WORKS_FOR]->n421
+CREATE n176-[:WORKS_FOR]->n413
+CREATE n177-[:WORKS_FOR]->n402
+CREATE n178-[:WORKS_FOR]->n418
+CREATE n179-[:WORKS_FOR]->n411
+CREATE n180-[:WORKS_FOR]->n405
+CREATE n181-[:WORKS_FOR]->n409
+CREATE n182-[:WORKS_FOR]->n415
+CREATE n183-[:WORKS_FOR]->n425
+CREATE n184-[:WORKS_FOR]->n401
+CREATE n185-[:WORKS_FOR]->n428
+CREATE n186-[:WORKS_FOR]->n400
+CREATE n187-[:WORKS_FOR]->n419
+CREATE n188-[:WORKS_FOR]->n406
+CREATE n189-[:WORKS_FOR]->n407
+CREATE n190-[:WORKS_FOR]->n424
+CREATE n191-[:WORKS_FOR]->n415
+CREATE n192-[:WORKS_FOR]->n419
+CREATE n193-[:WORKS_FOR]->n405
+CREATE n194-[:WORKS_FOR]->n413
+CREATE n195-[:WORKS_FOR]->n420
+CREATE n196-[:WORKS_FOR]->n402
+CREATE n197-[:WORKS_FOR]->n419
+CREATE n198-[:WORKS_FOR]->n425
+CREATE n199-[:WORKS_FOR]->n401
+CREATE n200-[:WORKS_FOR]->n402
+
+//person worked for Company
+CREATE n182-[:WORKED_FOR]->n418
+CREATE n149-[:WORKED_FOR]->n404
+CREATE n105-[:WORKED_FOR]->n400
+CREATE n169-[:WORKED_FOR]->n400
+CREATE n107-[:WORKED_FOR]->n421
+CREATE n53-[:WORKED_FOR]->n421
+CREATE n113-[:WORKED_FOR]->n421
+CREATE n190-[:WORKED_FOR]->n428
+CREATE n128-[:WORKED_FOR]->n416
+CREATE n64-[:WORKED_FOR]->n407
+CREATE n81-[:WORKED_FOR]->n408
+CREATE n131-[:WORKED_FOR]->n408
+CREATE n94-[:WORKED_FOR]->n415
+CREATE n173-[:WORKED_FOR]->n407
+CREATE n183-[:WORKED_FOR]->n429
+CREATE n102-[:WORKED_FOR]->n403
+CREATE n41-[:WORKED_FOR]->n415
+CREATE n75-[:WORKED_FOR]->n412
+CREATE n194-[:WORKED_FOR]->n400
+CREATE n7-[:WORKED_FOR]->n409
+CREATE n84-[:WORKED_FOR]->n411
+CREATE n76-[:WORKED_FOR]->n426
+CREATE n89-[:WORKED_FOR]->n402
+CREATE n116-[:WORKED_FOR]->n422
+CREATE n181-[:WORKED_FOR]->n418
+CREATE n118-[:WORKED_FOR]->n415
+CREATE n32-[:WORKED_FOR]->n414
+CREATE n184-[:WORKED_FOR]->n404
+CREATE n110-[:WORKED_FOR]->n425
+CREATE n70-[:WORKED_FOR]->n404
+CREATE n39-[:WORKED_FOR]->n417
+CREATE n1-[:WORKED_FOR]->n417
+CREATE n70-[:WORKED_FOR]->n401
+CREATE n65-[:WORKED_FOR]->n426
+CREATE n87-[:WORKED_FOR]->n407
+CREATE n82-[:WORKED_FOR]->n427
+CREATE n185-[:WORKED_FOR]->n408
+CREATE n125-[:WORKED_FOR]->n426
+CREATE n52-[:WORKED_FOR]->n421
+CREATE n52-[:WORKED_FOR]->n416
+CREATE n51-[:WORKED_FOR]->n420
+CREATE n170-[:WORKED_FOR]->n414
+CREATE n147-[:WORKED_FOR]->n410
+CREATE n156-[:WORKED_FOR]->n419
+CREATE n83-[:WORKED_FOR]->n407
+CREATE n142-[:WORKED_FOR]->n410
+CREATE n145-[:WORKED_FOR]->n409
+CREATE n150-[:WORKED_FOR]->n409
+CREATE n107-[:WORKED_FOR]->n426
+CREATE n41-[:WORKED_FOR]->n422
+CREATE n155-[:WORKED_FOR]->n424
+CREATE n89-[:WORKED_FOR]->n423
+CREATE n65-[:WORKED_FOR]->n414
+CREATE n105-[:WORKED_FOR]->n400
+CREATE n140-[:WORKED_FOR]->n407
+CREATE n180-[:WORKED_FOR]->n410
+CREATE n162-[:WORKED_FOR]->n416
+CREATE n37-[:WORKED_FOR]->n420
+CREATE n38-[:WORKED_FOR]->n429
+CREATE n105-[:WORKED_FOR]->n414
+CREATE n38-[:WORKED_FOR]->n402
+CREATE n3-[:WORKED_FOR]->n414
+CREATE n184-[:WORKED_FOR]->n426
+CREATE n99-[:WORKED_FOR]->n419
+CREATE n179-[:WORKED_FOR]->n409
+CREATE n2-[:WORKED_FOR]->n414
+CREATE n191-[:WORKED_FOR]->n416
+CREATE n71-[:WORKED_FOR]->n422
+CREATE n64-[:WORKED_FOR]->n414
+CREATE n42-[:WORKED_FOR]->n410
+CREATE n84-[:WORKED_FOR]->n406
+CREATE n158-[:WORKED_FOR]->n428
+CREATE n150-[:WORKED_FOR]->n405
+CREATE n19-[:WORKED_FOR]->n420
+CREATE n144-[:WORKED_FOR]->n404
+CREATE n111-[:WORKED_FOR]->n412
+CREATE n104-[:WORKED_FOR]->n421
+CREATE n28-[:WORKED_FOR]->n412
+CREATE n167-[:WORKED_FOR]->n404
+CREATE n182-[:WORKED_FOR]->n413
+CREATE n75-[:WORKED_FOR]->n408
+CREATE n103-[:WORKED_FOR]->n411
+CREATE n81-[:WORKED_FOR]->n421
+CREATE n27-[:WORKED_FOR]->n424
+CREATE n110-[:WORKED_FOR]->n406
+CREATE n30-[:WORKED_FOR]->n404
+CREATE n141-[:WORKED_FOR]->n407
+CREATE n196-[:WORKED_FOR]->n406
+CREATE n31-[:WORKED_FOR]->n420
+CREATE n110-[:WORKED_FOR]->n410
+CREATE n130-[:WORKED_FOR]->n402
+CREATE n13-[:WORKED_FOR]->n411
+CREATE n148-[:WORKED_FOR]->n404
+CREATE n25-[:WORKED_FOR]->n400
+CREATE n91-[:WORKED_FOR]->n425
+CREATE n116-[:WORKED_FOR]->n429
+CREATE n39-[:WORKED_FOR]->n425
+CREATE n188-[:WORKED_FOR]->n407
+CREATE n126-[:WORKED_FOR]->n421
+CREATE n182-[:WORKED_FOR]->n426
+CREATE n75-[:WORKED_FOR]->n404
+CREATE n21-[:WORKED_FOR]->n412
+CREATE n76-[:WORKED_FOR]->n419
+CREATE n182-[:WORKED_FOR]->n417
+CREATE n14-[:WORKED_FOR]->n400
+CREATE n49-[:WORKED_FOR]->n406
+CREATE n128-[:WORKED_FOR]->n418
+CREATE n197-[:WORKED_FOR]->n418
+CREATE n47-[:WORKED_FOR]->n420
+CREATE n154-[:WORKED_FOR]->n410
+CREATE n51-[:WORKED_FOR]->n405
+CREATE n53-[:WORKED_FOR]->n428
+CREATE n114-[:WORKED_FOR]->n425
+CREATE n171-[:WORKED_FOR]->n409
+CREATE n16-[:WORKED_FOR]->n404
+CREATE n96-[:WORKED_FOR]->n413
+CREATE n176-[:WORKED_FOR]->n422
+CREATE n73-[:WORKED_FOR]->n418
+CREATE n2-[:WORKED_FOR]->n411
+CREATE n55-[:WORKED_FOR]->n418
+CREATE n171-[:WORKED_FOR]->n415
+CREATE n32-[:WORKED_FOR]->n426
+CREATE n41-[:WORKED_FOR]->n405
+CREATE n35-[:WORKED_FOR]->n408
+CREATE n22-[:WORKED_FOR]->n405
+CREATE n95-[:WORKED_FOR]->n400
+CREATE n198-[:WORKED_FOR]->n426
+CREATE n78-[:WORKED_FOR]->n422
+CREATE n129-[:WORKED_FOR]->n421
+CREATE n68-[:WORKED_FOR]->n418
+CREATE n52-[:WORKED_FOR]->n403
+CREATE n25-[:WORKED_FOR]->n427
+CREATE n31-[:WORKED_FOR]->n408
+CREATE n44-[:WORKED_FOR]->n421
+CREATE n62-[:WORKED_FOR]->n402
+CREATE n34-[:WORKED_FOR]->n427
+CREATE n152-[:WORKED_FOR]->n407
+CREATE n66-[:WORKED_FOR]->n429
+CREATE n86-[:WORKED_FOR]->n412
+CREATE n175-[:WORKED_FOR]->n403
+CREATE n13-[:WORKED_FOR]->n407
+CREATE n68-[:WORKED_FOR]->n426
+CREATE n151-[:WORKED_FOR]->n408
+CREATE n162-[:WORKED_FOR]->n403
+CREATE n144-[:WORKED_FOR]->n418
+CREATE n80-[:WORKED_FOR]->n405
+CREATE n19-[:WORKED_FOR]->n422
+CREATE n141-[:WORKED_FOR]->n427
+CREATE n160-[:WORKED_FOR]->n419
+CREATE n134-[:WORKED_FOR]->n412
+CREATE n163-[:WORKED_FOR]->n414
+CREATE n93-[:WORKED_FOR]->n416
+CREATE n147-[:WORKED_FOR]->n425
+CREATE n177-[:WORKED_FOR]->n409
+CREATE n194-[:WORKED_FOR]->n418
+CREATE n76-[:WORKED_FOR]->n412
+CREATE n110-[:WORKED_FOR]->n426
+CREATE n103-[:WORKED_FOR]->n428
+CREATE n53-[:WORKED_FOR]->n405
+CREATE n161-[:WORKED_FOR]->n426
+CREATE n138-[:WORKED_FOR]->n425
+CREATE n121-[:WORKED_FOR]->n403
+CREATE n106-[:WORKED_FOR]->n429
+CREATE n187-[:WORKED_FOR]->n422
+CREATE n144-[:WORKED_FOR]->n418
+CREATE n82-[:WORKED_FOR]->n424
+CREATE n165-[:WORKED_FOR]->n427
+CREATE n82-[:WORKED_FOR]->n403
+CREATE n111-[:WORKED_FOR]->n415
+CREATE n67-[:WORKED_FOR]->n402
+CREATE n58-[:WORKED_FOR]->n429
+CREATE n195-[:WORKED_FOR]->n410
+CREATE n32-[:WORKED_FOR]->n407
+CREATE n158-[:WORKED_FOR]->n414
+CREATE n86-[:WORKED_FOR]->n427
+CREATE n68-[:WORKED_FOR]->n429
+CREATE n154-[:WORKED_FOR]->n417
+CREATE n5-[:WORKED_FOR]->n404
+CREATE n82-[:WORKED_FOR]->n420
+CREATE n196-[:WORKED_FOR]->n415
+CREATE n20-[:WORKED_FOR]->n408
+CREATE n8-[:WORKED_FOR]->n429
+CREATE n111-[:WORKED_FOR]->n407
+CREATE n111-[:WORKED_FOR]->n423
+CREATE n21-[:WORKED_FOR]->n407
+CREATE n18-[:WORKED_FOR]->n415
+CREATE n28-[:WORKED_FOR]->n407
+CREATE n30-[:WORKED_FOR]->n411
+CREATE n53-[:WORKED_FOR]->n422
+CREATE n90-[:WORKED_FOR]->n414
+CREATE n28-[:WORKED_FOR]->n403
+CREATE n112-[:WORKED_FOR]->n427
+CREATE n86-[:WORKED_FOR]->n415
+CREATE n76-[:WORKED_FOR]->n405
+CREATE n116-[:WORKED_FOR]->n423
+CREATE n51-[:WORKED_FOR]->n402
+CREATE n144-[:WORKED_FOR]->n422
+CREATE n109-[:WORKED_FOR]->n405
+CREATE n116-[:WORKED_FOR]->n428
+CREATE n167-[:WORKED_FOR]->n427
+CREATE n199-[:WORKED_FOR]->n410
+CREATE n54-[:WORKED_FOR]->n421
+CREATE n59-[:WORKED_FOR]->n421
+CREATE n4-[:WORKED_FOR]->n404
+CREATE n183-[:WORKED_FOR]->n414
+CREATE n71-[:WORKED_FOR]->n406
+CREATE n63-[:WORKED_FOR]->n407
+CREATE n109-[:WORKED_FOR]->n402
+CREATE n123-[:WORKED_FOR]->n408
+CREATE n87-[:WORKED_FOR]->n417
+CREATE n49-[:WORKED_FOR]->n429
+CREATE n101-[:WORKED_FOR]->n414
+CREATE n88-[:WORKED_FOR]->n402
+CREATE n3-[:WORKED_FOR]->n400
+CREATE n99-[:WORKED_FOR]->n413
+CREATE n197-[:WORKED_FOR]->n416
+CREATE n73-[:WORKED_FOR]->n407
+CREATE n143-[:WORKED_FOR]->n423
+CREATE n111-[:WORKED_FOR]->n413
+CREATE n6-[:WORKED_FOR]->n408
+CREATE n197-[:WORKED_FOR]->n417
+CREATE n63-[:WORKED_FOR]->n409
+CREATE n44-[:WORKED_FOR]->n418
+CREATE n65-[:WORKED_FOR]->n425
+CREATE n39-[:WORKED_FOR]->n418
+CREATE n135-[:WORKED_FOR]->n429
+CREATE n120-[:WORKED_FOR]->n414
+CREATE n20-[:WORKED_FOR]->n415
+CREATE n199-[:WORKED_FOR]->n416
+CREATE n123-[:WORKED_FOR]->n400
+CREATE n171-[:WORKED_FOR]->n424
+CREATE n25-[:WORKED_FOR]->n415
+CREATE n199-[:WORKED_FOR]->n414
+CREATE n57-[:WORKED_FOR]->n402
+CREATE n192-[:WORKED_FOR]->n415
+CREATE n174-[:WORKED_FOR]->n421
+CREATE n111-[:WORKED_FOR]->n406
+CREATE n133-[:WORKED_FOR]->n419
+CREATE n196-[:WORKED_FOR]->n420
+CREATE n22-[:WORKED_FOR]->n411
+CREATE n134-[:WORKED_FOR]->n403
+CREATE n44-[:WORKED_FOR]->n404
+CREATE n133-[:WORKED_FOR]->n428
+CREATE n123-[:WORKED_FOR]->n422
+CREATE n196-[:WORKED_FOR]->n429
+CREATE n162-[:WORKED_FOR]->n411
+CREATE n67-[:WORKED_FOR]->n415
+CREATE n139-[:WORKED_FOR]->n412
+CREATE n121-[:WORKED_FOR]->n425
+CREATE n76-[:WORKED_FOR]->n425
+CREATE n61-[:WORKED_FOR]->n425
+CREATE n141-[:WORKED_FOR]->n408
+CREATE n116-[:WORKED_FOR]->n418
+CREATE n22-[:WORKED_FOR]->n429
+CREATE n85-[:WORKED_FOR]->n413
+CREATE n163-[:WORKED_FOR]->n402
+CREATE n27-[:WORKED_FOR]->n400
+CREATE n192-[:WORKED_FOR]->n408
+CREATE n86-[:WORKED_FOR]->n428
+CREATE n128-[:WORKED_FOR]->n411
+CREATE n32-[:WORKED_FOR]->n417
+CREATE n165-[:WORKED_FOR]->n401
+CREATE n32-[:WORKED_FOR]->n414
+CREATE n104-[:WORKED_FOR]->n409
+CREATE n91-[:WORKED_FOR]->n404
+CREATE n148-[:WORKED_FOR]->n403
+CREATE n170-[:WORKED_FOR]->n428
+CREATE n115-[:WORKED_FOR]->n410
+CREATE n149-[:WORKED_FOR]->n411
+CREATE n166-[:WORKED_FOR]->n414
+CREATE n21-[:WORKED_FOR]->n406
+CREATE n161-[:WORKED_FOR]->n402
+CREATE n96-[:WORKED_FOR]->n414
+CREATE n196-[:WORKED_FOR]->n412
+CREATE n38-[:WORKED_FOR]->n412
+CREATE n171-[:WORKED_FOR]->n426
+CREATE n190-[:WORKED_FOR]->n423
+CREATE n78-[:WORKED_FOR]->n428
+CREATE n157-[:WORKED_FOR]->n418
+CREATE n48-[:WORKED_FOR]->n404
+CREATE n36-[:WORKED_FOR]->n421
+CREATE n95-[:WORKED_FOR]->n419
+CREATE n66-[:WORKED_FOR]->n410
+CREATE n22-[:WORKED_FOR]->n422
+CREATE n128-[:WORKED_FOR]->n401
+CREATE n168-[:WORKED_FOR]->n420
+CREATE n120-[:WORKED_FOR]->n416
+CREATE n177-[:WORKED_FOR]->n402
+CREATE n169-[:WORKED_FOR]->n426
+CREATE n46-[:WORKED_FOR]->n407
+CREATE n33-[:WORKED_FOR]->n412
+CREATE n66-[:WORKED_FOR]->n412
+CREATE n42-[:WORKED_FOR]->n412
+CREATE n137-[:WORKED_FOR]->n414
+CREATE n162-[:WORKED_FOR]->n408
+CREATE n182-[:WORKED_FOR]->n428
+CREATE n170-[:WORKED_FOR]->n416
+CREATE n66-[:WORKED_FOR]->n413
+CREATE n35-[:WORKED_FOR]->n420
+CREATE n94-[:WORKED_FOR]->n407
+CREATE n30-[:WORKED_FOR]->n429
+CREATE n111-[:WORKED_FOR]->n419
+CREATE n17-[:WORKED_FOR]->n418
+CREATE n115-[:WORKED_FOR]->n412
+CREATE n64-[:WORKED_FOR]->n411
+CREATE n81-[:WORKED_FOR]->n426
+CREATE n73-[:WORKED_FOR]->n405
+CREATE n19-[:WORKED_FOR]->n425
+CREATE n50-[:WORKED_FOR]->n409
+CREATE n116-[:WORKED_FOR]->n412
+CREATE n34-[:WORKED_FOR]->n405
+CREATE n177-[:WORKED_FOR]->n418
+CREATE n64-[:WORKED_FOR]->n417
+CREATE n51-[:WORKED_FOR]->n405
+CREATE n1-[:WORKED_FOR]->n419
+CREATE n104-[:WORKED_FOR]->n424
+CREATE n16-[:WORKED_FOR]->n410
+CREATE n131-[:WORKED_FOR]->n407
+CREATE n20-[:WORKED_FOR]->n413
+CREATE n119-[:WORKED_FOR]->n409
+CREATE n184-[:WORKED_FOR]->n400
+CREATE n27-[:WORKED_FOR]->n409
+CREATE n143-[:WORKED_FOR]->n415
+CREATE n195-[:WORKED_FOR]->n422
+CREATE n21-[:WORKED_FOR]->n426
+CREATE n20-[:WORKED_FOR]->n422
+CREATE n108-[:WORKED_FOR]->n414
+CREATE n189-[:WORKED_FOR]->n426
+CREATE n161-[:WORKED_FOR]->n404
+CREATE n31-[:WORKED_FOR]->n404
+CREATE n75-[:WORKED_FOR]->n423
+CREATE n58-[:WORKED_FOR]->n415
+CREATE n14-[:WORKED_FOR]->n414
+CREATE n39-[:WORKED_FOR]->n400
+CREATE n127-[:WORKED_FOR]->n427
+CREATE n128-[:WORKED_FOR]->n416
+CREATE n154-[:WORKED_FOR]->n418
+CREATE n73-[:WORKED_FOR]->n419
+CREATE n77-[:WORKED_FOR]->n406
+CREATE n124-[:WORKED_FOR]->n426
+CREATE n9-[:WORKED_FOR]->n401
+CREATE n29-[:WORKED_FOR]->n403
+CREATE n5-[:WORKED_FOR]->n406
+CREATE n135-[:WORKED_FOR]->n414
+CREATE n143-[:WORKED_FOR]->n420
+CREATE n188-[:WORKED_FOR]->n409
+CREATE n148-[:WORKED_FOR]->n418
+CREATE n129-[:WORKED_FOR]->n413
+CREATE n144-[:WORKED_FOR]->n415
+CREATE n184-[:WORKED_FOR]->n425
+CREATE n78-[:WORKED_FOR]->n414
+CREATE n70-[:WORKED_FOR]->n403
+CREATE n115-[:WORKED_FOR]->n408
+CREATE n9-[:WORKED_FOR]->n401
+CREATE n87-[:WORKED_FOR]->n428
+CREATE n169-[:WORKED_FOR]->n422
+CREATE n72-[:WORKED_FOR]->n415
+CREATE n94-[:WORKED_FOR]->n408
+CREATE n16-[:WORKED_FOR]->n420
+CREATE n21-[:WORKED_FOR]->n414
+CREATE n145-[:WORKED_FOR]->n426
+CREATE n162-[:WORKED_FOR]->n418
+CREATE n144-[:WORKED_FOR]->n403
+CREATE n49-[:WORKED_FOR]->n427
+CREATE n200-[:WORKED_FOR]->n402
+CREATE n178-[:WORKED_FOR]->n407
+CREATE n72-[:WORKED_FOR]->n420
+CREATE n119-[:WORKED_FOR]->n413
+CREATE n65-[:WORKED_FOR]->n402
+CREATE n2-[:WORKED_FOR]->n413
+CREATE n132-[:WORKED_FOR]->n405
+CREATE n40-[:WORKED_FOR]->n412
+CREATE n71-[:WORKED_FOR]->n405
+CREATE n180-[:WORKED_FOR]->n428
+CREATE n138-[:WORKED_FOR]->n416
+CREATE n112-[:WORKED_FOR]->n404
+CREATE n24-[:WORKED_FOR]->n427
+CREATE n158-[:WORKED_FOR]->n420
+CREATE n113-[:WORKED_FOR]->n411
+CREATE n143-[:WORKED_FOR]->n403
+CREATE n178-[:WORKED_FOR]->n414
+CREATE n62-[:WORKED_FOR]->n423
+CREATE n124-[:WORKED_FOR]->n410
+CREATE n190-[:WORKED_FOR]->n416
+CREATE n47-[:WORKED_FOR]->n425
+CREATE n32-[:WORKED_FOR]->n429
+CREATE n141-[:WORKED_FOR]->n419
+CREATE n152-[:WORKED_FOR]->n422
+CREATE n129-[:WORKED_FOR]->n425
+CREATE n159-[:WORKED_FOR]->n418
+CREATE n155-[:WORKED_FOR]->n425
+CREATE n164-[:WORKED_FOR]->n422
+CREATE n72-[:WORKED_FOR]->n423
+CREATE n101-[:WORKED_FOR]->n414
+CREATE n181-[:WORKED_FOR]->n418
+CREATE n22-[:WORKED_FOR]->n419
+CREATE n51-[:WORKED_FOR]->n401
+CREATE n126-[:WORKED_FOR]->n419
+CREATE n75-[:WORKED_FOR]->n413
+CREATE n96-[:WORKED_FOR]->n420
+CREATE n194-[:WORKED_FOR]->n409
+CREATE n172-[:WORKED_FOR]->n409
+CREATE n86-[:WORKED_FOR]->n419
+CREATE n43-[:WORKED_FOR]->n421
+CREATE n131-[:WORKED_FOR]->n404
+CREATE n157-[:WORKED_FOR]->n403
+CREATE n178-[:WORKED_FOR]->n410
+CREATE n93-[:WORKED_FOR]->n420
+CREATE n186-[:WORKED_FOR]->n409
+CREATE n45-[:WORKED_FOR]->n416
+CREATE n146-[:WORKED_FOR]->n402
+CREATE n117-[:WORKED_FOR]->n422
+CREATE n4-[:WORKED_FOR]->n415
+CREATE n182-[:WORKED_FOR]->n418
+CREATE n50-[:WORKED_FOR]->n404
+CREATE n142-[:WORKED_FOR]->n403
+CREATE n21-[:WORKED_FOR]->n417
+CREATE n120-[:WORKED_FOR]->n413
+CREATE n103-[:WORKED_FOR]->n404
+CREATE n35-[:WORKED_FOR]->n401
+CREATE n78-[:WORKED_FOR]->n424
+CREATE n147-[:WORKED_FOR]->n428
+CREATE n28-[:WORKED_FOR]->n401
+CREATE n108-[:WORKED_FOR]->n403
+CREATE n81-[:WORKED_FOR]->n400
+CREATE n27-[:WORKED_FOR]->n408
+CREATE n127-[:WORKED_FOR]->n421
+CREATE n68-[:WORKED_FOR]->n410
+CREATE n106-[:WORKED_FOR]->n402
+CREATE n75-[:WORKED_FOR]->n402
+CREATE n174-[:WORKED_FOR]->n427
+CREATE n181-[:WORKED_FOR]->n407
+CREATE n161-[:WORKED_FOR]->n420
+CREATE n181-[:WORKED_FOR]->n417
+CREATE n67-[:WORKED_FOR]->n414
+CREATE n148-[:WORKED_FOR]->n400
+CREATE n93-[:WORKED_FOR]->n428
+CREATE n194-[:WORKED_FOR]->n403
+CREATE n70-[:WORKED_FOR]->n407
+CREATE n79-[:WORKED_FOR]->n413
+CREATE n159-[:WORKED_FOR]->n411
+CREATE n177-[:WORKED_FOR]->n416
+CREATE n61-[:WORKED_FOR]->n422
+CREATE n164-[:WORKED_FOR]->n417
+CREATE n46-[:WORKED_FOR]->n411
+CREATE n61-[:WORKED_FOR]->n418
+CREATE n124-[:WORKED_FOR]->n402
+CREATE n109-[:WORKED_FOR]->n423
+CREATE n161-[:WORKED_FOR]->n412
+CREATE n100-[:WORKED_FOR]->n412
+CREATE n13-[:WORKED_FOR]->n428
+CREATE n59-[:WORKED_FOR]->n418
+CREATE n71-[:WORKED_FOR]->n429
+CREATE n149-[:WORKED_FOR]->n404
+CREATE n98-[:WORKED_FOR]->n414
+CREATE n169-[:WORKED_FOR]->n411
+CREATE n20-[:WORKED_FOR]->n413
+CREATE n74-[:WORKED_FOR]->n415
+CREATE n47-[:WORKED_FOR]->n418
+CREATE n29-[:WORKED_FOR]->n421
+CREATE n104-[:WORKED_FOR]->n423
+CREATE n22-[:WORKED_FOR]->n418
+CREATE n146-[:WORKED_FOR]->n413
+CREATE n22-[:WORKED_FOR]->n413
+CREATE n121-[:WORKED_FOR]->n420
+CREATE n140-[:WORKED_FOR]->n416
+CREATE n8-[:WORKED_FOR]->n405
+CREATE n124-[:WORKED_FOR]->n401
+CREATE n187-[:WORKED_FOR]->n412
+CREATE n191-[:WORKED_FOR]->n411
+CREATE n73-[:WORKED_FOR]->n428
+CREATE n106-[:WORKED_FOR]->n403
+CREATE n38-[:WORKED_FOR]->n412
+CREATE n153-[:WORKED_FOR]->n420
+CREATE n150-[:WORKED_FOR]->n402
+CREATE n160-[:WORKED_FOR]->n428
+CREATE n186-[:WORKED_FOR]->n428
+CREATE n137-[:WORKED_FOR]->n400
+CREATE n110-[:WORKED_FOR]->n413
+CREATE n12-[:WORKED_FOR]->n420
+CREATE n186-[:WORKED_FOR]->n418
+CREATE n19-[:WORKED_FOR]->n409
+CREATE n74-[:WORKED_FOR]->n427
+CREATE n30-[:WORKED_FOR]->n401
+CREATE n48-[:WORKED_FOR]->n401
+CREATE n26-[:WORKED_FOR]->n415
+CREATE n104-[:WORKED_FOR]->n400
+CREATE n107-[:WORKED_FOR]->n418
+CREATE n165-[:WORKED_FOR]->n425
+CREATE n157-[:WORKED_FOR]->n408
+CREATE n44-[:WORKED_FOR]->n420
+CREATE n117-[:WORKED_FOR]->n419
+CREATE n100-[:WORKED_FOR]->n422
+CREATE n197-[:WORKED_FOR]->n419
+CREATE n23-[:WORKED_FOR]->n408
+CREATE n18-[:WORKED_FOR]->n422
+CREATE n87-[:WORKED_FOR]->n413
+CREATE n88-[:WORKED_FOR]->n416
+CREATE n161-[:WORKED_FOR]->n405
+CREATE n117-[:WORKED_FOR]->n403
+CREATE n94-[:WORKED_FOR]->n416
+CREATE n128-[:WORKED_FOR]->n410
+CREATE n84-[:WORKED_FOR]->n407
+
+//person has Competency
+CREATE n1-[:HAS_COMPETENCY]->n305
+CREATE n2-[:HAS_COMPETENCY]->n300
+CREATE n3-[:HAS_COMPETENCY]->n308
+CREATE n4-[:HAS_COMPETENCY]->n305
+CREATE n5-[:HAS_COMPETENCY]->n303
+CREATE n6-[:HAS_COMPETENCY]->n305
+CREATE n7-[:HAS_COMPETENCY]->n304
+CREATE n8-[:HAS_COMPETENCY]->n308
+CREATE n9-[:HAS_COMPETENCY]->n305
+CREATE n10-[:HAS_COMPETENCY]->n301
+CREATE n11-[:HAS_COMPETENCY]->n302
+CREATE n12-[:HAS_COMPETENCY]->n300
+CREATE n13-[:HAS_COMPETENCY]->n304
+CREATE n14-[:HAS_COMPETENCY]->n301
+CREATE n15-[:HAS_COMPETENCY]->n304
+CREATE n16-[:HAS_COMPETENCY]->n305
+CREATE n17-[:HAS_COMPETENCY]->n306
+CREATE n18-[:HAS_COMPETENCY]->n308
+CREATE n19-[:HAS_COMPETENCY]->n303
+CREATE n20-[:HAS_COMPETENCY]->n308
+CREATE n21-[:HAS_COMPETENCY]->n308
+CREATE n22-[:HAS_COMPETENCY]->n306
+CREATE n23-[:HAS_COMPETENCY]->n301
+CREATE n24-[:HAS_COMPETENCY]->n302
+CREATE n25-[:HAS_COMPETENCY]->n308
+CREATE n26-[:HAS_COMPETENCY]->n308
+CREATE n27-[:HAS_COMPETENCY]->n308
+CREATE n28-[:HAS_COMPETENCY]->n300
+CREATE n29-[:HAS_COMPETENCY]->n306
+CREATE n30-[:HAS_COMPETENCY]->n302
+CREATE n31-[:HAS_COMPETENCY]->n306
+CREATE n32-[:HAS_COMPETENCY]->n304
+CREATE n33-[:HAS_COMPETENCY]->n305
+CREATE n34-[:HAS_COMPETENCY]->n307
+CREATE n35-[:HAS_COMPETENCY]->n309
+CREATE n36-[:HAS_COMPETENCY]->n301
+CREATE n37-[:HAS_COMPETENCY]->n305
+CREATE n38-[:HAS_COMPETENCY]->n305
+CREATE n39-[:HAS_COMPETENCY]->n304
+CREATE n40-[:HAS_COMPETENCY]->n303
+CREATE n41-[:HAS_COMPETENCY]->n302
+CREATE n42-[:HAS_COMPETENCY]->n308
+CREATE n43-[:HAS_COMPETENCY]->n307
+CREATE n44-[:HAS_COMPETENCY]->n302
+CREATE n45-[:HAS_COMPETENCY]->n305
+CREATE n46-[:HAS_COMPETENCY]->n302
+CREATE n47-[:HAS_COMPETENCY]->n301
+CREATE n48-[:HAS_COMPETENCY]->n300
+CREATE n49-[:HAS_COMPETENCY]->n300
+CREATE n50-[:HAS_COMPETENCY]->n309
+CREATE n51-[:HAS_COMPETENCY]->n308
+CREATE n52-[:HAS_COMPETENCY]->n302
+CREATE n53-[:HAS_COMPETENCY]->n306
+CREATE n54-[:HAS_COMPETENCY]->n301
+CREATE n55-[:HAS_COMPETENCY]->n306
+CREATE n56-[:HAS_COMPETENCY]->n300
+CREATE n57-[:HAS_COMPETENCY]->n309
+CREATE n58-[:HAS_COMPETENCY]->n304
+CREATE n59-[:HAS_COMPETENCY]->n301
+CREATE n60-[:HAS_COMPETENCY]->n302
+CREATE n61-[:HAS_COMPETENCY]->n309
+CREATE n62-[:HAS_COMPETENCY]->n309
+CREATE n63-[:HAS_COMPETENCY]->n309
+CREATE n64-[:HAS_COMPETENCY]->n301
+CREATE n65-[:HAS_COMPETENCY]->n307
+CREATE n66-[:HAS_COMPETENCY]->n306
+CREATE n67-[:HAS_COMPETENCY]->n306
+CREATE n68-[:HAS_COMPETENCY]->n307
+CREATE n69-[:HAS_COMPETENCY]->n301
+CREATE n70-[:HAS_COMPETENCY]->n308
+CREATE n71-[:HAS_COMPETENCY]->n309
+CREATE n72-[:HAS_COMPETENCY]->n304
+CREATE n73-[:HAS_COMPETENCY]->n307
+CREATE n74-[:HAS_COMPETENCY]->n301
+CREATE n75-[:HAS_COMPETENCY]->n305
+CREATE n76-[:HAS_COMPETENCY]->n302
+CREATE n77-[:HAS_COMPETENCY]->n306
+CREATE n78-[:HAS_COMPETENCY]->n308
+CREATE n79-[:HAS_COMPETENCY]->n309
+CREATE n80-[:HAS_COMPETENCY]->n307
+CREATE n81-[:HAS_COMPETENCY]->n303
+CREATE n82-[:HAS_COMPETENCY]->n300
+CREATE n83-[:HAS_COMPETENCY]->n302
+CREATE n84-[:HAS_COMPETENCY]->n306
+CREATE n85-[:HAS_COMPETENCY]->n308
+CREATE n86-[:HAS_COMPETENCY]->n306
+CREATE n87-[:HAS_COMPETENCY]->n309
+CREATE n88-[:HAS_COMPETENCY]->n303
+CREATE n89-[:HAS_COMPETENCY]->n305
+CREATE n90-[:HAS_COMPETENCY]->n300
+CREATE n91-[:HAS_COMPETENCY]->n302
+CREATE n92-[:HAS_COMPETENCY]->n306
+CREATE n93-[:HAS_COMPETENCY]->n309
+CREATE n94-[:HAS_COMPETENCY]->n306
+CREATE n95-[:HAS_COMPETENCY]->n302
+CREATE n96-[:HAS_COMPETENCY]->n304
+CREATE n97-[:HAS_COMPETENCY]->n305
+CREATE n98-[:HAS_COMPETENCY]->n305
+CREATE n99-[:HAS_COMPETENCY]->n307
+CREATE n100-[:HAS_COMPETENCY]->n303
+CREATE n101-[:HAS_COMPETENCY]->n300
+CREATE n102-[:HAS_COMPETENCY]->n304
+CREATE n103-[:HAS_COMPETENCY]->n301
+CREATE n104-[:HAS_COMPETENCY]->n305
+CREATE n105-[:HAS_COMPETENCY]->n305
+CREATE n106-[:HAS_COMPETENCY]->n304
+CREATE n107-[:HAS_COMPETENCY]->n308
+CREATE n108-[:HAS_COMPETENCY]->n308
+CREATE n109-[:HAS_COMPETENCY]->n303
+CREATE n110-[:HAS_COMPETENCY]->n306
+CREATE n111-[:HAS_COMPETENCY]->n308
+CREATE n112-[:HAS_COMPETENCY]->n300
+CREATE n113-[:HAS_COMPETENCY]->n304
+CREATE n114-[:HAS_COMPETENCY]->n300
+CREATE n115-[:HAS_COMPETENCY]->n307
+CREATE n116-[:HAS_COMPETENCY]->n302
+CREATE n117-[:HAS_COMPETENCY]->n300
+CREATE n118-[:HAS_COMPETENCY]->n309
+CREATE n119-[:HAS_COMPETENCY]->n303
+CREATE n120-[:HAS_COMPETENCY]->n300
+CREATE n121-[:HAS_COMPETENCY]->n301
+CREATE n122-[:HAS_COMPETENCY]->n304
+CREATE n123-[:HAS_COMPETENCY]->n308
+CREATE n124-[:HAS_COMPETENCY]->n305
+CREATE n125-[:HAS_COMPETENCY]->n304
+CREATE n126-[:HAS_COMPETENCY]->n305
+CREATE n127-[:HAS_COMPETENCY]->n303
+CREATE n128-[:HAS_COMPETENCY]->n306
+CREATE n129-[:HAS_COMPETENCY]->n303
+CREATE n130-[:HAS_COMPETENCY]->n303
+CREATE n131-[:HAS_COMPETENCY]->n302
+CREATE n132-[:HAS_COMPETENCY]->n309
+CREATE n133-[:HAS_COMPETENCY]->n305
+CREATE n134-[:HAS_COMPETENCY]->n301
+CREATE n135-[:HAS_COMPETENCY]->n306
+CREATE n136-[:HAS_COMPETENCY]->n308
+CREATE n137-[:HAS_COMPETENCY]->n302
+CREATE n138-[:HAS_COMPETENCY]->n301
+CREATE n139-[:HAS_COMPETENCY]->n307
+CREATE n140-[:HAS_COMPETENCY]->n309
+CREATE n141-[:HAS_COMPETENCY]->n306
+CREATE n142-[:HAS_COMPETENCY]->n303
+CREATE n143-[:HAS_COMPETENCY]->n304
+CREATE n144-[:HAS_COMPETENCY]->n307
+CREATE n145-[:HAS_COMPETENCY]->n307
+CREATE n146-[:HAS_COMPETENCY]->n306
+CREATE n147-[:HAS_COMPETENCY]->n304
+CREATE n148-[:HAS_COMPETENCY]->n308
+CREATE n149-[:HAS_COMPETENCY]->n306
+CREATE n150-[:HAS_COMPETENCY]->n302
+CREATE n151-[:HAS_COMPETENCY]->n302
+CREATE n152-[:HAS_COMPETENCY]->n301
+CREATE n153-[:HAS_COMPETENCY]->n303
+CREATE n154-[:HAS_COMPETENCY]->n306
+CREATE n155-[:HAS_COMPETENCY]->n301
+CREATE n156-[:HAS_COMPETENCY]->n304
+CREATE n157-[:HAS_COMPETENCY]->n307
+CREATE n158-[:HAS_COMPETENCY]->n303
+CREATE n159-[:HAS_COMPETENCY]->n307
+CREATE n160-[:HAS_COMPETENCY]->n306
+CREATE n161-[:HAS_COMPETENCY]->n307
+CREATE n162-[:HAS_COMPETENCY]->n307
+CREATE n163-[:HAS_COMPETENCY]->n309
+CREATE n164-[:HAS_COMPETENCY]->n307
+CREATE n165-[:HAS_COMPETENCY]->n302
+CREATE n166-[:HAS_COMPETENCY]->n303
+CREATE n167-[:HAS_COMPETENCY]->n306
+CREATE n168-[:HAS_COMPETENCY]->n305
+CREATE n169-[:HAS_COMPETENCY]->n305
+CREATE n170-[:HAS_COMPETENCY]->n300
+CREATE n171-[:HAS_COMPETENCY]->n302
+CREATE n172-[:HAS_COMPETENCY]->n304
+CREATE n173-[:HAS_COMPETENCY]->n302
+CREATE n174-[:HAS_COMPETENCY]->n306
+CREATE n175-[:HAS_COMPETENCY]->n309
+CREATE n176-[:HAS_COMPETENCY]->n307
+CREATE n177-[:HAS_COMPETENCY]->n305
+CREATE n178-[:HAS_COMPETENCY]->n305
+CREATE n179-[:HAS_COMPETENCY]->n305
+CREATE n180-[:HAS_COMPETENCY]->n308
+CREATE n181-[:HAS_COMPETENCY]->n306
+CREATE n182-[:HAS_COMPETENCY]->n302
+CREATE n183-[:HAS_COMPETENCY]->n304
+CREATE n184-[:HAS_COMPETENCY]->n307
+CREATE n185-[:HAS_COMPETENCY]->n300
+CREATE n186-[:HAS_COMPETENCY]->n307
+CREATE n187-[:HAS_COMPETENCY]->n309
+CREATE n188-[:HAS_COMPETENCY]->n304
+CREATE n189-[:HAS_COMPETENCY]->n305
+CREATE n190-[:HAS_COMPETENCY]->n308
+CREATE n191-[:HAS_COMPETENCY]->n301
+CREATE n192-[:HAS_COMPETENCY]->n306
+CREATE n193-[:HAS_COMPETENCY]->n302
+CREATE n194-[:HAS_COMPETENCY]->n305
+CREATE n195-[:HAS_COMPETENCY]->n305
+CREATE n196-[:HAS_COMPETENCY]->n305
+CREATE n197-[:HAS_COMPETENCY]->n309
+CREATE n198-[:HAS_COMPETENCY]->n307
+CREATE n199-[:HAS_COMPETENCY]->n309
+CREATE n200-[:HAS_COMPETENCY]->n302
+CREATE n1-[:HAS_COMPETENCY]->n306
+CREATE n2-[:HAS_COMPETENCY]->n309
+CREATE n3-[:HAS_COMPETENCY]->n303
+CREATE n4-[:HAS_COMPETENCY]->n306
+CREATE n5-[:HAS_COMPETENCY]->n305
+CREATE n6-[:HAS_COMPETENCY]->n305
+CREATE n7-[:HAS_COMPETENCY]->n309
+CREATE n8-[:HAS_COMPETENCY]->n306
+CREATE n9-[:HAS_COMPETENCY]->n309
+CREATE n10-[:HAS_COMPETENCY]->n301
+CREATE n11-[:HAS_COMPETENCY]->n303
+CREATE n12-[:HAS_COMPETENCY]->n302
+CREATE n13-[:HAS_COMPETENCY]->n307
+CREATE n14-[:HAS_COMPETENCY]->n301
+CREATE n15-[:HAS_COMPETENCY]->n308
+CREATE n16-[:HAS_COMPETENCY]->n309
+CREATE n17-[:HAS_COMPETENCY]->n305
+CREATE n18-[:HAS_COMPETENCY]->n306
+CREATE n19-[:HAS_COMPETENCY]->n302
+CREATE n20-[:HAS_COMPETENCY]->n309
+CREATE n21-[:HAS_COMPETENCY]->n304
+CREATE n22-[:HAS_COMPETENCY]->n305
+CREATE n23-[:HAS_COMPETENCY]->n308
+CREATE n24-[:HAS_COMPETENCY]->n300
+CREATE n25-[:HAS_COMPETENCY]->n300
+CREATE n26-[:HAS_COMPETENCY]->n302
+CREATE n27-[:HAS_COMPETENCY]->n308
+CREATE n28-[:HAS_COMPETENCY]->n307
+CREATE n29-[:HAS_COMPETENCY]->n301
+CREATE n30-[:HAS_COMPETENCY]->n305
+CREATE n31-[:HAS_COMPETENCY]->n303
+CREATE n32-[:HAS_COMPETENCY]->n307
+CREATE n33-[:HAS_COMPETENCY]->n305
+CREATE n34-[:HAS_COMPETENCY]->n305
+CREATE n35-[:HAS_COMPETENCY]->n302
+CREATE n36-[:HAS_COMPETENCY]->n301
+CREATE n37-[:HAS_COMPETENCY]->n300
+CREATE n38-[:HAS_COMPETENCY]->n307
+CREATE n39-[:HAS_COMPETENCY]->n307
+CREATE n40-[:HAS_COMPETENCY]->n308
+CREATE n41-[:HAS_COMPETENCY]->n303
+CREATE n42-[:HAS_COMPETENCY]->n304
+CREATE n43-[:HAS_COMPETENCY]->n305
+CREATE n44-[:HAS_COMPETENCY]->n302
+CREATE n45-[:HAS_COMPETENCY]->n304
+CREATE n46-[:HAS_COMPETENCY]->n306
+CREATE n47-[:HAS_COMPETENCY]->n305
+CREATE n48-[:HAS_COMPETENCY]->n304
+CREATE n49-[:HAS_COMPETENCY]->n300
+CREATE n50-[:HAS_COMPETENCY]->n305
+CREATE n51-[:HAS_COMPETENCY]->n304
+CREATE n52-[:HAS_COMPETENCY]->n300
+CREATE n53-[:HAS_COMPETENCY]->n304
+CREATE n54-[:HAS_COMPETENCY]->n304
+CREATE n55-[:HAS_COMPETENCY]->n306
+CREATE n56-[:HAS_COMPETENCY]->n304
+CREATE n57-[:HAS_COMPETENCY]->n303
+CREATE n58-[:HAS_COMPETENCY]->n306
+CREATE n59-[:HAS_COMPETENCY]->n303
+CREATE n60-[:HAS_COMPETENCY]->n302
+CREATE n61-[:HAS_COMPETENCY]->n308
+CREATE n62-[:HAS_COMPETENCY]->n303
+CREATE n63-[:HAS_COMPETENCY]->n302
+CREATE n64-[:HAS_COMPETENCY]->n308
+CREATE n65-[:HAS_COMPETENCY]->n300
+CREATE n66-[:HAS_COMPETENCY]->n300
+CREATE n67-[:HAS_COMPETENCY]->n301
+CREATE n68-[:HAS_COMPETENCY]->n304
+CREATE n69-[:HAS_COMPETENCY]->n306
+CREATE n70-[:HAS_COMPETENCY]->n308
+CREATE n71-[:HAS_COMPETENCY]->n307
+CREATE n72-[:HAS_COMPETENCY]->n300
+CREATE n73-[:HAS_COMPETENCY]->n303
+CREATE n74-[:HAS_COMPETENCY]->n304
+CREATE n75-[:HAS_COMPETENCY]->n301
+CREATE n76-[:HAS_COMPETENCY]->n309
+CREATE n77-[:HAS_COMPETENCY]->n301
+CREATE n78-[:HAS_COMPETENCY]->n300
+CREATE n79-[:HAS_COMPETENCY]->n300
+CREATE n80-[:HAS_COMPETENCY]->n300
+CREATE n81-[:HAS_COMPETENCY]->n302
+CREATE n82-[:HAS_COMPETENCY]->n301
+CREATE n83-[:HAS_COMPETENCY]->n300
+CREATE n84-[:HAS_COMPETENCY]->n308
+CREATE n85-[:HAS_COMPETENCY]->n309
+CREATE n86-[:HAS_COMPETENCY]->n307
+CREATE n87-[:HAS_COMPETENCY]->n309
+CREATE n88-[:HAS_COMPETENCY]->n302
+CREATE n89-[:HAS_COMPETENCY]->n300
+CREATE n90-[:HAS_COMPETENCY]->n309
+CREATE n91-[:HAS_COMPETENCY]->n306
+CREATE n92-[:HAS_COMPETENCY]->n308
+CREATE n93-[:HAS_COMPETENCY]->n305
+CREATE n94-[:HAS_COMPETENCY]->n302
+CREATE n95-[:HAS_COMPETENCY]->n305
+CREATE n96-[:HAS_COMPETENCY]->n306
+CREATE n97-[:HAS_COMPETENCY]->n305
+CREATE n98-[:HAS_COMPETENCY]->n308
+CREATE n99-[:HAS_COMPETENCY]->n301
+CREATE n100-[:HAS_COMPETENCY]->n300
+CREATE n101-[:HAS_COMPETENCY]->n308
+CREATE n102-[:HAS_COMPETENCY]->n305
+CREATE n103-[:HAS_COMPETENCY]->n304
+CREATE n104-[:HAS_COMPETENCY]->n302
+CREATE n105-[:HAS_COMPETENCY]->n308
+CREATE n106-[:HAS_COMPETENCY]->n304
+CREATE n107-[:HAS_COMPETENCY]->n305
+CREATE n108-[:HAS_COMPETENCY]->n309
+CREATE n109-[:HAS_COMPETENCY]->n309
+CREATE n110-[:HAS_COMPETENCY]->n309
+CREATE n111-[:HAS_COMPETENCY]->n308
+CREATE n112-[:HAS_COMPETENCY]->n301
+CREATE n113-[:HAS_COMPETENCY]->n308
+CREATE n114-[:HAS_COMPETENCY]->n300
+CREATE n115-[:HAS_COMPETENCY]->n300
+CREATE n116-[:HAS_COMPETENCY]->n304
+CREATE n117-[:HAS_COMPETENCY]->n308
+CREATE n118-[:HAS_COMPETENCY]->n301
+CREATE n119-[:HAS_COMPETENCY]->n300
+CREATE n121-[:HAS_COMPETENCY]->n305
+CREATE n122-[:HAS_COMPETENCY]->n307
+CREATE n123-[:HAS_COMPETENCY]->n300
+CREATE n124-[:HAS_COMPETENCY]->n309
+CREATE n125-[:HAS_COMPETENCY]->n305
+CREATE n126-[:HAS_COMPETENCY]->n301
+CREATE n127-[:HAS_COMPETENCY]->n301
+CREATE n128-[:HAS_COMPETENCY]->n309
+CREATE n129-[:HAS_COMPETENCY]->n306
+CREATE n130-[:HAS_COMPETENCY]->n300
+CREATE n131-[:HAS_COMPETENCY]->n302
+CREATE n132-[:HAS_COMPETENCY]->n309
+CREATE n133-[:HAS_COMPETENCY]->n306
+CREATE n134-[:HAS_COMPETENCY]->n307
+CREATE n135-[:HAS_COMPETENCY]->n305
+CREATE n136-[:HAS_COMPETENCY]->n301
+CREATE n137-[:HAS_COMPETENCY]->n305
+CREATE n138-[:HAS_COMPETENCY]->n303
+CREATE n139-[:HAS_COMPETENCY]->n306
+CREATE n140-[:HAS_COMPETENCY]->n300
+CREATE n141-[:HAS_COMPETENCY]->n300
+CREATE n142-[:HAS_COMPETENCY]->n308
+CREATE n143-[:HAS_COMPETENCY]->n300
+CREATE n144-[:HAS_COMPETENCY]->n301
+CREATE n145-[:HAS_COMPETENCY]->n307
+CREATE n146-[:HAS_COMPETENCY]->n305
+CREATE n147-[:HAS_COMPETENCY]->n308
+CREATE n148-[:HAS_COMPETENCY]->n305
+CREATE n149-[:HAS_COMPETENCY]->n309
+CREATE n150-[:HAS_COMPETENCY]->n308
+CREATE n151-[:HAS_COMPETENCY]->n306
+CREATE n152-[:HAS_COMPETENCY]->n308
+CREATE n153-[:HAS_COMPETENCY]->n305
+CREATE n154-[:HAS_COMPETENCY]->n308
+CREATE n155-[:HAS_COMPETENCY]->n308
+CREATE n156-[:HAS_COMPETENCY]->n307
+CREATE n157-[:HAS_COMPETENCY]->n304
+CREATE n158-[:HAS_COMPETENCY]->n300
+CREATE n159-[:HAS_COMPETENCY]->n305
+CREATE n160-[:HAS_COMPETENCY]->n301
+CREATE n161-[:HAS_COMPETENCY]->n300
+CREATE n162-[:HAS_COMPETENCY]->n301
+CREATE n163-[:HAS_COMPETENCY]->n305
+CREATE n164-[:HAS_COMPETENCY]->n302
+CREATE n165-[:HAS_COMPETENCY]->n308
+CREATE n166-[:HAS_COMPETENCY]->n308
+CREATE n167-[:HAS_COMPETENCY]->n304
+CREATE n168-[:HAS_COMPETENCY]->n305
+CREATE n169-[:HAS_COMPETENCY]->n305
+CREATE n170-[:HAS_COMPETENCY]->n303
+CREATE n171-[:HAS_COMPETENCY]->n303
+CREATE n172-[:HAS_COMPETENCY]->n302
+CREATE n173-[:HAS_COMPETENCY]->n308
+CREATE n174-[:HAS_COMPETENCY]->n302
+CREATE n175-[:HAS_COMPETENCY]->n306
+CREATE n176-[:HAS_COMPETENCY]->n301
+CREATE n177-[:HAS_COMPETENCY]->n305
+CREATE n178-[:HAS_COMPETENCY]->n301
+CREATE n179-[:HAS_COMPETENCY]->n306
+CREATE n180-[:HAS_COMPETENCY]->n304
+CREATE n181-[:HAS_COMPETENCY]->n304
+CREATE n182-[:HAS_COMPETENCY]->n301
+CREATE n183-[:HAS_COMPETENCY]->n307
+CREATE n184-[:HAS_COMPETENCY]->n306
+CREATE n185-[:HAS_COMPETENCY]->n304
+CREATE n186-[:HAS_COMPETENCY]->n305
+CREATE n187-[:HAS_COMPETENCY]->n308
+CREATE n188-[:HAS_COMPETENCY]->n302
+CREATE n189-[:HAS_COMPETENCY]->n309
+CREATE n190-[:HAS_COMPETENCY]->n303
+CREATE n191-[:HAS_COMPETENCY]->n301
+CREATE n192-[:HAS_COMPETENCY]->n309
+CREATE n193-[:HAS_COMPETENCY]->n308
+CREATE n194-[:HAS_COMPETENCY]->n307
+CREATE n195-[:HAS_COMPETENCY]->n308
+CREATE n196-[:HAS_COMPETENCY]->n308
+CREATE n197-[:HAS_COMPETENCY]->n304
+CREATE n198-[:HAS_COMPETENCY]->n301
+CREATE n199-[:HAS_COMPETENCY]->n302
+CREATE n200-[:HAS_COMPETENCY]->n309
+CREATE n15-[:HAS_COMPETENCY]->n302
+CREATE n161-[:HAS_COMPETENCY]->n306
+CREATE n92-[:HAS_COMPETENCY]->n300
+CREATE n33-[:HAS_COMPETENCY]->n305
+CREATE n46-[:HAS_COMPETENCY]->n302
+CREATE n130-[:HAS_COMPETENCY]->n307
+CREATE n78-[:HAS_COMPETENCY]->n305
+CREATE n200-[:HAS_COMPETENCY]->n304
+CREATE n115-[:HAS_COMPETENCY]->n306
+CREATE n109-[:HAS_COMPETENCY]->n306
+CREATE n53-[:HAS_COMPETENCY]->n304
+CREATE n147-[:HAS_COMPETENCY]->n302
+CREATE n87-[:HAS_COMPETENCY]->n308
+CREATE n134-[:HAS_COMPETENCY]->n300
+CREATE n113-[:HAS_COMPETENCY]->n308
+CREATE n171-[:HAS_COMPETENCY]->n307
+CREATE n182-[:HAS_COMPETENCY]->n308
+CREATE n161-[:HAS_COMPETENCY]->n302
+CREATE n57-[:HAS_COMPETENCY]->n303
+CREATE n117-[:HAS_COMPETENCY]->n304
+CREATE n74-[:HAS_COMPETENCY]->n308
+CREATE n32-[:HAS_COMPETENCY]->n304
+CREATE n38-[:HAS_COMPETENCY]->n301
+CREATE n200-[:HAS_COMPETENCY]->n308
+CREATE n119-[:HAS_COMPETENCY]->n304
+CREATE n21-[:HAS_COMPETENCY]->n305
+CREATE n195-[:HAS_COMPETENCY]->n306
+CREATE n142-[:HAS_COMPETENCY]->n307
+CREATE n197-[:HAS_COMPETENCY]->n303
+CREATE n192-[:HAS_COMPETENCY]->n302
+CREATE n190-[:HAS_COMPETENCY]->n308
+CREATE n84-[:HAS_COMPETENCY]->n302
+CREATE n2-[:HAS_COMPETENCY]->n304
+CREATE n77-[:HAS_COMPETENCY]->n306
+CREATE n19-[:HAS_COMPETENCY]->n302
+CREATE n180-[:HAS_COMPETENCY]->n308
+CREATE n186-[:HAS_COMPETENCY]->n309
+CREATE n177-[:HAS_COMPETENCY]->n308
+CREATE n167-[:HAS_COMPETENCY]->n300
+CREATE n95-[:HAS_COMPETENCY]->n305
+CREATE n77-[:HAS_COMPETENCY]->n306
+CREATE n133-[:HAS_COMPETENCY]->n300
+CREATE n193-[:HAS_COMPETENCY]->n303
+CREATE n120-[:HAS_COMPETENCY]->n301
+CREATE n26-[:HAS_COMPETENCY]->n303
+CREATE n69-[:HAS_COMPETENCY]->n304
+CREATE n85-[:HAS_COMPETENCY]->n301
+CREATE n19-[:HAS_COMPETENCY]->n304
+CREATE n107-[:HAS_COMPETENCY]->n305
+CREATE n26-[:HAS_COMPETENCY]->n307
+CREATE n114-[:HAS_COMPETENCY]->n304
+CREATE n54-[:HAS_COMPETENCY]->n301
+CREATE n197-[:HAS_COMPETENCY]->n302
+CREATE n86-[:HAS_COMPETENCY]->n300
+CREATE n142-[:HAS_COMPETENCY]->n300
+CREATE n116-[:HAS_COMPETENCY]->n300
+CREATE n87-[:HAS_COMPETENCY]->n307
+CREATE n115-[:HAS_COMPETENCY]->n303
+CREATE n48-[:HAS_COMPETENCY]->n304
+CREATE n68-[:HAS_COMPETENCY]->n304
+CREATE n162-[:HAS_COMPETENCY]->n309
+CREATE n173-[:HAS_COMPETENCY]->n305
+CREATE n184-[:HAS_COMPETENCY]->n307
+CREATE n160-[:HAS_COMPETENCY]->n301
+CREATE n151-[:HAS_COMPETENCY]->n300
+CREATE n11-[:HAS_COMPETENCY]->n303
+CREATE n1-[:HAS_COMPETENCY]->n301
+CREATE n21-[:HAS_COMPETENCY]->n304
+CREATE n86-[:HAS_COMPETENCY]->n303
+CREATE n99-[:HAS_COMPETENCY]->n304
+CREATE n199-[:HAS_COMPETENCY]->n308
+CREATE n134-[:HAS_COMPETENCY]->n305
+CREATE n196-[:HAS_COMPETENCY]->n308
+CREATE n28-[:HAS_COMPETENCY]->n300
+CREATE n182-[:HAS_COMPETENCY]->n309
+CREATE n21-[:HAS_COMPETENCY]->n309
+CREATE n189-[:HAS_COMPETENCY]->n305
+CREATE n34-[:HAS_COMPETENCY]->n302
+CREATE n122-[:HAS_COMPETENCY]->n308
+CREATE n27-[:HAS_COMPETENCY]->n306
+CREATE n153-[:HAS_COMPETENCY]->n302
+CREATE n48-[:HAS_COMPETENCY]->n308
+CREATE n166-[:HAS_COMPETENCY]->n302
+CREATE n168-[:HAS_COMPETENCY]->n304
+CREATE n30-[:HAS_COMPETENCY]->n303
+CREATE n38-[:HAS_COMPETENCY]->n300
+CREATE n196-[:HAS_COMPETENCY]->n308
+CREATE n35-[:HAS_COMPETENCY]->n300
+CREATE n99-[:HAS_COMPETENCY]->n302
+CREATE n148-[:HAS_COMPETENCY]->n300
+CREATE n122-[:HAS_COMPETENCY]->n305
+CREATE n191-[:HAS_COMPETENCY]->n303
+CREATE n24-[:HAS_COMPETENCY]->n308
+CREATE n134-[:HAS_COMPETENCY]->n309
+CREATE n170-[:HAS_COMPETENCY]->n309
+CREATE n88-[:HAS_COMPETENCY]->n302
+CREATE n75-[:HAS_COMPETENCY]->n300
+CREATE n14-[:HAS_COMPETENCY]->n306
+
+//person friend of other person
+CREATE n125-[:FRIEND_OF]->n165
+CREATE n135-[:FRIEND_OF]->n150
+CREATE n90-[:FRIEND_OF]->n1
+CREATE n102-[:FRIEND_OF]->n88
+CREATE n131-[:FRIEND_OF]->n140
+CREATE n156-[:FRIEND_OF]->n191
+CREATE n160-[:FRIEND_OF]->n131
+CREATE n64-[:FRIEND_OF]->n174
+CREATE n6-[:FRIEND_OF]->n2
+CREATE n70-[:FRIEND_OF]->n144
+CREATE n59-[:FRIEND_OF]->n196
+CREATE n144-[:FRIEND_OF]->n164
+CREATE n20-[:FRIEND_OF]->n191
+CREATE n75-[:FRIEND_OF]->n155
+CREATE n3-[:FRIEND_OF]->n104
+CREATE n26-[:FRIEND_OF]->n178
+CREATE n176-[:FRIEND_OF]->n103
+CREATE n196-[:FRIEND_OF]->n84
+CREATE n15-[:FRIEND_OF]->n47
+CREATE n184-[:FRIEND_OF]->n22
+CREATE n172-[:FRIEND_OF]->n96
+CREATE n50-[:FRIEND_OF]->n61
+CREATE n188-[:FRIEND_OF]->n62
+CREATE n143-[:FRIEND_OF]->n162
+CREATE n143-[:FRIEND_OF]->n27
+CREATE n82-[:FRIEND_OF]->n91
+CREATE n97-[:FRIEND_OF]->n40
+CREATE n141-[:FRIEND_OF]->n114
+CREATE n1-[:FRIEND_OF]->n70
+CREATE n85-[:FRIEND_OF]->n100
+CREATE n18-[:FRIEND_OF]->n131
+CREATE n134-[:FRIEND_OF]->n143
+CREATE n180-[:FRIEND_OF]->n102
+CREATE n82-[:FRIEND_OF]->n33
+CREATE n109-[:FRIEND_OF]->n127
+CREATE n128-[:FRIEND_OF]->n36
+CREATE n39-[:FRIEND_OF]->n143
+CREATE n86-[:FRIEND_OF]->n96
+CREATE n122-[:FRIEND_OF]->n61
+CREATE n110-[:FRIEND_OF]->n141
+CREATE n46-[:FRIEND_OF]->n43
+CREATE n110-[:FRIEND_OF]->n60
+CREATE n89-[:FRIEND_OF]->n128
+CREATE n45-[:FRIEND_OF]->n129
+CREATE n86-[:FRIEND_OF]->n14
+CREATE n49-[:FRIEND_OF]->n1
+CREATE n58-[:FRIEND_OF]->n48
+CREATE n110-[:FRIEND_OF]->n180
+CREATE n110-[:FRIEND_OF]->n73
+CREATE n109-[:FRIEND_OF]->n125
+CREATE n22-[:FRIEND_OF]->n66
+CREATE n145-[:FRIEND_OF]->n148
+CREATE n181-[:FRIEND_OF]->n117
+CREATE n90-[:FRIEND_OF]->n122
+CREATE n8-[:FRIEND_OF]->n46
+CREATE n170-[:FRIEND_OF]->n100
+CREATE n30-[:FRIEND_OF]->n195
+CREATE n119-[:FRIEND_OF]->n5
+CREATE n184-[:FRIEND_OF]->n120
+CREATE n74-[:FRIEND_OF]->n94
+CREATE n72-[:FRIEND_OF]->n181
+CREATE n24-[:FRIEND_OF]->n197
+CREATE n46-[:FRIEND_OF]->n55
+CREATE n7-[:FRIEND_OF]->n85
+CREATE n100-[:FRIEND_OF]->n124
+CREATE n44-[:FRIEND_OF]->n98
+CREATE n24-[:FRIEND_OF]->n119
+CREATE n82-[:FRIEND_OF]->n118
+CREATE n106-[:FRIEND_OF]->n195
+CREATE n189-[:FRIEND_OF]->n7
+CREATE n103-[:FRIEND_OF]->n83
+CREATE n32-[:FRIEND_OF]->n14
+CREATE n150-[:FRIEND_OF]->n168
+CREATE n11-[:FRIEND_OF]->n128
+CREATE n73-[:FRIEND_OF]->n58
+CREATE n109-[:FRIEND_OF]->n188
+CREATE n22-[:FRIEND_OF]->n88
+CREATE n25-[:FRIEND_OF]->n37
+CREATE n109-[:FRIEND_OF]->n95
+CREATE n184-[:FRIEND_OF]->n122
+CREATE n114-[:FRIEND_OF]->n161
+CREATE n35-[:FRIEND_OF]->n33
+CREATE n1-[:FRIEND_OF]->n147
+CREATE n37-[:FRIEND_OF]->n21
+CREATE n158-[:FRIEND_OF]->n197
+CREATE n94-[:FRIEND_OF]->n67
+CREATE n27-[:FRIEND_OF]->n31
+CREATE n82-[:FRIEND_OF]->n79
+CREATE n145-[:FRIEND_OF]->n161
+CREATE n72-[:FRIEND_OF]->n144
+CREATE n99-[:FRIEND_OF]->n81
+CREATE n26-[:FRIEND_OF]->n185
+CREATE n166-[:FRIEND_OF]->n53
+CREATE n47-[:FRIEND_OF]->n15
+CREATE n64-[:FRIEND_OF]->n17
+CREATE n8-[:FRIEND_OF]->n189
+CREATE n8-[:FRIEND_OF]->n186
+CREATE n183-[:FRIEND_OF]->n155
+CREATE n98-[:FRIEND_OF]->n51
+CREATE n11-[:FRIEND_OF]->n66
+CREATE n139-[:FRIEND_OF]->n159
+CREATE n45-[:FRIEND_OF]->n117
+CREATE n173-[:FRIEND_OF]->n37
+CREATE n2-[:FRIEND_OF]->n198
+CREATE n17-[:FRIEND_OF]->n117
+CREATE n79-[:FRIEND_OF]->n193
+CREATE n28-[:FRIEND_OF]->n174
+CREATE n80-[:FRIEND_OF]->n1
+CREATE n48-[:FRIEND_OF]->n82
+CREATE n122-[:FRIEND_OF]->n147
+CREATE n140-[:FRIEND_OF]->n200
+CREATE n193-[:FRIEND_OF]->n27
+CREATE n41-[:FRIEND_OF]->n49
+CREATE n176-[:FRIEND_OF]->n65
+CREATE n7-[:FRIEND_OF]->n56
+CREATE n19-[:FRIEND_OF]->n75
+CREATE n185-[:FRIEND_OF]->n141
+CREATE n198-[:FRIEND_OF]->n180
+CREATE n154-[:FRIEND_OF]->n77
+CREATE n40-[:FRIEND_OF]->n115
+CREATE n71-[:FRIEND_OF]->n196
+CREATE n47-[:FRIEND_OF]->n12
+CREATE n68-[:FRIEND_OF]->n183
+CREATE n135-[:FRIEND_OF]->n90
+CREATE n124-[:FRIEND_OF]->n4
+CREATE n40-[:FRIEND_OF]->n198
+CREATE n165-[:FRIEND_OF]->n20
+CREATE n4-[:FRIEND_OF]->n80
+CREATE n38-[:FRIEND_OF]->n51
+CREATE n161-[:FRIEND_OF]->n38
+CREATE n117-[:FRIEND_OF]->n41
+CREATE n47-[:FRIEND_OF]->n197
+CREATE n86-[:FRIEND_OF]->n89
+CREATE n67-[:FRIEND_OF]->n34
+CREATE n119-[:FRIEND_OF]->n157
+CREATE n135-[:FRIEND_OF]->n200
+CREATE n3-[:FRIEND_OF]->n101
+CREATE n36-[:FRIEND_OF]->n147
+CREATE n134-[:FRIEND_OF]->n65
+CREATE n153-[:FRIEND_OF]->n94
+CREATE n14-[:FRIEND_OF]->n64
+CREATE n109-[:FRIEND_OF]->n161
+CREATE n193-[:FRIEND_OF]->n171
+CREATE n94-[:FRIEND_OF]->n4
+CREATE n199-[:FRIEND_OF]->n192
+CREATE n73-[:FRIEND_OF]->n160
+CREATE n100-[:FRIEND_OF]->n118
+CREATE n65-[:FRIEND_OF]->n89
+CREATE n65-[:FRIEND_OF]->n154
+CREATE n10-[:FRIEND_OF]->n20
+CREATE n100-[:FRIEND_OF]->n151
+CREATE n82-[:FRIEND_OF]->n85
+CREATE n35-[:FRIEND_OF]->n52
+CREATE n200-[:FRIEND_OF]->n24
+CREATE n167-[:FRIEND_OF]->n198
+CREATE n123-[:FRIEND_OF]->n137
+CREATE n1-[:FRIEND_OF]->n156
+CREATE n175-[:FRIEND_OF]->n188
+CREATE n187-[:FRIEND_OF]->n31
+CREATE n7-[:FRIEND_OF]->n26
+CREATE n162-[:FRIEND_OF]->n70
+CREATE n10-[:FRIEND_OF]->n121
+CREATE n159-[:FRIEND_OF]->n72
+CREATE n79-[:FRIEND_OF]->n132
+CREATE n200-[:FRIEND_OF]->n48
+CREATE n172-[:FRIEND_OF]->n94
+CREATE n19-[:FRIEND_OF]->n99
+CREATE n159-[:FRIEND_OF]->n146
+CREATE n99-[:FRIEND_OF]->n16
+CREATE n91-[:FRIEND_OF]->n58
+CREATE n105-[:FRIEND_OF]->n140
+CREATE n47-[:FRIEND_OF]->n176
+CREATE n174-[:FRIEND_OF]->n114
+CREATE n79-[:FRIEND_OF]->n167
+CREATE n145-[:FRIEND_OF]->n87
+CREATE n122-[:FRIEND_OF]->n157
+CREATE n115-[:FRIEND_OF]->n35
+CREATE n65-[:FRIEND_OF]->n56
+CREATE n116-[:FRIEND_OF]->n32
+CREATE n42-[:FRIEND_OF]->n107
+CREATE n96-[:FRIEND_OF]->n62
+CREATE n74-[:FRIEND_OF]->n133
+CREATE n147-[:FRIEND_OF]->n148
+CREATE n194-[:FRIEND_OF]->n43
+CREATE n78-[:FRIEND_OF]->n177
+CREATE n11-[:FRIEND_OF]->n26
+CREATE n93-[:FRIEND_OF]->n28
+CREATE n172-[:FRIEND_OF]->n197
+CREATE n37-[:FRIEND_OF]->n53
+CREATE n179-[:FRIEND_OF]->n151
+CREATE n83-[:FRIEND_OF]->n199
+CREATE n46-[:FRIEND_OF]->n50
+CREATE n157-[:FRIEND_OF]->n191
+CREATE n198-[:FRIEND_OF]->n37
+CREATE n161-[:FRIEND_OF]->n12
+CREATE n16-[:FRIEND_OF]->n116
+CREATE n14-[:FRIEND_OF]->n128
+CREATE n49-[:FRIEND_OF]->n86
+CREATE n5-[:FRIEND_OF]->n152
+CREATE n87-[:FRIEND_OF]->n100
+CREATE n90-[:FRIEND_OF]->n66
+CREATE n10-[:FRIEND_OF]->n80
+CREATE n158-[:FRIEND_OF]->n46
+CREATE n72-[:FRIEND_OF]->n62
+CREATE n149-[:FRIEND_OF]->n148
+CREATE n110-[:FRIEND_OF]->n34
+CREATE n67-[:FRIEND_OF]->n121
+CREATE n64-[:FRIEND_OF]->n111
+CREATE n109-[:FRIEND_OF]->n38
+CREATE n167-[:FRIEND_OF]->n13
+CREATE n38-[:FRIEND_OF]->n88
+CREATE n174-[:FRIEND_OF]->n156
+CREATE n39-[:FRIEND_OF]->n129
+CREATE n139-[:FRIEND_OF]->n178
+CREATE n120-[:FRIEND_OF]->n109
+CREATE n179-[:FRIEND_OF]->n143
+CREATE n25-[:FRIEND_OF]->n134
+CREATE n146-[:FRIEND_OF]->n12
+CREATE n125-[:FRIEND_OF]->n122
+CREATE n185-[:FRIEND_OF]->n6
+CREATE n29-[:FRIEND_OF]->n83
+CREATE n1-[:FRIEND_OF]->n87
+CREATE n89-[:FRIEND_OF]->n71
+CREATE n32-[:FRIEND_OF]->n56
+CREATE n175-[:FRIEND_OF]->n184
+CREATE n102-[:FRIEND_OF]->n200
+CREATE n92-[:FRIEND_OF]->n31
+CREATE n63-[:FRIEND_OF]->n138
+CREATE n107-[:FRIEND_OF]->n68
+CREATE n26-[:FRIEND_OF]->n165
+CREATE n34-[:FRIEND_OF]->n61
+CREATE n79-[:FRIEND_OF]->n183
+CREATE n130-[:FRIEND_OF]->n179
+CREATE n181-[:FRIEND_OF]->n175
+CREATE n183-[:FRIEND_OF]->n89
+CREATE n195-[:FRIEND_OF]->n187
+CREATE n100-[:FRIEND_OF]->n132
+CREATE n139-[:FRIEND_OF]->n129
+CREATE n200-[:FRIEND_OF]->n151
+CREATE n124-[:FRIEND_OF]->n125
+CREATE n58-[:FRIEND_OF]->n87
+CREATE n135-[:FRIEND_OF]->n127
+CREATE n161-[:FRIEND_OF]->n189
+CREATE n110-[:FRIEND_OF]->n163
+CREATE n81-[:FRIEND_OF]->n75
+CREATE n30-[:FRIEND_OF]->n37
+CREATE n153-[:FRIEND_OF]->n37
+CREATE n126-[:FRIEND_OF]->n154
+CREATE n51-[:FRIEND_OF]->n21
+CREATE n134-[:FRIEND_OF]->n44
+CREATE n103-[:FRIEND_OF]->n94
+CREATE n62-[:FRIEND_OF]->n79
+CREATE n93-[:FRIEND_OF]->n98
+CREATE n83-[:FRIEND_OF]->n158
+CREATE n92-[:FRIEND_OF]->n15
+CREATE n29-[:FRIEND_OF]->n140
+CREATE n114-[:FRIEND_OF]->n60
+CREATE n74-[:FRIEND_OF]->n120
+CREATE n117-[:FRIEND_OF]->n20
+CREATE n183-[:FRIEND_OF]->n44
+CREATE n72-[:FRIEND_OF]->n74
+CREATE n142-[:FRIEND_OF]->n174
+CREATE n59-[:FRIEND_OF]->n45
+CREATE n118-[:FRIEND_OF]->n93
+CREATE n110-[:FRIEND_OF]->n27
+CREATE n85-[:FRIEND_OF]->n36
+CREATE n107-[:FRIEND_OF]->n49
+CREATE n113-[:FRIEND_OF]->n126
+CREATE n93-[:FRIEND_OF]->n104
+CREATE n30-[:FRIEND_OF]->n33
+CREATE n123-[:FRIEND_OF]->n188
+CREATE n194-[:FRIEND_OF]->n16
+CREATE n169-[:FRIEND_OF]->n118
+CREATE n133-[:FRIEND_OF]->n50
+CREATE n62-[:FRIEND_OF]->n70
+CREATE n197-[:FRIEND_OF]->n77
+CREATE n13-[:FRIEND_OF]->n95
+CREATE n116-[:FRIEND_OF]->n143
+CREATE n58-[:FRIEND_OF]->n121
+CREATE n77-[:FRIEND_OF]->n181
+CREATE n52-[:FRIEND_OF]->n88
+CREATE n26-[:FRIEND_OF]->n171
+CREATE n187-[:FRIEND_OF]->n145
+CREATE n166-[:FRIEND_OF]->n32
+CREATE n38-[:FRIEND_OF]->n28
+CREATE n28-[:FRIEND_OF]->n199
+CREATE n1-[:FRIEND_OF]->n36
+CREATE n123-[:FRIEND_OF]->n118
+CREATE n180-[:FRIEND_OF]->n84
+CREATE n109-[:FRIEND_OF]->n121
+CREATE n168-[:FRIEND_OF]->n10
+CREATE n173-[:FRIEND_OF]->n64
+CREATE n86-[:FRIEND_OF]->n37
+CREATE n11-[:FRIEND_OF]->n161
+CREATE n194-[:FRIEND_OF]->n16
+CREATE n74-[:FRIEND_OF]->n22
+CREATE n24-[:FRIEND_OF]->n43
+CREATE n165-[:FRIEND_OF]->n196
+CREATE n70-[:FRIEND_OF]->n3
+CREATE n120-[:FRIEND_OF]->n115
+CREATE n71-[:FRIEND_OF]->n192
+CREATE n42-[:FRIEND_OF]->n67
+CREATE n116-[:FRIEND_OF]->n187
+CREATE n121-[:FRIEND_OF]->n74
+CREATE n146-[:FRIEND_OF]->n133
+CREATE n7-[:FRIEND_OF]->n112
+CREATE n171-[:FRIEND_OF]->n115
+CREATE n146-[:FRIEND_OF]->n186
+CREATE n192-[:FRIEND_OF]->n81
+CREATE n178-[:FRIEND_OF]->n192
+CREATE n96-[:FRIEND_OF]->n150
+CREATE n97-[:FRIEND_OF]->n182
+CREATE n14-[:FRIEND_OF]->n156
+CREATE n73-[:FRIEND_OF]->n145
+CREATE n35-[:FRIEND_OF]->n82
+CREATE n188-[:FRIEND_OF]->n100
+CREATE n134-[:FRIEND_OF]->n101
+CREATE n67-[:FRIEND_OF]->n43
+CREATE n115-[:FRIEND_OF]->n196
+CREATE n89-[:FRIEND_OF]->n35
+CREATE n66-[:FRIEND_OF]->n199
+CREATE n117-[:FRIEND_OF]->n66
+CREATE n113-[:FRIEND_OF]->n193
+CREATE n124-[:FRIEND_OF]->n125
+CREATE n77-[:FRIEND_OF]->n152
+CREATE n97-[:FRIEND_OF]->n101
+CREATE n87-[:FRIEND_OF]->n196
+CREATE n174-[:FRIEND_OF]->n174
+CREATE n139-[:FRIEND_OF]->n43
+CREATE n94-[:FRIEND_OF]->n158
+CREATE n186-[:FRIEND_OF]->n138
+CREATE n177-[:FRIEND_OF]->n168
+CREATE n21-[:FRIEND_OF]->n31
+CREATE n96-[:FRIEND_OF]->n4
+CREATE n135-[:FRIEND_OF]->n70
+CREATE n174-[:FRIEND_OF]->n182
+CREATE n156-[:FRIEND_OF]->n21
+CREATE n146-[:FRIEND_OF]->n35
+CREATE n136-[:FRIEND_OF]->n174
+CREATE n98-[:FRIEND_OF]->n35
+CREATE n110-[:FRIEND_OF]->n35
+CREATE n75-[:FRIEND_OF]->n63
+CREATE n141-[:FRIEND_OF]->n134
+CREATE n143-[:FRIEND_OF]->n89
+CREATE n179-[:FRIEND_OF]->n40
+CREATE n189-[:FRIEND_OF]->n145
+CREATE n163-[:FRIEND_OF]->n131
+CREATE n23-[:FRIEND_OF]->n54
+CREATE n77-[:FRIEND_OF]->n65
+CREATE n130-[:FRIEND_OF]->n32
+CREATE n87-[:FRIEND_OF]->n32
+CREATE n61-[:FRIEND_OF]->n91
+CREATE n109-[:FRIEND_OF]->n45
+CREATE n189-[:FRIEND_OF]->n68
+CREATE n124-[:FRIEND_OF]->n136
+CREATE n97-[:FRIEND_OF]->n169
+CREATE n97-[:FRIEND_OF]->n135
+CREATE n177-[:FRIEND_OF]->n11
+CREATE n85-[:FRIEND_OF]->n137
+CREATE n72-[:FRIEND_OF]->n87
+CREATE n165-[:FRIEND_OF]->n41
+CREATE n44-[:FRIEND_OF]->n105
+CREATE n117-[:FRIEND_OF]->n178
+CREATE n176-[:FRIEND_OF]->n195
+CREATE n144-[:FRIEND_OF]->n184
+CREATE n47-[:FRIEND_OF]->n189
+CREATE n180-[:FRIEND_OF]->n143
+CREATE n120-[:FRIEND_OF]->n136
+CREATE n4-[:FRIEND_OF]->n175
+CREATE n159-[:FRIEND_OF]->n55
+CREATE n195-[:FRIEND_OF]->n188
+CREATE n99-[:FRIEND_OF]->n146
+CREATE n166-[:FRIEND_OF]->n93
+CREATE n21-[:FRIEND_OF]->n141
+CREATE n54-[:FRIEND_OF]->n123
+CREATE n131-[:FRIEND_OF]->n125
+CREATE n16-[:FRIEND_OF]->n162
+CREATE n20-[:FRIEND_OF]->n90
+CREATE n120-[:FRIEND_OF]->n163
+CREATE n33-[:FRIEND_OF]->n125
+CREATE n164-[:FRIEND_OF]->n4
+CREATE n115-[:FRIEND_OF]->n146
+CREATE n103-[:FRIEND_OF]->n173
+CREATE n1-[:FRIEND_OF]->n156
+CREATE n70-[:FRIEND_OF]->n173
+CREATE n66-[:FRIEND_OF]->n15
+CREATE n46-[:FRIEND_OF]->n3
+CREATE n189-[:FRIEND_OF]->n78
+CREATE n85-[:FRIEND_OF]->n46
+CREATE n14-[:FRIEND_OF]->n68
+CREATE n2-[:FRIEND_OF]->n141
+CREATE n115-[:FRIEND_OF]->n149
+CREATE n24-[:FRIEND_OF]->n72
+CREATE n156-[:FRIEND_OF]->n22
+CREATE n41-[:FRIEND_OF]->n193
+CREATE n17-[:FRIEND_OF]->n123
+CREATE n23-[:FRIEND_OF]->n162
+CREATE n153-[:FRIEND_OF]->n62
+CREATE n59-[:FRIEND_OF]->n117
+CREATE n83-[:FRIEND_OF]->n161
+CREATE n95-[:FRIEND_OF]->n110
+
+//jobs require competencies
+CREATE n430-[:IS_REQUIRED]->n301
+CREATE n430-[:IS_REQUIRED]->n302
+CREATE n430-[:IS_REQUIRED]->n304
+CREATE n431-[:IS_REQUIRED]->n307
+CREATE n431-[:IS_REQUIRED]->n300
+CREATE n431-[:IS_REQUIRED]->n301
+CREATE n431-[:IS_REQUIRED]->n302
+CREATE n431-[:IS_REQUIRED]->n303
+
+RETURN *
+----
+ 
+//graph
+ 
+'''
+You can download the complete dataset https://www.dropbox.com/s/5y6581iqcsvwtpq/hr_analytics.zip?dl=0[here].
+
+== What kinds of competencies are in my company
+
+Now that we have data about the people within our organization and their skills, it is time to start asking questions. Let's start with a simple one . We are a recruiter within a company called Siliconfind. We want to know what the top competencies within our company.
+
+[source,cypher]
+----
+match (n:Person)-[:HAS_COMPETENCY]->(co:Competency), (n)-->(cp:Company {name:'Siliconfind'})
+return co.name as competencies, count(n) as number_of_experts
+order by count(n) desc
+limit 5
+----
+ 
+//output
+//table
+ 
+== Siliconfind wants to hire a software engineer
+
+Siliconfind wants to hire a software engineer who knows Java and Python. Having skills in Project Management would be a plus. Let's see if we have that within our own company.
+
+[source,cypher]
+----
+match (p:Person)-[:HAS_COMPETENCY]->(c2:Competency {name:"Java Programming"}), (p)-[:HAS_COMPETENCY]->(c3:Competency {name:"Python Programming"}), (p)-[:HAS_COMPETENCY]->(c4:Competency), (p:Person)-[:WORKS_FOR]->(n:Company {name:'Siliconfind'})
+optional match (p)-[:HAS_COMPETENCY]->(c4:Competency {name:'Project Management'})
+return p.first_name, p.last_name, collect(c4.name)
+----
+ 
+//output
+//table
+
+Here we search our data to find someone who 1) has a competency in Java Programming, 2) has a competency in Python Programming and 3) works for Siliconfind. Looks like there is no result : we do not have the right match within our own talent pool.
+
+== Looking into the personal network of Siliconfind's employees
+
+Let's try to see within the personal network of our employees if there is a good match :
+
+[source,cypher]
+----
+MATCH (c:Company {name:'Siliconfind'})<-[WORKS_FOR]-(p1:Person)-[:FRIEND_OF]-(p2:Person) with p2 match (p2)-[:HAS_COMPETENCY]->(c2:Competency {name:"Java Programming"}), (p2)-[:HAS_COMPETENCY]->(c3:Competency {name:"Python Programming"})
+return distinct p2.first_name as first_name, p2.last_name as last_name, c2.name as skill_1, c3.name as skill_2
+----
+ 
+//output
+//table
+
+== Matching the requirements of a job ad
+
+Can we find potential candidates for a job automatically? Let's add another entity in our data model : a job. A job is linked to competencies via a "REQUIRES" relationships. Finding a perfect match for a given job means finding someone who matches all the required competencies of a job.
+
+We are going to look for a software engineer. We want him to be proficient in Python, Scala and Project Management. The node “Software Engineer” is thus linked to these 3 competencies. Here is how to make the query that will return us the list of people matching our requirements :
+
+[source,cypher]
+----
+match (o:Job {name:'Software Engineer'})-[:IS_REQUIRED]->req<-[:HAS_COMPETENCY]-p
+with o, p, count(req) as c
+where length(o-[:IS_REQUIRED]-()) = c
+return p, c
+----
+ 
+//output
+//table
+
+== Conclusion
+Graph databases like Neo4j can help companies improve their HR performances. It is not so surprising : after all a company is a social network...and thus a graph!
+
+For more graph-related use cases, make sure to check http://linkurio.us/blog[the blog of Linkurious]. 

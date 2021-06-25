@@ -1,0 +1,254 @@
+image::http://i.imgur.com/JIiwHO1.png[]
+We are going to develop a case study base on the videogame League of Legends. 
+League of Legends is a MOBA, (acronym of: Multiplayer Online Battle Arena), where players fight each other using unique characters called champions.
+In this game it's really important to select the right champion to fight against the particular enemy you will find, and buy the best 'weapons' to have more chances to win the game; our Model is planned to easily get usefull inforthis usefull informations that will help a player before starting a game.
+The weapons are called ITEMS, we've created them as nodes, a group of weapons bought from a player on a champion are called BUILD, them are nodes too.
+A champion that's weak against another champion is COUNTERED by that champion, so we say he HAS_COUNTER, we save this as a relation.
+//setup
+//hide
+[source,cypher]
+----
+//Champions
+CREATE(aatrox:Champion {name:'Aatrox', ip:6300, rp:975}),
+(riven:Champion {name:'Riven', ip:4800, rp:880}),
+(ahri:Champion {name:'Ahri', ip:4800, rp:880}),
+(ryze:Champion {name:'Ryze', ip:450, rp:260}),
+(fizz:Champion {name:'Fizz', ip:4800, rp:880}),
+(leBlanc:Champion {name:'LeBlanc', ip:3150, rp:790}),
+(xerath:Champion {name:'Xerath', ip:4800, rp:880}),
+(caitlyn:Champion {name:'Caitlyn', ip:4800, rp:880}),
+(illaoi:Champion {name:'Illaoi', ip:6300, rp:975}),
+(anivia:Champion {name:'Anivia', ip:3150, rp:790}),
+(teemo:Champion {name:'Teemo', ip:1350, rp:585}),
+(yorick:Champion {name:'Yorick', ip:4800, rp:880}),
+(zed:Champion {name:'Zed', ip:6300, rp:975}),
+//Positions
+(top:Position {name:'Top'}),
+(mid:Position {name:'Mid'}),
+(bottom:Position {name:'Bottom'}),
+(jungle:Position {name:'Jungle'}),
+//Roles
+(fighter:Role {name:'Fighter'}),
+(assasin:Role {name:'Assasin'}),
+(tank:Role {name:'Tank'}),
+(support:Role {name:'Support'}),
+(marksman:Role {name:'Marksman'}),
+(mage:Role {name:'Mage'}),
+//Items
+(boots:Item {name:'Boots'}),
+(doransRing:Item {name:'DoransRing'}),
+(doransBlade:Item {name:'DoransBlade'}),
+(doransShield:Item {name:'DoransShield'}),
+(frozenHeart:Item {name:'FrozenHeart'}),
+(lichBane:Item {name:'LichBane'}),
+(rabadon:Item {name:'rabadonsdDeathcap'}),
+(voidStaff:Item {name:'VoidStaff'}),
+(ludensEcho:Item {name:'LudensEcho'}),
+(zohnya:Item {name:'Zonhya'}),
+(athenesUnholyGrail:Item {name:'AthenesUnholyGrail'}),
+(guardianAngel:Item {name:'GuardianAngel'}),
+(sorceresShoes:Item {name:'SorceresShoes'}),
+//Champion Build
+(date1450624550000:ChampionBuild {date:'20/12/2015', milliseconds:1450624550000}),
+(date1450646150000:ChampionBuild {date:'20/12/2015', milliseconds:1450646150000}),
+(date1450649750000:ChampionBuild {date:'20/12/2015', milliseconds:1450649750000}),
+(date1450692950000:ChampionBuild {date:'21/12/2015', milliseconds:1450692950000}),
+(date1450890950000:ChampionBuild {date:'23/12/2015', milliseconds:1450890950000}),
+(date1450908950000:ChampionBuild {date:'23/12/2015', milliseconds:1450908950000}),
+//Player
+(wildturtle:Player {name:'Wildturtle'}),
+(huni:Player {name:'Huni'}),
+(doubleLift:Player {name:'DoubleLift'}),
+(xPeke:Player {name:'xPeke'}),
+(faker:Player {name:'Faker'}),
+//Spell
+(ignite:Spell {name:'Ignite'}),
+(heal:Spell {name:'Heal'}),
+(flash:Spell {name:'Flash'}),
+(teleport:Spell {name:'Teleport'}),
+(exhaust:Spell {name:'Exhaust'}),
+(smite:Spell {name:'Smite'}),
+
+
+//Relation champion
+(aatrox)-[:HAS_POPULAR_POSITION]->(top),
+(aatrox)-[:HAS_ROLE]->(fighter),
+(aatrox)-[:HAS_COUNTER {level:1}]->(riven),
+(aatrox)-[:HAS_COUNTER {level:2}]->(teemo),
+(aatrox)-[:HAS_COUNTER {level:3}]->(yorick),
+(aatrox)-[:HAS_COUNTER {level:4}]->(illaoi),
+(aatrox)-[:HAS_POPULAR_SPELL]->(ignite),
+(aatrox)-[:HAS_POPULAR_SPELL]->(flash),
+(aatrox)-[:HAS_POPULAR_ITEM]->(boots),
+(aatrox)-[:HAS_BUILD]->(date1450624550000),
+(date1450624550000)-[:DONE_BY]->(wildturtle),
+(date1450624550000)-[:HAS_ITEM]->(boots),
+(date1450624550000)-[:HAS_SPELL]->(ignite),
+(date1450624550000)-[:HAS_POSITION]->(top),
+
+(xerath)-[:HAS_POPULAR_POSITION]->(mid),
+(xerath)-[:HAS_ROLE]->(mage),
+(xerath)-[:HAS_COUNTER {level:1}]->(ahri),
+(xerath)-[:HAS_COUNTER {level:1}]->(fizz),
+(xerath)-[:HAS_COUNTER {level:1}]->(leBlanc),
+(xerath)-[:HAS_POPULAR_SPELL]->(heal),
+(xerath)-[:HAS_POPULAR_SPELL]->(flash),
+(xerath)-[:HAS_POPULAR_ITEM]->(doransRing),
+(xerath)-[:HAS_BUILD]->(date1450646150000),
+(date1450646150000)-[:DONE_BY]->(huni),
+(date1450646150000)-[:HAS_ITEM]->(rabadon),
+(date1450646150000)-[:HAS_ITEM]->(voidStaff),
+(date1450646150000)-[:HAS_ITEM]->(ludensEcho),
+(date1450646150000)-[:HAS_ITEM]->(zohnya),
+(date1450646150000)-[:HAS_ITEM]->(lichBane),
+(date1450646150000)-[:HAS_ITEM]->(sorceresShoes),
+(date1450646150000)-[:HAS_SPELL]->(heal),
+(date1450646150000)-[:HAS_SPELL]->(flash),
+(date1450646150000)-[:HAS_POSITION]->(mid),
+
+(fizz)-[:HAS_POPULAR_POSITION]->(mid),
+(fizz)-[:HAS_ROLE]->(mage),
+(fizz)-[:HAS_COUNTER {level:1}]->(ryze),
+(fizz)-[:HAS_POPULAR_SPELL]->(ignite),
+(fizz)-[:HAS_POPULAR_SPELL]->(flash),
+(fizz)-[:HAS_POPULAR_ITEM]->(doransRing),
+(fizz)-[:HAS_BUILD]->(date1450890950000),
+(date1450890950000)-[:DONE_BY]->(faker),
+(date1450890950000)-[:HAS_ITEM]->(rabadon),
+(date1450890950000)-[:HAS_ITEM]->(voidStaff),
+(date1450890950000)-[:HAS_ITEM]->(ludensEcho),
+(date1450890950000)-[:HAS_ITEM]->(zohnya),
+(date1450890950000)-[:HAS_ITEM]->(lichBane),
+(date1450890950000)-[:HAS_ITEM]->(sorceresShoes),
+(date1450890950000)-[:HAS_SPELL]->(ignite),
+(date1450890950000)-[:HAS_POSITION]->(mid),
+
+(fizz)-[:HAS_BUILD]->(date1450908950000),
+(date1450908950000)-[:DONE_BY]->(faker),
+(date1450908950000)-[:HAS_ITEM]->(voidStaff),
+(date1450908950000)-[:HAS_ITEM]->(rabadon),
+(date1450908950000)-[:HAS_ITEM]->(guardianAngel),
+(date1450908950000)-[:HAS_ITEM]->(athenesUnholyGrail),
+(date1450908950000)-[:HAS_ITEM]->(lichBane),
+(date1450908950000)-[:HAS_ITEM]->(sorceresShoes),
+(date1450908950000)-[:HAS_SPELL]->(ignite),
+(date1450908950000)-[:HAS_SPELL]->(flash),
+(date1450908950000)-[:HAS_POSITION]->(mid),
+
+(riven)-[:HAS_POPULAR_POSITION]->(top),
+(riven)-[:HAS_ROLE]->(fighter),
+(riven)-[:HAS_COUNTER {level:1}]->(xerath),
+(riven)-[:HAS_COUNTER {level:2}]->(illaoi),
+(riven)-[:HAS_POPULAR_SPELL]->(teleport),
+(riven)-[:HAS_POPULAR_SPELL]->(flash),
+(riven)-[:HAS_POPULAR_ITEM]->(doransBlade),
+(riven)-[:HAS_BUILD]->(date1450649750000),
+(date1450649750000)-[:DONE_BY]->(huni),
+(date1450649750000)-[:HAS_ITEM]->(doransBlade),
+(date1450649750000)-[:HAS_SPELL]->(teleport),
+(date1450649750000)-[:HAS_SPELL]->(flash),
+(date1450649750000)-[:HAS_POSITION]->(top),
+
+(illaoi)-[:HAS_POPULAR_POSITION]->(top),
+(illaoi)-[:HAS_ROLE]->(fighter),
+(illaoi)-[:HAS_COUNTER {level:1}]->(riven),
+(illaoi)-[:HAS_POPULAR_SPELL]->(teleport),
+(illaoi)-[:HAS_POPULAR_SPELL]->(flash),
+(illaoi)-[:HAS_POPULAR_ITEM]->(doransBlade),
+(illaoi)-[:HAS_BUILD]->(date1450692950000),
+(date1450692950000)-[:DONE_BY]->(xPeke),
+(date1450692950000)-[:HAS_ITEM]->(doransBlade),
+(date1450692950000)-[:HAS_SPELL]->(teleport),
+(date1450692950000)-[:HAS_SPELL]->(flash),
+(date1450692950000)-[:HAS_POSITION]->(top)
+
+----
+[source,cypher]
+----
+MATCH (n)
+RETURN n
+----
+//graph
+image::http://i.imgur.com/G1jtIJL.png[]
+So, you are ready to chose your champion, the enemy has picked Xerath, the magus ascendant; and you're in problem, what to do? 
+
+Ask NEO4J!
+
+"Magic mirror in my hand, who is the fairest in the land?"
+
+no wait... "neo, give me top 3 level 1 xerath counters"
+[source,cypher]
+----
+MATCH (enemy:Champion)-[c:HAS_COUNTER]->(pick:Champion)
+WHERE c.level = 1 AND enemy.name = 'Xerath'
+RETURN pick.name as Pick
+LIMIT 3
+----
+//table
+Those are all top three level 1 counters of xerath
+
+(levels reflect the relevance of the HAS_COUNTER relation)
+
+"I like to play Fizz"
+
+wich spells should I take? 
+
+neo give me the top 2 used spells for fizz
+[source,cypher]
+----
+MATCH (myPick:Champion)-[c:HAS_POPULAR_SPELL]->(spell:Spell)
+WHERE myPick.name = 'Fizz'
+RETURN spell.name as Spell
+LIMIT 2
+----
+//table
+Now I'm playing Fizz, but I don't know what are the best items I could buy?
+
+This time I know that "Faker", one of best League of Legends player, had surely played this champion, so try with a specific query:
+ "Neo give me items bought in the most recent build faker has done for Fizz"
+(we have saved the build name as DateTIMESTAMP, this way we can order by name and get the most recent one. It should be done by software, to get the most recent items by Cypher we added the milleseconds date as a property of the build too)
+[source,cypher]
+----
+MATCH (myPick:Champion)-[c:HAS_BUILD]->(build:ChampionBuild)-[:HAS_ITEM]->(item:Item),(build:ChampionBuild)-[:DONE_BY]->(p:Player)
+WHERE myPick.name = 'Fizz' AND p.name = 'Faker'
+WITH max(build.milliseconds) AS maxDate
+MATCH (myPick:Champion)-[c:HAS_BUILD]->(build:ChampionBuild)-[:HAS_ITEM]->(item:Item),(build:ChampionBuild)-[:DONE_BY]->(p:Player)
+WHERE myPick.name = 'Fizz' AND p.name = 'Faker' AND build.milliseconds = maxDate
+RETURN item.name AS item
+----
+//table
+image::http://i.imgur.com/h0vTlGa.jpg[]
+== Statistic information ==
+
+Get all the champions played by 'xPeke'
+
+[source,cypher]
+----
+MATCH (champions:Champion)-[c:HAS_BUILD]->(build:ChampionBuild)-[:DONE_BY]->(p:Player)
+WHERE p.name = 'xPeke'
+RETURN DISTINCT champions.name as ChampionName
+----
+//table
+
+Get the most popular spell above all champions
+
+[source,cypher]
+----
+MATCH (champions:Champion)-[c:HAS_POPULAR_SPELL]->(spell:Spell)
+RETURN spell.name as SpellName, count(spell.name) AS SpellCount
+ORDER BY SpellCount DESC 
+LIMIT 1
+----
+//table
+
+Get the most used spell in all builds of the champion 'Fizz'
+
+[source,cypher]
+----
+MATCH (champions:Champion)-[c:HAS_BUILD]->(build:ChampionBuild)-[:HAS_SPELL]->(spell:Spell)
+WHERE champions.name = 'Fizz'
+RETURN spell.name AS SpellName, count(spell.name) AS SpellCount
+ORDER BY SpellCount DESC 
+LIMIT 1
+----
+//table

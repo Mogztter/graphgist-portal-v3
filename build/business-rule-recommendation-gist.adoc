@@ -1,0 +1,79 @@
+// = Business Rule / Recommendation gist =
+
+:neo4j-version: 3.5
+ 
+In this simple example, we want to highlight the power of graphs to describe, discover, visualise and implement powerful business rule-based recommendations.
+
+In the example, we will create a simple graph containing
+	- a +person+ ("Rik")
+	- a +city+ ("London")
+	- an +age+ ("39")
+	- a +child+ ("Toon")
+and all the required relationships from the person to the city, to his age, and his child. 
+
+Then we can also immediately add an "inferred" relationship to a potential recommendation for a purchase by the person. Let's say that, based on historical data, pattern discovery, statistics or some other black magic, we know that a person living in London, age 35-40 and with a child should receive a promotional offer for an +Xbox 360+. That would be a "rule" or "recommendation" that we would want to present to the end user.
+
+With the following query, we can create the graph:
+
+[source,cypher]
+----
+// creating the based nodes and relationships
+
+CREATE (rik:person{name:'Rik'}), (london:city{name:'London'}), (age:age{name:'39'}), (kid:child{name:'Toon'})
+CREATE (london)<-[:LIVES_IN]-(rik)-[:HAS_AGE]->(age)
+CREATE (rik)-[:HAS_KID]->(kid)
+
+// create the "inferred" node and relationship
+
+CREATE (xbox:console{name:'Xbox 360'})
+CREATE (rik)-[:SHOULD_RECEIVE_PROMO_FOR]->(xbox)
+----
+
+Visually, this simple graph looks like this:
+
+//graph
+
+Hover over the nodes to see the +name+ node property in the Graph above.
+
+It then becomes quite easy to see that this is almost like the equivalent - but a much richer, versatile equivalent of having a traditional "business rule" that would say:
+
+----
+IF
+	rik lives in london,
+	AND is of age 39
+	AND has a kid
+THEN
+	propose Xbox 360 promo
+ELSE
+	proceed with something else ;-) ...
+----
+
+In graph terms, we would express this as a cypher query:
+
+[source,cypher]
+----
+MATCH
+	(rik:person)-[:HAS_AGE]->(age:age),
+	(rik:person)-[:LIVES_IN]->(london:city),
+	(rik:person)-[:HAS_KID]->(kid:child),
+	(rik:person)-[:SHOULD_RECEIVE_PROMO_FOR]->(sometoy)
+WHERE
+	rik.name='Rik'
+RETURN	
+	rik.name, sometoy.name;
+----
+
+You can play around with this some more in the console below.
+
+//setup
+//hide
+[source,cypher]
+----
+CREATE (rik:person{name:'Rik'}), (london:city{name:'London'}), (age:age{name:'39'}), (kid:child{name:'Toon'})
+CREATE (xbox:console{name:'Xbox 360'})
+CREATE (london)<-[:LIVES_IN]-(rik)-[:HAS_AGE]->(age)
+CREATE (rik)-[:HAS_KID]->(kid)
+CREATE (rik)-[:SHOULD_RECEIVE_PROMO_FOR]->(xbox)
+----
+
+Hope this example is useful. Enjoy!

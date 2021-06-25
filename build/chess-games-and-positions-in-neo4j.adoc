@@ -1,0 +1,885 @@
+== Chess Games and Positions in Neo4j
+
+:neo4j-version: 2.0.0
+:author: Wes Freeman
+:twitter: @wefreema
+:tags: chess
+
+The goal is to load a bunch of chess games into Neo4j for further analysis. Scores listed are Stockfish's take on a position after a 25 move horizon (but this number can be deepened as the graph is filled out or as more processing is done). Positions can also be loaded as alternative moves (not connected to a game) based on suggestions from Stockfish. The positions are recorded as link:http://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation[FEN], a human-readable/compressed chess board state notation.
+
+=== Schema diagram
+image::http://i.imgur.com/auzQHoq.png[]
+
+=== Chess decision tree diagram with board positions
+image::http://i.imgur.com/4dcsTCh.png[]
+
+//hide
+[source,cypher]
+----
+create 
+(gk:Player {name:"Garry Kasparov"}),
+(vt:Player {name:"Veselin Topalov"}),
+(g:Game {title:"Kasparov vs Topalov", year:1999}),
+gk-[:white_in]->g,
+vt-[:black_in]->g,
+(p01:Position {score:0.40, FEN:"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", to_move:"white"}),
+g-[:contains {move:1}]->p01,
+(p02:Position {score:0.08, FEN:"rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1", to_move:"black"}),
+g-[:contains {move:2}]->p02,
+p01-[:move {move:"e4"}]->p02,
+(p03:Position {score:0.50, FEN:"rnbqkbnr/ppp1pppp/3p4/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2", to_move:"white"}),
+g-[:contains {move:3}]->p03,
+p02-[:move {move:"d6"}]->p03,
+(p04:Position {score:0.52, FEN:"rnbqkbnr/ppp1pppp/3p4/8/3PP3/8/PPP2PPP/RNBQKBNR b KQkq - 0 2", to_move:"black"}),
+g-[:contains {move:4}]->p04,
+p03-[:move {move:"d4"}]->p04,
+(p05:Position {score:0.5, FEN:"rnbqkb1r/ppp1pppp/3p1n2/8/3PP3/8/PPP2PPP/RNBQKBNR w KQkq - 1 3", to_move:"white"}),
+g-[:contains {move:5}]->p05,
+p04-[:move {move:"Nf6"}]->p05,
+(p06:Position {score:0.4, FEN:"rnbqkb1r/ppp1pppp/3p1n2/8/3PP3/2N5/PPP2PPP/R1BQKBNR b KQkq - 2 3", to_move:"black"}),
+g-[:contains {move:6}]->p06,
+p05-[:move {move:"Nc3"}]->p06,
+(p07:Position {score:0.7, FEN:"rnbqkb1r/ppp1pp1p/3p1np1/8/3PP3/2N5/PPP2PPP/R1BQKBNR w KQkq - 0 4", to_move:"white"}),
+g-[:contains {move:7}]->p07,
+p06-[:move {move:"g6"}]->p07, 
+(p08:Position {score:0.5, FEN:"rnbqkb1r/ppp1pp1p/3p1np1/8/3PP3/2N1B3/PPP2PPP/R2QKBNR b KQkq - 1 4", to_move:"black"}),
+g-[:contains {move:8}]->p08,
+p07-[:move {move:"Be3"}]->p08,
+(p09:Position {score:0.5, FEN:"rnbqk2r/ppp1ppbp/3p1np1/8/3PP3/2N1B3/PPP2PPP/R2QKBNR w KQkq - 2 5", to_move:"white"}),
+g-[:contains {move:9}]->p09,
+p08-[:move {move:"Bg7"}]->p09,
+(p10:Position {score:0.5, FEN:"rnbqk2r/ppp1ppbp/3p1np1/8/3PP3/2N1B3/PPPQ1PPP/R3KBNR b KQkq - 3 5", to_move:"black"}),
+g-[:contains {move:10}]->p10,
+p09-[:move {move:"Qd2"}]->p10,
+(p11:Position {score:0.62, FEN:"rnbqk2r/pp2ppbp/2pp1np1/8/3PP3/2N1B3/PPPQ1PPP/R3KBNR w KQkq - 0 6", to_move:"white"}),
+g-[:contains {move:11}]->p11,
+p10-[:move {move:"c6"}]->p11,
+(p12:Position {score:0.42, FEN:"rnbqk2r/pp2ppbp/2pp1np1/8/3PP3/2N1BP2/PPPQ2PP/R3KBNR b KQkq - 0 6", to_move:"black"}),
+g-[:contains {move:12}]->p12,
+p11-[:move {move:"f3"}]->p12,
+(p13:Position {score:0.48, FEN:"rnbqk2r/p3ppbp/2pp1np1/1p6/3PP3/2N1BP2/PPPQ2PP/R3KBNR w KQkq - 0 7", to_move:"white"}),
+g-[:contains {move:13}]->p13,
+p12-[:move {move:"b5"}]->p13,
+(p14:Position {score:0.32, FEN:"rnbqk2r/p3ppbp/2pp1np1/1p6/3PP3/2N1BP2/PPPQN1PP/R3KB1R b KQkq - 1 7", to_move:"black"}),
+g-[:contains {move:14}]->p14,
+p13-[:move {move:"Nge2"}]->p14,
+(p15:Position {score:0.36, FEN:"r1bqk2r/p2nppbp/2pp1np1/1p6/3PP3/2N1BP2/PPPQN1PP/R3KB1R w KQkq - 2 8", to_move:"white"}),
+g-[:contains {move:15}]->p15,
+p14-[:move {move:"Nbd7"}]->p15,
+(p16:Position { score:0.32, FEN:"r1bqk2r/p2nppbp/2pp1npB/1p6/3PP3/2N2P2/PPPQN1PP/R3KB1R b KQkq - 3 8", to_move:"black"}),
+g-[:contains {move:16}]->p16,
+p15-[:move {move:"Bh6"}]->p16,
+(p17:Position {score:0.24, FEN:"r1bqk2r/p2npp1p/2pp1npb/1p6/3PP3/2N2P2/PPPQN1PP/R3KB1R w KQkq - 0 9", to_move:"white"}),
+g-[:contains {move:17}]->p17,
+p16-[:move {move:"Bxh6"}]->p17,
+(p18:Position {score:0.26 , FEN:"r1bqk2r/p2npp1p/2pp1npQ/1p6/3PP3/2N2P2/PPP1N1PP/R3KB1R b KQkq - 0 9", to_move:"black"}),
+g-[:contains {move:18}]->p18,
+p17-[:move {move:"Qxh6"}]->p18,
+(p19:Position {score:0.40, FEN:"r2qk2r/pb1npp1p/2pp1npQ/1p6/3PP3/2N2P2/PPP1N1PP/R3KB1R w KQkq - 1 10", to_move:"white"}),
+g-[:contains {move:19}]->p19,
+p18-[:move {move:"Bb7"}]->p19,
+(p20:Position {score:0.40, FEN:"r2qk2r/pb1npp1p/2pp1npQ/1p6/3PP3/P1N2P2/1PP1N1PP/R3KB1R b KQkq - 0 10", to_move:"black"}),
+g-[:contains {move:20}]->p20,
+p19-[:move {move:"a3"}]->p20,
+(p21:Position {score:0.40, FEN:"r2qk2r/pb1npp1p/2pp1npQ/1p6/3PP3/P1N2P2/1PP1N1PP/R3KB1R b KQkq - 0 10", to_move:"white"}),
+g-[:contains {move:21}]->p21,
+p20-[:move {move:"e5"}]->p21,
+(p22:Position {score:0.44, FEN:"r2qk2r/pb1n1p1p/2pp1npQ/1p2p3/3PP3/P1N2P2/1PP1N1PP/2KR1B1R b kq - 1 11", to_move:"black"}),
+g-[:contains {move:22}]->p22,
+p21-[:move {move:"O-O-O"}]->p22,
+(p23:Position {score:0.56, FEN:"r3k2r/pb1nqp1p/2pp1npQ/1p2p3/3PP3/P1N2P2/1PP1N1PP/2KR1B1R w kq - 2 12", to_move:"white"}),
+g-[:contains {move:23}]->p23,
+p22-[:move {move:"Qe7"}]->p23,
+(p24:Position {score:0.48, FEN:"r3k2r/pb1nqp1p/2pp1npQ/1p2p3/3PP3/P1N2P2/1PP1N1PP/1K1R1B1R b kq - 3 12", to_move:"black"}),
+g-[:contains {move:24}]->p24,
+p23-[:move {move:"Kb1"}]->p24,
+(p25:Position {score:0.90, FEN:"r3k2r/1b1nqp1p/p1pp1npQ/1p2p3/3PP3/P1N2P2/1PP1N1PP/1K1R1B1R w kq - 0 13", to_move:"white"}),
+g-[:contains {move:25}]->p25,
+p24-[:move {move:"a6"}]->p25,
+(p26:Position {score:0.72, FEN:"r3k2r/1b1nqp1p/p1pp1npQ/1p2p3/3PP3/P1N2P2/1PP3PP/1KNR1B1R b kq - 1 13", to_move:"black"}),
+g-[:contains {move:26}]->p26,
+p25-[:move {move:"Nc1"}]->p26,
+(p27:Position {score:0.76, FEN:"2kr3r/1b1nqp1p/p1pp1npQ/1p2p3/3PP3/P1N2P2/1PP3PP/1KNR1B1R w - - 2 14", to_move:"white"}),
+g-[:contains {move:27}]->p27,
+p26-[:move {move:"O-O-O"}]->p27,
+(p28:Position {score:0.62, FEN:"2kr3r/1b1nqp1p/p1pp1npQ/1p2p3/3PP3/PNN2P2/1PP3PP/1K1R1B1R b - - 3 14", to_move:"black"}),
+g-[:contains {move:28}]->p28,
+p27-[:move {move:"Nb3"}]->p28,
+(p29:Position {score:0.62, FEN:"2kr3r/1b1nqp1p/p1pp1npQ/1p6/3pP3/PNN2P2/1PP3PP/1K1R1B1R w - - 0 15", to_move:"white"}),
+g-[:contains {move:29}]->p29,
+p28-[:move {move:"exd4"}]->p29,
+(p30:Position {score:0.62, FEN:"2kr3r/1b1nqp1p/p1pp1npQ/1p6/3RP3/PNN2P2/1PP3PP/1K3B1R b - - 0 15", to_move:"black"}),
+g-[:contains {move:30}]->p30,
+p29-[:move {move:"Rxd4"}]->p30,
+(p31:Position {score:0.66, FEN:"2kr3r/1b1nqp1p/p2p1npQ/1pp5/3RP3/PNN2P2/1PP3PP/1K3B1R w - - 0 16", to_move:"white"}),
+g-[:contains {move:31}]->p31,
+p30-[:move {move:"c5"}]->p31,
+(p32:Position {score:0.66, FEN:"2kr3r/1b1nqp1p/p2p1npQ/1pp5/4P3/PNN2P2/1PP3PP/1K1R1B1R b - - 1 16", to_move:"black"}),
+g-[:contains {move:32}]->p32,
+p31-[:move {move:"Rd1"}]->p32,
+(p33:Position {score:0.74, FEN:"2kr3r/1b2qp1p/pn1p1npQ/1pp5/4P3/PNN2P2/1PP3PP/1K1R1B1R w - - 2 17", to_move:"white"}),
+g-[:contains {move:33}]->p33,
+p32-[:move {move:"Nb6"}]->p33,
+(p34:Position {score:0.54, FEN:"2kr3r/1b2qp1p/pn1p1npQ/1pp5/4P3/PNN2PP1/1PP4P/1K1R1B1R b - - 0 17", to_move:"black"}),
+g-[:contains {move:34}]->p34,
+p33-[:move {move:"g3"}]->p34,
+(p35:Position {score:0.60, FEN:"1k1r3r/1b2qp1p/pn1p1npQ/1pp5/4P3/PNN2PP1/1PP4P/1K1R1B1R w - - 1 18", to_move:"white"}),
+g-[:contains {move:35}]->p35,
+p34-[:move {move:"Kb8"}]->p35,
+(p36:Position {score:0.20, FEN:"1k1r3r/1b2qp1p/pn1p1npQ/Npp5/4P3/P1N2PP1/1PP4P/1K1R1B1R b - - 2 18", to_move:"black"}),
+g-[:contains {move:36}]->p36,
+p35-[:move {move:"Na5"}]->p36,
+(p37:Position {score:0.36, FEN:"bk1r3r/4qp1p/pn1p1npQ/Npp5/4P3/P1N2PP1/1PP4P/1K1R1B1R w - - 3 19", to_move:"white"}),
+g-[:contains {move:37}]->p37,
+p36-[:move {move:"Ba8"}]->p37,
+(p38:Position {score:0.12, FEN:"bk1r3r/4qp1p/pn1p1npQ/Npp5/4P3/P1N2PPB/1PP4P/1K1R3R b - - 4 19", to_move:"black"}),
+g-[:contains {move:38}]->p38,
+p37-[:move {move:"Bh3"}]->p38,
+(p39:Position {score:0.20, FEN:"bk1r3r/4qp1p/pn3npQ/Nppp4/4P3/P1N2PPB/1PP4P/1K1R3R w - - 0 20", to_move:"white"}),
+g-[:contains {move:39}]->p39,
+p38-[:move {move:"d5"}]->p39,
+(p40:Position {score:0.08, FEN:"bk1r3r/4qp1p/pn3np1/Nppp4/4PQ2/P1N2PPB/1PP4P/1K1R3R b - - 1 20", to_move:"black"}),
+g-[:contains {move:40}]->p40,
+p39-[:move {move:"Qf4+"}]->p40,
+(p41:Position {score:0.08, FEN:"b2r3r/k3qp1p/pn3np1/Nppp4/4PQ2/P1N2PPB/1PP4P/1K1R3R w - - 2 21", to_move:"white"}),
+g-[:contains {move:41}]->p41,
+p40-[:move {move:"Ka7"}]->p41,
+(p42:Position {score:0.00, FEN:"b2r3r/k3qp1p/pn3np1/Nppp4/4PQ2/P1N2PPB/1PP4P/1K1RR3 b - - 3 21", to_move:"black"}),
+g-[:contains {move:42}]->p42,
+p41-[:move {move:"Re1"}]->p42,
+(p43:Position {score:0.00, FEN:"b2r3r/k3qp1p/pn3np1/Npp5/3pPQ2/P1N2PPB/1PP4P/1K1RR3 w - - 0 22", to_move:"white"}),
+g-[:contains {move:43}]->p43,
+p42-[:move {move:"d4"}]->p43,
+(p44:Position {score:-0.52, FEN:"b2r3r/k3qp1p/pn3np1/NppN4/3pPQ2/P4PPB/1PP4P/1K1RR3 b - - 1 22", to_move:"black"}),
+g-[:contains {move:44}]->p44,
+p43-[:move {move:"Nd5"}]->p44,
+(p45:Position {score:-0.56, FEN:"b2r3r/k3qp1p/p4np1/Nppn4/3pPQ2/P4PPB/1PP4P/1K1RR3 w - - 0 23", to_move:"white"}),
+g-[:contains {move:45}]->p45,
+p44-[:move {move:"Nbxd5"}]->p45,
+(p46:Position {score:-0.44, FEN:"b2r3r/k3qp1p/p4np1/NppP4/3p1Q2/P4PPB/1PP4P/1K1RR3 b - - 0 23", to_move:"black"}),
+g-[:contains {move:46}]->p46,
+p45-[:move {move:"exd5"}]->p46,
+(p47:Position {score:-0.64, FEN:"b2r3r/k4p1p/p2q1np1/NppP4/3p1Q2/P4PPB/1PP4P/1K1RR3 w - - 1 24", to_move:"white"}),
+g-[:contains {move:47}]->p47,
+p46-[:move {move:"Qd6"}]->p47,
+(p48:Position {score:-0.80, FEN:"b2r3r/k4p1p/p2q1np1/NppP4/3R1Q2/P4PPB/1PP4P/1K2R3 b - - 0 24", to_move:"black"}),
+g-[:contains {move:48}]->p48,
+p47-[:move {move:"Rxd4"}]->p48,
+(p49:Position {score:0.00, FEN:"b2r3r/k4p1p/p2q1np1/Np1P4/3p1Q2/P4PPB/1PP4P/1K2R3 w - - 0 25", to_move:"white"}),
+g-[:contains {move:49}]->p49,
+p48-[:move {move:"cxd4"}]->p49,
+(p50:Position {score:0.00, FEN:"b2r3r/k3Rp1p/p2q1np1/Np1P4/3p1Q2/P4PPB/1PP4P/1K6 b - - 1 25", to_move:"black"}),
+g-[:contains {move:50}]->p50,
+p49-[:move {move:"cxd4"}]->p50,
+(p51:Position {score:0.00, FEN:"b2r3r/4Rp1p/pk1q1np1/Np1P4/3p1Q2/P4PPB/1PP4P/1K6 w - - 2 26", to_move:"white"}),
+g-[:contains {move:51}]->p51,
+p50-[:move {move:"Kb6"}]->p51,
+(p52:Position {score:0.00, FEN:"b2r3r/4Rp1p/pk1q1np1/Np1P4/3Q4/P4PPB/1PP4P/1K6 b - - 0 26", to_move:"black"}),
+g-[:contains {move:52}]->p52,
+p51-[:move {move:"Qxd4+"}]->p52,
+(p53:Position {score:0.24, FEN:"b2r3r/4Rp1p/p2q1np1/kp1P4/3Q4/P4PPB/1PP4P/1K6 w - - 0 27", to_move:"white"}),
+g-[:contains {move:53}]->p53,
+p52-[:move {move:"Kxa5"}]->p53,
+(p54:Position {score:0.24, FEN:"b2r3r/4Rp1p/p2q1np1/kp1P4/1P1Q4/P4PPB/2P4P/1K6 b - - 0 27", to_move:"black"}),
+g-[:contains {move:54}]->p54,
+p53-[:move {move:"b4+"}]->p54,
+(p55:Position {score:0.24, FEN:"b2r3r/4Rp1p/p2q1np1/1p1P4/kP1Q4/P4PPB/2P4P/1K6 w - - 1 28", to_move:"white"}),
+g-[:contains {move:55}]->p55,
+p54-[:move {move:"Ka4"}]->p55,
+(p56:Position {score:0.24, FEN:"b2r3r/4Rp1p/p2q1np1/1p1P4/kP6/P1Q2PPB/2P4P/1K6 b - - 2 28", to_move:"black"}),
+g-[:contains {move:56}]->p56,
+p55-[:move {move:"Qc3"}]->p56,
+(p57:Position {score:0.24, FEN:"b2r3r/4Rp1p/p4np1/1p1q4/kP6/P1Q2PPB/2P4P/1K6 w - - 0 29", to_move:"white"}),
+g-[:contains {move:57}]->p57,
+p56-[:move {move:"Qxd5"}]->p57,
+(p58:Position {score:0.24, FEN:"b2r3r/4Rp1p/p4np1/1p1q4/kP6/P1Q2PPB/2P4P/1K6 w - - 0 29", to_move:"black"}),
+g-[:contains {move:58}]->p58,
+p57-[:move {move:"Ra7"}]->p58,
+(p59:Position {score:0.24, FEN:"3r3r/Rb3p1p/p4np1/1p1q4/kP6/P1Q2PPB/2P4P/1K6 w - - 2 30", to_move:"white"}),
+g-[:contains {move:59}]->p59,
+p58-[:move {move:"Bb7"}]->p59,
+(p60:Position {score:0.24, FEN:"3r3r/1R3p1p/p4np1/1p1q4/kP6/P1Q2PPB/2P4P/1K6 b - - 0 30", to_move:"black"}),
+g-[:contains {move:60}]->p60,
+p59-[:move {move:"Rxb7"}]->p60,
+(p61:Position {score:1.21, FEN:"3r3r/1R3p1p/p4np1/1p6/kPq5/P1Q2PPB/2P4P/1K6 w - - 1 31", to_move:"white"}),
+g-[:contains {move:61}]->p61,
+p60-[:move {move:"Qc4"}]->p61,
+(p62:Position {score:1.29, FEN:"3r3r/1R3p1p/p4Qp1/1p6/kPq5/P4PPB/2P4P/1K6 b - - 0 31", to_move:"black"}),
+g-[:contains {move:62}]->p62,
+p61-[:move {move:"Qxf6"}]->p62,
+(p63:Position {score:5.57, FEN:"3r3r/1R3p1p/p4Qp1/1p6/1Pq5/k4PPB/2P4P/1K6 w - - 0 32", to_move:"white"}),
+g-[:contains {move:63}]->p63,
+p62-[:move {move:"Kxa3"}]->p63,
+(p63a:Position {score:1.45, FEN:"7r/1R3p1p/p4Qp1/1p6/kPq5/P4PPB/2P4P/1K1r4 w - - 1 32", to_move:"white"}),
+p62-[:move {move:"Rd1+"}]->p63a,
+(p64:Position {score:5.57, FEN:"3r3r/1R3p1p/Q5p1/1p6/1Pq5/k4PPB/2P4P/1K6 b - - 0 32", to_move:"black"}),
+g-[:contains {move:64}]->p64,
+p63-[:move {move:"Qxa6+"}]->p64,
+(p65:Position {score:5.49, FEN:"3r3r/1R3p1p/Q5p1/1p6/1kq5/5PPB/2P4P/1K6 w - - 0 33", to_move:"white"}),
+g-[:contains {move:65}]->p65,
+p64-[:move {move:"Kxb4"}]->p65,
+(p66:Position {score:5.49, FEN:"3r3r/1R3p1p/Q5p1/1p6/1kq5/2P2PPB/7P/1K6 b - - 0 33", to_move:"black"}),
+g-[:contains {move:66}]->p66,
+p65-[:move {move:"c3+"}]->p66,
+(p67:Position {score:5.49, FEN:"3r3r/1R3p1p/Q5p1/1p6/2q5/2k2PPB/7P/1K6 w - - 0 34", to_move:"white"}),
+g-[:contains {move:67}]->p67,
+p66-[:move {move:"Kxc3"}]->p67,
+(p68:Position {score:5.85, FEN:"3r3r/1R3p1p/6p1/1p6/2q5/2k2PPB/7P/QK6 b - - 1 34", to_move:"black"}),
+g-[:contains {move:68}]->p68,
+p67-[:move {move:"Qa1+"}]->p68,
+(p69:Position {score:5.77, FEN:"3r3r/1R3p1p/6p1/1p6/2q5/5PPB/3k3P/QK6 w - - 2 35", to_move:"white"}),
+g-[:contains {move:69}]->p69,
+p68-[:move {move:"Kd2"}]->p69,
+(p70:Position {score:5.77, FEN:"3r3r/1R3p1p/6p1/1p6/2q5/5PPB/1Q1k3P/1K6 b - - 3 35", to_move:"black"}),
+g-[:contains {move:70}]->p70,
+p69-[:move {move:"Qb2+"}]->p70,
+(p71:Position {score:5.97, FEN:"3r3r/1R3p1p/6p1/1p6/2q5/5PPB/1Q5P/1K1k4 w - - 4 36", to_move:"white"}),
+g-[:contains {move:71}]->p71,
+p70-[:move {move:"Kd1"}]->p71,
+(p72:Position {score:6.10, FEN:"3r3r/1R3p1p/6p1/1p6/2q5/5PP1/1Q5P/1K1k1B2 b - - 5 36", to_move:"black"}),
+g-[:contains {move:72}]->p72,
+p71-[:move {move:"Bf1"}]->p72,
+(p73:Position {score:6.26, FEN:"7r/1R3p1p/6p1/1p6/2q5/5PP1/1Q1r3P/1K1k1B2 w - - 6 37", to_move:"white"}),
+g-[:contains {move:73}]->p73,
+p72-[:move {move:"Rd2"}]->p73,
+(p74:Position {score:6.30, FEN:"7r/3R1p1p/6p1/1p6/2q5/5PP1/1Q1r3P/1K1k1B2 b - - 7 37", to_move:"black"}),
+g-[:contains {move:74}]->p74,
+p73-[:move {move:"Rd7"}]->p74,
+(p75:Position {score:6.14, FEN:"7r/3r1p1p/6p1/1p6/2q5/5PP1/1Q5P/1K1k1B2 w - - 0 38", to_move:"white"}),
+g-[:contains {move:75}]->p75,
+p74-[:move {move:"Rxd7"}]->p75,
+(p76:Position {score:6.38, FEN:"7r/3r1p1p/6p1/1p6/2B5/5PP1/1Q5P/1K1k4 b - - 0 38", to_move:"black"}),
+g-[:contains {move:76}]->p76,
+p75-[:move {move:"Bxc4"}]->p76,
+(p77:Position {score:6.42, FEN:"7r/3r1p1p/6p1/8/2p5/5PP1/1Q5P/1K1k4 w - - 0 39", to_move:"white"}),
+g-[:contains {move:77}]->p77,
+p76-[:move {move:"bxc4"}]->p77,
+(p78:Position {score:6.42, FEN:"7Q/3r1p1p/6p1/8/2p5/5PP1/7P/1K1k4 b - - 0 39", to_move:"black"}),
+g-[:contains {move:78}]->p78,
+p77-[:move {move:"Qxh8"}]->p78,
+(p79:Position {score:6.42, FEN:"7Q/5p1p/6p1/8/2p5/3r1PP1/7P/1K1k4 w - - 1 40", to_move:"white"}),
+g-[:contains {move:79}]->p79,
+p78-[:move {move:"Rd3"}]->p79,
+(p80:Position {score:6.18, FEN:"Q7/5p1p/6p1/8/2p5/3r1PP1/7P/1K1k4 b - - 2 40", to_move:"black"}),
+g-[:contains {move:80}]->p80,
+p79-[:move {move:"Qa8"}]->p80,
+(p81:Position {score:6.14, FEN:"Q7/5p1p/6p1/8/8/2pr1PP1/7P/1K1k4 w - - 0 41", to_move:"white"}),
+g-[:contains {move:81}]->p81,
+p80-[:move {move:"c3"}]->p81,
+(p82:Position {score:6.14, FEN:"8/5p1p/6p1/8/Q7/2pr1PP1/7P/1K1k4 b - - 1 41", to_move:"black"}),
+g-[:contains {move:82}]->p82,
+p81-[:move {move:"Qa4+"}]->p82,
+(p83:Position {score:6.48, FEN:"8/5p1p/6p1/8/Q7/2pr1PP1/7P/1K2k3 w - - 2 42", to_move:"white"}),
+g-[:contains {move:83}]->p83,
+p82-[:move {move:"Ke1"}]->p83,
+(p84:Position {score:7.17, FEN:"8/5p1p/6p1/8/Q4P2/2pr2P1/7P/1K2k3 b - - 0 42", to_move:"black"}),
+g-[:contains {move:84}]->p84,
+p83-[:move {move:"f4"}]->p84,
+(p85:Position {score:8.92, FEN:"8/7p/6p1/5p2/Q4P2/2pr2P1/7P/1K2k3 w - - 0 43", to_move:"white"}),
+g-[:contains {move:85}]->p85,
+p84-[:move {move:"f5"}]->p85,
+(p86:Position {score:9.89, FEN:"8/Q6p/6p1/5p2/5P2/2p3P1/3r3P/2K1k3 b - - 3 44", to_move:"black"}),
+g-[:contains {move:86}]->p86,
+p85-[:move {move:"Qa7"}]->p86,
+
+(wf:Player {name:"Wes"}),
+(a:Player {name:"Alvin"}),
+(gawf:Game {title:"Wes vs Alvin", year:2010}),
+wf-[:white_in]->gawf,
+a-[:black_in]->gawf,
+gawf-[:contains {move:1}]->p01,
+gawf-[:contains {move:2}]->p02,
+(wa02:Position {FEN:"rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2", score:0.26, to_move:"white"}),
+gawf-[:contains {move:3}]->wa02,
+p02-[:move {move:"c5"}]->wa02,
+(wa03:Position {FEN:"rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2", score:0.26, to_move:"black"}),
+gawf-[:contains {move:4}]->wa03,
+wa02-[:move {move:"Nf3"}]->wa03,
+(wa04:Position {FEN:"r1bqkbnr/pp1ppppp/2n5/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3", score:0.26, to_move:"white"}),
+gawf-[:contains {move:5}]->wa04,
+wa03-[:move {move:"Nc6"}]->wa04,
+(wa05:Position {FEN:"r1bqkbnr/pp1ppppp/2n5/2p5/3PP3/5N2/PPP2PPP/RNBQKB1R b KQkq - 0 3", score:0.16, to_move:"black"}),
+gawf-[:contains {move:6}]->wa05,
+wa04-[:move {move:"d4"}]->wa05,
+(wa06:Position {FEN:"r1bqkbnr/pp1ppppp/2n5/8/3pP3/5N2/PPP2PPP/RNBQKB1R w KQkq - 0 4", score:0.16, to_move:"white"}),
+gawf-[:contains {move:7}]->wa06,
+wa05-[:move {move:"cxd4"}]->wa06,
+(wa07:Position {FEN:"r1bqkbnr/pp1ppppp/2n5/8/3NP3/8/PPP2PPP/RNBQKB1R b KQkq - 0 4", score:0.16, to_move:"black"}),
+gawf-[:contains {move:8}]->wa07,
+wa06-[:move {move:"Nxd4"}]->wa07,
+(wa08:Position {FEN:"r1bqkbnr/pp1ppp1p/2n3p1/8/3NP3/8/PPP2PPP/RNBQKB1R w KQkq - 0 5", score:0.24, to_move:"white"}),
+gawf-[:contains {move:9}]->wa08,
+wa07-[:move {move:"g6"}]->wa08,
+(wa09:Position {FEN:"r1bqkbnr/pp1ppp1p/2n3p1/8/3NPP2/8/PPP3PP/RNBQKB1R b KQkq - 0 5", score:-0.28, to_move:"black"}),
+gawf-[:contains {move:10}]->wa09,
+wa08-[:move {move:"f4"}]->wa09,
+(wa10:Position {FEN:"r1bqk1nr/pp1pppbp/2n3p1/8/3NPP2/8/PPP3PP/RNBQKB1R w KQkq - 1 6", score:-0.30, to_move:"white"}),
+gawf-[:contains {move:11}]->wa10,
+wa09-[:move {move:"Bg7"}]->wa10,
+(wa11:Position {FEN:"r1bqk1nr/pp1pppbp/2n3p1/4P3/3N1P2/8/PPP3PP/RNBQKB1R b KQkq - 0 6", score:-1.01, to_move:"black"}),
+gawf-[:contains {move:12}]->wa11,
+wa10-[:move {move:"e5"}]->wa11,
+(wa12:Position {FEN:"r1bqk1nr/pp2ppbp/2np2p1/4P3/3N1P2/8/PPP3PP/RNBQKB1R w KQkq - 0 7", score:-0.74, to_move:"white"}),
+gawf-[:contains {move:13}]->wa12,
+wa11-[:move {move:"d6"}]->wa12,
+(wa13:Position {FEN:"r1bqk1nr/pp2ppbp/2np2p1/1B2P3/3N1P2/8/PPP3PP/RNBQK2R b KQkq - 1 7", score:-0.96, to_move:"black"}),
+gawf-[:contains {move:14}]->wa13,
+wa12-[:move {move:"Bb5"}]->wa13,
+(wa14:Position {FEN:"r1b1k1nr/pp2ppbp/1qnp2p1/1B2P3/3N1P2/8/PPP3PP/RNBQK2R w KQkq - 2 8", score:-0.72, to_move:"white"}),
+gawf-[:contains {move:15}]->wa14,
+wa13-[:move {move:"Qb6"}]->wa14,
+(wa15:Position {FEN:"r1b1k1nr/pp2ppbp/1qnp2p1/1B2P3/3N1P2/2N5/PPP3PP/R1BQK2R b KQkq - 3 8", score:-0.80, to_move:"black"}),
+gawf-[:contains {move:16}]->wa15,
+wa14-[:move {move:"Nc3"}]->wa15,
+(wa16:Position {FEN:"r1b1k1nr/pp3pbp/1qnpp1p1/1B2P3/3N1P2/2N5/PPP3PP/R1BQK2R w KQkq - 0 9", score:3.33, to_move:"white"}),
+gawf-[:contains {move:17}]->wa16,
+wa15-[:move {move:"e6"}]->wa16,
+(wa16a:Position {FEN:"r1b1k1nr/pp2ppbp/1qn3p1/1B2p3/3N1P2/2N5/PPP3PP/R1BQK2R w KQkq - 0 9", score:-0.70, to_move:"white"}),
+wa15-[:move {move:"dxe5"}]->wa16a,
+(wa16b:Position {FEN:"", score:0.12, to_move:"white"}),
+wa15-[:move {move:"Bd7"}]->wa16b,
+(wa16c:Position {FEN:"", score:1.13, to_move:"white"}),
+wa15-[:move {move:"Kf8"}]->wa16c,
+(wa16d:Position {FEN:"", score:1.45, to_move:"white"}),
+wa15-[:move {move:"Qc7"}]->wa16d,
+(wa16e:Position {FEN:"", score:1.49, to_move:"white"}),
+wa15-[:move {move:"Be6"}]->wa16e,
+(wa16f:Position {FEN:"", score:1.97, to_move:"white"}),
+wa15-[:move {move:"Bg4"}]->wa16f,
+(wa16g:Position {FEN:"", score:2.82, to_move:"white"}),
+wa15-[:move {move:"Qd8"}]->wa16g,
+(wa16h:Position {FEN:"", score:2.98, to_move:"white"}),
+wa15-[:move {move:"Qc5"}]->wa16h,
+(wa16i:Position {FEN:"", score:3.27, to_move:"white"}),
+wa15-[:move {move:"Bf5"}]->wa16i,
+(wa16j:Position {FEN:"", score:3.63, to_move:"white"}),
+wa15-[:move {move:"a6"}]->wa16j,
+(wa16k:Position {FEN:"", score:3.55, to_move:"white"}),
+wa15-[:move {move:"Rb8"}]->wa16k,
+(wa16l:Position {FEN:"", score:3.71, to_move:"white"}),
+wa15-[:move {move:"Nh6"}]->wa16l,
+(wa16m:Position {FEN:"", score:3.79, to_move:"white"}),
+wa15-[:move {move:"Nf6"}]->wa16m,
+(wa16n:Position {FEN:"", score:3.91, to_move:"white"}),
+wa15-[:move {move:"h5"}]->wa16n,
+(wa17:Position {FEN:"r1b1k1nr/pp3pbp/1qnpp1p1/1B2P3/3N1P2/2N1B3/PPP3PP/R2QK2R b KQkq - 1 9", score:3.53, to_move:"black"}),
+gawf-[:contains {move:18}]->wa17,
+wa16-[:move {move:"Be3"}]->wa17,
+(wa18:Position {FEN:"r1b1k1nr/pp3pbp/1qn1p1p1/1B2p3/3N1P2/2N1B3/PPP3PP/R2QK2R w KQkq - 0 10", score:4.38, to_move:"white"}),
+gawf-[:contains {move:19}]->wa18,
+wa17-[:move {move:"dxe5"}]->wa18,
+(wa19:Position {FEN:"r1b1k1nr/pp3pbp/1qn1p1p1/1B2pN2/5P2/2N1B3/PPP3PP/R2QK2R b KQkq - 1 10", score:4.80, to_move:"black"}),
+gawf-[:contains {move:20}]->wa19,
+wa18-[:move {move:"Nf5"}]->wa19,
+(wa20:Position {FEN:"r1b1k1nr/ppq2pbp/2n1p1p1/1B2pN2/5P2/2N1B3/PPP3PP/R2QK2R w KQkq - 2 11", score:5.09, to_move:"white"}),
+gawf-[:contains {move:21}]->wa20,
+wa19-[:move {move:"Qc7"}]->wa20,
+(wa21:Position {FEN:"r1b1k1nr/ppq2pbp/2nNp1p1/1B2p3/5P2/2N1B3/PPP3PP/R2QK2R b KQkq - 3 11", score:0.50, to_move:"black"}),
+gawf-[:contains {move:22}]->wa21,
+wa20-[:move {move:"Nd6+"}]->wa21,
+(wa22:Position {FEN:"r1b3nr/ppq1kpbp/2nNp1p1/1B2p3/5P2/2N1B3/PPP3PP/R2QK2R w KQ - 4 12", score:6.56, to_move:"white"}),
+gawf-[:contains {move:23}]->wa22,
+wa21-[:move {move:"Ke7"}]->wa22,
+(wa23:Position {FEN:"r1b3nr/ppq1kpbp/2nNp1p1/1BB1p3/5P2/2N5/PPP3PP/R2QK2R b KQ - 5 12", score:6.58, to_move:"black"}),
+gawf-[:contains {move:24}]->wa23,
+wa22-[:move {move:"Bc5"}]->wa23,
+(wa24:Position {FEN:"r1b3nr/ppq1k1bp/2nNppp1/1BB1p3/5P2/2N5/PPP3PP/R2QK2R w KQ - 0 13", score:15.77, to_move:"white"}),
+gawf-[:contains {move:25}]->wa24,
+wa23-[:move {move:"f6"}]->wa24,
+(wa24a:Position {FEN:"r5nr/ppqbkpbp/2nNp1p1/1BB1p3/5P2/2N5/PPP3PP/R2QK2R w KQ - 6 13", score:6.86, to_move:"white"}),
+wa23-[:move {move:"Bd7"}]->wa24a,
+(wa24b:Position {FEN:"r1b3nr/ppq1kp1p/2nNpbp1/1BB1p3/5P2/2N5/PPP3PP/R2QK2R w KQ - 6 13", score:9.85, to_move:"white"}),
+wa23-[:move {move:"Bf6"}]->wa24b,
+(wa25:Position {FEN:"r1N3nr/ppq1k1bp/2n1ppp1/1BB1p3/5P2/2N5/PPP3PP/R2QK2R b KQ - 0 13", score:13.71, to_move:"black"}),
+gawf-[:contains {move:26}]->wa25,
+wa24-[:move {move:"Nxc8+"}]->wa25,
+(wa26:Position {FEN:"r1N3nr/ppq2kbp/2n1ppp1/1BB1p3/5P2/2N5/PPP3PP/R2QK2R w KQ - 1 14", score:14.42, to_move:"white"}),
+gawf-[:contains {move:27}]->wa26,
+wa25-[:move {move:"Kf7"}]->wa26,
+(wa27:Position {FEN:"r5nr/ppq2kbp/2nNppp1/1BB1p3/5P2/2N5/PPP3PP/R2QK2R b KQ - 2 14", score:14.14, to_move:"black"}),
+gawf-[:contains {move:28}]->wa27,
+wa26-[:move {move:"Nd6+"}]->wa27,
+(wa28:Position {FEN:"r4knr/ppq3bp/2nNppp1/1BB1p3/5P2/2N5/PPP3PP/R2QK2R w KQ - 3 15", score:14.94, to_move:"white"}),
+gawf-[:contains {move:29}]->wa28,
+wa27-[:move {move:"Kf8"}]->wa28,
+(wa29:Position {FEN:"r4knr/pNq3bp/2n1ppp1/1BB1p3/5P2/2N5/PPP3PP/R2QK2R b KQ - 0 15", score:8.52, to_move:"black"}),
+gawf-[:contains {move:30}]->wa29,
+wa28-[:move {move:"Nxb7+"}]->wa29,
+(wa29a:Position {FEN:"r4knr/ppq3bp/2nNppp1/1BBNp3/5P2/8/PPP3PP/R2QK2R b KQ - 4 15", score:14.94, to_move:"black"}),
+wa28-[:move {move:"Nd5"}]->wa29a,
+(wa30:Position {FEN:"r5nr/pNq2kbp/2n1ppp1/1BB1p3/5P2/2N5/PPP3PP/R2QK2R w KQ - 1 16", score:19.93, to_move:"white"}),
+gawf-[:contains {move:31}]->wa30,
+wa29-[:move {move:"Kf7"}]->wa30,
+(wa31:Position {FEN:"r5nr/p1q2kbp/2nNppp1/1BB1p3/5P2/2N5/PPP3PP/R2QK2R b KQ - 2 16", score:16.72, to_move:"black"}),
+gawf-[:contains {move:32}]->wa31,
+wa30-[:move {move:"Nd6+"}]->wa31,
+(wa32:Position {FEN:"r5nr/p1q1k1bp/2nNppp1/1BB1p3/5P2/2N5/PPP3PP/R2QK2R w KQ - 3 17", score:40.82, to_move:"white"}),
+gawf-[:contains {move:33}]->wa32,
+wa31-[:move {move:"Ke7"}]->wa32,
+(wa32a:Position {FEN:"r4knr/p1q3bp/2nNppp1/1BB1p3/5P2/2N5/PPP3PP/R2QK2R w KQ - 3 17", score:15.95, to_move:"white"}),
+wa31-[:move {move:"Kf8"}]->wa32a,
+(wa32b:Position {FEN:"r5nr/p4kbp/2nqppp1/1BB1p3/5P2/2N5/PPP3PP/R2QK2R w KQ - 0 17", score:26.72, to_move:"white"}),
+wa31-[:move {move:"Qxd6"}]->wa32b,
+(wa33:Position {FEN:"r5nr/p1q1k1bp/2n1ppp1/1BB1pN2/5P2/2N5/PPP3PP/R2QK2R b KQ - 4 17", score:17.65, to_move:"black"}),
+gawf-[:contains {move:34}]->wa33,
+wa32-[:move {move:"Nf5+"}]->wa33,
+(wa33a:Position {FEN:"r5nr/p1q1k1bp/2nNppp1/1BBNp3/5P2/8/PPP3PP/R2QK2R b KQ - 4 17", score:43.75, to_move:"black"}),
+wa32-[:move {move:"Nd5+"}]->wa33a,
+(wa34:Position {FEN:"r5nr/p1q2kbp/2n1ppp1/1BB1pN2/5P2/2N5/PPP3PP/R2QK2R w KQ - 5 18", score:18.86, to_move:"white"}),
+gawf-[:contains {move:35}]->wa34,
+wa33-[:move {move:"Kf7"}]->wa34,
+(wa35:Position {FEN:"r5nr/p1q2kNp/2n1ppp1/1BB1p3/5P2/2N5/PPP3PP/R2QK2R b KQ - 0 18", score:7.23, to_move:"black"}),
+gawf-[:contains {move:36}]->wa35,
+wa34-[:move {move:"Nxg7"}]->wa35,
+(wa35a:Position {FEN:"r5nr/p1q2kbp/2n1ppp1/1BBNpN2/5P2/8/PPP3PP/R2QK2R b KQ - 6 18", score:17.17, to_move:"black"}),
+wa34-[:move {move:"Nd5"}]->wa35a,
+(wa35b:Position {FEN:"r5nr/p1q2kbp/2nNppp1/1BB1p3/5P2/2N5/PPP3PP/R2QK2R b KQ - 6 18", score:14.58, to_move:"black"}),
+wa34-[:move {move:"Nd6"}]->wa35b,
+(wa36:Position {FEN:"r5nr/p1q3kp/2n1ppp1/1BB1p3/5P2/2N5/PPP3PP/R2QK2R w KQ - 0 19", score:6.96, to_move:"white"}),
+gawf-[:contains {move:37}]->wa36,
+wa35-[:move {move:"Kxg7"}]->wa36,
+(wa37:Position {FEN:"r5nr/p1q3kp/2n1ppp1/1BB1p3/5P2/2N2Q2/PPP3PP/R3K2R b KQ - 1 19", score:6.58, to_move:"black"}),
+gawf-[:contains {move:38}]->wa37,
+wa36-[:move {move:"Qf3"}]->wa37,
+(wa38:Position {FEN:"r6r/p1q1n1kp/2n1ppp1/1BB1p3/5P2/2N2Q2/PPP3PP/R3K2R w KQ - 2 20", score:7.21, to_move:"white"}),
+gawf-[:contains {move:39}]->wa38,
+wa37-[:move {move:"Nge7"}]->wa38,
+(wa39:Position {FEN:"r6r/p1q1B1kp/2n1ppp1/1B2p3/5P2/2N2Q2/PPP3PP/R3K2R b KQ - 0 20", score:6.46, to_move:"black"}),
+gawf-[:contains {move:40}]->wa39,
+wa38-[:move {move:"Bxe7"}]->wa39,
+(wa40:Position {FEN:"r6r/p1q1B1kp/4ppp1/1B2p3/3n1P2/2N2Q2/PPP3PP/R3K2R w KQ - 1 21", score:11.43, to_move:"white"}),
+gawf-[:contains {move:41}]->wa40,
+wa39-[:move {move:"Nd4"}]->wa40,
+(wa40a:Position {FEN:"r6r/p1q1n1kp/4ppp1/1B2p3/5P2/2N2Q2/PPP3PP/R3K2R w KQ - 0 21", score:6.84, to_move:"white"}),
+wa39-[:move {move:"Nxe7"}]->wa40a,
+(wa41:Position {FEN:"r6r/p1q3kp/4pBp1/1B2p3/3n1P2/2N2Q2/PPP3PP/R3K2R b KQ - 0 21", score:11.61, to_move:"black"}),
+gawf-[:contains {move:42}]->wa41,
+wa40-[:move {move:"Bxf6+"}]->wa41,
+(wa42:Position {FEN:"r6r/p1q4p/4pkp1/1B2p3/3n1P2/2N2Q2/PPP3PP/R3K2R w KQ - 0 22", score:12.00, to_move:"white"}),
+gawf-[:contains {move:43}]->wa42,
+wa41-[:move {move:"Kxf6"}]->wa42,
+(wa43:Position {FEN:"r6r/p1q4p/4pkp1/1B2P3/3n4/2N2Q2/PPP3PP/R3K2R b KQ - 0 22", score:12.04, to_move:"black"}),
+gawf-[:contains {move:44}]->wa43,
+wa42-[:move {move:"fxe5+"}]->wa43,
+(wa44:Position {FEN:"r6r/p1q3kp/4p1p1/1B2P3/3n4/2N2Q2/PPP3PP/R3K2R w KQ - 1 23", score:12.00, to_move:"white"}),
+gawf-[:contains {move:45}]->wa44,
+wa43-[:move {move:"Kg7"}]->wa44,
+(wa45:Position {FEN:"r6r/p1q3kp/4pQp1/1B2P3/3n4/2N5/PPP3PP/R3K2R b KQ - 2 23", score:12.26, to_move:"black"}),
+gawf-[:contains {move:46}]->wa45,
+wa44-[:move {move:"Qf6+"}]->wa45,
+(wa46:Position {FEN:"r5kr/p1q4p/4pQp1/1B2P3/3n4/2N5/PPP3PP/R3K2R w KQ - 3 24", score:12.00, to_move:"white"}),
+gawf-[:contains {move:47}]->wa46,
+wa45-[:move {move:"Kg8"}]->wa46,
+(wa47:Position {FEN:"r5kr/p1q4p/4pQp1/1B2P3/3n4/2N5/PPP3PP/2KR3R b - - 4 24", score:10.08, to_move:"black"}),
+gawf-[:contains {move:48}]->wa47,
+wa46-[:move {move:"O-O-O"}]->wa47,
+(wa48:Position {FEN:"5rkr/p1q4p/4pQp1/1B2P3/3n4/2N5/PPP3PP/2KR3R w - - 5 25", score:10.20, to_move:"white"}),
+gawf-[:contains {move:49}]->wa48,
+wa47-[:move {move:"Rf8"}]->wa48,
+(wa49:Position {FEN:"5rkr/p1q4p/4p1p1/1B2P1Q1/3n4/2N5/PPP3PP/2KR3R b - - 6 25", score:11.0, to_move:"black"}),
+gawf-[:contains {move:50}]->wa49,
+wa48-[:move {move:"Qg5"}]->wa49,
+(wa50:Position {FEN:"6kr/p1q4p/4p1p1/1B2PrQ1/3n4/2N5/PPP3PP/2KR3R w - - 7 26", score:14.16, to_move:"white"}),
+gawf-[:contains {move:51}]->wa50,
+wa49-[:move {move:"Rf5"}]->wa50,
+(wa51:Position {FEN:"6kr/p1q4p/4p1p1/1B2Pr2/3n3Q/2N5/PPP3PP/2KR3R b - - 8 26", score:14.02, to_move:"black"}),
+gawf-[:contains {move:52}]->wa51,
+wa50-[:move {move:"Qh4"}]->wa51,
+(wa52:Position {FEN:"6kr/p1q4p/4p1p1/1n2Pr2/7Q/2N5/PPP3PP/2KR3R w - - 0 27", score:16.34, to_move:"white"}),
+gawf-[:contains {move:53}]->wa52,
+wa51-[:move {move:"Nxb5"}]->wa52,
+(wa53:Position {FEN:"6kr/p1q4p/4p1p1/1N2Pr2/7Q/8/PPP3PP/2KR3R b - - 0 27", score:15.33, to_move:"black"}),
+gawf-[:contains {move:54}]->wa53,
+wa52-[:move {move:"Nxb5"}]->wa53,
+(wa54:Position {FEN:"6kr/p6p/4p1p1/1N2qr2/7Q/8/PPP3PP/2KR3R w - - 0 28", score:25.37, to_move:"white"}),
+gawf-[:contains {move:55}]->wa54,
+wa53-[:move {move:"Qxe5"}]->wa54,
+(wa55:Position {FEN:"3R2kr/p6p/4p1p1/1N2qr2/7Q/8/PPP3PP/2K4R b - - 1 28", score:12.64, to_move:"black"}),
+gawf-[:contains {move:56}]->wa55,
+wa54-[:move {move:"Rd8+"}]->wa55,
+(wa56:Position {FEN:"3R3r/p5kp/4p1p1/1N2qr2/7Q/8/PPP3PP/2K4R w - - 2 29", score:23.55, to_move:"white"}),
+gawf-[:contains {move:57}]->wa56,
+wa55-[:move {move:"Kg7"}]->wa56,
+(wa57:Position {FEN:"7R/p5kp/4p1p1/1N2qr2/7Q/8/PPP3PP/2K4R b - - 0 29", score:7.35, to_move:"black"}),
+gawf-[:contains {move:58}]->wa57,
+wa56-[:move {move:"Rxh8"}]->wa57,
+(wa57a:Position {FEN:"7r/p2R2kp/4p1p1/1N2qr2/7Q/8/PPP3PP/2K4R b - - 3 29", score:16.12, to_move:"black"}),
+wa56-[:move {move:"Rd7+"}]->wa57a,
+(wa58:Position {FEN:"7k/p6p/4p1p1/1N2qr2/7Q/8/PPP3PP/2K4R w - - 0 30", score:7.55, to_move:"white"}),
+gawf-[:contains {move:59}]->wa58,
+wa57-[:move {move:"Kxh8"}]->wa58,
+(wa59:Position {FEN:"3Q3k/p6p/4p1p1/1N2qr2/8/8/PPP3PP/2K4R b - - 1 30", score:6.26, to_move:"black"}),
+gawf-[:contains {move:60}]->wa59,
+wa58-[:move {move:"Qd8+"}]->wa59,
+(wa60:Position {FEN:"3Q4/p5kp/4p1p1/1N2qr2/8/8/PPP3PP/2K4R w - - 2 31", score:6.42, to_move:"white"}),
+gawf-[:contains {move:61}]->wa60,
+wa59-[:move {move:"Kg7"}]->wa60,
+(wa61:Position {FEN:"3Q4/p5kp/4p1p1/4qr2/8/2N5/PPP3PP/2K4R b - - 3 31", score:6.50, to_move:"black"}),
+gawf-[:contains {move:62}]->wa61,
+wa60-[:move {move:"Nc3"}]->wa61,
+(wa62:Position {FEN:"3Q4/p5kp/4p1p1/5r2/8/2N1q3/PPP3PP/2K4R w - - 4 32", score:6.66, to_move:"white"}),
+gawf-[:contains {move:63}]->wa62,
+wa61-[:move {move:"Qe3+"}]->wa62,
+(wa63:Position {FEN:"8/p5kp/4p1p1/5r2/8/2N1q3/PPPQ2PP/2K4R b - - 5 32", score:6.06, to_move:"black"}),
+gawf-[:contains {move:64}]->wa63,
+wa62-[:move {move:"Qd2"}]->wa63,
+(wa64:Position {FEN:"8/p5kp/4p1p1/5r2/8/2N5/PPPq2PP/2K4R w - - 0 33", score:6.26, to_move:"white"}),
+gawf-[:contains {move:65}]->wa64,
+wa63-[:move {move:"Qxd2"}]->wa64,
+(wa65:Position {FEN:"8/p5kp/4p1p1/5r2/8/2N5/PPPK2PP/7R b - - 0 33", score:6.38, to_move:"black"}),
+gawf-[:contains {move:66}]->wa65,
+wa64-[:move {move:"Kxd2"}]->wa65,
+(wa66:Position {FEN:"8/p5kp/4p1p1/8/8/2N5/PPPK1rPP/7R w - - 1 34", score:6.30, to_move:"white"}),
+gawf-[:contains {move:67}]->wa66,
+wa65-[:move {move:"Rf2+"}]->wa66,
+(wa67:Position {FEN:"8/p5kp/4p1p1/8/8/2NK4/PPP2rPP/7R b - - 2 34", score:6.90, to_move:"black"}),
+gawf-[:contains {move:68}]->wa67,
+wa66-[:move {move:"Kd3"}]->wa67,
+(wa68:Position {FEN:"8/p5kp/4p1p1/8/8/2NK4/PPP3rP/7R w - - 0 35", score:6.30, to_move:"white"}),
+gawf-[:contains {move:69}]->wa68,
+wa67-[:move {move:"Rxg2"}]->wa68,
+(wa69:Position {FEN:"8/p5kp/4p1p1/8/1P6/2NK4/P1P3rP/7R b - - 0 35", score:6.94, to_move:"black"}),
+gawf-[:contains {move:70}]->wa69,
+wa68-[:move {move:"b4"}]->wa69,
+(wa70:Position {FEN:"8/p6p/4pkp1/8/1P6/2NK4/P1P3rP/7R w - - 1 36", score:8.92, to_move:"white"}),
+gawf-[:contains {move:71}]->wa70,
+wa69-[:move {move:"Kf6"}]->wa70,
+(wa71:Position {FEN:"8/p6p/4pkp1/8/1P6/2NK4/P1P3rP/5R2 b - - 2 36", score:6.06, to_move:"black"}),
+gawf-[:contains {move:72}]->wa71,
+wa70-[:move {move:"Rf1+"}]->wa71,
+(wa72:Position {FEN:"8/p3k2p/4p1p1/8/1P6/2NK4/P1P3rP/5R2 w - - 3 37", score:6.86, to_move:"white"}),
+gawf-[:contains {move:73}]->wa72,
+wa71-[:move {move:"Ke7"}]->wa72,
+(wa73:Position {FEN:"8/p3k2p/4p1p1/1N6/1P6/3K4/P1P3rP/5R2 b - - 4 37", score:7.01, to_move:"black"}),
+gawf-[:contains {move:74}]->wa73,
+wa72-[:move {move:"Nb5"}]->wa73,
+(wa74:Position {FEN:"8/p3k2p/4p1p1/1N6/1P6/3K4/P1P4r/5R2 w - - 0 38", score:7.41, to_move:"white"}),
+gawf-[:contains {move:75}]->wa74,
+wa73-[:move {move:"Rxh2"}]->wa74,
+(wa75:Position {FEN:"8/N3k2p/4p1p1/8/1P6/3K4/P1P4r/5R2 b - - 0 38", score:7.41, to_move:"black"}),
+gawf-[:contains {move:76}]->wa75,
+wa74-[:move {move:"Nxa7"}]->wa75,
+(wa76:Position {FEN:"8/N3k2p/4p1p1/8/1P6/3K3r/P1P5/5R2 w - - 1 39", score:7.41, to_move:"white"}),
+gawf-[:contains {move:77}]->wa76,
+wa75-[:move {move:"Rh3"}]->wa76,
+(wa77:Position {FEN:"8/N3k2p/4p1p1/8/1PK5/7r/P1P5/5R2 b - - 2 39", score:7.41, to_move:"black"}),
+gawf-[:contains {move:78}]->wa77,
+wa76-[:move {move:"Kc4"}]->wa77,
+(wa78:Position {FEN:"8/N3k2p/4p1p1/8/1PK5/r7/P1P5/5R2 w - - 3 40", score:9.89, to_move:"white"}),
+gawf-[:contains {move:79}]->wa78,
+wa77-[:move {move:"Ra3"}]->wa78,
+(wa79:Position {FEN:"8/4k2p/2N1p1p1/8/1PK5/r7/P1P5/5R2 b - - 4 40", score:10.06, to_move:"black"}),
+gawf-[:contains {move:80}]->wa79,
+wa78-[:move {move:"Nc6+"}]->wa79,
+(wa80:Position {FEN:"8/7p/2Nkp1p1/8/1PK5/r7/P1P5/5R2 w - - 5 41", score:12.58, to_move:"white"}),
+gawf-[:contains {move:81}]->wa80,
+wa79-[:move {move:"Kd6"}]->wa80,
+(wa81:Position {FEN:"8/7p/3kp1p1/N7/1PK5/r7/P1P5/5R2 b - - 6 41", score:7.03, to_move:"black"}),
+gawf-[:contains {move:82}]->wa81,
+wa80-[:move {move:"Na5"}]->wa81,
+(wa81a:Position {FEN:"8/7p/2Nkp1p1/1P6/2K5/r7/P1P5/5R2 b - - 0 41", score:11.27, to_move:"black"}),
+wa80-[:move {move:"b5"}]->wa81a,
+(wa82:Position {FEN:"8/7p/3kp3/N5p1/1PK5/r7/P1P5/5R2 w - - 0 42", score:7.33, to_move:"white"}),
+gawf-[:contains {move:83}]->wa82,
+wa81-[:move {move:"g5"}]->wa82,
+(wa83:Position {FEN:"8/7p/3kp3/N5p1/1PK5/r7/P1P5/7R b - - 1 42", score:7.73, to_move:"black"}),
+gawf-[:contains {move:84}]->wa83,
+wa82-[:move {move:"Rh1"}]->wa83,
+(wa84:Position {FEN:"8/7p/4p3/N3k1p1/1PK5/r7/P1P5/7R w - - 2 43", score:8.98, to_move:"white"}),
+gawf-[:contains {move:85}]->wa84,
+wa83-[:move {move:"Ke5"}]->wa84,
+(wa85:Position {FEN:"8/7R/4p3/N3k1p1/1PK5/r7/P1P5/8 b - - 0 43", score:9.11, to_move:"black"}),
+gawf-[:contains {move:86}]->wa85,
+wa84-[:move {move:"Rxh7"}]->wa85,
+(wa86:Position {FEN:"8/7R/4p3/N3k1p1/1PK5/8/r1P5/8 w - - 0 44", score:8.42, to_move:"white"}),
+gawf-[:contains {move:87}]->wa86,
+wa85-[:move {move:"Rxa2"}]->wa86,
+(wa87:Position {FEN:"8/7R/4p3/N3k1p1/1P6/1K6/r1P5/8 b - - 1 44", score:8.48, to_move:"black"}),
+gawf-[:contains {move:88}]->wa87,
+wa86-[:move {move:"Kb3"}]->wa87,
+(wa88:Position {FEN:"8/7R/4p3/N3k1p1/1P6/1K6/2P5/r7 w - - 2 45", score:13.59, to_move:"white"}),
+gawf-[:contains {move:89}]->wa88,
+wa87-[:move {move:"Ra1"}]->wa88,
+(wa89:Position {FEN:"8/7R/4p3/N3k1p1/1P6/8/1KP5/r7 b - - 3 45", score:13.59, to_move:"black"}),
+gawf-[:contains {move:90}]->wa89,
+wa88-[:move {move:"Kb2"}]->wa89,
+(wa90:Position {FEN:"8/7R/4p3/N3k1p1/1P6/8/1KP5/4r3 w - - 4 46", score:77.08, to_move:"white"}),
+gawf-[:contains {move:91}]->wa90,
+wa89-[:move {move:"Re1"}]->wa90,
+(wa91:Position {FEN:"8/6R1/4p3/N3k1p1/1P6/8/1KP5/4r3 b - - 5 46", score:8.42, to_move:"black"}),
+gawf-[:contains {move:92}]->wa91,
+wa90-[:move {move:"Rg7"}]->wa91
+;
+----
+
+//graph
+=== Here is the one of my games for analysis
+I managed to squeek out a win, but it makes for an interesting game to look at because both of us made so many blunders.
+
+++++
+<link rel="stylesheet" type="text/css" href="http://www4.skeweredrook.com/chess-replayer/css/chess-replayer.css"/>
+<script>
+(function() {
+    // Load the script
+    var script = document.createElement("SCRIPT");
+    script.src = 'http://www4.skeweredrook.com/chess-replayer/js/jquery.chess-replayer.min.js';
+    script.type = 'text/javascript';
+    document.getElementsByTagName("head")[0].appendChild(script);
+
+    // Poll for replayer
+    var checkReady = function(callback) {
+        if (jQuery().replayer) {
+            callback(jQuery);
+        }
+        else {
+            window.setTimeout(function() { checkReady(callback); }, 1000);
+        }
+    };
+
+    checkReady(function($) {
+        $('.chess').replayer({
+          size: 'small',
+          lightColor: "#F0F0FF",
+          darkColor: "#00BB99"
+        });
+    });
+})();
+</script>
+<div class="chess">
+[Event "Fairfax Open"]
+[Round "2"]
+[White "Wes"]
+[Black "Alvin"]
+[Result "1-0"]
+
+1.e4 c5 2.Nf3 Nc6 3.d4 cxd4 4.Nxd4 g6 5.f4 Bg7 6.e5 d6 7.Bb5 Qb6 8.Nc3 e6 
+9.Be3 dxe5 10.Nf5 Qc7 11.Nd6+ Ke7 12.Bc5 f6 13.Nxc8+ Kf7 14.Nd6+ Kf8 15.
+Nxb7+ Kf7 16.Nd6+ Ke7 17.Nf5+ Kf7 18.Nxg7 Kxg7 19.Qf3 Nge7 20.Bxe7 Nd4 21.
+Bxf6+ Kxf6 22.fxe5+ Kg7 23.Qf6+ Kg8 24.O-O-O Rf8 25.Qg5 Rf5 26.Qh4 Nxb5 
+27.Nxb5 Qxe5 28.Rd8+ Kg7 29.Rxh8 Kxh8 30.Qd8+ Kg7 31.Nc3 Qe3+ 32.Qd2 Qxd2+
+33.Kxd2 Rf2+ 34.Kd3 Rxg2 35.b4 Kf6 36.Rf1+ Ke7 37.Nb5 Rxh2 38.Nxa7 Rh3+ 
+39.Kc4 Ra3 40.Nc6+ Kd6 41.Na5 g5 42.Rh1 Ke5 43.Rxh7 Rxa2 44.Kb3 Ra1 45.Kb2
+Re1 46.Rg7 Kf4 47.c4 g4 48.c5 Re2+ 49.Kc3 Re3+ 50.Kc4 Re1 51.c6 g3 52.Kc5 
+Rd1 53.c7 e5 54.c8=Q Rc1+ 55.Nc4 Kf3 56.Qg4+ Kf2 57.Qxg3+ Ke2 58.Qe3+ Kd1 
+59.Qd2# *
+</div>
+++++
+
+=== Get the list of moves in a game
+This requires matching positions in a game twice to make sure they are in the game when finding which move was made between them. The score here is what Stockfish thinks is the state of the position, unit of measure is pawns. 3 pawns = knight/bishop, 5 pawns = rook, 9 pawns = queen. Positive score means white is winning, and negative score means black is winning (at least, based on this basic calculation). Typically, a score very near 0 means that the game looks about even.
+
+//output
+[source,cypher]
+----
+MATCH (game:Game)-[c:contains]->(position:Position)
+WHERE game.title="Wes vs Alvin" 
+WITH game, collect(position) AS positions 
+MATCH (game)-[c:contains]->(position:Position) 
+WITH positions, c, position 
+ORDER BY c.move ASC 
+MATCH (position)-[m:move]->(next) 
+WHERE next IN (positions) 
+RETURN (c.move+1)/2 as move, position.to_move as player, m.move, next.score as score
+LIMIT 20
+----
+
+=== Get the blunders in a game
+Similar query, but we can figure out which moves either missed a good move or were awful. Assuming that a difference of score from one move to the next of >3 means a player missed something, we show just those moves along with the score difference and the resulting score.
+
+//output
+[source,cypher]
+----
+MATCH (game:Game)-[c:contains]->(position:Position)
+WHERE game.title="Wes vs Alvin" 
+WITH game, collect(position) AS positions 
+MATCH game-[c:contains]->(position:Position) 
+WITH positions, c, position 
+ORDER BY c.move ASC 
+MATCH position-[m:move]->next 
+WHERE next IN (positions)
+and abs(position.score - next.score) > 3.0
+RETURN (c.move+1)/2 as move, position.to_move as player, m.move, (position.score - next.score) as score_diff, next.score as resulting_score
+----
+
+=== Find better moves, based on blunders query
+
+//output
+[source,cypher]
+----
+MATCH (game:Game)-[c:contains]->(position:Position)
+WHERE game.title="Wes vs Alvin" 
+WITH game, collect(position) AS positions 
+MATCH (game)-[c:contains]->(position:Position) 
+WITH positions, c, position 
+ORDER BY c.move ASC 
+MATCH (position)-[m:move]->(next) 
+WHERE next IN positions
+and abs(position.score - next.score) > 3.0
+WITH positions, position, next, m, c
+MATCH (position)-[better:move]->(better_next)
+WHERE NOT(better_next IN positions)
+WITH position, next, better_next, better, m, c, 
+  case when position.to_move = "black" then better_next.score < next.score
+  else better_next.score > next.score end as score_filter
+WHERE score_filter = true
+RETURN (c.move+1)/2 as move, position.to_move as player, m.move as actual_move,next.score as resulting_score, collect([better.move, better_next.score])[..3] as better_moves_and_scores
+ORDER BY move asc, player desc
+----
+
+=== Get some overall statistics for a game
+Let's see what the average score was, along with a standard deviation and 25th/50th/75th percentile. Apparently I enjoyed a winning game, although the stdev shows it was a wild ride.
+
+//output
+[source,cypher]
+----
+MATCH (game:Game)-[c:contains]->(position:Position)
+WHERE game.title="Wes vs Alvin" 
+WITH game, collect(position) AS positions 
+MATCH (game)-[c:contains]->(position:Position) 
+WITH positions, c, position 
+ORDER BY c.move ASC 
+MATCH (position)-[m:move]->(next) 
+WHERE next IN (positions)
+RETURN avg(next.score), stdev(next.score), percentileDisc(next.score, 0.25) as first_quartile, percentileDisc(next.score, 0.5) as median, percentileDisc(next.score, 0.75) as third_quartile
+----
+
+=== Ok, let's see these queries against a famous grandmaster game
+Kasparov's Immortal, they called it. Let's see what Stockfish and Neo4j can help us see about the game.
+
+++++
+<div class="chess">
+[Event "It (cat.17), Wijk aan Zee (Netherlands) 1999"]
+[White "Garry Kasparov"]
+[Black "Veselin Topalov"]
+[Result "1-0"]
+
+1. e4 d6 2. d4 Nf6 3. Nc3 g6 4. Be3 Bg7 5. Qd2 c6 6. f3 b5 7. Nge2 Nbd7 8. Bh6 Bxh6 9. Qxh6 Bb7 10. a3 e5 11. O-O-O Qe7 12. Kb1 a6 13. Nc1 O-O-O 14. Nb3 exd4 15. Rxd4 c5 16. Rd1 Nb6 17. g3 Kb8 18. Na5 Ba8 19. Bh3 d5 20. Qf4 Ka7 21. Rhe1 d4 22. Nd5 Nbxd5 23. exd5 Qd6 24. Rxd4 cxd4 25. Re7 Kb6 26. Qxd4 Kxa5 27. b4 Ka4 28. Qc3 Qxd5 29. Ra7 Bb7 30. Rxb7 Qc4 31. Qxf6 Kxa3 32. Qxa6 Kxb4 33. c3 Kxc3 34. Qa1 Kd2 35. Qb2 Kd1 36. Bf1 Rd2 37. Rd7 Rxd7 38. Bxc4 bxc4 39. Qxh8 Rd3 40. Qa8 c3 41. Qa4 Ke1 42. f4 f5 43. Kc1 Rd2 44. Qa7
+</div>
+++++
+
+=== See the list of moves from Kasparov vs Topalov
+//output
+[source,cypher]
+----
+MATCH (game:Game)-[c:contains]->(position:Position)
+WHERE game.title="Kasparov vs Topalov" 
+WITH game, collect(position) AS positions 
+MATCH game-[c:contains]->(position:Position) 
+WITH positions, c, position 
+ORDER BY c.move ASC 
+MATCH position-[m:move]->next 
+WHERE next IN (positions) 
+RETURN (c.move+1)/2 as move, position.to_move as player, m.move, next.score as score
+----
+
+=== Get the blunders in Kasparov vs Topalov
+I have a sense that there were no real blunders in their game, but let's try this query, and if we get few results, we can loosen our filter to see when at least a pawn worth of difference happened.
+
+//output
+[source,cypher]
+----
+MATCH (game:Game)-[c:contains]->(position:Position)
+WHERE game.title="Kasparov vs Topalov" 
+WITH game, collect(position) AS positions 
+MATCH game-[c:contains]->(position:Position) 
+WITH positions, c, position 
+ORDER BY c.move ASC 
+MATCH position-[m:move]->next 
+WHERE next IN (positions)
+and abs(position.score - next.score) > 3.0
+RETURN (c.move+1)/2 as move, position.to_move as player, m.move, (position.score - next.score) as score_diff, next.score as resulting_score 
+----
+
+Here is the query with just 1 pawn of difference filtered.
+
+//output
+[source,cypher]
+----
+MATCH (game:Game)-[c:contains]->(position:Position)
+WHERE game.title="Kasparov vs Topalov" 
+WITH game, collect(position) AS positions 
+MATCH game-[c:contains]->(position:Position) 
+WITH positions, c, position 
+ORDER BY c.move ASC 
+MATCH position-[m:move]->next 
+WHERE next IN (positions)
+and abs(position.score - next.score) > 1.0
+RETURN (c.move+1)/2 as move, position.to_move as player, m.move, (position.score - next.score) as score_diff, next.score as resulting_score 
+----
+
+=== Find better moves, based on blunders query
+This query doesn't find many alternatives, the 31. ... Rd1+ move is probably the only move that would have made this game harder for Kasparov to win. 
+
+//output
+[source,cypher]
+----
+MATCH (game:Game)-[c:contains]->(position:Position)
+WHERE game.title="Kasparov vs Topalov" 
+WITH game, collect(position) AS positions 
+MATCH (game)-[c:contains]->(position:Position) 
+WITH positions, c, position 
+ORDER BY c.move ASC 
+MATCH (position)-[m:move]->(next) 
+WHERE next IN positions
+and abs(position.score - next.score) > 1.0
+WITH positions, position, next, m, c
+MATCH (position)-[better:move]->(better_next)
+WHERE NOT(better_next IN positions)
+WITH position, next, better_next, better, m, c, 
+  case when position.to_move = "black" then better_next.score < next.score
+  else better_next.score > next.score end as score_filter
+WHERE score_filter = true
+RETURN (c.move+1)/2 as move, position.to_move as player, m.move as actual_move,next.score as resulting_score, collect([better.move, better_next.score]) as better_moves_and_scores
+ORDER BY move asc, player desc
+----
+
+=== Overall statistics from a GM-level game
+I have a feeling this will show a low stdev and average closer to zero.
+
+//output
+[source,cypher]
+----
+MATCH (game:Game)-[c:contains]->(position:Position)
+WHERE game.title="Kasparov vs Topalov" 
+WITH game, collect(position) AS positions 
+MATCH game-[c:contains]->(position:Position) 
+WITH positions, c, position 
+ORDER BY c.move ASC 
+MATCH position-[m:move]->next 
+WHERE next IN (positions)
+RETURN avg(next.score), stdev(next.score), percentileDisc(next.score, 0.25) as first_quartile, percentileDisc(next.score, 0.5) as median, percentileDisc(next.score, 0.75) as third_quartile
+----
+
+=== Let's try another more generic type of query, best moves for a position
+==== black to move
+++++
+<div class="chess"  data-replayer-options='{"boardOnly":"true"}'>
+[Event "Fairfax Open"]
+[Round "2"]
+[White "Wes"]
+[Black "Alvin"]
+[Result "1-0"]
+[SetUp "1"]
+[FEN "r1b1k1nr/pp2ppbp/1qnp2p1/1B2P3/3N1P2/2N5/PPP3PP/R1BQK2R b KQkq - 3 8"]
+
+*
+</div>
+++++
+
+//output
+[source,cypher]
+----
+Match (pos:Position)-[m:move]->next
+WHERE pos.FEN="r1b1k1nr/pp2ppbp/1qnp2p1/1B2P3/3N1P2/2N5/PPP3PP/R1BQK2R b KQkq - 3 8"
+RETURN pos.to_move, m.move, next.score
+ORDER by case when pos.to_move = "black" then next.score
+         else 0-next.score end
+----
+
+With a big enough database, you might imagine that a chess engine could be built from this sort of data. :) Ok, that's all for now!
+
+Thanks to: 
+
+* Andrew Hoy for his awesome link:http://andrewphoy.github.io/chess-replayer/[Chess Replayer]
+* Alistair Jones for his great link:http://www.apcjones.com/arrows/[Arrows] tool.
+* Neo4j for the stuff this is made for!

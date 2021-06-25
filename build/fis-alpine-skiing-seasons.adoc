@@ -1,0 +1,370 @@
+= FIS Alpine Skiing seasons
+
+:neo4j-version: 2.1
+:author: Patrick Ceppi
+:twitter: @pac_19
+
+== Introduction
+
+I was interested on playing with Neo4j with some real data and so I grabbed some from the http://www.fis-ski.com/alpine-skiing[FIS site] and tried to play with it. The outcome is a graph that stores the results of alpine skiing races. 
+
+The idea is to have a graph that is easy to navigate: you can start from the +Alpine skiing+ node, then go to +Ladies+, then to the +current season+ and then to the +first race+, then to the +next race+, and so on. Every race has its type (Downhill, Slalom , Giant Slalom , Super G, Super Combined) and location. Athletes are connected to the races through their results. Seasons, races and results are linked lists.
+
+2014 will be the year of the XXII winter olympic games in Sochi. Go Switzerland!
+
+=== Graph model
+
+image::https://docs.google.com/drawings/d/1Wiue3RRsqenQm60trFDZgC3leeFzrFEGnlAigJnSXjg/pub?w=960&h=720[]
+
+== The graph
+
+//hide
+//setup
+[source,cypher]
+----
+CREATE (lara:Athlete { firstname : 'Lara', lastname : 'Gut' }),
+ (tina:Athlete { firstname : 'Tina', lastname : 'Weirather' }),
+ (anna:Athlete { firstname : 'Anna', lastname : 'Fenninger' }),
+ (kat:Athlete { firstname : 'Kathrin', lastname : 'Zettel' }),
+ (vik:Athlete { firstname : 'Viktoria', lastname : 'Rebensburg' }),
+ (nic:Athlete { firstname : 'Nicole', lastname : 'Hosp' }),
+ (mik:Athlete { firstname : 'Mikaela', lastname : 'Shiffrin' }),
+ (maria:Athlete { firstname : 'Maria', lastname : 'Hoefl-Riesch' }),
+ (maze:Athlete { firstname : 'Tina', lastname : 'Maze' }),
+ (ele:Athlete { firstname : 'Elena', lastname : 'Fanchini' }),
+ (sui:Country { name : 'SUI' }),
+ (lie:Country { name : 'LIE' }),
+ (aut:Country { name : 'AUT' }),
+ (ger:Country { name : 'GER' }),
+ (slo:Country { name : 'SLO' }),
+ (usa:Country { name : 'USA' }),
+ (ita:Country { name : 'ITA' }),
+ (r1:Race { id:1, date:'26/10/2013' }),
+ (soe:Location { name:'Soelden' }),
+ (levi:Location { name:'Levi' }),
+ (cree:Location { name:'Beaver Creek' }),
+ (gs:Type { name:'Giant Slalom' }),
+ (lad:Gender { name:'Ladies' }),
+ (men:Gender { name:'Men' }),
+ (d:Discipline { name:'FIS Alpine Skiing' }),
+ (s1:Season { name: '2013/14' }),
+ (s2:Season { name: '2012/13' }),
+ (r1t1:Result { time: '2:25.16' }),
+ (r1t2:Result { time: '2:26.00' }),
+ (r1t3:Result { time: '2:26.44' }),
+ (r1t4:Result { time: '2:26.57' }),
+ (d)-[:HAS]->(lad),
+ (d)-[:HAS]->(men),
+ (lad)-[:CURRENT_SEASON]->(s1),
+ (s1)-[:PREVIOUS_SEASON]->(s2),
+ (s1)-[:FIRST_RACE]->(r1),
+ (lara)-[:RACES_FOR]->(sui),
+ (tina)-[:RACES_FOR]->(lie),
+ (anna)-[:RACES_FOR]->(aut),
+ (kat)-[:RACES_FOR]->(aut),
+ (vik)-[:RACES_FOR]->(ger),
+ (r1)-[:IN]->(soe),
+ (r1)-[:IS_A]->(gs),
+ (r1t1)-[:FINISHED{diff:0}]->(r1),
+ (lara)-[:FINISHED_AT]->(r1t1),
+ (r1t2)-[:FINISHED{diff:84}]->(r1t1),
+ (kat)-[:FINISHED_AT]->(r1t2),
+ (r1t3)-[:FINISHED{diff:44}]->(r1t2),
+ (vik)-[:FINISHED_AT]->(r1t3),
+ (r1t4)-[:FINISHED{diff:13}]->(r1t3),
+ (anna)-[:FINISHED_AT]->(r1t4),
+ (r2:Race { id:2, date:'16/11/2013' }),
+ (s:Type { name:'Slalom' }),
+ (r2t1:Result { time: '1:55.07' }),
+ (r2t2:Result { time: '1:56.13' }),
+ (r2t3:Result { time: '1:56.68' }),
+ (maria)-[:RACES_FOR]->(ger),
+ (maze)-[:RACES_FOR]->(slo),
+ (mik)-[:RACES_FOR]->(usa),
+ (r2)-[:IN]->(levi),
+ (r2)-[:IS_A]->(s),
+ (r1)-[:NEXT_RACE]->(r2),
+ (r2t1)-[:FINISHED{diff:0}]->(r2),
+ (mik)-[:FINISHED_AT]->r2t1,
+ (r2t2)-[:FINISHED{diff:106}]->(r2t1),
+ (maria)-[:FINISHED_AT]->(r2t2),
+ (r2t3)-[:FINISHED{diff:55}]->(r2t2),
+ (maze)-[:FINISHED_AT]->r2t3,
+ (r3:Race { id:3, date:'29/11/2013' }),
+ (down:Type { name:'Downhill' }),
+ (r3t1:Result { time: '1:41.26' }),
+ (r3t2:Result { time: '1:41.73' }),
+ (r3t3:Result { time: '1:42.24' }),
+ (ele)-[:RACES_FOR]->(ita),
+ (r3)-[:IN]->(cree),
+ (r3)-[:IS_A]->(down),
+ (r2)-[:NEXT_RACE]->(r3),
+ (r3t1)-[:FINISHED{diff:0}]->(r3),
+ (lara)-[:FINISHED_AT]->r3t1,
+ (r3t2)-[:FINISHED{diff:47}]->(r3t1),
+ (tina)-[:FINISHED_AT]->r3t2,
+ (r3t3)-[:FINISHED{diff:51}]->(r3t2),
+ (ele)-[:FINISHED_AT]->r3t3,
+ (r4:Race { id:4, date:'30/11/2013' }),
+ (sg:Type { name:'Super G' }),
+ (r4t1:Result { time: '1:18.42' }),
+ (r4t2:Result { time: '1:19.34' }),
+ (r4t3:Result { time: '1:19.53' }),
+ (nic)-[:RACES_FOR]->(aut),
+ (r4)-[:IN]->(cree),
+ (r4)-[:IS_A]->(sg),
+ (r3)-[:NEXT_RACE]->(r4),
+ (r4t1)-[:FINISHED{diff:0}]->(r4),
+ (lara)-[:FINISHED_AT]->r4t1,
+ (r4t2)-[:FINISHED{diff:92}]->(r4t1),
+ (anna)-[:FINISHED_AT]->r4t2,
+ (r4t3)-[:FINISHED{diff:19}]->(r4t2),
+ (nic)-[:FINISHED_AT]->r4t3
+
+----
+
+//graph
+
+== Use cases
+
+=== Current season ladies calendar
+[source,cypher]
+----
+MATCH (g:Gender)-[:CURRENT_SEASON]->(s:Season)-[*]->(r:Race)
+where g.name = 'Ladies'
+match r-[:IS_A]->(t), r-[:IN]->(l)
+return r.date as date, l.name as location, t.name as type
+----
+//table
+
+=== Ranking by race
+[source,cypher]
+----
+MATCH (r:Race)
+where r.date = '29/11/2013'
+match r<-[time:FINISHED*]-(f)<-[:FINISHED_AT]-(racer)
+with racer, f, time, reduce(totalDiff = 0, n IN time| totalDiff + n.diff) as diff
+return length(time) as rank, racer.firstname+" "+racer.lastname as racer, f.time as time, "+"+diff as diff
+----
+//table
+
+=== Ladies overall leader board current season
+[source,cypher]
+----
+MATCH (g:Gender)-[:CURRENT_SEASON]->(s:Season)-[*]->(r:Race)
+Where g.name = 'Ladies'
+with r
+MATCH (n:Athlete)
+MATCH p = allShortestPaths((n)-[:FINISHED_AT|:FINISHED*]->(r))
+WITH length(relationships(p))-1 as c, p
+WITH CASE
+WHEN c < 4
+THEN 100-((c-1)*20)
+WHEN c < 7
+THEN 50-((c-4)*5)
+WHEN c = 7
+THEN 36
+WHEN c < 11
+THEN 32-((c-8)*3)
+WHEN c < 16
+THEN 24 -((c-11)*2)
+WHEN c < 31
+THEN 31-c
+ELSE 0  END AS result, p
+return distinct(head(nodes(p)).firstname+' '+head(nodes(p)).lastname) as racer , sum(result) as points order by points desc
+----
+//table
+
+*Another way to calculate ranking points*
+
+Added a second graph with the ranking points. Every node is a ranking position, with its related points. Doing so, the association between rank and points is no more in the query, but in the database.
+
+image::https://docs.google.com/drawings/d/1kLvnFi01GtHbLprUwMMru1Clsu4e6Ch2wKvMLqKAOto/pub?w=922&h=252[]
+
+//hide
+//setup
+[source,cypher]
+----
+CREATE (rp1:Rankpoints { label:"1", points:100 }),
+ (rp2:Rankpoints { label:"2", points:80 }),
+ (rp3:Rankpoints { label:"3", points:60 }),
+ (rp4:Rankpoints { label:"4", points:50 }),
+ (rp5:Rankpoints { label:"5", points:45 }),
+ (rp6:Rankpoints { label:"6", points:40 }),
+ (rp7:Rankpoints { label:"7", points:36 }),
+ (rp8:Rankpoints { label:"8", points:32 }),
+ (rp9:Rankpoints { label:"8", points:29 }),
+ (rp10:Rankpoints { label:"8", points:26 }),
+ (rp11:Rankpoints { label:"8", points:24 }),
+ (rp12:Rankpoints { label:"8", points:22 }),
+ (rp13:Rankpoints { label:"8", points:20 }),
+ (rp14:Rankpoints { label:"8", points:18 }),
+ (rp15:Rankpoints { label:"8", points:16 }),
+ (rp16:Rankpoints { label:"8", points:15 }),
+ (rp17:Rankpoints { label:"8", points:14 }),
+ (rp18:Rankpoints { label:"8", points:13 }),
+ (rp19:Rankpoints { label:"8", points:12 }),
+ (rp20:Rankpoints { label:"8", points:11 }),
+ (rp21:Rankpoints { label:"8", points:10 }),
+ (rp22:Rankpoints { label:"8", points:9 }),
+ (rp23:Rankpoints { label:"8", points:8 }),
+ (rp24:Rankpoints { label:"8", points:7 }),
+ (rp25:Rankpoints { label:"8", points:6 }),
+ (rp26:Rankpoints { label:"8", points:5 }),
+ (rp27:Rankpoints { label:"8", points:4 }),
+ (rp28:Rankpoints { label:"8", points:3 }),
+ (rp29:Rankpoints { label:"8", points:2 }),
+ (rp30:Rankpoints { label:"8", points:1 }),
+ 
+ (rp2)-[:ARRIVED_AFTER]->(rp1),
+ (rp3)-[:ARRIVED_AFTER]->(rp2),
+ (rp4)-[:ARRIVED_AFTER]->(rp3),
+ (rp5)-[:ARRIVED_AFTER]->(rp4),
+ (rp6)-[:ARRIVED_AFTER]->(rp5),
+ (rp7)-[:ARRIVED_AFTER]->(rp6),
+ (rp8)-[:ARRIVED_AFTER]->(rp7),
+ (rp9)-[:ARRIVED_AFTER]->(rp8),
+ (rp10)-[:ARRIVED_AFTER]->(rp9),
+ (rp11)-[:ARRIVED_AFTER]->(rp10),
+ (rp12)-[:ARRIVED_AFTER]->(rp11),
+ (rp13)-[:ARRIVED_AFTER]->(rp12),
+ (rp14)-[:ARRIVED_AFTER]->(rp13),
+ (rp15)-[:ARRIVED_AFTER]->(rp14),
+ (rp16)-[:ARRIVED_AFTER]->(rp15),
+ (rp17)-[:ARRIVED_AFTER]->(rp16),
+ (rp18)-[:ARRIVED_AFTER]->(rp17),
+ (rp19)-[:ARRIVED_AFTER]->(rp18),
+ (rp20)-[:ARRIVED_AFTER]->(rp19),
+ (rp21)-[:ARRIVED_AFTER]->(rp20),
+ (rp22)-[:ARRIVED_AFTER]->(rp21),
+ (rp23)-[:ARRIVED_AFTER]->(rp22),
+ (rp24)-[:ARRIVED_AFTER]->(rp23),
+ (rp25)-[:ARRIVED_AFTER]->(rp24),
+ (rp26)-[:ARRIVED_AFTER]->(rp25),
+ (rp27)-[:ARRIVED_AFTER]->(rp26),
+ (rp28)-[:ARRIVED_AFTER]->(rp27),
+ (rp29)-[:ARRIVED_AFTER]->(rp28),
+ (rp30)-[:ARRIVED_AFTER]->(rp29)
+----
+
+=== Ladies overall leader board current season using rankpoints graph
+[source,cypher]
+----
+MATCH (g:Gender)-[:CURRENT_SEASON]->(s:Season)-[*]->(r:Race)
+Where g.name = 'Ladies'
+with r
+MATCH (n:Athlete)
+MATCH p = allShortestPaths((n)-[:FINISHED_AT|:FINISHED*]->(r))
+WITH length(relationships(p))-1 as c, p
+match (rp:Rankpoints)
+where rp.label = c+''
+return distinct(head(nodes(p)).firstname+' '+head(nodes(p)).lastname) as racer , sum(rp.points) as points  order by points desc
+----
+//table
+
+=== Ladies Downhill leader board current season
+[source,cypher]
+----
+MATCH (g:Gender)-[:CURRENT_SEASON]->(s:Season)-[*]->(r:Race)
+Where g.name = 'Ladies'
+with r
+MATCH (n:Athlete), r-[:IS_A]->(t:Type)
+Where t.name = 'Downhill'
+MATCH p = allShortestPaths((n)-[:FINISHED_AT|:FINISHED*]->(r))
+WITH length(relationships(p))-1 as c, p
+match (rp:Rankpoints)
+where rp.label = c+''
+return distinct(head(nodes(p)).firstname+' '+head(nodes(p)).lastname) as racer , sum(rp.points) as points  order by points desc
+----
+//table
+
+=== Ladies country leader board current season
+[source,cypher]
+----
+MATCH (g:Gender)-[:CURRENT_SEASON]->(s:Season)-[*]->(r:Race)
+Where g.name = 'Ladies'
+with r
+MATCH (n:Athlete)-[:RACES_FOR]->(country:Country)
+MATCH p = allShortestPaths((n)-[:FINISHED_AT|:FINISHED*]->(r))
+WITH length(relationships(p))-1 as c, p
+match (rp:Rankpoints)
+where rp.label = c+''
+with head(nodes(p)) as e, rp
+match e-[:RACES_FOR]->(d)
+return distinct(d.name) as country , sum(rp.points) as points  order by points desc
+----
+//table
+
+=== Podiums by athlete ever
+
+Podiums of Lara Gut ever
+
+[source,cypher]
+----
+MATCH (n:Athlete),(r:Race)
+WHERE n.lastname = 'Gut'
+MATCH p = allShortestPaths((n)-[:FINISHED_AT|FINISHED*..4]->(r))
+RETURN count(p) as Gut_podiums
+----
+//table
+
+=== Rank by athlete in all races on current season
+
+Rank of Anna Fenninger in all races in current season
+
+[source,cypher]
+----
+MATCH (g:Gender)-[:CURRENT_SEASON]->(s:Season)-[*]->(r:Race)
+Where g.name = 'Ladies'
+with r
+MATCH (n:Athlete)
+WHERE n.lastname = 'Fenninger'
+MATCH p = allShortestPaths((n)-[:FINISHED_AT|FINISHED*]->(r))
+MATCH r-[:IS_A]->(t), r-[:IN]->(c)
+return r.date as date, t.name as type, c.name as location, length(relationships(p))-1 as rank
+----
+//table
+
+=== Average ranking by athlete
+
+Average ranking of Anna Fenninger ever
+
+[source,cypher]
+----
+MATCH (n:Athlete),(r:Race)
+WHERE n.lastname = 'Fenninger'
+MATCH p = allShortestPaths((n)-[:FINISHED_AT|FINISHED*]->(r))
+MATCH r-[:IS_A]->(t), r-[:IN]->(c)
+return avg(length(relationships(p))-1) as avg_rank, "over "+count(p)+" races" as races
+----
+//table
+
+=== Podiums by country ever
+
+Podiums of Austria ever
+
+[source,cypher]
+----
+MATCH (n:Country)
+WHERE n.name = 'AUT'
+MATCH (a:Athlete)-[:RACES_FOR]->(n),(r:Race)
+MATCH p = allShortestPaths((a)-[:FINISHED_AT|FINISHED*..4]->(r))
+RETURN count(p) as AUT_podiums
+----
+//table
+
+
+=== How close was a victory
+
+How close to first place was a second place
+
+[source,cypher]
+----
+MATCH (n:Athlete),(r:Race)
+MATCH p = allShortestPaths((n)-[:FINISHED_AT|FINISHED*..3]->(r))
+with filter(x IN relationships(p) WHERE (x.diff < 200 and x.diff <> 0)) as filtered
+with filtered[0] as m
+match (racer)-[:FINISHED_AT]->()-[m]->()-[:FINISHED]->(r), r-[:IN]->(l), r-[:IS_A]->(t)
+return racer.firstname+' '+racer.lastname as racer, r.date as date,l.name as location, t.name as type,"+"+m.diff as diff
+----
+//table

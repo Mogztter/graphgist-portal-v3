@@ -1,0 +1,826 @@
+:author: Justyna Gromada
+:twitter: @gromajus
+:linkedIn: http://www.linkedin.com/in/jgromada
+:email: jgromada@gmail.com
+
+= TRAVEL HELPER
+
+== Idea
+The aim of this work is to show that it is posible to build an interesting service (at least from my point of view:) ) with open data retrieved from sources of public institutions.  This exemplary service facilitates travels and uses public data about countries and cities provided by link:http://www.unece.org/cefact/codesfortrade/codes_index.html[The United Nations Economic Commission for Europe (UNECE)] but it is also enriched with information about restaurants and hostels retrieved from link:http://www.openstreetmap.org[OpenStreetMap] .
+Currently, even when you are no very rich, you can afford traveling the world - there are cheap airlines, you can sleep on someone's couch for free, find tons of useful tips in the Internet about how to see the world and not being ruined. Nowadays, the problem might be actually *where to go* for a weekend, for a short trip or for a one in a lifetime adventure as the choice of possibilies is huge. The Travel Helper service is meant to recommend people traveling directions and facilities.
+
+== Data
+To realize basic functionalities of the service presented above, the follwing data is needed:
+
+* data concerning different places: countries, regions, cities - in this case open data was retrieved from link:http://www.unece.org/cefact/codesfortrade/codes_index.html[The United Nations Economic Commission for Europe (UNECE)].
+* data about POI: hotels and restaurants that can be fetched from link:http://www.openstreetmap.org[OpenStreetMap]. This data is available under link:http://opendatacommons.org/licenses/odbl[the Open Database Licence] and is the property of *© link:http://www.openstreetmap.org[OpenStreetMap] contributors*
+* Everything shouch be enriched with the information about people, their travels to various places and visits in restaurants, bars. I believe this missing data can be collected by the Travel Help service itself.
+
+== Data Model
+The designed data model is presented on the figure below:
+
+image::http://i.imgur.com/fSZBomW.png[width=774, align="center"]
+
+
+The nodes and relationships of the model together with appropriate examples are shown in the following tables:
+
+.Domains
+[options="header,footer"]
+|=======================
+|Domain             |Attributes                               |Example
+|Person             |name, age, blog address                  |Bill, age 32
+|Place:Country      |name, code                               |Poland
+|Place:Region       |name, code, type                         |Provence (France)
+|Place:City         |name, code, coordinates                  |Warsaw
+|PlaceToSleep       |name, website, address                   |Hilton Hotel in New York, Camp in Scottish Highlands
+|Sustenance         |name, website, address, cuisine          |Creperie in Paris, Burger Bar in Chicago
+|Trip               |type, duration, year season              |Trip arround Europe, weekend in London
+|=======================
+
+
+.Relationships
+[options="header,footer"]
+|=======================
+|Start Node             |Relationship               |End Node | Example
+|Place	|BELONGS_TO	|Place 	| Warsaw BELONGS_TO Poland
+|Person	|LIVES_IN (from, to)	|Place 	| Kate LIVES_IN Moscow (from 2014)
+|Person |WENT_FOR| Trip| Bob WENT_FOR a trip around the world
+|Trip |TO (transportation)| Place| trip TO London (transportation = plane)
+|Trip |STARTS_FROM| Place| trip to London STARTS_FROM Berlin
+|Trip |IS_PART_OF (order no)| Trip| trip to London IS_PART_OF trip around the world (order_no = 1)
+|Trip |STAYED_AT (rate, avg price per night)| PlaceToSleep| during trip to London Kate STAYED at Hilton Hotel (rate = 5, avg price per night = 1000)
+|Trip |WENT_TO (rate, avg money spent)| Sustenance| during trip to London Kate WENT_TO at Dawsan Restaurant (rate = 5, avg money spent = 1000)
+|Sustenance |IS_LOCATED_IN| Place| Dawsan Restaurant IS_LOCATED_IN London
+|PlaceToSleep |IS_LOCATED_IN| Place| Hilton Hotel IS_LOCATED_IN London
+|=======================
+
+
+== Graph data upload
+Firtly, the test data is added to the database.
+
+The uploaded data consists of information about people, places and trips of these people to various places:
+
+*Places:* 
+
+* *Poland*        : Warsaw, Cracow, Zakopane, Torun, Gdansk, Poznan;
+
+* *France*        : Paris, Nice, Avignon, Lyon, Marseille, Perpignon;
+
+* *Italy*         : Rome, Milan, Palermo, Neapol, Bari
+
+* *Spain*         : Barcelona, Madrid, Seville, Bilbao	
+
+* *Portugal*      : Porto, Lisbon, Cascais, Faro
+
+* *United Kingdom*: London, Glasgow, Manchester, Cardiff
+
+* *USA* 	  : Chicago, New York, Boston, Philadelphia, Washington, Seattle, San Francisco, San Jose, Monterey, Santa Barbara, Los Angeles, Las Vegas
+
+The data about those places comes from UNECE sources. The CSV files containing coutries, regions and cities have been modified this way so they consist only data concerning the above countries, cities and regions. This way, graph rendering is possible in this place. This data is uploaded the following way: 
+
+//setup
+
+[source,cypher]
+
+----
+create index on :Place(name);
+create index on :Country(name);
+create index on :Region(name);
+create index on :City(name);
+create index on :Place(code);
+create index on :Country(code);
+create index on :Region(code);
+create index on :City(code);
+
+load csv with headers from
+'https://gist.githubusercontent.com/justynaGithub/45be86f418c009f0dcaf/raw/f8666bcc7cd9a9e8a0e191f148c67b88b6b58d06/countries.csv' as line fieldterminator ','
+WITH line.CountryCode as CountryCode, line.CountryName as CountryName
+CREATE (p:Place:Country{code:CountryCode, name:CountryName});
+
+load csv with headers from
+'https://gist.githubusercontent.com/justynaGithub/ce3bc36eb55c71a7931a/raw/fd9962071e13b1db7ace1cb2b971c150c91cda50/subdiv.csv' as line fieldterminator ','
+WITH line.CountryCode as CountryCode, line.RegionCode as RegionCode, line.RegionName as RegionName, line.RegionType as RegionType
+MATCH (country:Country {code:CountryCode})
+CREATE (p:Place:Region{code:RegionCode, name:RegionName})-[:BELONGS_TO]->country;
+
+load csv with headers from
+'https://gist.githubusercontent.com/justynaGithub/d7708b8cd2891f876199/raw/e4a64ab07772452b9a23f48adbab16dd7213d522/cities.csv' as line fieldterminator ','
+WITH line.CountryCode as CountryCode, line.CityCode as CityCode, line.CityNameNoSpecialChars as CityName, line.RegionCode as RegionCode, line.Coordinates as Coordinates
+MATCH (country:Country {code:CountryCode})
+OPTIONAL MATCH country<-[:BELONGS_TO]-(region:Region{code:RegionCode})
+FOREACH (o IN CASE WHEN region IS NOT NULL THEN [region] ELSE [] END |
+	CREATE (c:Place:City{code:CityCode, name:CityName, coordinates:Coordinates})-[:BELONGS_TO]->(region)
+)
+FOREACH (o IN CASE WHEN region IS NULL THEN [region] ELSE [] END |
+	CREATE (c:Place:City{code:CityCode, name:CityName, coordinates:Coordinates})-[:BELONGS_TO]->(country)
+);
+	 
+
+----
+
+Now, there is already the graph of chosen test countries with identified cities and districts they belong to:
+
+//graph
+
+
+The next step is to upload the data about restaurants and hotels in Warsaw - only this one city has been chosen to show the application of this data. The data from OpenStreetMap has been retrieved with use of http://overpass-turbo.eu/s/e6d and translated to CVS file.
+
+
+//setup
+
+[source,cypher]
+
+----
+//restaurants
+load csv with headers from
+'https://gist.githubusercontent.com/justynaGithub/a5fdb93fc28988d03eb8/raw/554fd7f02a5e57b819533bbb618e0774c6a1755b/restaurantsWarsaw.csv' as line fieldterminator ','
+WITH line.name as Name, line.lon as Lon, line.lat as Lat, line.cuisine as Cuisine, line.addr_city as City, line.addr_treet as Street, line.addr_housenumber as Housenumber, line.website as Website
+MATCH (warsaw:City{name:'Warszawa'})
+CREATE (:Sustenance:Restaurant{name:Name, lon:Lon, lat:Lat,city: City,street:Street, housenumber:Housenumber, cuisine:Cuisine, website:Website})-[:IS_LOCATED_IN]->(warsaw);
+
+//hotels
+load csv with headers from
+'https://gist.githubusercontent.com/justynaGithub/ee34f74812779b2b692d/raw/2509cd53639b209987a26590cf776ee563679d57/hotelsWarsaw.csv' as line fieldterminator ','
+WITH line.name as Name, line.lon as Lon, line.lat as Lat, line.addr_city as City, line.addr_street as Street, line.addr_housenumber as Housenumber, line.website as Website
+MATCH (warsaw:City{name:'Warszawa'})
+CREATE (:PlaceToSleep:Hotel{name:Name, lon:Lon, lat:Lat, city:City, street:Street, housenumber:Housenumber, website:Website})-[:IS_LOCATED_IN]->warsaw
+
+----
+
+
+Restaurants and hotels in Warsaw:
+
+//setup
+
+[source,cypher]
+
+----
+MATCH (a)-[r:IS_LOCATED_IN]->(warsaw:City{name:'Warszawa'})
+RETURN a, r, warsaw
+----
+
+
+//graph
+
+Next thing is to add some examplary people and they trips to various places.
+
+*People:*
+
+* *Kate*, age: 30, from Madrid in Spain, traveled around USA, went to Barcelona
+
+* *Ben*, age: 56, from London in UK, went to USA
+
+* *Tom*, age: 40, from Madrid in Spain, spent a weekend in London
+
+* *John*, age: 34, from Madrid in Spain, spent a weekend in Barcelona
+
+* *Claudia*, age: 26, from Lisbon in Portugal, traveled around Poland
+
+* *Norah*, age: 18, from Chicago in USA, traveled around Poland
+
+* *Lucas*, age: 30, from Warsaw in Poland, traveled around Europe
+
+* *Pedro*, age: 32, from Rome in Italy, traveled around Poland
+
+* *Pierre*, age: 40, from Nice in France, traveled around Poland
+
+* *Laura*, age: 31, from Madrid in Spain, looking for an inspiration for traveling
+
+
+
+//hide
+
+//setup
+
+[source,cypher]
+
+----
+//find Places: cities, PlacesToSleep and Sustenance
+MATCH (warsaw:City{name:'Warszawa'}),
+	   (cracow:City{name:'Krakow'}),
+	   (zakopane:City{name:'Zakopane'}),	
+	   (torun:City{name:'Torun'}),	 
+	   (gdansk:City{name:'Gdansk'}),
+	   (poznan:City{name:'Poznan'}),
+	   (paris:City{name:'Paris'}),
+	   (nice:City{name:'Nice'}),	
+	   (avignon:City{name:'Avignon'}),	
+	   (lyon:City{name:'Lyon'}),	
+	   (marseille:City{name:'Marseille'}),	
+	   (perpignon:City{name:'Perpignan'}),		
+	   (rome:City{code:'ROM'}),
+	   (milan:City{name:'Milano'}),	
+	   (palermo:City{name:'Palermo'}),
+	   (neapol:City{name:'Napoli'}),
+	   (bari:City{name:'Bari'}),	   
+	   (barcelona:City{name:'Barcelona'}),	
+	   (madrid:City{name:'Madrid'}),	
+	   (seville:City{name:'Sevilla'}),
+	   (bilbao:City{name:'Bilbao'}),		
+	   (porto:City{name:'Porto'}),	
+	   (lisbon:City{name:'Lisboa'}),
+	   (cascais:City{name:'Cascais'}),	
+	   (faro:City{name:'Faro'}),	
+	   (london:City{name:'London'}),
+	   (glasgow:City{name:'Glasgow'}),	 
+	   (manchester:City{name:'Manchester'}),	
+	   (cardiff:City{name:'Cardiff'}),		
+	   (chicago:City{name:'Chicago'}),		   
+	   (newYork:City{code:'NYC'}),
+	   (boston:City{name:'Boston'}),
+	   (philadelphia:City{name:'Philadelphia'}),
+	   (washington:City{name:'Washington'}),
+	   (seattle:City{name:'Seattle'}),
+	   (sanFrancisco:City{code:'SFO'}),
+	   (sanJose:City{code:'SJC'}),
+	   (monterey:City{name:'Monterey'}),
+	   (santaBarbara:City{code:'SBA'}),
+	   (losAngeles:City{code:'LAX'}),
+	   (lasVegas:City{code:'LAS'}),
+	   (warsawYouthHostel:PlaceToSleep{name:'Villa Jeziorki 71'}),
+           (sheraton:PlaceToSleep{name:'Sheraton'}),
+           (classic:PlaceToSleep{name:'Mazowiecki'}),
+	   (pierogi:Sustenance{name:'Pierogarnia Zapiecek'}),
+	   (drinkBar:Sustenance{name:'Literatka'}),
+	   (belvederRestaurant:Sustenance{name:'Orient Express'}),
+	   (disco:Sustenance{name:'Grill Bar Zgoda'})
+		 
+//Person
+CREATE (kate:Person{name:'Kate', age:30, blog_address:'kate blog'}),
+       (ben:Person{name:'Ben', age:56, blog_address:'ben blog'}),
+	   (tom:Person{name:'Tom', age:40, blog_address:'tom blog'}),
+	   (john:Person{name:'John', age:34, blog_address:'john blog'}),
+	   (claudia:Person{name:'Claudia', age:26, blog_address:'claudia blog'}),
+	   (norah:Person{name:'Norah', age:18, blog_address:'norah blog'}),
+	   (lucas:Person{name:'Lucas', age:30, blog_address:'lucas blog'}),
+	   (pedro:Person{name:'Pedro', age:32, blog_address:'pedro blog'}),
+	   (pierre:Person{name:'Pierre', age:40, blog_address:'pierre blog'}),
+	   (laura:Person{name:'Laura', age:31, blog_address:'Laura blog'})
+
+	   
+
+//Trip
+CREATE (kateInUsa:Trip{name:'My trip to USA', duration:30, year_season:'autumn', type:'low budget'}),
+	   (kateInUsa1:Trip{duration:2}),
+	   (kateInUsa2:Trip{duration:3}),
+	   (kateInUsa3:Trip{duration:1}),
+	   (kateInUsa4:Trip{duration:2}),
+	   (kateInUsa5:Trip{duration:2}),
+	   (kateInUsa6:Trip{duration:2}),
+	   (kateInUsa7:Trip{duration:3}),
+	   (kateInUsa8:Trip{duration:1}),
+	   (kateInUsa9:Trip{duration:2}),
+	   (kateInUsa10:Trip{duration:3}),
+	   (kateInUsa11:Trip{duration:4}),
+	   (kateInUsa12:Trip{duration:4}),
+	   (kateInUsaEnd:Trip{duration:1})
+
+//Person WENT_FOR a trip
+CREATE  kate-[:WENT_FOR]->kateInUsa,
+		kate-[:WENT_FOR]->kateInUsa1,
+		kate-[:WENT_FOR]->kateInUsa2,
+		kate-[:WENT_FOR]->kateInUsa3,
+		kate-[:WENT_FOR]->kateInUsa4,
+		kate-[:WENT_FOR]->kateInUsa5,
+		kate-[:WENT_FOR]->kateInUsa6,
+		kate-[:WENT_FOR]->kateInUsa7,
+		kate-[:WENT_FOR]->kateInUsa8,
+		kate-[:WENT_FOR]->kateInUsa9,
+		kate-[:WENT_FOR]->kateInUsa10,
+		kate-[:WENT_FOR]->kateInUsa11,
+		kate-[:WENT_FOR]->kateInUsa12,
+		kate-[:WENT_FOR]->kateInUsaEnd
+
+//Trip TO Place
+CREATE kateInUsa-[:STARTS_FROM]->madrid,
+	   kateInUsa1-[:TO{transportation:'plane'}]->chicago,
+	   kateInUsa2-[:TO{transportation:'plane'}]->newYork,
+	   kateInUsa3-[:TO{transportation:'car'}]->boston,
+	   kateInUsa4-[:TO{transportation:'car'}]->philadelphia,
+	   kateInUsa5-[:TO{transportation:'car'}]->washington,
+	   kateInUsa6-[:TO{transportation:'plane'}]->seattle,
+	   kateInUsa7-[:TO{transportation:'plane'}]->sanFrancisco,
+	   kateInUsa8-[:TO{transportation:'car'}]->sanJose,
+	   kateInUsa9-[:TO{transportation:'car'}]->monterey,
+	   kateInUsa10-[:TO{transportation:'car'}]->santaBarbara,
+	   kateInUsa11-[:TO{transportation:'car'}]->losAngeles,
+	   kateInUsa12-[:TO{transportation:'car'}]->lasVegas,
+	   kateInUsaEnd-[:TO{transportation:'plane'}]->madrid	   
+	   
+CREATE kateInUsa1-[:IS_PART_OF{order_no:1}]->kateInUsa,
+	   kateInUsa2-[:IS_PART_OF{order_no:2}]->kateInUsa,
+	   kateInUsa3-[:IS_PART_OF{order_no:3}]->kateInUsa,
+	   kateInUsa4-[:IS_PART_OF{order_no:4}]->kateInUsa,
+	   kateInUsa5-[:IS_PART_OF{order_no:5}]->kateInUsa,
+	   kateInUsa6-[:IS_PART_OF{order_no:6}]->kateInUsa,
+	   kateInUsa7-[:IS_PART_OF{order_no:7}]->kateInUsa,
+	   kateInUsa8-[:IS_PART_OF{order_no:8}]->kateInUsa,
+	   kateInUsa9-[:IS_PART_OF{order_no:9}]->kateInUsa,
+	   kateInUsa10-[:IS_PART_OF{order_no:10}]->kateInUsa,
+	   kateInUsa11-[:IS_PART_OF{order_no:11}]->kateInUsa,
+	   kateInUsa12-[:IS_PART_OF{order_no:12}]->kateInUsa,
+	   kateInUsaEnd-[:IS_PART_OF{order_no:13}]->kateInUsa
+	   
+//Trip
+CREATE (benInUsa:Trip{name:'My holidays to USA', duration:30, year_season:'summer', type:'standard'}),
+	   (benInUsa1:Trip{duration:2}),
+	   (benInUsa2:Trip{duration:3}),
+	   (benInUsa3:Trip{duration:1}),
+	   (benInUsa4:Trip{duration:2}),
+	   (benInUsaEnd:Trip{duration:2})
+	   
+//Person WENT_FOR a trip
+CREATE  ben-[:WENT_FOR]->benInUsa,
+		ben-[:WENT_FOR]->benInUsa1,
+		ben-[:WENT_FOR]->benInUsa2,
+		ben-[:WENT_FOR]->benInUsa3,
+		ben-[:WENT_FOR]->benInUsa4,
+		ben-[:WENT_FOR]->benInUsaEnd
+		
+//Trip TO Place
+CREATE benInUsa-[:STARTS_FROM]->london,
+	   benInUsa1-[:TO{transportation:'plane'}]->sanFrancisco,
+	   benInUsa2-[:TO{transportation:'plane'}]->losAngeles,
+	   benInUsa3-[:TO{transportation:'car'}]->santaBarbara,
+	   benInUsa4-[:TO{transportation:'car'}]->losAngeles,
+	   benInUsaEnd-[:TO{transportation:'plane'}]->london
+	   
+CREATE benInUsa1-[:IS_PART_OF{order_no:1}]->benInUsa,
+	   benInUsa2-[:IS_PART_OF{order_no:2}]->benInUsa,
+	   benInUsa3-[:IS_PART_OF{order_no:3}]->benInUsa,
+	   benInUsa4-[:IS_PART_OF{order_no:4}]->benInUsa,
+	   benInUsaEnd-[:IS_PART_OF{order_no:5}]->benInUsa
+								
+//Trip
+CREATE (lucasEuroTrip:Trip{name:'My trip around Europe', duration:30, year_season:'summer', type:'backpacking'}),
+	   (lucasEuroTrip1:Trip{duration:2}),
+	   (lucasEuroTrip2:Trip{duration:2}),
+	   (lucasEuroTrip3:Trip{duration:2}),
+	   (lucasEuroTrip4:Trip{duration:2}),
+	   (lucasEuroTrip5:Trip{duration:2}),
+	   (lucasEuroTrip6:Trip{duration:2}),
+	   (lucasEuroTrip7:Trip{duration:2}),
+	   (lucasEuroTrip8:Trip{duration:2}),
+	   (lucasEuroTrip9:Trip{duration:2}),
+	   (lucasEuroTrip10:Trip{duration:2}),
+	   (lucasEuroTrip11:Trip{duration:2}),
+	   (lucasEuroTrip12:Trip{duration:2}),
+	   (lucasEuroTrip13:Trip{duration:2}),
+	   (lucasEuroTrip14:Trip{duration:2}),
+	   (lucasEuroTripEnd:Trip{duration:2})
+	   
+//Person WENT_FOR a trip
+CREATE  lucas-[:WENT_FOR]->lucasEuroTrip,
+		lucas-[:WENT_FOR]->lucasEuroTrip1,
+		lucas-[:WENT_FOR]->lucasEuroTrip2,
+		lucas-[:WENT_FOR]->lucasEuroTrip3,
+		lucas-[:WENT_FOR]->lucasEuroTrip4,
+		lucas-[:WENT_FOR]->lucasEuroTrip5,
+		lucas-[:WENT_FOR]->lucasEuroTrip6,
+		lucas-[:WENT_FOR]->lucasEuroTrip7,
+		lucas-[:WENT_FOR]->lucasEuroTrip8,
+		lucas-[:WENT_FOR]->lucasEuroTrip9,
+		lucas-[:WENT_FOR]->lucasEuroTrip10,
+		lucas-[:WENT_FOR]->lucasEuroTrip11,
+		lucas-[:WENT_FOR]->lucasEuroTrip12,
+		lucas-[:WENT_FOR]->lucasEuroTrip13,
+		lucas-[:WENT_FOR]->lucasEuroTrip14,
+		lucas-[:WENT_FOR]->lucasEuroTripEnd
+		
+//Trip TO Place
+CREATE lucasEuroTrip-[:STARTS_FROM]->warsaw,
+	   lucasEuroTrip1-[:TO{transportation:'plane'}]->rome,
+	   lucasEuroTrip2-[:TO{transportation:'train'}]->milan,
+	   lucasEuroTrip3-[:TO{transportation:'train'}]->nice,
+	   lucasEuroTrip4-[:TO{transportation:'train'}]->marseille,
+	   lucasEuroTrip5-[:TO{transportation:'train'}]->avignon,
+	   lucasEuroTrip6-[:TO{transportation:'train'}]->perpignon,
+	   lucasEuroTrip7-[:TO{transportation:'train'}]->barcelona,
+	   lucasEuroTrip8-[:TO{transportation:'train'}]->seville,
+	   lucasEuroTrip9-[:TO{transportation:'bus'}]->faro,
+	   lucasEuroTrip10-[:TO{transportation:'bus'}]->lisbon,
+	   lucasEuroTrip11-[:TO{transportation:'train'}]->cascais,	   
+	   lucasEuroTrip12-[:TO{transportation:'train'}]->porto,
+	   lucasEuroTrip13-[:TO{transportation:'plane'}]->madrid,
+	   lucasEuroTrip14-[:TO{transportation:'plane'}]->paris,	   
+	   lucasEuroTripEnd-[:TO{transportation:'plane'}]->warsaw
+	   
+	   
+CREATE lucasEuroTrip1-[:IS_PART_OF{order_no:1}]->lucasEuroTrip,
+	   lucasEuroTrip2-[:IS_PART_OF{order_no:2}]->lucasEuroTrip,
+	   lucasEuroTrip3-[:IS_PART_OF{order_no:3}]->lucasEuroTrip,
+	   lucasEuroTrip4-[:IS_PART_OF{order_no:4}]->lucasEuroTrip,
+	   lucasEuroTrip5-[:IS_PART_OF{order_no:5}]->lucasEuroTrip,
+	   lucasEuroTrip6-[:IS_PART_OF{order_no:6}]->lucasEuroTrip,
+	   lucasEuroTrip7-[:IS_PART_OF{order_no:7}]->lucasEuroTrip,
+	   lucasEuroTrip8-[:IS_PART_OF{order_no:8}]->lucasEuroTrip,
+	   lucasEuroTrip9-[:IS_PART_OF{order_no:9}]->lucasEuroTrip,
+	   lucasEuroTrip10-[:IS_PART_OF{order_no:10}]->lucasEuroTrip,
+	   lucasEuroTrip11-[:IS_PART_OF{order_no:11}]->lucasEuroTrip,
+	   lucasEuroTrip12-[:IS_PART_OF{order_no:12}]->lucasEuroTrip,
+	   lucasEuroTrip13-[:IS_PART_OF{order_no:13}]->lucasEuroTrip,
+	   lucasEuroTrip14-[:IS_PART_OF{order_no:14}]->lucasEuroTrip,
+	   lucasEuroTripEnd-[:IS_PART_OF{order_no:15}]->lucasEuroTrip
+
+// pedro in Poland
+
+//Trip
+CREATE (pedroPolandTrip:Trip{name:'My trip around Poland', duration:20, year_season:'summer', type:'standard'}),
+	   (pedroPolandTrip1:Trip{duration:3}),
+	   (pedroPolandTrip2:Trip{duration:3}),
+	   (pedroPolandTrip3:Trip{duration:2}),
+	   (pedroPolandTrip4:Trip{duration:1}),
+	   (pedroPolandTrip5:Trip{duration:5}),
+	   (pedroPolandTrip6:Trip{duration:5}),
+	   (pedroPolandTripEnd:Trip{duration:1})
+	   
+//Person WENT_FOR a trip
+CREATE  lucas-[:WENT_FOR]->pedroPolandTrip,
+		pedro-[:WENT_FOR]->pedroPolandTrip1,
+		pedro-[:WENT_FOR]->pedroPolandTrip2,
+		pedro-[:WENT_FOR]->pedroPolandTrip3,
+		pedro-[:WENT_FOR]->pedroPolandTrip4,
+		pedro-[:WENT_FOR]->pedroPolandTrip5,
+		pedro-[:WENT_FOR]->pedroPolandTrip6,
+		pedro-[:WENT_FOR]->pedroPolandTripEnd
+		
+//Trip TO Place
+CREATE pedroPolandTrip-[:STARTS_FROM]->rome,
+	   pedroPolandTrip1-[:TO{transportation:'plane'}]->warsaw,
+	   pedroPolandTrip2-[:TO{transportation:'bus'}]->torun,
+	   pedroPolandTrip3-[:TO{transportation:'bus'}]->poznan,
+	   pedroPolandTrip4-[:TO{transportation:'train'}]->warsaw,
+	   pedroPolandTrip5-[:TO{transportation:'car'}]->zakopane,
+	   pedroPolandTrip6-[:TO{transportation:'bus'}]->cracow,	   
+	   pedroPolandTripEnd-[:TO{transportation:'plane'}]->rome
+	   
+	   
+CREATE pedroPolandTrip1-[:IS_PART_OF{order_no:1}]->pedroPolandTrip,
+	   pedroPolandTrip2-[:IS_PART_OF{order_no:2}]->pedroPolandTrip,
+	   pedroPolandTrip3-[:IS_PART_OF{order_no:3}]->pedroPolandTrip,
+	   pedroPolandTrip4-[:IS_PART_OF{order_no:4}]->pedroPolandTrip,
+	   pedroPolandTrip5-[:IS_PART_OF{order_no:5}]->pedroPolandTrip,
+	   pedroPolandTrip6-[:IS_PART_OF{order_no:6}]->pedroPolandTrip,
+	   pedroPolandTripEnd-[:IS_PART_OF{order_no:7}]->pedroPolandTrip
+
+// pierre in Poland
+
+//Trip
+CREATE (pierrePolandTrip:Trip{name:'My trip around Poland', duration:10, year_season:'summer', type:'standard'}),
+	   (pierrePolandTrip1:Trip{duration:3}),
+	   (pierrePolandTrip2:Trip{duration:3}),
+	   (pierrePolandTrip3:Trip{duration:3}),
+	   (pierrePolandTripEnd:Trip{duration:1})
+	   
+//Person WENT_FOR a trip
+CREATE  pierre-[:WENT_FOR]->pierrePolandTrip,
+		pierre-[:WENT_FOR]->pierrePolandTrip1,
+		pierre-[:WENT_FOR]->pierrePolandTrip2,
+		pierre-[:WENT_FOR]->pierrePolandTrip3,
+		pierre-[:WENT_FOR]->pierrePolandTripEnd
+		
+//Trip TO Place
+CREATE pierrePolandTrip-[:STARTS_FROM]->nice,
+	   pierrePolandTrip1-[:TO{transportation:'plane'}]->poznan,
+	   pierrePolandTrip2-[:TO{transportation:'train'}]->warsaw,
+	   pierrePolandTrip3-[:TO{transportation:'train'}]->cracow,	   
+	   pierrePolandTripEnd-[:TO{transportation:'plane'}]->nice
+	   
+	   
+CREATE pierrePolandTrip1-[:IS_PART_OF{order_no:1}]->pierrePolandTrip,
+	   pierrePolandTrip2-[:IS_PART_OF{order_no:2}]->pierrePolandTrip,
+	   pierrePolandTrip3-[:IS_PART_OF{order_no:3}]->pierrePolandTrip,
+	   pierrePolandTripEnd-[:IS_PART_OF{order_no:4}]->pierrePolandTrip
+
+// claudia in Poland
+
+//Trip
+CREATE (claudiaPolandTrip:Trip{name:'My trip around Poland', duration:13, year_season:'summer', type:'standard'}),
+	   (claudiaPolandTrip1:Trip{duration:3}),
+	   (claudiaPolandTrip2:Trip{duration:3}),
+	   (claudiaPolandTrip3:Trip{duration:3}),
+	   (claudiaPolandTrip4:Trip{duration:3}),
+	   (claudiaPolandTripEnd:Trip{duration:1})
+	   
+//Person WENT_FOR a trip
+CREATE  claudia-[:WENT_FOR]->claudiaPolandTrip,
+		claudia-[:WENT_FOR]->claudiaPolandTrip1,
+		claudia-[:WENT_FOR]->claudiaPolandTrip2,
+		claudia-[:WENT_FOR]->claudiaPolandTrip3,
+		claudia-[:WENT_FOR]->claudiaPolandTrip4,
+		claudia-[:WENT_FOR]->claudiaPolandTripEnd
+		
+//Trip TO Place
+CREATE claudiaPolandTrip-[:STARTS_FROM]->lisbon,
+	   claudiaPolandTrip1-[:TO{transportation:'plane'}]->warsaw,
+	   claudiaPolandTrip2-[:TO{transportation:'train'}]->cracow,
+	   claudiaPolandTrip3-[:TO{transportation:'bus'}]->zakopane,	   
+	   claudiaPolandTrip4-[:TO{transportation:'bus'}]->warsaw,
+	   claudiaPolandTripEnd-[:TO{transportation:'plane'}]->lisbon
+	   
+	   
+CREATE claudiaPolandTrip1-[:IS_PART_OF{order_no:1}]->claudiaPolandTrip,
+	   claudiaPolandTrip2-[:IS_PART_OF{order_no:2}]->claudiaPolandTrip,
+	   claudiaPolandTrip3-[:IS_PART_OF{order_no:3}]->claudiaPolandTrip,
+	   claudiaPolandTrip4-[:IS_PART_OF{order_no:4}]->claudiaPolandTrip, 
+	   claudiaPolandTripEnd-[:IS_PART_OF{order_no:5}]->claudiaPolandTrip
+
+// norah in Poland
+
+//Trip
+CREATE (norahPolandTrip:Trip{name:'My trip around Poland', duration:32, year_season:'summer', type:'standard'}),
+	   (norahPolandTrip1:Trip{duration:10}),
+	   (norahPolandTrip2:Trip{duration:10}),
+	   (norahPolandTrip3:Trip{duration:10}),
+	   (norahPolandTrip4:Trip{duration:1}),
+	   (norahPolandTripEnd:Trip{duration:1})
+	   
+//Person WENT_FOR a trip
+CREATE  norah-[:WENT_FOR]->norahPolandTrip,
+		norah-[:WENT_FOR]->norahPolandTrip1,
+		norah-[:WENT_FOR]->norahPolandTrip2,
+		norah-[:WENT_FOR]->norahPolandTrip3,
+		norah-[:WENT_FOR]->norahPolandTrip4,
+		norah-[:WENT_FOR]->norahPolandTripEnd
+		
+//Trip TO Place
+CREATE norahPolandTrip-[:STARTS_FROM]->chicago,
+	   norahPolandTrip1-[:TO{transportation:'plane'}]->warsaw,
+	   norahPolandTrip2-[:TO{transportation:'train'}]->cracow,
+	   norahPolandTrip3-[:TO{transportation:'bus'}]->zakopane,	   
+	   norahPolandTrip4-[:TO{transportation:'bus'}]->warsaw,
+	   norahPolandTripEnd-[:TO{transportation:'plane'}]->chicago
+	   
+	   
+CREATE norahPolandTrip1-[:IS_PART_OF{order_no:1}]->norahPolandTrip,
+	   norahPolandTrip2-[:IS_PART_OF{order_no:2}]->norahPolandTrip,
+	   norahPolandTrip3-[:IS_PART_OF{order_no:3}]->norahPolandTrip,
+	   norahPolandTrip4-[:IS_PART_OF{order_no:4}]->norahPolandTrip, 
+	   norahPolandTripEnd-[:IS_PART_OF{order_no:5}]->norahPolandTrip
+
+	   // tom in London
+
+//Trip
+CREATE (tomLondonTrip:Trip{name:'Weekend in London', duration:2, year_season:'summer', type:'standard'}),
+	   (tomLondonTrip1:Trip{duration:2}),
+	   (tomLondonTripEnd:Trip{duration:'0'})
+	   
+//Person WENT_FOR a trip
+CREATE  tom-[:WENT_FOR]->tomLondonTrip,
+		tom-[:WENT_FOR]->tomLondonTrip1,
+		tom-[:WENT_FOR]->tomLondonTripEnd
+		
+//Trip TO Place
+CREATE tomLondonTrip-[:STARTS_FROM]->madrid,
+	   tomLondonTrip1-[:TO{transportation:'plane'}]->london,
+	   tomLondonTripEnd-[:TO{transportation:'plane'}]->madrid
+	   
+	   
+CREATE tomLondonTrip1-[:IS_PART_OF{order_no:1}]->tomLondonTrip,
+	   tomLondonTripEnd-[:IS_PART_OF{order_no:2}]->tomLondonTrip
+
+// john in Barcelona
+
+//Trip
+CREATE (johnBarcelonaTrip:Trip{name:'Weekend in Barcelona', duration:2, year_season:'summer', type:'standard'}),
+	   (johnBarcelonaTrip1:Trip{duration:2}),
+	   (johnBarcelonaTripEnd:Trip{duration:0})
+	   
+//Person WENT_FOR a trip
+CREATE  john-[:WENT_FOR]->johnBarcelonaTrip,
+		john-[:WENT_FOR]->johnBarcelonaTrip1,
+		john-[:WENT_FOR]->johnBarcelonaTripEnd
+		
+//Trip TO Place
+CREATE johnBarcelonaTrip-[:STARTS_FROM]->madrid,
+	   johnBarcelonaTrip1-[:TO{transportation:'plane'}]->barcelona,
+	   johnBarcelonaTripEnd-[:TO{transportation:'plane'}]->madrid
+	   
+	   
+CREATE johnBarcelonaTrip1-[:IS_PART_OF{order_no:1}]->johnBarcelonaTrip,
+	   johnBarcelonaTripEnd-[:IS_PART_OF{order_no:2}]->johnBarcelonaTrip
+
+// kate in Barcelona
+
+//Trip
+CREATE (kateBarcelonaTrip:Trip{name:'Weekend in Barcelona', duration:2, year_season:'summer', type:'standard'}),
+	   (kateBarcelonaTrip1:Trip{duration:2}),
+	   (kateBarcelonaTripEnd:Trip{duration:0})
+	   
+//Person WENT_FOR a trip
+CREATE  kate-[:WENT_FOR]->kateBarcelonaTrip,
+		kate-[:WENT_FOR]->kateBarcelonaTrip1,
+		kate-[:WENT_FOR]->kateBarcelonaTripEnd
+		
+//Trip TO Place
+CREATE kateBarcelonaTrip-[:STARTS_FROM]->madrid,
+	   kateBarcelonaTrip1-[:TO{transportation:'plane'}]->barcelona,
+	   kateBarcelonaTripEnd-[:TO{transportation:'plane'}]->madrid
+	   
+	   
+CREATE kateBarcelonaTrip1-[:IS_PART_OF{order_no:1}]->kateBarcelonaTrip,
+	   kateBarcelonaTripEnd-[:IS_PART_OF{order_no:2}]->kateBarcelonaTrip
+
+
+
+//STAYED_AT
+CREATE norahPolandTrip1-[:STAYED_AT{rate:5, avg_price_per_night:60}]->warsawYouthHostel,
+	   norahPolandTrip4-[:STAYED_AT{rate:5, avg_price_per_night:120}]->classic,
+	   claudiaPolandTrip1-[:STAYED_AT{rate:5, avg_price_per_night:100}]->classic,
+	   claudiaPolandTrip4-[:STAYED_AT{rate:5, avg_price_per_night:120}]->classic,
+	   pedroPolandTrip1-[:STAYED_AT{rate:5, avg_price_per_night:120}]->classic,
+	   pedroPolandTrip4-[:STAYED_AT{rate:5, avg_price_per_night:100}]->classic,	   
+	   pierrePolandTrip2-[:STAYED_AT{rate:5, avg_price_per_night:400}]->sheraton	
+	   
+//WENT_TO
+CREATE norahPolandTrip1-[:WENT_TO{rate:5, avg_money_spent:50}]->disco,
+	   norahPolandTrip4-[:WENT_TO{rate:5, avg_money_spent:30}]->pierogi,
+	   claudiaPolandTrip1-[:WENT_TO{rate:5, avg_money_spent:30}]->pierogi,
+	   claudiaPolandTrip4-[:WENT_TO{rate:5, avg_money_spent:50}]->drinkBar,
+	   pedroPolandTrip1-[:WENT_TO{rate:5, avg_money_spent:30}]->pierogi,
+	   pedroPolandTrip4-[:WENT_TO{rate:5, avg_money_spent:50}]->drinkBar,	   
+	   pierrePolandTrip2-[:WENT_TO{rate:5, avg_money_spent:400}]->belvederRestaurant	
+
+//LIVES_IN
+CREATE kate-[:LIVES_IN]->madrid,
+	   ben-[:LIVES_IN]->london,
+	   tom-[:LIVES_IN]->madrid,	
+	   john-[:LIVES_IN]->madrid,	
+	   claudia-[:LIVES_IN]->lisbon,
+	   norah-[:LIVES_IN]->chicago,
+	   lucas-[:LIVES_IN]->warsaw,
+	   pedro-[:LIVES_IN]->rome,	   
+	   pierre-[:LIVES_IN]->nice,
+	   laura-[:LIVES_IN]->madrid	   
+	      
+	   
+   
+	   
+
+	   
+
+
+
+
+
+
+
+
+
+----
+
+
+//graph
+
+
+
+== Use cases
+Having the data collected about people and their travels to various places, one can use this data to recommend places and facilities that might be better suited for people needs. The examplary use cases can be divided into two groups: using TravelHelper when planning holidays in advance and TravelHelper when being in need during holidays.
+It is assumed in the examples below that person that is looking for help is Laura, age: 31, from Madrid in Spain.
+
+
+
+
+=== 1. How to use TravelHelper to plan holidays?
+
+
+=== 1a. I am Laura, 31, from Madrid. Where can I go for a weekend?
+
+[source,cypher]
+
+----
+MATCH (weekend:Trip{duration:2})-[:STARTS_FROM]->(madrid:Place{name:'Madrid'}),
+(trip:Trip)-[:IS_PART_OF]->(weekend),
+(trip)-[:TO]->(place:Place)
+WHERE place.name <> 'Madrid'
+WITH place.name as placeName, count(place) as counts
+RETURN placeName
+ORDER BY counts DESC
+----
+
+
+//table
+
+
+
+
+=== 1b. I am Laura, 31, from Madrid. I am planning to go to USA for one month. I want to see as many places as possible. Show me how people travel there.
+
+[source,cypher]
+
+----
+MATCH (shortTrip:Trip)-[:TO]->(:Place)-[:BELONGS_TO*]->(:Country{code:'US'}),
+(shortTrip)-[:IS_PART_OF]->(usaTrip:Trip)-[:STARTS_FROM]->(start_place:Place)
+WHERE usaTrip.duration<32
+WITH DISTINCT usaTrip, start_place.name as start_place
+MATCH (:Country{code:'US'})<-[:BELONGS_TO*]-(city:Place)<-[to:TO]-(shortTrip:Trip)-[part:IS_PART_OF]->(usaTrip)
+WITH usaTrip.name as tripName, start_place, city.name as name, part.order_no as order_no, to.transportation as by
+ORDER BY order_no
+WITH tripName, start_place, collect({order_no:order_no, to:name, by:by}) as cities
+WITH tripName, start_place, cities, size(cities) as nbrOfCities
+RETURN tripName, start_place, cities
+ORDER BY nbrOfCities DESC
+----
+
+
+//table
+
+
+
+
+=== 1c. I am Laura, 31, from Madrid. I need an inspiration for a long travel. I want to see as many places as possible. Show me travels of other people.
+
+[source,cypher]
+
+----
+MATCH (:Trip)-[:IS_PART_OF]->(longTrip:Trip)-[:STARTS_FROM]->(start_place:Place)
+WITH DISTINCT longTrip, start_place.name as start_place
+MATCH (city:Place)<-[to:TO]-(shortTrip:Trip)-[part:IS_PART_OF]->(longTrip)
+WITH longTrip.name as tripName, start_place, city.name as name, part.order_no as order_no, to.transportation as by
+ORDER BY order_no
+WITH tripName, start_place, collect({order_no:order_no, to:name, by:by}) as cities
+WITH tripName, start_place, cities, size(cities) as nbrOfCities
+RETURN tripName, start_place, cities
+ORDER BY nbrOfCities DESC
+----
+
+
+//table
+
+
+
+
+=== 2. How to use TravelHelper ad-hoc during holidays?
+
+
+=== 2a. I am Laura, 31, from Madrid. Currently visiting Warsaw in Poland. What restaurants in Warsaw are mostly recommended by people in my age?
+
+[source,cypher]
+
+----
+MATCH (restaurant:Sustenance)-[IS_LOCATED_IN]->(:Place{name:'Warszawa'}),
+(client:Person)-[:WENT_FOR]->(:Trip)-[meal:WENT_TO]->restaurant
+WHERE client.age>25 AND client.age<36
+WITH DISTINCT restaurant.name as resto, collect(meal) as meals
+WITH resto, (reduce(s = 0 , x IN meals | s + x.rate))/size(meals) as avg_rate
+RETURN resto, avg_rate
+ORDER BY avg_rate DESC
+----
+
+
+//table
+
+
+
+
+
+=== 2b. I am Laura, 31, from Madrid. Currently visiting Warsaw in Poland. I don't like my hotel. Show me hotels recommended by other people in desired price.
+
+[source,cypher]
+
+----
+MATCH (hotel:PlaceToSleep)-[IS_LOCATED_IN]->(:Place{name:'Warszawa'}),
+(client:Person)-[:WENT_FOR]->(:Trip)-[stay:STAYED_AT]->hotel
+WITH DISTINCT hotel.name as hotel, hotel.website as website, collect(stay) as stays
+WITH hotel, website, (reduce(s = 0 , x IN stays | s + x.avg_price_per_night))/size(stays) as avg_price
+WHERE avg_price<200
+RETURN hotel, website, avg_price
+ORDER BY avg_price
+----
+
+
+//table
+
+
+
+
+
+=== 2c. I am Laura, 31, from Madrid. Currently visiting Warsaw in Poland. I want to spend more time in Poland than I planned previously. Where can I go next?
+
+[source,cypher]
+
+----
+MATCH (warsawTrip:Trip)-[:TO]->(place:Place{name:'Warszawa'}), 
+(warsawTrip)-[warsawPart:IS_PART_OF]->(longTrip:Trip),
+(previousPlace:Place)<-[:TO]-(previousTrip)-[previousPart:IS_PART_OF]->longTrip,
+(place)-[:BELONGS_TO*]->(:Country{name:'Poland'})<-[BELONGS_TO]-(previousPlace)
+WHERE previousPart.order_no = warsawPart.order_no -1
+RETURN previousPlace.name as place
+UNION
+MATCH (warsawTrip:Trip)-[:TO]->(place:Place{name:'Warszawa'}), 
+(warsawTrip)-[warsawPart:IS_PART_OF]->(longTrip:Trip),
+(nextPlace:Place)<-[:TO]-(nextTrip)-[nextPart:IS_PART_OF]->longTrip,
+(place)-[:BELONGS_TO*]->(:Country{name:'Poland'})<-[BELONGS_TO]-(nextPlace)
+WHERE nextPart.order_no = warsawPart.order_no +1
+RETURN nextPlace.name as place
+----
+
+
+//table
+
+
+
+
+== Summary
+
+Presented model already enables various recommendation as shown in use cases and it seems it has potential to be still expanded. The model can be enriched with additional relationships, like Person can FOLLOW another Person, Place IS CLOSE to another Place, additional labels can be added to places, like Island, Continent. These extra relationships and labels could help to improve the personalization of travel directions recommendations. 

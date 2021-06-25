@@ -1,0 +1,48 @@
+= A sales funnel model
+
+This Gist is about analysing and visualizing the different paths of leads through the different stages of a sales funnel. There are lots of different models for sales funnels, http://fourquadrant.com/increase-sales-by-providing-the-right-sales-resources-in-the-sales-funnel/[this is one example]
+
+== The setup
+
+In this setup, for each path there is statistics to be stored for e.g. the frequency of occurence. Relationship typs are used to distinguish between paths touching the same stages.
+
+//hide
+//setup
+[source,cypher]
+----
+CREATE (s:Stage{name:'Suspect'})
+CREATE (mql:Stage{name:'Marketing Qualified Lead'})
+CREATE (ssc:Stage{name:'Self-Serve Customer'})
+CREATE (ec:Stage{name:'Existing Customer'})
+CREATE (ecno:Stage{name:'Existing Customer-No Opportunity'})
+CREATE (sql:Stage{name:'Sales Qualified Lead'})
+CREATE (nc:Stage{name:'No change'})
+CREATE (r:Stage{name:'Recycled'})
+CREATE (ro:Stage{name:'Reached Out'})
+CREATE (dbd:Stage{name:'Disqualified Bad Data'})
+CREATE (e:Stage{name:'Engaged'})
+CREATE (sdr:Stage{name:'New SDR Lead'})
+
+CREATE (:Path{name:'P1', count:159})-[:NEXT_P1]->(s)-[:NEXT_P1]->(mql)-[:NEXT_P1]->(ssc)
+CREATE (:Path{name:'P2', count:4})-[:NEXT_P2]->(s)-[:NEXT_P2]->(ssc)
+CREATE (:Path{name:'P3', count:9})-[:NEXT_P3]->(mql)-[:NEXT_P3]->(ec)-[:NEXT_P3]->(ecno)
+
+
+----
+
+//graph
+
+
+== What are the different paths through my sales funnel?
+
+To find out the different paths through the sales funnel, the following query can be used.
+
+[source,cypher]
+----
+MATCH p=(startStage:Path)-[r]-()-[rels*0..]->(endStage)
+WHERE ALL(rel in rels WHERE type(rel) = type(r))
+WITH startStage, type(r) as type, max(length(p)) as max, collect(p) as paths
+RETURN startStage, type, head([p in paths WHERE length(p) = max]) as longest_path
+----
+
+//table

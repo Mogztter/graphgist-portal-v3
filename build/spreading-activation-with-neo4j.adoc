@@ -1,0 +1,107 @@
+= Spreading activation in Neo4j
+:author: Gerbrand van Dieijen, Onne van der Weijde
+:twitter: @gerbrandvd
+
+== Introduction
+How does the human brain work? How do thoughts pop up in our conscience? Just thinking about the question is confusion enough. Maybe our brain works as a semantic network as explained by https://www.youtube.com/watch?v=ig-SVifJUKw[Carole Yue at Kahn Academy].
+
+Try for yourself: think of a bird? You now probably think a sparrow, duck. Think of an extinct animal? Now you might think of the dodo, mammoth or dinosaur. Animal living on the south pole: a penguin? Or polar bear?
+Facts, ideas, memories in our brain are interconnected. They're certainly not structured into tables like in relational databases or hierarchical in directories on a harddrive: if I'd ask you to name all the birds you know, you won't give me a long list immediately. A better model of human memories would a graph, a network of interconnected nodes. Some nodes are more strongly connected than others, so you can associated one fact with another faster. You know a dodo and a penguin is a bird, but it's not the first animal you think of. You might also have some doubt wether the polar bear really lives on the south pole. Might this be the north pole?
+
+Inspired by this model of the human memory is spreading activation, an algorithm: https://en.wikipedia.org/wiki/Spreading_activation[spreading activation]
+The idea of using a graphs to for _information retrieval_ (IR) is as old as modern computers. The spreading activation model was first introduced in the http://link.springer.com/article/10.1023/A%3A1006569829653[early 80's]. What's exciting now is computers becoming fast, memory is extremely cheap. Also the idea that computers can do much more than just storing information is getting recognized again, with machhine-learning, alghorithms and smart software in general becoming popular.
+
+Using a database server that's specifically designed to handle graphs: https://www.neo4j.com[neo4j] I'll try to model the the previous mentioned facts and how we recollect them in our mind.
+
+This document is a http://neo4j.com/graphgists/[graphgist] so you can see the http://portal.graphgist.org/graph_gists/by_url?url=https%3A%2F%2Fgist.github.com%2Fgerbrand%2F7524cd5522fe5828eb4b[results on the fly]
+
+== Setup
+First we'll set up the 'facts' as mentioned above in neo4j using its query language https://neo4j.com/docs/cypher-refcard/current/[cypher]. Each fact is linked to another with a certain weight with a range from 0 to 1, the higher the weight, the stronger the facts are interconnected. In this case the weight correlates with the certainty we have they're connected. In general weight could be based similarity, gathered feedback, number of sales, etc.
+
+//setup
+//hide
+[source,cypher]
+----
+create (bird {name:"bird"})<-[_0:IS {weight: 1}]-(duck {name:"duck"}),
+ (bird)<-[_1:IS {weight: 0.9}]-(sparrow {name:"sparrow"}),
+ (extinct {name:"extinct"})-[_3:IS {weight: 0.8}]->(mamoth {name:"mammoth"}),
+ (extinct)-[_4:IS {weight: 0.7}]->(dodo {name:"dodo"}),
+ (extinct)-[_5:IS {weight: 0.8}]->(dinosaur {name:"dinosaur"}),
+ (dodo)-[_6:IS {weight: 0.7}]->(bird),
+ (southpole {name:"South Pole"})<-[_7:LIVES {weight: 1}]-(penguin {name:"penguin"}),
+ (southpole)<-[_8:LIVES {weight: 0.5}]-(polarbear {name:"polar bear"}),
+ (penguin)-[_9:IS {weight: 0.6}]->(bird)
+ RETURN *
+----
+
+//graph
+
+== Spread activation
+The spread activation algorithm is described by https://en.wikipedia.org/wiki/Spreading_activation#Algorithm[wikipedia].
+We've already set up a graph above, with weights for each edge.
+
+Now we want to ask our 'brain' to name an *extinct* *bird*. What will come up?
+
+.First we'll define the initial parameters for the algorithm:
+* Firing threshold I'll set to an arbitrary value of 0.8
+* Decay factor I'll set to an arbitrary value of 0.6
+
+And we'll run the actual algorithm. First the activation value of all nodes should be cleared, and one node has to be activated. That's the *bird* and *extinct* in this case.
+
+[source,cypher]
+----
+MATCH (n) SET n.activation = null, n.fired=false
+----
+[source,cypher]
+----
+MATCH (n) WHERE n.name="bird" OR n.name="extinct" SET n.activation = 1
+----
+
+After activation, the nodes are fired and new nodes are activated.
+[source,cypher]
+----
+MATCH (i)-[r]-(j) WHERE not i.fired AND i.activation IS NOT NULL AND i.activation>=0.8 AND NOT j.fired SET i.fired=true SET j.activation =  COALESCE(j.activation, 0) + i.activation * COALESCE(r.weight,0) * 0.6 RETURN count(i)
+----
+
+//table
+A few nodes are fired.
+
+The activation should be between 0 and 1 as described by the alghorithm, so we'll truncate the activation values.
+[source,cypher]
+----
+MATCH (j) WHERE j.activation<=0 SET j.activation=null
+----
+[source,cypher]
+----
+MATCH (j) WHERE j.activation>1 SET j.activation = 1
+----
+
+and we fire again
+[source,cypher]
+----
+MATCH (i)-[r]-(j) WHERE not i.fired AND i.activation IS NOT NULL AND i.activation>=0.8 AND NOT j.fired SET i.fired=true SET j.activation =  COALESCE(j.activation, 0) + i.activation * COALESCE(r.weight,0) * 0.6 RETURN count(i)
+----
+//table
+
+Now, no new nodes are fired again. Let's query the network to see the resuls. The activation value is used as an ordering, e.g. _ranking_.
+[source,cypher]
+----
+MATCH (n) WHERE n.activation IS NOT NULL RETURN n.name as name, n.activation as activation ORDER by n.activation DESC LIMIT 5
+----
+
+//table
+This looks quite ok: when querying, e.g. asking, our network for an _extinct_ _bird_, we got back the original answers, followed by *dodo* has highest ranking answer
+
+This result is of course not very suprisingly, but imagine a network of hundreds of thousands or billions of nodes. This may seem like a lot, but a modern laptop can easily run a neo4j database containing hundres of thoundes of interconnected nodes. Connect a few computers togetter together and you can do quite amazing things:
+
+.Imagine:
+* Using the data of all your _customers and their orders of your webshop_, so you can give them recommendations.
+* In hundred of thousand of resumes and feedback-forms find out a good _candidate for a job_.
+
+You don't have to be Google or Facebook to http://techcrunch.com/2016/03/19/how-real-businesses-are-using-machine-learning/[apply machine learning] Want to know more? Contact mailto:gerbrand@vandieyen.nl[Gerbrand] or mailto:onne@oneup.company[Onne].
+
+---
+Created by 
+* Gerbrand van Dieijen: linkedin.com/in/gerbrand/
+* Onne van der Weijde: linkedin.com/in/onne-van-der-weijde-389a46b2/
+

@@ -1,0 +1,203 @@
+= The Life You Save May Be Your Own
+ 
+== Modeling the Graph
+
+
+//graph
+
+ 
+=== OUR DATASET
+[source, cypher]
+----
+CREATE
+//People
+(shiflet:Person{name:'Tom T. Shiflet'}),
+(crater:Person{name:'Lucynell Crater'}),
+(crater2:Person{name:'Lucynell Crater'}),
+
+//Second People
+(roy:Person2{name:'Uncle Roy and his Red Creek Wranglers'}),
+(duchessor:Person2{name:'Duchesser Windsor'}),
+(oldmother:Person2{name:'My Old Mother'}),
+(boy:Person2{name:'Boy Behind the Counter'}),
+(boy2:Person2{name:'Boy on Road'}),
+(husband:Person2{name:'Dead Husband'}),
+
+
+//Alias
+(angel: Alias {name:'Angel of Gawd'}),
+(sugarbaby:Alias {name:'Sugarbaby'}),
+(baby:Alias {name:'Baby Girl'}),
+(aaron:Alias {name:'Aaron Sparks'}),
+(george:Alias {name:'George Speeds'}),
+(thompson:Alias {name:'Thompson Bright'}),
+
+//Family Ties
+(mother:Family {name:'Mother'}),
+(daughter:Family{name:'Daughter'}),
+(son:Family{name:'Son'}),
+(husband2:Family{name:'Husband'}),
+
+//Professions
+(singer:Profession{name:'Gospel Singer'}),
+(foreman:Profession{name:'Foreman on the Railroad'}),
+(undertaker:Profession{name:'Assistant in an Undertaking Parlor'}),
+(carpenter:Profession{name:'Carpenter'}),
+(radio:Profession{name:'On the Radio'}),
+(illiterate:Profession{name:'Illiterate'}),
+
+//Locations
+(atlanta:Location{name:'Atlanta'}),
+(tarwater:Location{name:'Tarwater, Tennessee'}),
+(singleberry:Location{name:'Singleberry, Georgia'}),
+(lucy:Location{name:'Lucy, Alabama'}),
+(toolafalls:Location{name:'Toolafalls, Missippi'}),
+(mobile:Location{name:'Mobile'}),
+(hotspot:Location{name:'Hot Spot'}),
+
+//Words
+(hat:Word{name:'Hat'}),
+(heart:Word{name:'Heart'}),
+(chicken:Word{name:'Chicken'}),
+(matches:Word{name:'Matches'}),
+(hitchhiker:Word{name:'Hitchhiker'}),
+(cloud:Word{name:'Cloud'}),
+(arm:Word{name:'Arm Service'}),
+(smoke:Word{name:'Smoke'}),
+(moon:Word{name:'Moon'}),
+(car:Word{name:'Car'}),
+(dress:Word{name:'Dress'}),
+(hair:Word{name:'Hair'}),
+(eyes:Word{name:'Eyes'}),
+(sky:Word{name:'Sky'}),
+
+
+
+
+
+//Colors
+(gray:Color{name:'gray'}),
+(yellow:Color{name:'yellow'}),
+(pinkgold:Color{name:'pinkgold'}),
+(white:Color{name:'white'}),
+(blue:Color{name:'blue'}),
+
+
+//Relationships
+(shiflet)-[:KNEW]->(crater),
+(shiflet)-[:KNEW]->(crater2),
+(shiflet)-[:KNEW]->(boy2),
+(shiflet)-[:KNEW]->(oldmother),
+(shiflet)-[:KNEW]->(boy),
+(shiflet)-[:WAS]->(singer),
+(shiflet)-[:WAS]->(foreman),
+(shiflet)-[:WAS]->(undertaker),
+(shiflet)-[:WAS]->(carpenter),
+(shiflet)-[:WAS]->(radio),
+(shiflet)-[:WAS]->(illiterate),
+(duchessor)-[:IS]->(illiterate),
+(arm)-[:IS]->(illiterate),
+(shiflet)-[:AKA]->(aaron),
+(shiflet)-[:AKA]->(george),
+(shiflet)-[:AKA]->(thompson),
+(shiflet)-[:WAS_FROM]->(tarwater),
+(shiflet)-[:WENT_TO]->(hotspot),
+(shiflet)-[:WAS_GOING_TO]->(mobile),
+(aaron)-[:AKA]->(george),
+(george)-[:AKA]->(thompson),
+(george)-[:WAS_FROM]->(lucy),
+(aaron)-[:WAS_FROM]->(singleberry),
+(thompson)-[:WAS_FROM]->(toolafalls),
+(crater2)-[:WENT_TO]->(hotspot),
+(crater2)-[:KNEW]->(boy),
+(crater2)-[:AKA]->(angel),
+(crater2)-[:AKA]->(sugarbaby),
+(crater2)-[:AKA]->(baby),
+(crater2)-[:WAS]->(hitchhiker),
+(crater2)-[:WORE]->(dress),
+(crater2)-[:HAD]->(hair),
+(crater2)-[:HAD]->(eyes),
+(boy2)-[:WAS]->(hitchhiker),
+(oldmother)-[:WAS]->(angel),
+(oldmother)-[:WAS]->(mother),
+(oldmother)-[:WAS_MOTHER_OF]->(shiflet),
+(shiflet)-[:WAS_SON_OF]->(oldmother),
+(crater)-[:WAS]->(mother),
+(crater)-[:WAS_MOTHER_OF]->(crater2),
+(crater2)-[:WAS_DAUGHTER_OF]->(crater),
+(crater2)-[:WAS]->(daughter),
+(boy2)-[:WAS]->(son),
+(shiflet)-[:WAS]->(son),
+(husband)-[:WAS_MARRIED_TO]->(crater),
+(husband2)-[:WAS_MARRIED_TO]->(crater),
+(crater)-[:WORE]->(hat),
+(boy2)-[:WORE]->(hat),
+(hat)-[:WAS]->(gray),
+(smoke)-[:WAS]->(gray),
+(cloud)-[:WAS]->(gray),
+(shiflet)-[:BLEW]->(gray),
+(moon)-[:WAS]->(yellow),
+(car)-[:WAS]->(yellow),
+(dress)-[:WAS]->(white),
+(dress)-[:WAS]->(blue),
+(hair)-[:WAS]->(pinkgold),
+(sky)-[:WAS]->(blue),
+(eyes)-[:WERE]->(blue),
+(aaron)-[:HAS]->(matches),
+(chicken)-[:IS_ASSOCIATED_WITH]->(heart),
+(chicken)-[:IS_ASSOCIATED_WITH]->(crater2),
+(heart)-[:IS_IN]->(atlanta),
+(roy)-[:WAS_ON]->(radio),
+(boy)-[:WORKED_AT]->(hotspot)
+----
+
+=== Who are the main characters?
+[source, cypher]
+----
+MATCH (a:Person)
+RETURN a
+----
+
+//graph_result 
+
+=== Who are all the characters?
+[source, cypher]
+----
+MATCH (a:Person),(b:Person2)
+RETURN a,b
+----
+
+//graph_result 
+
+=== Who went to the Hot Spot?
+[source, cypher]
+----
+MATCH (a)-[r]-(hotspot:Location{name:'Hot Spot'})
+RETURN a,r,hotspot
+----
+
+//graph_result 
+=== What is blue?
+[source, cypher]
+----
+MATCH (a)-[r]-(blue:Color{name:'blue'})
+RETURN a,r,blue
+----
+
+//graph_result
+=== What is related to blue?
+[source, cypher]
+----
+MATCH (bluething)-[r]-(blue:Color{name:'blue'})
+WITH bluething
+MATCH (bluething)-[r]-(anything)
+RETURN bluething,r,anything
+
+----
+//graph_result 
+
+
+= More themes that could be graphed
+ 
+Light, Sun, Blue, White, Devil, Christ, God, Bright, Tools, Fire, Moon, Yellow, Sugar, Metal, Birds, Coffins, Car, Spirit, Speed, Mobility, Children, Body, Spirit, Law, Money, Blood, Berries, Tears, Children, Parents, Delusion, 
+ 

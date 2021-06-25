@@ -1,0 +1,498 @@
+= Call Detail Records (CDR) Analytics
+:neo4j-version: 3.5
+:author: Kamal Murthy
+:style: red:Person(name) 
+
+== Introduction
+A CDR contains the phone numbers originating the call and receiving the call, time of the call, call duration and many more attributes. CDR data can reach big data proportions for
+some Enterprise Businesses.
+
+Neo4j has been used in telecom industry: churn reduction (https://neo4j.com/news/0227-reducing-telecom-churn/) and event log data( https://vimeo.com/79390660[https://vimeo.com/79390660]).
+These applications are at the telecom provider level.
+
+image::https://raw.githubusercontent.com/kaisesha/cdrgraph/42a213d8700d45833d4fa99ac0c975a6de73b1ea/images/churn2.png[width=500]
+
+Here I use Neo4j at the business (corporations) level that consume the services provided by the telecom provider.
+
+image::https://raw.githubusercontent.com/kaisesha/cdrgraph/42a213d8700d45833d4fa99ac0c975a6de73b1ea/images/business2.png[width=500]
+== Solution
+**Incoming calls**: Answered or went to voicemail.
+
+**Incoming calls**: Forwarded, answered or went to voicemail.
+
+**Outgoing calls (Extension to Extension)**: Answered or went to voicemail.
+
+**Outgoing calls (External)**: Called
+
+**Direct to voicemail**: Voicemail
+
+This graph model stores call detail records (CDR) in nodes, relationships and properties. Call date is modelled as integer following the article: https://www.menome.com/wp/neo4j-modelling-dates/
+
+== Data Model
+image::https://raw.githubusercontent.com/kaisesha/cdrgraph/b6ea3ff22d0edaf9ffe494c5f40ce3a52dfa094e/images/DataModel.png[]
+
+== Metadata
+image::https://raw.githubusercontent.com/kaisesha/cdrgraph/b6ea3ff22d0edaf9ffe494c5f40ce3a52dfa094e/images/Metadata.png[]
+
+== Setup
+Here is a sample of data in the .csv file:
+
+TME: Epoch time, CLNG: Calling number, CLED: Called number, FCLED: Call forwarded number (80000 is voicemail), TYP: Call type, ANS: Answered or Voicemail, FWD: Forwarded number, CPNY:Company name
+
+TME,CLNG,CLED,FCLED,DUR,TYP,ANS,FWD,CPNY
+1449158574,4045551212,4041212555,80000,70,Incoming,VM,FWD,AmeyaSoft
+1449159132,9195551212,8191212555,8191212555,458,Outgoing,Ans,Orig,AmeyaSoft
+1449159135,8045551212,5401212555,80000,304,Incoming,VM,FWD,AmeyaSoft
+1449159146,2705551212,8151212555,8151212555,451,Incoming,Ans,FWD,AmeyaSoft
+
+A Cypher query to setup the database (used only 50 call records)
+
+//hide
+//setup
+
+[source,cypher]
+----
+CREATE (company:Company {name: "AmeyaSoft"})
+CREATE (calldate:CallDate {id: 20151203})
+CREATE (company)-[:CALL_DATE]->(calldate)
+
+CREATE (connect:Connect {id: 1449158574})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect)
+CREATE (called:CallTo {orig: "4041212555", fwd: "80000"})
+CREATE (callingvm:IncomingVM {id: "4045551212", duration: 70})    
+CREATE (connect)-[:VOICEMAIL {call: "Incoming", Abandon: false}]->(callingvm)
+CREATE (callingvm)-[:CALL_TO]->(called) 
+
+CREATE (connect1:Connect {id: 1449159132})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect1)
+CREATE (called1:CallTo {orig: "8191212555", fwd: "8191212555"})
+CREATE (calling1:CallFrom {id: "9195551212", duration: 458})    
+CREATE (connect1)-[:OUTGOING {ans: true, Abandon: false}]->(calling1)
+CREATE (calling1)-[:CALL_TO {fwd: false}]->(called1)
+
+CREATE (connect2:Connect {id: 1449159135})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect2)
+CREATE (called2:CallTo {orig: "5401212555", fwd: "80000"})
+CREATE (callingvm2:IncomingVM {id: "8045551212", duration: 304})    
+CREATE (connect2)-[:VOICEMAIL {call: "Incoming", Abandon: false}]->(callingvm2)
+CREATE (callingvm2)-[:CALL_TO]->(called2) 
+
+CREATE (connect3:Connect {id: 1449159146})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect3)
+CREATE (called3:CallTo {orig: "8151212555", fwd: "8151212555"})
+CREATE (calling3:IncomingFrom {id: "2705551212", duration: 451})    
+CREATE (connect3)-[:INCOMING {ans: true, Abandon: false}]->(calling3)
+CREATE (calling3)-[:CALL_TO {fwd: true}]->(called3)
+
+CREATE (connect4:Connect {id: 1449159149})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect4)
+CREATE (called4:CallTo {orig: "8121212555", fwd: "8121212555"})
+CREATE (calling4:CallFrom {id: "9735551212", duration: 384})    
+CREATE (connect4)-[:OUTGOING {ans: true, Abandon: false}]->(calling4)
+CREATE (calling4)-[:CALL_TO {fwd: false}]->(called4)
+
+CREATE (connect5:Connect {id: 1449159162})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect5)
+CREATE (called5:CallTo {orig: "8121212555", fwd: "8121212555"})
+CREATE (calling5:CallFrom {id: "2145551212", duration: 695})    
+CREATE (connect5)-[:OUTGOING {ans: true, Abandon: false}]->(calling5)
+CREATE (calling5)-[:CALL_TO {fwd: false}]->(called5)
+
+CREATE (connect6:Connect {id: 1449159198})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect6)
+CREATE (called6:CallTo {orig: "6151212555", fwd: "6151212555"})
+CREATE (calling6:IncomingFrom {id: "3525551212", duration: 480})    
+CREATE (connect6)-[:INCOMING {ans: true, Abandon: false}]->(calling6)
+CREATE (calling6)-[:CALL_TO {fwd: true}]->(called6)
+
+CREATE (connect7:Connect {id: 1449159229})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect7)
+CREATE (called7:CallTo {orig: "8191212555", fwd: "8191212555"})
+CREATE (calling7:CallFrom {id: "5615551212", duration: 668})    
+CREATE (connect7)-[:OUTGOING {ans: true, Abandon: false}]->(calling7)
+CREATE (calling7)-[:CALL_TO {fwd: false}]->(called7)
+
+CREATE (connect8:Connect {id: 1449159334})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect8)
+CREATE (called8:CallTo {orig: "5181212555", fwd: "80000"})
+CREATE (callingvm8:VoiceCall {id: "5185551212", duration: 361})    
+CREATE (connect8)-[:VOICEMAIL {call: "Outgoing"}]->(callingvm8)
+CREATE (callingvm8)-[:CALL_TO]->(called8) 
+
+CREATE (connect9:Connect {id: 1449159420})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect9)
+CREATE (called9:CallTo {orig: "9091212555", fwd: "9091212555"})
+CREATE (calling9:IncomingFrom {id: "8175551212", duration: 881})    
+CREATE (connect9)-[:INCOMING {ans: true, Abandon: false}]->(calling9)
+CREATE (calling9)-[:CALL_TO {fwd: true}]->(called9)
+
+CREATE (connect10:Connect {id: 1449159488})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect10)
+CREATE (called10:CallTo {orig: "8161212555", fwd: "8161212555"})
+CREATE (calling10:CallFrom {id: "5615551212", duration: 314})    
+CREATE (connect10)-[:OUTGOING {ans: true, Abandon: false}]->(calling10)
+CREATE (calling10)-[:CALL_TO {fwd: false}]->(called10) 
+
+CREATE (connect11:Connect {id: 1449159492})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect11)
+CREATE (called11:CallTo {orig: "8181212555", fwd: "8181212555"})
+CREATE (calling11:CallFrom {id: "8155551212", duration: 352})    
+CREATE (connect11)-[:OUTGOING {ans: true, Abandon: false}]->(calling11)
+CREATE (calling11)-[:CALL_TO {fwd: false}]->(called11) 
+
+CREATE (connect12:Connect {id: 1449159570})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect12)
+CREATE (called12:CallTo {orig: "8181212555", fwd: "8181212555"})
+CREATE (calling12:CallFrom {id: "7135551212", duration: 653})    
+CREATE (connect12)-[:OUTGOING {ans: true, Abandon: false}]->(calling12)
+CREATE (calling12)-[:CALL_TO {fwd: false}]->(called12) 
+
+CREATE (connect13:Connect {id: 1449159623})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect13)
+CREATE (called13:CallTo {orig: "8161212555", fwd: "8161212555"})
+CREATE (calling13:CallFrom {id: "6155551212", duration: 485})    
+CREATE (connect13)-[:OUTGOING {ans: true, Abandon: false}]->(calling13)
+CREATE (calling13)-[:CALL_TO {fwd: false}]->(called13) 
+
+CREATE (connect14:Connect {id: 1449160268})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect14)
+CREATE (called14:CallTo {orig: "7171212555", fwd: "80000"})
+CREATE (callingvm14:VoiceCall {id: "7175551212", duration: 351})    
+CREATE (connect14)-[:VOICEMAIL {call: "Outgoing"}]->(callingvm14)
+CREATE (callingvm14)-[:CALL_TO]->(called14)
+
+CREATE (connect15:Connect {id: 1449160627})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect15)
+CREATE (called15:CallTo {orig: "8141212555", fwd: "8141212555"})
+CREATE (calling15:CallFrom {id: "4075551212", duration: 471})    
+CREATE (connect15)-[:OUTGOING {ans: true, Abandon: false}]->(calling15)
+CREATE (calling15)-[:CALL_TO {fwd: false}]->(called15)  
+
+CREATE (connect16:Connect {id: 1449160671})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect16)
+CREATE (called16:CallTo {orig: "8161212555", fwd: "8161212555"})
+CREATE (calling16:CallFrom {id: "2145551212", duration: 308})    
+CREATE (connect16)-[:OUTGOING {ans: true, Abandon: false}]->(calling16)
+CREATE (calling16)-[:CALL_TO {fwd: false}]->(called16) 
+
+CREATE (connect17:Connect {id: 1449160860})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect17)
+CREATE (called17:CallTo {orig: "8451212555", fwd: "8451212555"})
+CREATE (calling17:IncomingFrom {id: "8455551212", duration: 324})    
+CREATE (connect17)-[:INCOMING {ans: true, Abandon: false}]->(calling17)
+CREATE (calling17)-[:CALL_TO {fwd: true}]->(called17)
+
+CREATE (connect18:Connect {id: 1449160936})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect18)
+CREATE (called18:CallTo {orig: "4041212555", fwd: "80000"})
+CREATE (callingvm18:IncomingVM {id: "6781212555", duration: 64})    
+CREATE (connect18)-[:VOICEMAIL {call: "Incoming"}]->(callingvm18)
+CREATE (callingvm18)-[:CALL_TO]->(called18)
+
+CREATE (connect19:Connect {id: 1449160976})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect19)
+CREATE (called19:CallTo {orig: "2011212555", fwd: "2011212555"})
+CREATE (calling19:IncomingFrom {id: "5125551212", duration: 376})    
+CREATE (connect19)-[:INCOMING {ans: true, Abandon: false}]->(calling19)
+CREATE (calling19)-[:CALL_TO {fwd: false}]->(called19)
+ 
+CREATE (connect20:Connect {id: 1449161939})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect20)
+CREATE (called20:CallTo {orig: "9091212555", fwd: "9091212555"})
+CREATE (calling20:IncomingFrom {id: "9515551212", duration: 540})    
+CREATE (connect20)-[:INCOMING {ans: true, Abandon: false}]->(calling20)
+CREATE (calling20)-[:CALL_TO {fwd: false}]->(called20)
+
+CREATE (connect21:Connect {id: 1449162007})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect21)
+CREATE (called21:CallTo {orig: "9091212555", fwd: "9091212555"})
+CREATE (calling21:IncomingFrom {id: "7145551212", duration: 371})    
+CREATE (connect21)-[:INCOMING {ans: true, Abandon: false}]->(calling21)
+CREATE (calling21)-[:CALL_TO {fwd: true}]->(called21)
+
+CREATE (connect22:Connect {id: 1449162054})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect22)
+CREATE (called22:CallTo {orig: "4101212555", fwd: "4101212555"})
+CREATE (calling22:IncomingFrom {id: "2025551212", duration: 369})    
+CREATE (connect22)-[:INCOMING {ans: true, Abandon: false}]->(calling22)
+CREATE (calling22)-[:CALL_TO {fwd: false}]->(called22)
+
+CREATE (connect23:Connect {id: 1449162215})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect23)
+CREATE (called23:CallTo {orig: "7021212555", fwd: "7021212555"})
+CREATE (calling23:IncomingFrom {id: "7855551212", duration: 418})    
+CREATE (connect23)-[:INCOMING {ans: true, Abandon: false}]->(calling23)
+CREATE (calling23)-[:CALL_TO {fwd: false}]->(called23)
+
+CREATE (connect24:Connect {id: 1449163024})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect24)
+CREATE (called24:CallTo {orig: "9541212555", fwd: "80000"})
+CREATE (callingvm24:VoiceCall {id: "9545551212", duration: 314})    
+CREATE (connect24)-[:VOICEMAIL {call: "Outgoing"}]->(callingvm24)
+CREATE (callingvm24)-[:CALL_TO]->(called24)
+
+CREATE (connect241:Connect {id: 1449163781})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect241)
+CREATE (called241:CallTo {orig: "4041212555", fwd: "4041212555"})
+CREATE (calling241:IncomingFrom {id: "4045551212", duration: 349})    
+CREATE (connect241)-[:INCOMING {ans: true, Abandon: false}]->(calling241)
+CREATE (calling241)-[:CALL_TO {fwd: false}]->(called241)
+
+CREATE (connect25:Connect {id: 1449164479})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect25)
+CREATE (called25:CallTo {orig: "8001212555", fwd: "80000"})
+CREATE (callingvm25:VoiceCall {id: "9545551212", duration: 379})    
+CREATE (connect25)-[:VOICEMAIL {call: "Outgoing", Abandon: false}]->(callingvm25)
+CREATE (callingvm25)-[:CALL_TO]->(called25)
+
+CREATE (connect26:Connect {id: 1449165245})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect26)
+CREATE (called26:CallTo {orig: "9091212555", fwd: "80000"})
+CREATE (callingvm26:IncomingVM {id: "9091212555", duration: 362})    
+CREATE (connect26)-[:VOICEMAIL {call: "Incoming", Abandon: false}]->(callingvm26)
+CREATE (callingvm26)-[:CALL_TO]->(called26) 
+
+CREATE (connect27:Connect {id: 1449169344})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect27)
+CREATE (called27:CallTo {orig: "8001212555", fwd: "80000"})
+CREATE (callingvm27:VoiceCall {id: "3035551212", duration: 447})    
+CREATE (connect27)-[:VOICEMAIL {call: "Outgoing", Abandon: false}]->(callingvm27)
+CREATE (callingvm27)-[:CALL_TO]->(called27)
+
+CREATE (connect28:Connect {id: 1449169392})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect28)
+CREATE (called28:CallTo {orig: "9091212555", fwd: "80000"})
+CREATE (callingvm28:IncomingVM {id: "7021212555", duration: 151})    
+CREATE (connect28)-[:VOICEMAIL {call: "Incoming", Abandon: false}]->(callingvm28)
+CREATE (callingvm28)-[:CALL_TO]->(called28) 
+
+CREATE (connect29:Connect {id: 1449169887})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect29)
+CREATE (called29:CallTo {orig: "9091212555", fwd: "80000"})
+CREATE (callingvm29:IncomingVM {id: "5591212555", duration: 108})    
+CREATE (connect29)-[:VOICEMAIL {call: "Incoming", Abandon: false}]->(callingvm29)
+CREATE (callingvm29)-[:CALL_TO]->(called29)
+
+CREATE (connect30:Connect {id: 1449172878})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect30)
+CREATE (called30:CallTo {orig: "6151212555", fwd: "80000"})
+CREATE (callingvm30:IncomingVM {id: "6151212555", duration: 171})    
+CREATE (connect30)-[:VOICEMAIL {call: "Incoming", Abandon: false}]->(callingvm30)
+CREATE (callingvm30)-[:CALL_TO]->(called30)
+
+CREATE (connect31:Connect {id: 1449173459})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect31)
+CREATE (called31:CallTo {orig: "4041212555", fwd: "80000"})
+CREATE (callingvm31:IncomingVM {id: "6781212555", duration: 62})    
+CREATE (connect31)-[:VOICEMAIL {call: "Incoming", Abandon: false}]->(callingvm31)
+CREATE (callingvm31)-[:CALL_TO]->(called31)
+
+CREATE (connect32:Connect {id: 1449173679})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect32)
+CREATE (called32:CallTo {orig: "8001212555", fwd: "80000"})
+CREATE (callingvm32:VoiceCall {id: "9735551212", duration: 311})    
+CREATE (connect32)-[:VOICEMAIL {call: "Outgoing", Abandon: false}]->(callingvm32)
+CREATE (callingvm32)-[:CALL_TO]->(called32)
+
+CREATE (connect33:Connect {id: 1449174539})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect33)
+CREATE (called33:CallTo {orig: "6151212555", fwd: "80000"})
+CREATE (callingvm33:IncomingVM {id: "2701212555", duration: 137})    
+CREATE (connect33)-[:VOICEMAIL {call: "Incoming", Abandon: false}]->(callingvm33)
+CREATE (callingvm33)-[:CALL_TO]->(called33)
+
+CREATE (connect34:Connect {id: 1449175373})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect34)
+CREATE (called34:CallTo {orig: "5401212555", fwd: "80000"})
+CREATE (callingvm34:IncomingVM {id: "5401212555", duration: 100})    
+CREATE (connect34)-[:VOICEMAIL {call: "Incoming", Abandon: false}]->(callingvm34)
+CREATE (callingvm34)-[:CALL_TO]->(called34)
+
+CREATE (connect35:Connect {id: 1449176076})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect35)
+CREATE (called35:CallTo {orig: "7021212555", fwd: "80000"})
+CREATE (callingvm35:IncomingVM {id: "6021212555", duration: 114})    
+CREATE (connect35)-[:VOICEMAIL {call: "Incoming", Abandon: false}]->(callingvm35)
+CREATE (callingvm35)-[:CALL_TO]->(called35)
+
+CREATE (connect36:Connect {id: 1449176132})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect36)
+CREATE (called36:CallTo {orig: "4041212555", fwd: "80000"})
+CREATE (callingvm36:IncomingVM {id: "4701212555", duration: 66})    
+CREATE (connect36)-[:VOICEMAIL {call: "Incoming", Abandon: false}]->(callingvm36)
+CREATE (callingvm36)-[:CALL_TO]->(called36)
+
+CREATE (connect37:Connect {id: 1449177292})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect37)
+CREATE (called37:CallTo {orig: "8001212555", fwd: "80000"})
+CREATE (callingvm37:VoiceCall {id: "9515551212", duration: 300})    
+CREATE (connect37)-[:VOICEMAIL {call: "Outgoing", Abandon: false}]->(callingvm37)
+CREATE (callingvm37)-[:CALL_TO]->(called37)
+
+CREATE (connect371:Connect {id: 1449177501})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect371)
+CREATE (called371:CallTo {orig: "4071212555", fwd: "80000"})
+CREATE (callingvm371:VoiceCall {id: "4075551212", duration: 364})    
+CREATE (connect371)-[:VOICEMAIL {call: "Outgoing", Abandon: false}]->(callingvm371)
+CREATE (callingvm371)-[:CALL_TO]->(called371)
+
+CREATE (connect38:Connect {id: 1449177594})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect38)
+CREATE (called38:CallTo {orig: "7141212555", fwd: "80000"})
+CREATE (callingvm38:IncomingVM {id: "8011212555", duration: 165})    
+CREATE (connect38)-[:VOICEMAIL {call: "Incoming", Abandon: false}]->(callingvm38)
+CREATE (callingvm38)-[:CALL_TO]->(called38)
+
+CREATE (connect39:Connect {id: 1449179416})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect39)
+CREATE (called39:CallTo {orig: "8001212555", fwd: "80000"})
+CREATE (callingvm39:VoiceCall {id: "8175551212", duration: 323})    
+CREATE (connect39)-[:VOICEMAIL {call: "Outgoing", Abandon: false}]->(callingvm39)
+CREATE (callingvm39)-[:CALL_TO]->(called39)
+
+CREATE (connect40:Connect {id: 1449180507})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect40)
+CREATE (called40:CallTo {orig: "4101212555", fwd: "80000"})
+CREATE (callingvm40:IncomingVM {id: "2401212555", duration: 111})    
+CREATE (connect40)-[:VOICEMAIL {call: "Incoming", Abandon: false}]->(callingvm40)
+CREATE (callingvm40)-[:CALL_TO]->(called40)
+
+CREATE (connect41:Connect {id: 1449180703})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect41)
+CREATE (called41:CallTo {orig: "4041212555", fwd: "80000"})
+CREATE (callingvm41:IncomingVM {id: "2141212555", duration: 91})    
+CREATE (connect41)-[:VOICEMAIL {call: "Incoming", Abandon: false}]->(callingvm41)
+CREATE (callingvm41)-[:CALL_TO]->(called41)
+
+CREATE (connect42:Connect {id: 1449181970})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect42)
+CREATE (called42:CallTo {orig: "4041212555", fwd: "80000"})
+CREATE (callingvm42:IncomingVM {id: "4041212555", duration: 65})    
+CREATE (connect42)-[:VOICEMAIL {call: "Incoming", Abandon: false}]->(callingvm42)
+CREATE (callingvm42)-[:CALL_TO]->(called42)
+
+CREATE (connect43:Connect {id: 1449182480})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect43)
+CREATE (called43:CallTo {orig: "8001212555", fwd: "80000"})
+CREATE (callingvm43:VoiceCall {id: "7605551212", duration: 530})    
+CREATE (connect43)-[:VOICEMAIL {call: "Outgoing", Abandon: false}]->(callingvm43)
+CREATE (callingvm43)-[:CALL_TO]->(called43)
+
+CREATE (connect44:Connect {id: 1449183491})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect44)
+CREATE (called44:CallTo {orig: "4041212555", fwd: "80000"})
+CREATE (callingvm44:IncomingVM {id: "4041212555", duration: 81})    
+CREATE (connect44)-[:VOICEMAIL {call: "Incoming", Abandon: false}]->(callingvm44)
+CREATE (callingvm44)-[:CALL_TO]->(called44)
+
+CREATE (connect45:Connect {id: 1449186481})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect45)
+CREATE (called45:CallTo {orig: "4041212555", fwd: "80000"})
+CREATE (callingvm45:IncomingVM {id: "7701212555", duration: 66})    
+CREATE (connect45)-[:VOICEMAIL {call: "Incoming", Abandon: false}]->(callingvm45)
+CREATE (callingvm45)-[:CALL_TO]->(called45)
+
+CREATE (connect46:Connect {id: 1449189294})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect46)
+CREATE (called46:CallTo {orig: "4041212555", fwd: "80000"})
+CREATE (callingvm46:IncomingVM {id: "7701212555", duration: 62})    
+CREATE (connect46)-[:VOICEMAIL {call: "Incoming", Abandon: false}]->(callingvm46)
+CREATE (callingvm46)-[:CALL_TO]->(called46)
+
+CREATE (connect47:Connect {id: 1449192673})
+CREATE (calldate)-[:CONNECT_TIME {date: 20151203}]->(connect47)
+CREATE (called47:CallTo {orig: "4041212555", fwd: "80000"})
+CREATE (callingvm47:IncomingVM {id: "9191212555", duration: 95})    
+CREATE (connect47)-[:VOICEMAIL {call: "Incoming", Abandon: false}]->(callingvm47)
+CREATE (callingvm47)-[:CALL_TO]->(called47)
+;
+
+----
+
+image::https://raw.githubusercontent.com/kaisesha/cdrgraph/1232087e48c0ea4b0e395fe23dc8ccd85b7d2e34/images/cdranalytic.PNG[]
+ 
+== Incoming Calls
+ 
+[source,cypher]
+----
+MATCH (c:Company)-[]->(n0:CallDate)-[]->(n:Connect)-[r:INCOMING]->(n1)-[]->(n2)
+RETURN c, n0, n, r, n1, n2;
+----
+
+image::https://raw.githubusercontent.com/kaisesha/cdrgraph/b6ea3ff22d0edaf9ffe494c5f40ce3a52dfa094e/images/Incoming.png[]
+
+== Voicemail 
+[source,cypher]
+----
+MATCH (c:Company)-[]->(n0:CallDate)-[]->(n:Connect)-[r:VOICEMAIL]->(n1)-[]->(n2)
+RETURN c, n0, n, r, n1, n2;
+----
+
+image::https://raw.githubusercontent.com/kaisesha/cdrgraph/b6ea3ff22d0edaf9ffe494c5f40ce3a52dfa094e/images/Voicemail.png[]
+
+== Call Distributions
+
+----
+Total calls by call type:
+----
+[source,cypher]
+----
+MATCH (n:Connect) 
+WITH count(n) as Total
+MATCH (n:Connect)-[r:INCOMING]->(n1)
+WITH Total, COUNT(n) as Incoming
+MATCH (n:Connect)-[r:OUTGOING]->(n1)
+WITH Total, Incoming, COUNT(n) as Outgoing
+MATCH (n:Connect)-[r:VOICEMAIL]->(n1)
+WITH Total, Incoming, Outgoing, COUNT(n) as Voicemail
+RETURN Total, Incoming, Outgoing, Voicemail;
+----
+
+image::https://raw.githubusercontent.com/kaisesha/cdrgraph/d6a0d2db9df43780a1f4435dc4d0d78438bfbbaa/Totalcalls.PNG[]
+
+----
+Phone numbers and total calls by call type:
+----
+[source,cypher]
+----
+//Total calls by phone number
+MATCH (n:Connect)-[]->(n1)-[]->(n2)
+RETURN n2.orig as PhoneNbr, COUNT(n) as Count ORDER BY Count DESC;
+//
+MATCH (n:Connect)-[r:INCOMING]->(n1)-[]->(n2)
+RETURN n2.orig as Incoming, COUNT(n) as Count ORDER BY Count  DESC;
+MATCH (n:Connect)-[r:OUTGOING]->(n1)-[]->(n2)
+RETURN n2.orig as Outgoing, COUNT(n) as Count ORDER BY Count  DESC;
+MATCH (n:Connect)-[r:VOICEMAIL]->(n1)-[]->(n2)
+RETURN n2.orig as Voicemail, COUNT(n) as Count ORDER BY Count  DESC;
+----
+image:https://raw.githubusercontent.com/kaisesha/cdrgraph/8cf79529036e15c7226eeb6079b6e6b97d2fd504/images/Count_Phone.PNG[width=100]image:https://raw.githubusercontent.com/kaisesha/cdrgraph/e34c3b39114bf2d29b4aafd704d0afeef7764f85/images/InCalls.PNG[width=170]image:https://raw.githubusercontent.com/kaisesha/cdrgraph/e34c3b39114bf2d29b4aafd704d0afeef7764f85/images/Otcalls.PNG[width=170]image:https://raw.githubusercontent.com/kaisesha/cdrgraph/e34c3b39114bf2d29b4aafd704d0afeef7764f85/images/VM.PNG[width=170]
+
+
+----
+10 out of 11 calls to 4041212555 went to voicemail.
+----
+
+== More Details...
+
+A graph showing multiple calls both incoming and outgoing for a given time (with a bigger dataset). 
+
+[source,cypher]
+----
+MATCH (n:Connect)-[r:VOICEMAIL {call: 'Incoming'}]-(n1:VoiceCall)
+WITH DISTINCT n.id as inc
+MATCH (n1:Connect)-[r1:VOICEMAIL {call: 'Outgoing'}]-(n2:VoiceCall)
+WHERE n1.id = inc
+WITH DISTINCT n1.id as out
+MATCH (x:Company)-[]->(n0:CallDate)-[]->(n2:Connect)-[r2:INCOMING|VOICEMAIL|OUTGOING]->(n11)-[]->(n21)
+WHERE n2.id = out
+RETURN x, n0, n2, r2, n11, n21;
+----
+
+image::https://raw.githubusercontent.com/kaisesha/cdrgraph/aafd1a2ae478cbf9cb545c488cd72ec59b38ad65/images/clusters.PNG[]
+
+== Resources
+Dataset: https://github.com/kaisesha/cdrgraph/blob/master/CDR_Gist3.csv
+
+----
+Created by {Kamal Murthy}

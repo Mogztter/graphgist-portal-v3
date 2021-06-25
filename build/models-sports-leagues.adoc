@@ -1,0 +1,423 @@
+= Models Sports Leagues
+Aravind R. Yarram <yaravind@gmail.com>
+v1.0, 08-Sep-2013
+
+== Domain Model
+
+Each *League* has multiple *Level*s like playoffs, quarter-finals etc. The levels are ordered: first is playoffs, +NEXT+ is quarter-finals, +NEXT+ is semi-finals and then the next and last one is the finals. The ordering is represented using a http://docs.neo4j.org/chunked/milestone/cookbook-linked-list.html[linked-list].
+
+A *Player* can play for more than one team over multiple leagues but can only play for a single team in a given league. This is captured by the +PLAYED_IN_FOR_LEAGUE+ http://docs.neo4j.org/chunked/milestone/cypher-cookbook-hyperedges.html[hyperedge] between player, team and league using http://docs.neo4j.org/chunked/milestone/cypher-cookbook-hyperedges.html[hypernode] *PlayerTeamLeague* . A team can register in a new league with a different name in which case, we want to know what it was +PREVIOUSLY_KNOWN_AS+.The fact that a player had for a given team (irrespective of which league) is captured by +PLAYED_WITH_TEAM+ between the player and team to simplify the queries.
+
+In each level, *Teams* are organized into *Pools* and each pool consists of one or more teams. Each pool has fixtures i.e. the *Matches* played between two teams, +TEAM_A+ and +TEAM_B+ respectively. Each match is +PLAYED_ON+ a court. Each match has a +WINNER+, +LOSER+ and a +MVP+.
+
+A team can have many players but only subset of them, allowed by the game rules (for e.g. only 2 players can play table tennis). This is captured by the +TEAM_A_PLAYER+ and +TEAM_B_PLAYER+ relationships from match to each of the players who played this match.
+
+Each league is +PLAYED_AT+ one or more *Venues*. Each venue has one or more *Courts*. The more the courts and venues, the faster we can complete the league.
+
+Each league gives away certain Awards. Awards are +AWARDED_TO+ teams and players. Teams win +TEAM_AWARD+ s and players win +INDIVIDUAL_AWARD+ s.
+
+image::https://raw.github.com/funpluscharity/avleague/master/avleague/src/test/resources/sports_domain_leagues.jpg[Domain Model]
+
+== Setup
+
+Let us relaize this model using Volleyball as the sport. This model (with more enhancements) will eventually be used as a database for http://www.AtlantaVolleyballLeague.com[Atlanta Volleyball League]
+
+//hide
+//setup
+//output
+[source,cypher]
+----
+//Nodes for league 1
+
+CREATE (league:League{ name:'September Volleyball League' })
+
+CREATE (winner:Award { name:'Winner' })
+CREATE (runner:Award { name:'Runner' })
+CREATE (spiker:Award { name:'Best Spiker' })
+
+//linked list
+CREATE (playoffs:Level { name:'Playoffs' })
+CREATE (quarters:Level { name:'Quarterfinal' })
+CREATE (semis:Level { name:'Semifinal' })
+CREATE (final:Level { name:'Final' })
+
+CREATE (oceePark:Venue { name:'Ocee Park' })
+CREATE (low:Court { name:'Low Court' })
+CREATE (high:Court { name:'High Court' })
+
+CREATE (poolA:Pool { name:'Pool A' })
+CREATE (poolAQuarterfinal:Pool { name:'Pool A' })
+
+CREATE (falcons:Team { name:'Falcons' })
+CREATE (bob:Player { name:'Bob' })
+CREATE (alice:Player { name:'Alice' })
+
+CREATE (broncos:Team { name:'Broncos' })
+CREATE (ted:Player { name:'Ted' })
+CREATE (carol:Player { name:'Carol' })
+
+CREATE (lakers:Team { name:'Lakers' })
+CREATE (paul:Player { name:'Paul' })
+CREATE (aravind:Player { name:'Aravind' })
+CREATE (rishik:Player { name:'Rishik' })
+CREATE (esha:Player { name:'Esha' })
+
+//hyper nodes
+CREATE (bobFalconsSeptemberLeague:PlayerTeamLeague { name:'Bob_Falcons_September_League' })
+CREATE (aliceFalconsSeptemberLeague:PlayerTeamLeague { name:'Alice_Falcons_September_League' })
+CREATE (tedBroncosSeptemberLeague:PlayerTeamLeague { name:'Ted_Broncos_September_League' })
+CREATE (carolBroncosSeptemberLeague:PlayerTeamLeague { name:'Carol_Broncos_September_League' })
+
+CREATE (match1:Match { name:'Falcons versus Broncos' })
+CREATE (match2:Match { name:'Falcons versus Lakers' })
+CREATE (quartersMatch1:Match { name:'Falcons versus Broncos Quarters' })
+
+//Relationships
+CREATE league-[:TEAM_AWARD]->winner
+CREATE league-[:TEAM_AWARD]->runner
+CREATE league-[:INDIVIDUAL_AWARD]->spiker
+
+CREATE league-[:PLAYED_AT]->oceePark
+CREATE oceePark-[:COURT]->high
+CREATE oceePark-[:COURT]->low
+
+CREATE league-[:LEVEL]->playoffs
+CREATE playoffs-[:NEXT]->quarters
+CREATE quarters-[:NEXT]->semis
+CREATE semis-[:NEXT]->final
+
+CREATE playoffs-[:POOL]->poolA
+CREATE quarters-[:POOL]->poolAQuarterfinal
+
+CREATE poolA-[:TEAM]->falcons
+CREATE poolA-[:TEAM]->broncos
+CREATE poolA-[:TEAM]->lakers
+CREATE poolAQuarterfinal-[:TEAM]->falcons
+CREATE poolAQuarterfinal-[:TEAM]->broncos
+
+CREATE poolA-[:FIXTURE]->match1
+CREATE poolA-[:FIXTURE]->match2
+CREATE poolAQuarterfinal-[:FIXTURE]->quartersMatch1
+
+//hyper edges
+CREATE bob-[:PLAYED_FOR_IN_LEAGUE]->bobFalconsSeptemberLeague-[:PLAYED_FOR]->falcons
+CREATE bobFalconsSeptemberLeague-[:IN_LEAGUE]->league
+CREATE alice-[:PLAYED_FOR_IN_LEAGUE]->aliceFalconsSeptemberLeague-[:PLAYED_FOR]->falcons
+CREATE aliceFalconsSeptemberLeague-[:IN_LEAGUE]->league
+CREATE ted-[:PLAYED_FOR_IN_LEAGUE]->tedBroncosSeptemberLeague-[:PLAYED_FOR]->broncos
+CREATE tedBroncosSeptemberLeague-[:IN_LEAGUE]->league
+CREATE carol-[:PLAYED_FOR_IN_LEAGUE]->carolBroncosSeptemberLeague-[:PLAYED_FOR]->broncos
+CREATE carolBroncosSeptemberLeague-[:IN_LEAGUE]->league
+CREATE paul-[:PLAYED_FOR_IN_LEAGUE]->paulLakersSeptemberLeague-[:PLAYED_FOR]->lakers
+CREATE paulLakersSeptemberLeague-[:IN_LEAGUE]->league
+CREATE aravind-[:PLAYED_FOR_IN_LEAGUE]->aravindLakersSeptemberLeague-[:PLAYED_FOR]->lakers
+CREATE aravindLakersSeptemberLeague-[:IN_LEAGUE]->league
+CREATE rishik-[:PLAYED_FOR_IN_LEAGUE]->rishikLakersSeptemberLeague-[:PLAYED_FOR]->lakers
+CREATE rishikLakersSeptemberLeague-[:IN_LEAGUE]->league
+CREATE esha-[:PLAYED_FOR_IN_LEAGUE]->eshaLakersSeptemberLeague-[:PLAYED_FOR]->lakers
+CREATE eshaLakersSeptemberLeague-[:IN_LEAGUE]->league
+
+//to simplify queries
+CREATE bob-[:PLAYED_WITH_TEAM]->falcons
+CREATE alice-[:PLAYED_WITH_TEAM]->falcons
+CREATE ted-[:PLAYED_WITH_TEAM]->broncos
+CREATE carol-[:PLAYED_WITH_TEAM]->broncos
+CREATE paul-[:PLAYED_WITH_TEAM]->lakers
+CREATE aravind-[:PLAYED_WITH_TEAM]->lakers
+CREATE rishik-[:PLAYED_WITH_TEAM]->lakers
+CREATE esha-[:PLAYED_WITH_TEAM]->lakers
+
+CREATE falcons-[:CONTESTED_IN]->league
+CREATE broncos-[:CONTESTED_IN]->league
+CREATE lakers-[:CONTESTED_IN]->league
+
+//falcons versus broncos
+CREATE match1-[:TEAM_A]->falcons
+CREATE match1-[:TEAM_B]->broncos
+CREATE match1-[:WINNER]->falcons
+CREATE match1-[:LOSER]->broncos
+CREATE match1-[:MVP]->bob
+CREATE match1-[:TEAM_A_PLAYER]->bob
+CREATE match1-[:TEAM_A_PLAYER]->alice
+CREATE match1-[:TEAM_B_PLAYER]->ted
+CREATE match1-[:TEAM_B_PLAYER]->carol
+CREATE league-[:PART_OF_LEAGUE]->match1
+CREATE match1-[:PLAYED_ON]->high
+
+//falcons versus lakers
+CREATE match2-[:TEAM_A]->falcons
+CREATE match2-[:TEAM_B]->lakers
+CREATE match2-[:WINNER]->falcons
+CREATE match2-[:LOSER]->lakers
+CREATE match2-[:MVP]->bob
+CREATE match2-[:TEAM_A_PLAYER]->bob
+CREATE match2-[:TEAM_A_PLAYER]->alice
+CREATE match2-[:TEAM_B_PLAYER]->paul
+CREATE match2-[:TEAM_B_PLAYER]->aravind
+CREATE match2-[:TEAM_B_PLAYER]->rishik
+CREATE league-[:PART_OF_LEAGUE]->match2
+CREATE match2-[:PLAYED_ON]->low
+
+//falcons versus broncos quarters
+CREATE quartersMatch1-[:TEAM_A]->falcons
+CREATE quartersMatch1-[:TEAM_B]->broncos
+CREATE quartersMatch1-[:WINNER]->falcons
+CREATE quartersMatch1-[:LOSER]->broncos
+CREATE quartersMatch1-[:MVP]->alice
+CREATE quartersMatch1-[:TEAM_A_PLAYER]->bob
+CREATE quartersMatch1-[:TEAM_A_PLAYER]->alice
+CREATE quartersMatch1-[:TEAM_B_PLAYER]->ted
+CREATE quartersMatch1-[:TEAM_B_PLAYER]->carol
+CREATE league-[:PART_OF_LEAGUE]->quartersMatch1
+CREATE quartersMatch1-[:PLAYED_ON]->high
+
+CREATE winner-[:AWARDED_TO]->falcons
+CREATE runner-[:AWARDED_TO]->broncos
+CREATE spiker-[:AWARDED_TO]->alice
+
+
+//Nodes for league 2
+CREATE (octLeague:League { name:'October Volleyball League' })
+
+CREATE octLeague-[:TEAM_AWARD]->(winnerOct:Award { name:'Winner' })
+
+//linked list
+CREATE octLeague-[:LEVEL]->(playoffsOct:Level { name:'Playoffs' })
+CREATE playoffsOct-[:NEXT]->(finalOct:Level { name:'Final' })
+
+CREATE octLeague-[:PLAYED_AT]->(donPark:Venue { name:'Don White Memorial Park' })
+CREATE donPark-[:COURT]->(c1:Court { name:'Court 1' })
+CREATE donPark-[:COURT]->(c2:Court { name:'Court 2' })
+
+CREATE (megaBytes:Team { name:'MegaBytes' })-[:PREVIOUSLY_KNOWN_AS]->falcons
+CREATE (john:Player { name:'John' })-[:PLAYED_WITH_TEAM]->megaBytes
+CREATE alice-[:PLAYED_WITH_TEAM]->megaBytes
+
+//hyper edges
+CREATE john-[:PLAYED_FOR_IN_LEAGUE]->johnMegaBytesOctoberLeague-[:PLAYED_FOR]->megaBytes
+CREATE johnMegaBytesOctoberLeague-[:IN_LEAGUE]->octLeague
+CREATE alice-[:PLAYED_FOR_IN_LEAGUE]->aliceMegaBytesOctoberLeague-[:PLAYED_FOR]->megaBytes
+CREATE aliceMegaBytesOctoberLeague-[:IN_LEAGUE]->octLeague
+
+//register full broncos team in october league
+CREATE ted-[:PLAYED_FOR_IN_LEAGUE]->tedBroncosOctoberLeague-[:PLAYED_FOR]->broncos
+CREATE tedBroncosOctoberLeague-[:IN_LEAGUE]->octLeague
+CREATE carol-[:PLAYED_FOR_IN_LEAGUE]->carolBroncosOctoberLeague-[:PLAYED_FOR]->broncos
+CREATE carolBroncosOctoberLeague-[:IN_LEAGUE]->octLeague
+
+CREATE winnerOct-[:AWARDED_TO]->broncos
+----
+
+//graph
+
+== Use Cases
+
+=== League
+
+==== Get all leagues and venues.
+[source,cypher]
+----
+MATCH (l:League)-[:PLAYED_AT]->(v:Venue)-[:COURT]->(c:Court) 
+RETURN l.name AS League, v.name AS Venue, collect(c.name) AS Courts
+----
+
+//table
+
+==== Get total teams contested by league.
+[source,cypher]
+----
+MATCH (p:Player)-[:PLAYED_FOR_IN_LEAGUE]->(hyperEdge)-[:PLAYED_FOR]->(t:Team), (hyperEdge)-[:IN_LEAGUE]->(l:League) 
+RETURN COUNT(DISTINCT t) AS TotalTeamsContested, l.name AS League
+----
+
+//table
+
+==== How many teams participated in a given league?
+[source,cypher]
+----
+MATCH (t:Team)<-[:PLAYED_FOR]-(hyperEdge)-[:IN_LEAGUE]->(l:League) 
+WHERE l.name='September Volleyball League' 
+RETURN count(DISTINCT t) AS TotalTeamsContested
+----
+
+//table
+
+==== Get total players participated by league.
+[source,cypher]
+----
+MATCH (p:Player)-[:PLAYED_FOR_IN_LEAGUE]->(hyperEdge)-[:PLAYED_FOR]->(t:Team), (hyperEdge)-[:IN_LEAGUE]->(l:League) 
+RETURN count(p) AS TotalPlayersContested, l.name AS League
+----
+
+//table
+
+==== How many players contested in a given league?
+[source,cypher]
+----
+MATCH (p:Player)-[:PLAYED_FOR_IN_LEAGUE]->(hyperEdge)-[:PLAYED_FOR]->(t:Team), (hyperEdge)-[:IN_LEAGUE]->(l:League) 
+WHERE l.name='September Volleyball League' 
+RETURN count(p) AS TotalPlayersContested
+----
+
+//table
+
+==== How many players contested in a given league, group by Team.
+[source,cypher]
+----
+MATCH (p:Player)-[:PLAYED_FOR_IN_LEAGUE]->(hyperEdge)-[:PLAYED_FOR]->(t:Team), (hyperEdge)-[:IN_LEAGUE]->(l:League) 
+WHERE l.name='September Volleyball League' 
+RETURN t.name AS Team, count(p) AS TotalPlayersContested, collect(p.name) AS Players
+----
+
+//table
+
+==== Where was this league organized?
+[source,cypher]
+----
+MATCH (l:League)-[:PLAYED_AT]->(v:Venue)-[:COURT]->(c:Court) 
+WHERE l.name='September Volleyball League' 
+RETURN v.name AS Venue, collect(c.name) AS Courts
+----
+
+//table
+
+==== Get all the levels of a given league in the order they are played.
+[source,cypher]
+----
+MATCH p=(league:League)-[r:LEVEL|NEXT*]->(l:Level) 
+WHERE league.name='September Volleyball League' 
+WITH last(nodes(p)) AS levels
+RETURN COLLECT(levels.name) AS LevelsInOrder
+----
+
+//table
+
+==== Get the levels of each league.
+[source,cypher]
+----
+MATCH p=(league:League)-[r:LEVEL|NEXT*]->(l:Level) 
+WITH last(nodes(p)) AS levels, league 
+RETURN league.name AS League, COLLECT(levels.name) AS LevelsInOrder
+----
+
+//table
+
+=== Team
+
+==== Get a list of all the players that had ever played for a given team. Simplified by using the played_with_team relationship.
+[source,cypher]
+----
+MATCH (p:Player)-[:PLAYED_WITH_TEAM]->(t:Team) WHERE t.name='Falcons' 
+RETURN p AS Players
+----
+
+//table
+
+==== Get a list of players for a given team for a given league.
+[source,cypher]
+----
+MATCH (p:Player)-[:PLAYED_FOR_IN_LEAGUE]->(hyperEdge)-[:PLAYED_FOR]->(t:Team), (hyperEdge)-[:IN_LEAGUE]->(l:League) 
+WHERE l.name='September Volleyball League' AND t.name='Lakers' 
+RETURN p AS Players
+----
+
+//table
+
+==== Get all the leagues this team had played in.
+[source,cypher]
+----
+MATCH (t:Team)<-[:PLAYED_FOR]-(hyperEdge)-[:IN_LEAGUE]->(l:League) 
+WHERE t.name='Broncos' 
+RETURN DISTINCT l.name AS Leagues
+----
+
+//table
+
+==== How many leagues this team has WON?
+[source,cypher]
+----
+MATCH (l:League)-[:TEAM_AWARD]->(a:Award)-[:AWARDED_TO]->(t:Team) 
+WHERE t.name='Falcons' 
+RETURN t.name AS Team, a.name AS Award, count(t) AS TimesWon, l.name AS League
+----
+
+//table
+
+==== Which levels did this team win through in a given league?
+[source,cypher]
+----
+MATCH (t:Team)<-[:TEAM]-(p:Pool)<-[:POOL]-(l:Level)<-[:LEVEL|NEXT*]-(league:League) 
+WHERE league.name='September Volleyball League' 
+RETURN t.name AS Team, collect(l.name) AS Levels
+----
+
+//table
+
+==== Get previous names or aliases.
+[source,cypher]
+----
+MATCH (t:Team)-[:PREVIOUSLY_KNOWN_AS]->(other) 
+RETURN t.name AS CurrentName, other.name AS PreviousName
+----
+
+//table
+
+=== Player
+
+==== How many times part of winning (winner, runner etc) Team.
+[source,cypher]
+----
+MATCH (p:Player)-[:PLAYED_FOR_IN_LEAGUE]->(hyperEdge)-[:PLAYED_FOR]->(t:Team), 
+      (hyperEdge)-[:IN_LEAGUE]->(l:League), 
+      (l:League)-[:TEAM_AWARD]->(a:Award)-[:AWARDED_TO]->(t:Team) 
+WHERE p.name='Bob' AND a.name='Winner' 
+RETURN count(t) AS TimesPartOfWinningTeam
+----
+
+//table
+
+==== Get the co-players of a given player.
+[source,cypher]
+----
+MATCH (p:Player)-[:PLAYED_WITH_TEAM]->(t:Team)<-[:PLAYED_WITH_TEAM]-(coPlayer:Player) 
+WHERE p.name='Alice' 
+RETURN coPlayer.name AS Coplayer, t.name AS FromTeam
+----
+
+//table
+
+==== How many MVP awards are won by the given player?
+[source,cypher]
+----
+MATCH (p:Player)-[:MVP]-(m:Match) 
+WHERE p.name='Bob' 
+RETURN count(p) AS TimesWonTheMVPAward
+----
+
+//table
+
+=== Awards
+
+==== All the awards of a given league.
+[source,cypher]
+----
+MATCH (league:League)-[r:INDIVIDUAL_AWARD|TEAM_AWARD]->(award) 
+WHERE league.name='September Volleyball League' 
+RETURN award.name AS Award, TYPE(r) AS AwardType
+----
+
+//table
+
+==== Winners of the awards of a given league.
+[source,cypher]
+----
+MATCH (league:League)-[:INDIVIDUAL_AWARD|:TEAM_AWARD]->(award:Award)-[:AWARDED_TO]->(awardee) 
+WHERE league.name='September Volleyball League' 
+RETURN award.name AS Award, awardee.name AS WonBy
+----
+
+//table
+
+=== GitHub Project
+
+A complete working example of this domain can be cloned from  https://github.com/funpluscharity/avleague.git[funpluscharity/avleague]. Contact yaravind@gmail.com if you want to contribute to this project or has any suggestions on enhancing the model.

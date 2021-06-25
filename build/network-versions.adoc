@@ -1,0 +1,339 @@
+= Network versioning using relationnodes
+
+Recently there was a nice blog on versioning networks by Ian Robinson (http://iansrobinson.com/2014/05/13/time-based-versioned-graphs/[read it here]) on using identity nodes and separating structure from state. In this gist I'd like to put in my 2 cents by introducing another approach using _relationnodes_. This is more about structure of a network than about states of nodes, but it treats versioning differently. As Ian states in his blog, there's always a trade-off to be made, since versioning causes an extra load on storage and processing.
+
+== Relationnodes?
+
+=== What are relationnodes?
+Relation nodes are intermediary nodes between two network nodes that represents the relation between the nodes.
+
+So, if A and B are two network nodes, instead of connecting them with a relationship of `[:RELTYPE]`,
+a relationnode is inserted in between, and is connected with a `[:RS]` and `[RE]`  which stand for _relation start_ and  _relation end_ respectively.
+
+image::http://www.ophileon.com/img/Gist01.jpg[]
+
+=== Why use relationnodes?
+Neo4j (my preferred graph db) current 2.0.3. version does not allow to create relationships between a relationship and a node. And this is what I need if I want to indicate that a specific relationship between to network nodes belongs to a specific network, which is itself represented by a node. 
+
+In addition, my usecase requires me to share network nodes between networks, but in a different constellation. 
+
+Another reason is that a network is determined by the relationships between the nodes. Not by the nodes in themselves. If I have two nodes A and B, this doesn't tell me something about their relationship. Not its direction, not its type, or if there are multiple relationships connecting them. On the other hand, if I know a relationship, I know its starting/ending node and its type. A node can exist without relationships, while a relationship can only exist with a start and end node.
+
+A fourth reason for using this approach is that it allows me to compare networks. For instance to answer questions like "Can version 3 of Network 1 co-exist with version 1 of Network 2?". This will not be subject of this gist however, since it requires some additional braintime.
+
+== Creating a network
+
+=== Setup
+The process of creating a network has the following steps:
+
+* Create a node representing a network
+* Create network nodes
+* Create relationnodes that are linked through  `[:RS]` and `[:RE]` relations to network nodes and with an `[:UPDATE {type:'ADD', version:1]` to the network node.
+
+A first version of Network 1 of chaining A to B to C is created by the setup query.  Note that the `version` property of the `[:UPDATE]` relationship can simply be replaced or accompanied by a timestamp property, making the graph time-aware.
+
+
+//setup
+
+[source,cypher]
+----
+CREATE (_0:`nw` {`name`:"Network1"})
+CREATE (_5:`nwnode` {`name`:"A"})
+CREATE (_6:`nwnode` {`name`:"B"})
+CREATE (_7:`nwnode` {`name`:"C"})
+CREATE (_13:`relationnode` {`id`:1})
+CREATE (_14:`relationnode` {`id`:2})
+CREATE _5-[:`RS`]->_13
+CREATE _6-[:`RS`]->_14
+CREATE _13-[:`RE`]->_6
+CREATE _14-[:`RE`]->_7
+CREATE _0-[:`UPDATE` {`type`:"ADD", `version`:1}]->_14
+CREATE _0-[:`UPDATE` {`type`:"ADD", `version`:1}]->_13
+----
+
+//graph
+
+The relations in this network are:
+
+[source,cypher]
+----
+MATCH (s:nwnode)-[:RS]->(rn:relationnode)-[:RE]->(e:nwnode)
+RETURN s.name as From,e.name as To ORDER BY From,To
+----
+//table
+
+=== Adding a node to the network
+If a node has to be added to the network, we need to:
+
+* Create the new node
+* Create a relationnode
+* Create an `[:UPDATE]` this time with version:2
+
+[source,cypher]
+----
+MATCH (nw:nw {name:"Network1"}),(sn:nwnode {name:"C"})
+CREATE (_8:`nwnode` {`name`:"D"})
+CREATE (_15:`relationnode` {`id`:3})
+CREATE (sn)-[:`RS`]->_15-[:`RE`]->_8
+CREATE (nw)-[:`UPDATE` {`type`:"ADD", `version`:2}]->_15
+----
+
+//hide
+[source,cypher]
+----
+MATCH (nw:nw {name:"Network1"})-[u:UPDATE]->(rn:relationnode) 
+WHERE u.version <=2
+WITH rn,u.version AS uv,u.type AS ut ORDER BY rn.id,u.version DESC
+WITH rn,HEAD(COLLECT(ut)) AS lastut
+WHERE lastut="ADD"
+MATCH (s:nwnode)-[:RS]->(rn)-[:RE]->(e:nwnode)
+RETURN s,rn,e
+----
+//graph_result
+
+The relations in version 2 of our network are:
+
+[source,cypher]
+----
+MATCH (s:nwnode)-[:RS]->(rn:relationnode)-[:RE]->(e:nwnode)
+RETURN s.name as From,e.name as To ORDER BY From,To
+----
+
+//table
+
+=== Removing a node from the network
+If a node has to be removed to the network, what we do is to add an `[:UPDATE {type:'REMOVE', version:3}]` relation to the concerned relationnodes. So, removing node "C" entirely from Network 1 is a matter of:
+
+* Finding the relationnodes connecting "C" with Network 1
+* Create `[:UPDATE {type:'REMOVE', version:3}]` relationships between Network 1 and these relationnodes
+
+
+[source,cypher]
+----
+MATCH (nw:nw {name:"Network1"})-[:UPDATE]->(rn:relationnode)-[:RS|RE]-(n:nwnode {name:"C"})
+WITH nw,COLLECT(DISTINCT rn) AS rns
+FOREACH ( i IN rns |
+  CREATE (nw)-[:`UPDATE` {`type`:"REMOVE", `version`:3}]->(i)  
+)
+
+----
+
+A full list of relations that exist now is given by this query:
+
+[source,cypher]
+----
+MATCH (nw:nw {name:"Network1"})-[u:UPDATE]->(rn:relationnode),(s:nwnode)-[:RS]->(rn)-[:RE]->(e:nwnode) 
+RETURN u.version AS Version,u.type AS UpdateType,s.name AS From, e.name AS To 
+ORDER BY Version,UpdateType,From
+----
+//table
+
+To get the relations in version 3 of our network, we have to limit the search to the network, and just take into account the transactions for which the most recent `[:UPDATE]` that have a type = "ADD".
+
+//hide
+[source,cypher]
+----
+MATCH (nw:nw {name:"Network1"})-[u:UPDATE]->(rn:relationnode) 
+WITH rn,u.version AS uv,u.type AS ut ORDER BY rn.id,u.version DESC
+WITH rn,HEAD(COLLECT(ut)) AS lastut
+WHERE lastut="ADD"
+MATCH (s:nwnode)-[:RS]->(rn)-[:RE]->(e:nwnode)
+RETURN s.name as From,e.name as To ORDER BY From,To
+----
+
+//table
+
+What you see is that by removing C we also cut D out of the network. Too bad, but fortunately we can also create relationships between existing nodes.
+
+=== Create a link between two existing nodes
+If a node has to be added to the network, we need to:
+
+* Get the nodes
+* Create a relationnode
+* Create an `[:UPDATE]` this time with version:4
+
+[source,cypher]
+----
+MATCH (nw:nw {name:"Network1"}),(sn:nwnode {name:"B"}),(en:nwnode {name:"D"})
+CREATE (rn:`relationnode` {`id`:7})
+CREATE (sn)-[:`RS`]->(rn)-[:`RE`]->(en)
+CREATE (nw)-[:`UPDATE` {`type`:"ADD", `version`:4}]->(rn)
+----
+
+And the updated version of the network is:
+
+//hide
+[source,cypher]
+----
+MATCH (nw:nw {name:"Network1"})-[u:UPDATE]->(rn:relationnode) 
+WITH rn,u.version AS uv,u.type AS ut ORDER BY rn.id,u.version DESC
+WITH rn,HEAD(COLLECT(ut)) AS lastut
+WHERE lastut="ADD"
+MATCH (s:nwnode)-[:RS]->(rn)-[:RE]->(e:nwnode)
+RETURN s.name as From,e.name as To ORDER BY From,To
+----
+
+//table
+
+
+== Historical versions
+
+A specific version of the network can be retrieved by just taking into account the `[:UPDATE]` relationships up to that version.
+
+=== Version 1 of Network 1
+//hide 
+[source,cypher]
+----
+MATCH (nw:nw {name:"Network1"})-[u:UPDATE]->(rn:relationnode) 
+WHERE u.version <=1
+WITH rn,u.version AS uv,u.type AS ut ORDER BY rn.id,u.version DESC
+WITH rn,HEAD(COLLECT(ut)) AS lastut
+WHERE lastut="ADD"
+MATCH (s:nwnode)-[:RS]->(rn)-[:RE]->(e:nwnode)
+RETURN s.name as From,e.name as To ORDER BY From,To
+----
+
+//table
+
+And as a graph (only works for now 14MAY2014 when you are here http://jexp.github.io/graphgist/?40364ac2a52f57aa520a . Thanks @Jim_Salmons for pointing out)
+//hide 
+[source,cypher]
+----
+MATCH (nw:nw {name:"Network1"})-[u:UPDATE]->(rn:relationnode) 
+WHERE u.version <=1
+WITH rn,u.version AS uv,u.type AS ut ORDER BY rn.id,u.version DESC
+WITH rn,HEAD(COLLECT(ut)) AS lastut
+WHERE lastut="ADD"
+MATCH (s:nwnode)-[:RS]->(rn)-[:RE]->(e:nwnode)
+RETURN s,rn,e
+----
+//graph_result
+
+=== Version 2 of Network 1
+//hide 
+[source,cypher]
+----
+MATCH (nw:nw {name:"Network1"})-[u:UPDATE]->(rn:relationnode) 
+WHERE u.version <=2
+WITH rn,u.version AS uv,u.type AS ut ORDER BY rn.id,u.version DESC
+WITH rn,HEAD(COLLECT(ut)) AS lastut
+WHERE lastut="ADD"
+MATCH (s:nwnode)-[:RS]->(rn)-[:RE]->(e:nwnode)
+RETURN s.name as From,e.name as To ORDER BY From,To
+----
+//table
+=== Version 3 of Network 1
+//hide 
+[source,cypher]
+----
+MATCH (nw:nw {name:"Network1"})-[u:UPDATE]->(rn:relationnode) 
+WHERE u.version <=3
+WITH rn,u.version AS uv,u.type AS ut ORDER BY rn.id,u.version DESC
+WITH rn,HEAD(COLLECT(ut)) AS lastut
+WHERE lastut="ADD"
+MATCH (s:nwnode)-[:RS]->(rn)-[:RE]->(e:nwnode)
+RETURN s.name as From,e.name as To ORDER BY From,To
+----
+//table
+
+
+
+
+== Adding a second network
+One of the reasons for this approach was that I need to be able to re-use the network nodes in a second network with its own relations.
+
+Let's create a Network 2 with 2 versions.
+
+* Version 1  
+** C to A
+* Version 2  
+** A to D
+** B to A
+** D to E
+** E to A
+** E to B
+
+
+[source,cypher]
+----
+MATCH (na:nwnode {name:"A"}),(nb:nwnode {name:"B"}),(nc:nwnode {name:"C"}),(nd:nwnode {name:"D"})
+CREATE (nw:`nw` {`name`:"Network2"})
+CREATE (ne:`nwnode` {`name`:"E"})
+
+CREATE (nc)-[:`RS`]->(rn1:relationnode)-[:`RE`]->(na)
+CREATE (nw)-[:`UPDATE` {`type`:"ADD", `version`:1}]->(rn1)
+CREATE (nw)-[:`UPDATE` {`type`:"REMOVE", `version`:2}]->(rn1)
+
+CREATE (nb)-[:`RS`]->(rn2:relationnode)-[:`RE`]->(na)
+CREATE (nw)-[:`UPDATE` {`type`:"ADD", `version`:2}]->(rn2)
+
+CREATE (na)-[:`RS`]->(rn3:relationnode)-[:`RE`]->(nd)
+CREATE (nw)-[:`UPDATE` {`type`:"ADD", `version`:2}]->(rn3)
+
+CREATE (nd)-[:`RS`]->(rn4:relationnode)-[:`RE`]->(ne)
+CREATE (nw)-[:`UPDATE` {`type`:"ADD", `version`:2}]->(rn4)
+
+CREATE (ne)-[:`RS`]->(rn5:relationnode)-[:`RE`]->(nb)
+CREATE (nw)-[:`UPDATE` {`type`:"ADD", `version`:2}]->(rn5)
+
+CREATE (ne)-[:`RS`]->(rn6:relationnode)-[:`RE`]->(na)
+CREATE (nw)-[:`UPDATE` {`type`:"ADD", `version`:2}]->(rn6)
+----
+
+After which the relations of the current Network 2 are:
+
+//hide
+[source,cypher]
+----
+MATCH (nw:nw {name:"Network2"})-[u:UPDATE]->(rn:relationnode) 
+WITH rn,u.version AS uv,u.type AS ut ORDER BY rn.id,u.version DESC
+WITH rn,HEAD(COLLECT(ut)) AS lastut
+WHERE lastut="ADD"
+MATCH (s:nwnode)-[:RS]->(rn)-[:RE]->(e:nwnode)
+RETURN s.name as From,e.name as To ORDER BY From,To
+----
+
+//table
+
+//hide 
+[source,cypher]
+----
+MATCH (nw:nw {name:"Network2"})-[u:UPDATE]->(rn:relationnode) 
+WITH rn,u.version AS uv,u.type AS ut ORDER BY rn.id,u.version DESC
+WITH rn,HEAD(COLLECT(ut)) AS lastut
+WHERE lastut="ADD"
+MATCH (s:nwnode)-[:RS]->(rn)-[:RE]->(e:nwnode)
+RETURN s,rn,e
+----
+//graph_result
+
+== Just checking
+Version 2 of Network 1 is still intact of course.
+//hide 
+[source,cypher]
+----
+MATCH (nw:nw {name:"Network1"})-[u:UPDATE]->(rn:relationnode) 
+WHERE u.version <=2
+WITH rn,u.version AS uv,u.type AS ut ORDER BY rn.id,u.version DESC
+WITH rn,HEAD(COLLECT(ut)) AS lastut
+WHERE lastut="ADD"
+MATCH (s:nwnode)-[:RS]->(rn)-[:RE]->(e:nwnode)
+RETURN s.name as From,e.name as To ORDER BY From,To
+----
+//table
+
+== Afterthoughts
+
+This is my first gist. Was fun setting it up. Would be great to have  //graph thingies that visualise the query results, not the enitre graph. UPDATE :  we have them on http://jexp.github.io/graphgist/?40364ac2a52f57aa520a  :) and somewhere in the near future also on http://gist.neo4j.org/ I guess.
+
+I prefer to do things as graphy as possible. Not sure if I succeeded in this one, but I try to keep in mind that opening and closing nodes and relationships instead of doing traversals comes at a cost.
+
+Adding another property `{status: "pending"}` to the `[:UPDATE]` relationships will allow me to run cyphers answering questions  like  : "What if I do this?"
+
+As I already said, adding timestamps to the  `[:UPDATE]` relationships will make it time-aware. You could also create a linked list of version nodes and link the `[:UPDATE]` to those nodes. 
+
+Comparing different networks will be something for my next gist. 
+
+I will also be treating vizualsization aspects of working with relationnodes. Sometimes you want to see them, sometimes they get in the way because force-driven layouts may cause angles where you don't want them. Fortunately Cypher allows you to tweak results in a way that a viz engine can handle it, and to fool the viz engine so that it thinks what you feed it, is a relationship.
+
+Interested? Follow me on @tomzeppenfeldt / @ophileon  Any comments appreciated too of course.

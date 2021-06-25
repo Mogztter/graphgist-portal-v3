@@ -1,0 +1,80 @@
+= Rock-Paper-Scissors-Lizard-Spock
+
+// hide
+// setup
+[source,cypher]
+----
+create (rock:Rock), (paper:Paper), (scissors:Scissors), (lizard:Lizard), (spock:Spock),
+(rock)-[:BEATS {label: "crushes"}]->(scissors), 
+(rock)-[:BEATS {label: "crushes"}]->(lizard),
+(paper)-[:BEATS {label: "covers"}]->(rock), 
+(paper)-[:BEATS {label: "disproves"}]->(spock),
+(scissors)-[:BEATS {label: "cut"}]->(paper),
+(scissors)-[:BEATS {label: "decapitate"}]->(lizard),
+(lizard)-[:BEATS {label: "eats"}]->(paper),
+(lizard)-[:BEATS {label: "poisons"}]->(spock),
+(spock)-[:BEATS {label: "vaporizes"}]->(rock),
+(spock)-[:BEATS {label: "smashes"}]->(scissors)
+----
+
+== Overview
+
+In case you haven't heard about it yet, I recommend the following site for a little background material: http://www.samkass.com/theories/RPSSL.html[Rock-Paper-Scissors-Lizard-Spock Site by Sam Kass]
+
+//In Neo4j this looks as follows: 
+
+//image broken due to dropbox
+//image::https://dl.dropboxusercontent.com/u/29685210/RPSLS.png[]
+
+== The Rules
+
+This +[:BEATS]+ relationship might be correct from a model point of view but it's a little boring to read. So let's put these rules in a more "human readable" format:
+
+// hide
+[source,cypher]
+----
+match (winner)-[b:BEATS]->(looser)
+return 
+	head(labels(winner)) as Winner, 
+	b.label as Winning_Strategy, 
+	head(labels(looser)) as Looser
+----
+
+//table
+
+Much better. So the graph has the rules but can I let the graph decide who won? Let's see...
+
+== Let's play
+
+Player one showed paper and player two showed lizard:
+
+[source,cypher]
+----
+match (player1)-[r:BEATS]-(player2)
+where 
+    head(labels(player1)) = "Paper"
+    and head(labels(player2)) = "Lizard"
+with startnode(r) as winner, player1, player2
+return 
+case winner 
+	when player1 then "Player 1 wins!" 
+	when player2 then "Player 2 wins!" 
+	else "How the @!#$% did you do that!?"
+end as Winner
+----
+
+// table
+
+Nice :)
+
+Of course in a real application you would not hard code the choice of Player 1 and 2 but use parameters: +{choicePlayer1}+ instead of +"Paper"+ and +{choicePlayer2}+ instead of +"Lizard"+.
+
+== Final thoughts
+
+So thinking about this you would probably not give each Weapon it's own label but instead create a label +Weapon+ or something with a +name+ property to get rid of this ugly +head(labels(node)) =+ thing and write +node.name =+ instead. But this way it made the nodes look much nicer in the Neo4j Server console for the image at the top :)
+
+If you like, play around in the console with it.
+
+//console
+
+Created by http://twitter.com/carstenlenz[Carsten Lenz]

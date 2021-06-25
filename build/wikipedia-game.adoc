@@ -1,0 +1,300 @@
+= Wikipedia Game
+:author: Sascha Peukert
+
+// Provide an introduction to your data modeling domain and what you are trying to accomplish
+
+image::https://users.ifsr.de/~sascha/gists/Wikigame_logo.png[]
+
+The Wikipedia Game, or any of its variants like "Wikirace", "Wikispeedia", "Wiki-Link Game", or the allegedly original "Clicks to Hitler", is a game played on Wikipedia. It is mostly enjoyed by students in boring lectures all over the world and everyone who likes to have a little bit of fun with the magnificent chaotic beauty that is Wikipedia. 
+
+In this gist, I propose a concept to use a Neo4j server as an engine for this game. To actually build this, you'll also need to provide a frontend that can provide some game screens, the wikipedia pages and execute cypher queries, described in the following parts.
+
+== Game rules
+Players start on a randomly selected Wikipedia page and must navigate to another given page (home) only by clicking links in the current article. The goal is to arrive at the home with the fewest number of clicks (steps)  and in  the least amount of time.
+
+Based on the number of steps and the time, points will be awarded to the player. A possible formula for that could look like this:
+
+image::https://users.ifsr.de/~sascha/gists/wikiPoints.png[]
+
+Thus a possible result of a played round would look like this:
+
+image::https://users.ifsr.de/~sascha/gists/wikiplayer.png[]
+
+OPTIMALBOT is given for comparison and shows the parameters for maximum points in this round. I also suggest to use some maximum time limit, just to keep the game fair. 
+
+== Data model: A game powered by Neo4j
+image::https://users.ifsr.de/~sascha/gists/Links.png[]
+As shown in this image, the data model needed for the game is most simplistic. To find the minimal path between two article pages, we just need to consider pages and links between them.  We don't need any more information about the pages, other than the title to identify the pages. 
+
+Luckily, Mirko Nasato provided the https://github.com/mirkonasato/graphipedia[graphipedia project] to generate a Neo4j database out of a Wikipedia dump file, exactly fitting the requested data model.
+
+== Import the graph
+
+//setup
+//hide
+[source,cypher]
+----
+   CREATE
+ (_255:`Page` {`title`:"Apple Inc."}),
+ (_1976:`Page` {`title`:"Bulgaria"}),
+ (_4484:`Page` {`title`:"Computer security"}),
+ (_5026:`Page` {`title`:"Doctor Who"}),
+ (_5683:`Page` {`title`:"Europe"}),
+ (_5738:`Page` {`title`:"European Union"}),
+ (_7598:`Page` {`title`:"Greece"}),
+ (_8186:`Page` {`title`:"Gerrymandering"}),
+ (_9246:`Page` {`title`:"Intel"}),
+ (_9453:`Page` {`title`:"International Organization for Standardization"}),
+ (_9594:`Page` {`title`:"International Electrotechnical Commission"}),
+ (_12152:`Page` {`title`:"Microsoft Windows"}),
+ (_12223:`Page` {`title`:"Microsoft"}),
+ (_15725:`Page` {`title`:"President"}),
+ (_16517:`Page` {`title`:"QuickTime"}),
+ (_16645:`Page` {`title`:"Russian language"}),
+ (_18289:`Page` {`title`:"South Park"}),
+ (_20609:`Page` {`title`:"Time (magazine)"}),
+ (_21557:`Page` {`title`:"World Wide Web Consortium"}),
+ (_38388:`Page` {`title`:"Sofia"}),
+ (_40570:`Page` {`title`:"Social Democratic Party of Germany"}),
+ (_47740:`Page` {`title`:"C++"}),
+ (_48102:`Page` {`title`:"Angela Merkel"}),
+ (_80695:`Page` {`title`:"Marlborough, Massachusetts"}),
+ (_117528:`Page` {`title`:"Caller ID"}),
+ (_127677:`Page` {`title`:"2010 Winter Olympics"}),
+ (_128269:`Page` {`title`:"Xandros"}),
+ (_129457:`Page` {`title`:"Yad Vashem"}),
+ (_162917:`Page` {`title`:"Grey market"}),
+ (_211694:`Page` {`title`:"Mass surveillance"}),
+ (_274757:`Page` {`title`:"Windows Media"}),
+ (_337003:`Page` {`title`:"United States Holocaust Memorial Museum"}),
+ (_338916:`Page` {`title`:"Michael Capellas"}),
+ (_389464:`Page` {`title`:"ASP.NET"}),
+ (_392166:`Page` {`title`:"Mobile computing"}),
+ (_515372:`Page` {`title`:"Xbox Live"}),
+ (_516440:`Page` {`title`:"Ecma International"}),
+ (_520857:`Page` {`title`:"PC World"}),
+ (_691962:`Page` {`title`:"Windows Mobile"}),
+ (_1265789:`Page` {`title`:"Digital rights"}),
+ (_1276570:`Page` {`title`:"Adolf Hitler"}),
+ (_1506054:`Page` {`title`:"United States"}),
+ (_1561748:`Page` {`title`:"Battlestar Galactica (2004 TV series)"}),
+ (_2549148:`Page` {`title`:"Air conditioning"}),
+ (_2627139:`Page` {`title`:"Facebook"}),
+ (_2807887:`Page` {`title`:"Classmate PC"}),
+ (_2951705:`Page` {`title`:"Countries in the International Organization for Standardization"}),
+ (_3111186:`Page` {`title`:"Microsoft Silverlight"}),
+ (_3343228:`Page` {`title`:"DVD"}),
+ (_3364840:`Page` {`title`:"Turkey"}),
+ (_3729742:`Page` {`title`:"Android (operating system)"}),
+ (_3977211:`Page` {`title`:"Loophole"}),
+ (_4463762:`Page` {`title`:"Forced labour under German rule during World War II"}),
+ (_5054897:`Page` {`title`:"SafeNet"}),
+ (_5062928:`Page` {`title`:"Leverage (TV series)"}),
+ (_5260395:`Page` {`title`:"Proprietary software"}),
+ (_5264127:`Page` {`title`:"Free Software Foundation"}),
+ (_5354155:`Page` {`title`:"Great Recession"}),
+ (_5694888:`Page` {`title`:"Chancellor of Germany"}),
+ (_5797746:`Page` {`title`:"Hewlett-Packard"}),
+ (_6029543:`Page` {`title`:"V.i. Labs"}),
+ (_6742395:`Page` {`title`:".NET Framework"}),
+ (_6742400:`Page` {`title`:".NET"}),
+ (_10850099:`Page` {`title`:"Telerik"}),
+ (_234:`Page` {`title`:"The Guardian"}),
+ (_123:`Page` {`title`:"Mike Vernal"}),
+ (_1976)-[:`Link` ]->(_7598),
+ (_4484)-[:`Link` ]->(_7598),
+ (_5026)-[:`Link` ]->(_2627139),
+ (_5026)-[:`Link` ]->(_3729742),
+ (_5026)-[:`Link` ]->(_16517),
+ (_5026)-[:`Link` ]->(_5062928),
+ (_5026)-[:`Link` ]->(_3343228),
+ (_5026)-[:`Link` ]->(_18289),
+ (_5026)-[:`Link` ]->(_1506054),
+ (_5026)-[:`Link` ]->(_274757),
+ (_5026)-[:`Link` ]->(_1561748),
+ (_5683)-[:`Link` ]->(_7598),
+ (_5738)-[:`Link` ]->(_7598),
+ (_8186)-[:`Link` ]->(_7598),
+ (_9246)-[:`Link` ]->(_2807887),
+ (_9246)-[:`Link` ]->(_5738),
+ (_9453)-[:`Link` ]->(_2951705),
+ (_9453)-[:`Link` ]->(_9594),
+ (_9453)-[:`Link` ]->(_16645),
+ (_9594)-[:`Link` ]->(_7598),
+ (_12152)-[:`Link` ]->(_520857),
+ (_12152)-[:`Link` ]->(_515372),
+ (_12152)-[:`Link` ]->(_128269),
+ (_12223)-[:`Link` ]->(_5354155),
+ (_12223)-[:`Link` ]->(_515372),
+ (_12223)-[:`Link` ]->(_5738),
+ (_12223)-[:`Link` ]->(_211694),
+ (_15725)-[:`Link` ]->(_7598),
+ (_16517)-[:`Link` ]->(_255),
+ (_16645)-[:`Link` ]->(_7598),
+ (_18289)-[:`Link` ]->(_255),
+ (_20609)-[:`Link` ]->(_255),
+ (_21557)-[:`Link` ]->(_7598),
+ (_38388)-[:`Link` ]->(_7598),
+ (_40570)-[:`Link` ]->(_48102),
+ (_47740)-[:`Link` ]->(_9594),
+ (_80695)-[:`Link` ]->(_7598),
+ (_117528)-[:`Link` ]->(_7598),
+ (_127677)-[:`Link` ]->(_7598),
+ (_128269)-[:`Link` ]->(_7598),
+ (_129457)-[:`Link` ]->(_48102),
+ (_162917)-[:`Link` ]->(_7598),
+ (_211694)-[:`Link` ]->(_7598),
+ (_274757)-[:`Link` ]->(_255),
+ (_337003)-[:`Link` ]->(_255),
+ (_338916)-[:`Link` ]->(_7598),
+ (_389464)-[:`Link` ]->(_21557),
+ (_392166)-[:`Link` ]->(_4484),
+ (_515372)-[:`Link` ]->(_7598),
+ (_516440)-[:`Link` ]->(_9594),
+ (_516440)-[:`Link` ]->(_5683),
+ (_520857)-[:`Link` ]->(_7598),
+ (_691962)-[:`Link` ]->(_117528),
+ (_1265789)-[:`Link` ]->(_7598),
+ (_1276570)-[:`Link` ]->(_5694888),
+ (_1276570)-[:`Link` ]->(_4463762),
+ (_1276570)-[:`Link` ]->(_20609),
+ (_1276570)-[:`Link` ]->(_129457),
+ (_1276570)-[:`Link` ]->(_337003),
+ (_1276570)-[:`Link` ]->(_40570),
+ (_1506054)-[:`Link` ]->(_255),
+ (_1561748)-[:`Link` ]->(_255),
+ (_2549148)-[:`Link` ]->(_7598),
+ (_2627139)-[:`Link` ]->(_255),
+ (_2807887)-[:`Link` ]->(_7598),
+ (_2951705)-[:`Link` ]->(_7598),
+ (_3111186)-[:`Link` ]->(_127677),
+ (_3343228)-[:`Link` ]->(_255),
+ (_3364840)-[:`Link` ]->(_7598),
+ (_3729742)-[:`Link` ]->(_255),
+ (_3977211)-[:`Link` ]->(_8186),
+ (_3977211)-[:`Link` ]->(_162917),
+ (_3977211)-[:`Link` ]->(_3364840),
+ (_4463762)-[:`Link` ]->(_48102),
+ (_5054897)-[:`Link` ]->(_15725),
+ (_5062928)-[:`Link` ]->(_255),
+ (_5260395)-[:`Link` ]->(_2549148),
+ (_5264127)-[:`Link` ]->(_1265789),
+ (_5354155)-[:`Link` ]->(_7598),
+ (_5694888)-[:`Link` ]->(_48102),
+ (_5797746)-[:`Link` ]->(_338916),
+ (_5797746)-[:`Link` ]->(_38388),
+ (_5797746)-[:`Link` ]->(_80695),
+ (_6029543)-[:`Link` ]->(_15725),
+ (_6742395)-[:`Link` ]->(_3977211),
+ (_6742395)-[:`Link` ]->(_5260395),
+ (_6742395)-[:`Link` ]->(_47740),
+ (_6742395)-[:`Link` ]->(_5264127),
+ (_6742395)-[:`Link` ]->(_392166),
+ (_6742395)-[:`Link` ]->(_9246),
+ (_6742395)-[:`Link` ]->(_389464),
+ (_6742395)-[:`Link` ]->(_12152),
+ (_6742395)-[:`Link` ]->(_5054897),
+ (_6742395)-[:`Link` ]->(_3111186),
+ (_6742395)-[:`Link` ]->(_6029543),
+ (_6742395)-[:`Link` ]->(_5797746),
+ (_6742395)-[:`Link` ]->(_12223),
+ (_6742395)-[:`Link` ]->(_691962),
+ (_6742395)-[:`Link` ]->(_10850099),
+ (_6742395)-[:`Link` ]->(_516440),
+ (_6742395)-[:`Link` ]->(_9453),
+ (_6742400)-[:`Link` ]->(_6742395),
+ (_10850099)-[:`Link` ]->(_1976),
+ (_10850099)-[:`Link` ]->(_38388),
+ (_7598)-[:`Link` ]->(_1276570),
+ (_48102)-[:`Link` ]->(_234),
+ (_7598)-[:`Link` ]->(_234),
+ (_123)-[:`Link` ]->(_2627139),
+ (_2627139)-[:`Link` ]->(_123),
+ (_123)-[:`Link` ]->(_6742400),
+ (_48102)-[:`Link` ]->(_5694888),
+ (_5694888)-[:`Link` ]->(_1276570)
+----
+//graph
+
+Generated from a  Wikipedia dump with graphipedia, this is an example (sub)graph of the English Wikipedia. In order to keep this example at a manageable size (for a gist), I chose to limit the amount of nodes and relationships in the example.
+
+Note that the Wikipedia dump needs to correspond to the version of Wikipedia you want to play on. Otherwise there could be missing or additional links/pages on the live version that your system doesn't know about. If you choose to play on an older version of the dump, you might need to host that version yourself. 
+
+So, now that we have the graph, lets look at how we can use it:
+
+== Selecting Start and Home
+First, we need two pages, selected at random: a start and a home. A simple query like the following will provide us with two pages.
+
+[source,cypher]
+----
+MATCH (node:Page)
+WITH node, rand() AS number
+RETURN node.title as Pages
+ORDER BY number
+LIMIT 2
+----
+//table
+
+== Calculating optimal paths
+
+In order to check if a path between the both pages exists (if not, take two new random pages) and, more importantly, evaluate the performance of a player, we need to know the length of a shortest path from the random start page to home. 
+With cypher, this is pretty easy. For example, lets find all shortest paths from "Angela Merkel" to "Apple Inc." on the given graph:
+
+[source,cypher]
+----
+MATCH paths = allShortestPaths((a:Page { title:'Angela Merkel' })-[:Link*]->(b:Page { title:'Apple Inc.' }))
+RETURN paths
+----
+//graph
+
+As we see, there are two equally minimal paths with a lengh of 4 steps. Finding any of them would be awarded with the maximum number of points for steps (50).
+Thus, we don't really need all paths. Any shortest path is enough to compare against player results.  
+
+So let us see a minimal path from "Doctor Who" to "Microsoft" and for convenience, print out the number of steps this path requires:
+
+[source,cypher]
+----
+MATCH path = shortestPath((a:Page { title:'Doctor Who' })-[:Link*]->(b:Page { title:'Microsoft' }))
+RETURN path, length(path) as Steps
+----
+//graph
+//table
+
+= Adding Rules
+
+Adding additional rules is quite simple too.
+For example, if we want to add a rule like "Do NOT use countries" there are two ways. The first is to enrich the dataset, so that nodes that represent countries will get a label "Country". Those nodes can then either be removed from the databse or the queries need to be changed to ignore those country pages. The second is to remove them manually, which can be done fairly quickly for countries but might be a task you want to automate, if it's things like cities you want to remove from the game. 
+
+== Cheating detection
+If we track the players steps, we can detect rule breaking attempts. Just match any path of the player against the graph and see if there truly is a path between the nodes. So, if a user tried to take an "illegal shortcut" like going directly from "ASP.NET" to ".NET", a query that checks his path like
+
+[source,cypher]
+----
+OPTIONAL MATCH path = (a:Page { title:'ASP.NET' })-[:Link]->(b:Page { title:'.NET' })
+RETURN 
+CASE
+WHEN path is null THEN false
+ELSE true
+END AS ValidPath
+----
+//table
+
+will discover a cheating player, while valid steps like going from ".NET Framework" to "C++" can be verified: 
+
+[source,cypher]
+----
+OPTIONAL MATCH path = (a:Page { title:'.NET Framework' })-[:Link]->(b:Page { title:'C++' })
+RETURN 
+CASE
+WHEN path is null THEN false
+ELSE true
+END AS ValidPath
+----
+//table
+
+
+== About
+
+Created by Sascha Peukert
+
+https://en.wikipedia.org/wiki/File:Wikipedia-logo-v2.svg["Wikipedia-logo-v2"], Author: version 1 by Nohat (concept by Paullusmagnus); Wikimedia. Licensed under CC BY-SA 3.0

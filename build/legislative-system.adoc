@@ -1,0 +1,458 @@
+= Legislative system
+Aravind R. Yarram <yaravind@gmail.com>
+v1.0, 30-Dec-2013
+
+== About Me
+Aravind R. Yarram <yaravind@gmail.com>
+
+Sr. Principal Innovation - Research and Development, Equifax Inc.
+
+- http://www.linkedin.com/profile/view?id=132789707[LinkedIn]
+- http://2scompliment.wordpress.com/[Blog]
+- http://stackoverflow.com/users/127320/pangea[Stackoverflow]
+- http://careers.stackoverflow.com/aravindyarram[Stackoverflow Careers]
+- http://twitter.com/yaravind[Twitter]
+
+== Domain
+
+This Gist shows a domain (simplified subset) to model the Legislative System's of various countries. I've used the http://en.wikipedia.org/wiki/Politics_of_India[Indian Legislative System] as an example to demonstrate this domain. The following white board diagram is self explanatory (If not it will be as we explore some examples.
+
+image::https://raw.github.com/funpluscharity/avleague/master/avleague/src/test/resources/political-insights.jpg[Domain Model]
+
+I am using the data sets obtained from Open Data initiave of Government of India avialble to download at http://data.gov.in/. The website provides islands of data that has to be JOINED together (making the graph database an obvious choice) to derive some useful insigths. To keep this GraphGist manageable, we import approx 0.5% of the available data.
+
+== Setup
+
+Intialize the graph with only a fraction of the data.
+ 
+//hide
+//setup
+//output
+[source,cypher]
+----
+CREATE (legis:Legislature { name: 'Sansad', desc: 'Parliament'})
+CREATE (lok:House { name: 'Lok Sabha', desc: 'House of the People'})
+CREATE (rajya:House { name: 'Rajya Sabha', desc: 'Council of States'})
+CREATE (legis)-[:CONSISTS_OF]->(lok)
+CREATE (legis)-[:CONSISTS_OF]->(rajya)
+CREATE (Indian_National_Congress:Party {name: 'Indian National Congress' })
+CREATE (Dravida_Munnetra_Kazhagam:Party {name: 'Dravida Munnetra Kazhagam' })
+CREATE (Rashtriya_Lok_Dal:Party {name: 'Rashtriya Lok Dal' })
+CREATE (lok)-[:SESSION]->(SES15_1:Session { session: 1, totalSittings:7})
+CREATE (CONS1:Constituency { name: 'Rae Barelii'})
+CREATE (uttar_pradesh:State { name: 'Uttar Pradesh'})
+CREATE (CONS1)-[:PART_OF]->(uttar_pradesh)
+CREATE (MEM3:Member { seatNum: 3, name: 'Sonia Gandhi', gender: 'F', dob: -727815600000, dobStr: '09-Dec-46' })
+CREATE (MEM3)-[:ATTENDED {numDaysRegisterSigned: 5}]->(SES15_1)
+CREATE (lok)<-[:MEMBER_OF]-(MEM3)-[:CONTESTED_FROM]->(CONS1)
+CREATE (MEM3)-[:CONTESTED_FOR]->(Indian_National_Congress)
+CREATE (CONS2:Constituency { name: 'Chikkballapur'})
+CREATE (karnataka:State { name: 'Karnataka'})
+CREATE (CONS2)-[:PART_OF]->(karnataka)
+CREATE (MEM8:Member { seatNum: 8, name: 'M. Veerappa Moily', gender: 'M', dob: -945802800000, dobStr: '12-Jan-40' })
+CREATE (MEM8)-[:ATTENDED {numDaysRegisterSigned: 0}]->(SES15_1)
+CREATE (lok)<-[:MEMBER_OF]-(MEM8)-[:CONTESTED_FROM]->(CONS2)
+CREATE (MEM8)-[:CONTESTED_FOR]->(Indian_National_Congress)
+CREATE (CONS3:Constituency { name: 'Baghpat'})
+CREATE (CONS3)-[:PART_OF]->(uttar_pradesh)
+CREATE (MEM11:Member { seatNum: 11, name: 'Ajit Singh', gender: 'M', dob: -974660400000, dobStr: '12-Feb-39' })
+CREATE (MEM11)-[:ATTENDED {numDaysRegisterSigned: 0}]->(SES15_1)
+CREATE (lok)<-[:MEMBER_OF]-(MEM11)-[:CONTESTED_FROM]->(CONS3)
+CREATE (MEM11)-[:CONTESTED_FOR]->(Rashtriya_Lok_Dal)
+CREATE (CONS4:Constituency { name: 'Gulbarga'})
+CREATE (CONS4)-[:PART_OF]->(karnataka)
+CREATE (lok)<-[:MEMBER_OF]-(MEM12)-[:CONTESTED_FROM]->(CONS4)
+CREATE (CONS5:Constituency { name: 'Dibrugarh'})
+CREATE (assam:State { name: 'Assam'})
+CREATE (CONS5)-[:PART_OF]->(assam)
+CREATE (CONS6:Constituency { name: 'Bhilwara'})
+CREATE (rajasthan:State { name: 'Rajasthan'})
+CREATE (CONS6)-[:PART_OF]->(rajasthan)
+CREATE (CONS7:Constituency { name: 'Araku'})
+CREATE (andhra_pradesh:State { name: 'Andhra Pradesh'})
+CREATE (CONS7)-[:PART_OF]->(andhra_pradesh)
+CREATE (CONS8:Constituency { name: 'Gonda'})
+CREATE (CONS8)-[:PART_OF]->(uttar_pradesh)
+CREATE (CONS9:Constituency { name: 'Kheda'})
+CREATE (gujarat:State { name: 'Gujarat'})
+CREATE (CONS9)-[:PART_OF]->(gujarat)
+CREATE (MEM26:Member { seatNum: 26, name: 'Dinsha Patel', gender: 'M', dob: -1028923200000, dobStr: '25-May-37' })
+CREATE (MEM26)-[:ATTENDED {numDaysRegisterSigned: 0}]->(SES15_1)
+CREATE (lok)<-[:MEMBER_OF]-(MEM26)-[:CONTESTED_FROM]->(CONS9)
+CREATE (MEM26)-[:CONTESTED_FOR]->(Indian_National_Congress)
+CREATE (CONS13:Constituency { name: 'Ernakulam'})
+CREATE (kerala:State { name: 'Kerala'})
+CREATE (CONS13)-[:PART_OF]->(kerala)
+CREATE (MEM32:Member { seatNum: 32, name: 'K.V. Thomas', gender: 'M', dob: -746222400000, dobStr: '10-May-46' })
+CREATE (MEM32)-[:ATTENDED {numDaysRegisterSigned: 0}]->(SES15_1)
+CREATE (lok)<-[:MEMBER_OF]-(MEM32)-[:CONTESTED_FROM]->(CONS13)
+CREATE (MEM32)-[:CONTESTED_FOR]->(Indian_National_Congress)
+CREATE (CONS18:Constituency { name: 'Visakhapatnam'})
+CREATE (CONS18)-[:PART_OF]->(andhra_pradesh)
+CREATE (MEM43:Member { seatNum: 43, name: 'D. Purandeswari', gender: 'F', dob: -337546800000, dobStr: '22-Apr-59' })
+CREATE (MEM43)-[:ATTENDED {numDaysRegisterSigned: 0}]->(SES15_1)
+CREATE (lok)<-[:MEMBER_OF]-(MEM43)-[:CONTESTED_FROM]->(CONS18)
+CREATE (MEM43)-[:CONTESTED_FOR]->(Indian_National_Congress)
+CREATE (CONS25:Constituency { name: 'Thiruvananthapuram'})
+CREATE (CONS25)-[:PART_OF]->(kerala)
+CREATE (MEM55:Member { seatNum: 55, name: 'Shashi Tharoor', gender: 'M', dob: -435956400000, dobStr: '09-Mar-56' })
+CREATE (MEM55)-[:ATTENDED {numDaysRegisterSigned: 0}]->(SES15_1)
+CREATE (lok)<-[:MEMBER_OF]-(MEM55)-[:CONTESTED_FROM]->(CONS25)
+CREATE (MEM55)-[:CONTESTED_FOR]->(Indian_National_Congress)
+CREATE (CONS26:Constituency { name: 'Jhansi'})
+CREATE (CONS26)-[:PART_OF]->(uttar_pradesh)
+CREATE (MEM56:Member { seatNum: 56, name: 'Pradeep Jain Aditya', gender: 'M', dob: -230846400000, dobStr: '08-Sep-62' })
+CREATE (MEM56)-[:ATTENDED {numDaysRegisterSigned: 0}]->(SES15_1)
+CREATE (lok)<-[:MEMBER_OF]-(MEM56)-[:CONTESTED_FROM]->(CONS26)
+CREATE (MEM56)-[:CONTESTED_FOR]->(Indian_National_Congress)
+CREATE (CONS27:Constituency { name: 'Alappuzha'})
+CREATE (CONS27)-[:PART_OF]->(kerala)
+CREATE (MEM57:Member { seatNum: 57, name: 'K. C. Venugopal', gender: 'M', dob: -217969200000, dobStr: '04-Feb-63' })
+CREATE (MEM57)-[:ATTENDED {numDaysRegisterSigned: 0}]->(SES15_1)
+CREATE (lok)<-[:MEMBER_OF]-(MEM57)-[:CONTESTED_FROM]->(CONS27)
+CREATE (MEM57)-[:CONTESTED_FOR]->(Indian_National_Congress)
+CREATE (CONS28:Constituency { name: 'Korba'})
+CREATE (chhattisgarh:State { name: 'Chhattisgarh'})
+CREATE (CONS28)-[:PART_OF]->(chhattisgarh)
+CREATE (MEM58:Member { seatNum: 58, name: 'Charan Das Mahant', gender: 'M', dob: -475009200000, dobStr: '13-Dec-54' })
+CREATE (MEM58)-[:ATTENDED {numDaysRegisterSigned: 0}]->(SES15_1)
+CREATE (lok)<-[:MEMBER_OF]-(MEM58)-[:CONTESTED_FROM]->(CONS28)
+CREATE (MEM58)-[:CONTESTED_FOR]->(Indian_National_Congress)
+CREATE (CONS29:Constituency { name: 'Mumbai-South'})
+CREATE (CONS29)-[:PART_OF]->(maharashtra)
+CREATE (MEM59:Member { seatNum: 59, name: 'Milind Deora', gender: 'M', dob: 218523600000, dobStr: '04-Dec-76' })
+CREATE (MEM59)-[:ATTENDED {numDaysRegisterSigned: 0}]->(SES15_1)
+CREATE (lok)<-[:MEMBER_OF]-(MEM59)-[:CONTESTED_FROM]->(CONS29)
+CREATE (MEM59)-[:CONTESTED_FOR]->(Indian_National_Congress)
+CREATE (CONS30:Constituency { name: 'Mavelikkara'})
+CREATE (CONS30)-[:PART_OF]->(kerala)
+CREATE (MEM60:Member { seatNum: 60, name: 'Kodikunnil Suresh', gender: 'M', dob: -239140800000, dobStr: '04-Jun-62' })
+CREATE (MEM60)-[:ATTENDED {numDaysRegisterSigned: 0}]->(SES15_1)
+CREATE (lok)<-[:MEMBER_OF]-(MEM60)-[:CONTESTED_FROM]->(CONS30)
+CREATE (MEM60)-[:CONTESTED_FOR]->(Indian_National_Congress)
+CREATE (CONS31:Constituency { name: 'Kurnool'})
+CREATE (CONS31)-[:PART_OF]->(andhra_pradesh)
+CREATE (MEM62:Member { seatNum: 62, name: 'K. J.S.P. Reddy', gender: 'M', dob: -577137600000, dobStr: '18-Sep-51' })
+CREATE (MEM62)-[:ATTENDED {numDaysRegisterSigned: 0}]->(SES15_1)
+CREATE (lok)<-[:MEMBER_OF]-(MEM62)-[:CONTESTED_FROM]->(CONS31)
+CREATE (MEM62)-[:CONTESTED_FOR]->(Indian_National_Congress)
+CREATE (CONS32:Constituency { name: 'Maldaha Dakshin'})
+CREATE (west_bengal:State { name: 'West Bengal'})
+CREATE (CONS32)-[:PART_OF]->(west_bengal)
+CREATE (MEM63:Member { seatNum: 63, name: 'A.H. Khan Choudhury', gender: 'M', dob: -1008874800000, dobStr: '12-Jan-38' })
+CREATE (MEM63)-[:ATTENDED {numDaysRegisterSigned: 0}]->(SES15_1)
+CREATE (lok)<-[:MEMBER_OF]-(MEM63)-[:CONTESTED_FROM]->(CONS32)
+CREATE (MEM63)-[:CONTESTED_FOR]->(Indian_National_Congress)
+CREATE (CONS33:Constituency { name: 'Baharampur'})
+CREATE (CONS33)-[:PART_OF]->(west_bengal)
+CREATE (MEM64:Member { seatNum: 64, name: 'Adhir Ranjan Chowdhury', gender: 'M', dob: -433882800000, dobStr: '02-Apr-56' })
+CREATE (MEM64)-[:ATTENDED {numDaysRegisterSigned: 0}]->(SES15_1)
+CREATE (lok)<-[:MEMBER_OF]-(MEM64)-[:CONTESTED_FROM]->(CONS33)
+CREATE (MEM64)-[:CONTESTED_FOR]->(Indian_National_Congress)
+CREATE (CONS34:Constituency { name: 'Lakhimpur'})
+CREATE (CONS34)-[:PART_OF]->(assam)
+CREATE (MEM65:Member { seatNum: 65, name: 'Ranee Narah', gender: 'F', dob: -131572800000, dobStr: '31-Oct-65' })
+CREATE (MEM65)-[:ATTENDED {numDaysRegisterSigned: 0}]->(SES15_1)
+CREATE (lok)<-[:MEMBER_OF]-(MEM65)-[:CONTESTED_FROM]->(CONS34)
+CREATE (MEM65)-[:CONTESTED_FOR]->(Indian_National_Congress)
+CREATE (CONS35:Constituency { name: 'Malkajgiri'})
+CREATE (CONS35)-[:PART_OF]->(andhra_pradesh)
+CREATE (MEM66:Member { seatNum: 66, name: 'Sarvey Sathyanarayana', gender: 'M', dob: -496868400000, dobStr: '04-Apr-54' })
+CREATE (MEM66)-[:ATTENDED {numDaysRegisterSigned: 0}]->(SES15_1)
+CREATE (lok)<-[:MEMBER_OF]-(MEM66)-[:CONTESTED_FROM]->(CONS35)
+CREATE (MEM66)-[:CONTESTED_FOR]->(Indian_National_Congress)
+CREATE (CONS36:Constituency { name: 'Arunachal East'})
+CREATE (arunachal_pradesh:State { name: 'Arunachal Pradesh'})
+CREATE (CONS36)-[:PART_OF]->(arunachal_pradesh)
+CREATE (MEM67:Member { seatNum: 67, name: 'Ninong Ering', gender: 'M', dob: -346964400000, dobStr: '03-Jan-59' })
+CREATE (MEM67)-[:ATTENDED {numDaysRegisterSigned: 0}]->(SES15_1)
+CREATE (lok)<-[:MEMBER_OF]-(MEM67)-[:CONTESTED_FROM]->(CONS36)
+CREATE (MEM67)-[:CONTESTED_FOR]->(Indian_National_Congress)
+CREATE (CONS37:Constituency { name: 'Raiganj'})
+CREATE (CONS37)-[:PART_OF]->(west_bengal)
+CREATE (MEM68:Member { seatNum: 68, name: 'Deepa Dasmunsi', gender: 'F', dob: -298670400000, dobStr: '15-Jul-60' })
+CREATE (MEM68)-[:ATTENDED {numDaysRegisterSigned: 0}]->(SES15_1)
+CREATE (lok)<-[:MEMBER_OF]-(MEM68)-[:CONTESTED_FROM]->(CONS37)
+CREATE (MEM68)-[:CONTESTED_FOR]->(Indian_National_Congress)
+CREATE (CONS38:Constituency { name: 'Mahabubabad'})
+CREATE (CONS38)-[:PART_OF]->(andhra_pradesh)
+CREATE (MEM69:Member { seatNum: 69, name: 'P. Balram Naik', gender: 'M', dob: -175809600000, dobStr: '06-Jun-64' })
+CREATE (MEM69)-[:ATTENDED {numDaysRegisterSigned: 0}]->(SES15_1)
+CREATE (lok)<-[:MEMBER_OF]-(MEM69)-[:CONTESTED_FROM]->(CONS38)
+CREATE (MEM69)-[:CONTESTED_FOR]->(Indian_National_Congress)
+CREATE (CONS39:Constituency { name: 'Srikakulam'})
+CREATE (CONS39)-[:PART_OF]->(andhra_pradesh)
+CREATE (MEM70:Member { seatNum: 70, name: 'Krupa Rani Killi', gender: 'M', dob: -129927600000, dobStr: '19-Nov-65' })
+CREATE (MEM70)-[:ATTENDED {numDaysRegisterSigned: 0}]->(SES15_1)
+CREATE (lok)<-[:MEMBER_OF]-(MEM70)-[:CONTESTED_FROM]->(CONS39)
+CREATE (MEM70)-[:CONTESTED_FOR]->(Indian_National_Congress)
+CREATE (CONS40:Constituency { name: 'Jaipur Rural'})
+CREATE (CONS40)-[:PART_OF]->(rajasthan)
+CREATE (MEM71:Member { seatNum: 71, name: 'Lal Chand Kataria', gender: 'M', dob: -49060800000, dobStr: '12-Jun-68' })
+CREATE (MEM71)-[:ATTENDED {numDaysRegisterSigned: 0}]->(SES15_1)
+CREATE (lok)<-[:MEMBER_OF]-(MEM71)-[:CONTESTED_FROM]->(CONS40)
+CREATE (MEM71)-[:CONTESTED_FOR]->(Indian_National_Congress)
+CREATE (CONS41:Constituency { name: 'East Delhi'})
+CREATE (delhi:State { name: 'Delhi'})
+CREATE (CONS41)-[:PART_OF]->(delhi)
+CREATE (MEM72:Member { seatNum: 72, name: 'Sandeep Dikshit', gender: 'M', dob: -169761600000, dobStr: '15-Aug-64' })
+CREATE (MEM72)-[:ATTENDED {numDaysRegisterSigned: 6}]->(SES15_1)
+CREATE (lok)<-[:MEMBER_OF]-(MEM72)-[:CONTESTED_FROM]->(CONS41)
+CREATE (MEM72)-[:CONTESTED_FOR]->(Indian_National_Congress)
+CREATE (CONS42:Constituency { name: 'Theni'})
+CREATE (CONS42)-[:PART_OF]->(tamil_nadu)
+CREATE (MEM73:Member { seatNum: 73, name: 'J.M. Aaron Rashid', gender: 'M', dob: -619732800000, dobStr: '13-May-50' })
+CREATE (MEM73)-[:ATTENDED {numDaysRegisterSigned: 5}]->(SES15_1)
+CREATE (lok)<-[:MEMBER_OF]-(MEM73)-[:CONTESTED_FROM]->(CONS42)
+CREATE (MEM73)-[:CONTESTED_FOR]->(Indian_National_Congress)
+CREATE (CONS43:Constituency { name: 'Khandwa'})
+CREATE (madhya_pradesh:State { name: 'Madhya Pradesh'})
+CREATE (CONS43)-[:PART_OF]->(madhya_pradesh)
+CREATE (MEM74:Member { seatNum: 74, name: 'Arun Yadav', gender: 'M', dob: 127454400000, dobStr: '15-Jan-74' })
+CREATE (MEM74)-[:ATTENDED {numDaysRegisterSigned: 0}]->(SES15_1)
+CREATE (lok)<-[:MEMBER_OF]-(MEM74)-[:CONTESTED_FROM]->(CONS43)
+CREATE (MEM74)-[:CONTESTED_FOR]->(Indian_National_Congress)
+CREATE (CONS44:Constituency { name: 'Kurukshetra'})
+CREATE (CONS44)-[:PART_OF]->(haryana)
+CREATE (MEM75:Member { seatNum: 75, name: 'Naveen Jindal', gender: 'M', dob: 5806800000, dobStr: '09-Mar-70' })
+CREATE (MEM75)-[:ATTENDED {numDaysRegisterSigned: 6}]->(SES15_1)
+CREATE (lok)<-[:MEMBER_OF]-(MEM75)-[:CONTESTED_FROM]->(CONS44)
+CREATE (MEM75)-[:CONTESTED_FOR]->(Indian_National_Congress)
+CREATE (CONS45:Constituency { name: 'Nizamabad'})
+CREATE (CONS45)-[:PART_OF]->(andhra_pradesh)
+CREATE (MEM76:Member { seatNum: 76, name: 'Madhu Goud Yaskhi', gender: 'M', dob: -285447600000, dobStr: '15-Dec-60' })
+CREATE (MEM76)-[:ATTENDED {numDaysRegisterSigned: 6}]->(SES15_1)
+CREATE (lok)<-[:MEMBER_OF]-(MEM76)-[:CONTESTED_FROM]->(CONS45)
+CREATE (MEM76)-[:CONTESTED_FOR]->(Indian_National_Congress)
+CREATE (CONS46:Constituency { name: 'Garhwal'})
+CREATE (CONS46)-[:PART_OF]->(uttarakhand)
+CREATE (MEM77:Member { seatNum: 77, name: 'Satpal Maharaj', gender: 'M', dob: -576878400000, dobStr: '21-Sep-51' })
+CREATE (MEM77)-[:ATTENDED {numDaysRegisterSigned: 7}]->(SES15_1)
+CREATE (lok)<-[:MEMBER_OF]-(MEM77)-[:CONTESTED_FROM]->(CONS46)
+CREATE (MEM77)-[:CONTESTED_FOR]->(Indian_National_Congress)
+CREATE (CONS47:Constituency { name: 'Tehri Garhwal'})
+CREATE (CONS47)-[:PART_OF]->(uttarakhand)
+CREATE (MEM78:Member { seatNum: 78, name: 'Vijay Bahuguna', gender: 'M', dob: -720817200000, dobStr: '28-Feb-47' })
+CREATE (MEM78)-[:ATTENDED {numDaysRegisterSigned: 7}]->(SES15_1)
+CREATE (lok)<-[:MEMBER_OF]-(MEM78)-[:CONTESTED_FROM]->(CONS47)
+CREATE (MEM78)-[:CONTESTED_FOR]->(Indian_National_Congress)
+CREATE (CONS48:Constituency { name: 'Shillong'})
+CREATE (meghalaya:State { name: 'Meghalaya'})
+CREATE (CONS48)-[:PART_OF]->(meghalaya)
+CREATE (MEM78)-[:ATTENDED {numDaysRegisterSigned: 0}]->(SES15_1)
+CREATE (lok)<-[:MEMBER_OF]-(MEM78)-[:CONTESTED_FROM]->(CONS48)
+CREATE (MEM78)-[:CONTESTED_FOR]->(Indian_National_Congress)
+CREATE (CONS49:Constituency { name: 'Jammu'})
+CREATE (jammu_and_kashmir:State { name: 'Jammu and Kashmir'})
+CREATE (CONS49)-[:PART_OF]->(jammu_and_kashmir)
+CREATE (MEM79:Member { seatNum: 79, name: 'Madan Lal Sharma', gender: 'M', dob: -495313200000, dobStr: '22-Apr-54' })
+CREATE (MEM79)-[:ATTENDED {numDaysRegisterSigned: 7}]->(SES15_1)
+CREATE (lok)<-[:MEMBER_OF]-(MEM79)-[:CONTESTED_FROM]->(CONS49)
+CREATE (MEM79)-[:CONTESTED_FOR]->(Indian_National_Congress)
+CREATE (CONS64:Constituency { name: 'Kancheepuram'})
+CREATE (CONS64)-[:PART_OF]->(tamil_nadu)
+CREATE (MEM97:Member { seatNum: 97, name: 'P. Viswanathan', gender: 'M', dob: -177278400000, dobStr: '20-May-64' })
+CREATE (MEM97)-[:ATTENDED {numDaysRegisterSigned: 6}]->(SES15_1)
+CREATE (lok)<-[:MEMBER_OF]-(MEM97)-[:CONTESTED_FROM]->(CONS64)
+CREATE (MEM97)-[:CONTESTED_FOR]->(Indian_National_Congress)
+CREATE (CONS65:Constituency { name: 'Jhunjhunu'})
+CREATE (CONS65)-[:PART_OF]->(rajasthan)
+CREATE (MEM98:Member { seatNum: 98, name: 'Sheesh Ram Ola', gender: 'M', dob: -1338840000000, dobStr: '30-Jul-27' })
+CREATE (MEM98)-[:ATTENDED {numDaysRegisterSigned: 5}]->(SES15_1)
+CREATE (lok)<-[:MEMBER_OF]-(MEM98)-[:CONTESTED_FROM]->(CONS65)
+CREATE (MEM98)-[:CONTESTED_FOR]->(Indian_National_Congress)
+CREATE (CONS66:Constituency { name: 'Sriperumbudur'})
+CREATE (CONS66)-[:PART_OF]->(tamil_nadu)
+CREATE (MEM99:Member { seatNum: 99, name: 'T.R. Baalu', gender: 'M', dob: -900878400000, dobStr: '15-Jun-41' })
+CREATE (MEM99)-[:ATTENDED {numDaysRegisterSigned: 7}]->(SES15_1)
+CREATE (lok)<-[:MEMBER_OF]-(MEM99)-[:CONTESTED_FROM]->(CONS66)
+CREATE (MEM99)-[:CONTESTED_FOR]->(Dravida_Munnetra_Kazhagam)
+CREATE (CONS67:Constituency { name: 'Nagpur'})
+CREATE (CONS67)-[:PART_OF]->(maharashtra)
+CREATE (MEM100:Member { seatNum: 100, name: 'Vilasrao Baburao Muttemwar', gender: 'M', dob: -655758000000, dobStr: '22-Mar-49' })
+CREATE (MEM100)-[:ATTENDED {numDaysRegisterSigned: 2}]->(SES15_1)
+CREATE (lok)<-[:MEMBER_OF]-(MEM100)-[:CONTESTED_FROM]->(CONS67)
+CREATE (MEM100)-[:CONTESTED_FOR]->(Indian_National_Congress)
+CREATE (CONS68:Constituency { name: 'Nandurbar'})
+CREATE (CONS68)-[:PART_OF]->(maharashtra)
+CREATE (MEM101:Member { seatNum: 101, name: 'Manikrao Hodlya Gavit', gender: 'M', dob: -1110049200000, dobStr: '29-Oct-34' })
+CREATE (MEM101)-[:ATTENDED {numDaysRegisterSigned: 0}]->(SES15_1)
+CREATE (lok)<-[:MEMBER_OF]-(MEM101)-[:CONTESTED_FROM]->(CONS68)
+CREATE (MEM101)-[:CONTESTED_FOR]->(Indian_National_Congress)
+CREATE (CONS69:Constituency { name: 'Pune'})
+CREATE (CONS69)-[:PART_OF]->(maharashtra)
+CREATE (MEM102:Member { seatNum: 102, name: 'Suresh Kalmadi', gender: 'M', dob: -810072000000, dobStr: '01-May-44' })
+CREATE (MEM102)-[:ATTENDED {numDaysRegisterSigned: 7}]->(SES15_1)
+CREATE (lok)<-[:MEMBER_OF]-(MEM102)-[:CONTESTED_FROM]->(CONS69)
+CREATE (MEM102)-[:CONTESTED_FOR]->(Indian_National_Congress)
+CREATE (CONS70:Constituency { name: 'Rajampet'})
+CREATE (CONS70)-[:PART_OF]->(andhra_pradesh)
+CREATE (MEM104:Member { seatNum: 104, name: 'A. Sai Prathap', gender: 'M', dob: -797803200000, dobStr: '20-Sep-44' })
+CREATE (MEM104)-[:ATTENDED {numDaysRegisterSigned: 2}]->(SES15_1)
+CREATE (lok)<-[:MEMBER_OF]-(MEM104)-[:CONTESTED_FROM]->(CONS70)
+CREATE (MEM104)-[:CONTESTED_FOR]->(Indian_National_Congress)
+CREATE (CONS71:Constituency { name: 'Tirupati'})
+CREATE (CONS71)-[:PART_OF]->(andhra_pradesh)
+CREATE (MEM106:Member { seatNum: 106, name: 'Chinta Mohan', gender: 'M', dob: -477774000000, dobStr: '11-Nov-54' })
+CREATE (MEM106)-[:ATTENDED {numDaysRegisterSigned: 7}]->(SES15_1)
+CREATE (lok)<-[:MEMBER_OF]-(MEM106)-[:CONTESTED_FROM]->(CONS71)
+CREATE (MEM106)-[:CONTESTED_FOR]->(Indian_National_Congress)
+CREATE (CONS72:Constituency { name: 'Autonomous District'})
+CREATE (CONS72)-[:PART_OF]->(assam)
+CREATE (MEM107:Member { seatNum: 107, name: 'Biren Singh Engti', gender: 'M', dob: -783720000000, dobStr: '02-Mar-45' })
+CREATE (MEM107)-[:ATTENDED {numDaysRegisterSigned: 7}]->(SES15_1)
+CREATE (lok)<-[:MEMBER_OF]-(MEM107)-[:CONTESTED_FROM]->(CONS72)
+CREATE (MEM107)-[:CONTESTED_FOR]->(Indian_National_Congress)
+CREATE (CONS73:Constituency { name: 'Eluru'})
+CREATE (CONS73)-[:PART_OF]->(andhra_pradesh)
+CREATE (MEM108:Member { seatNum: 108, name: 'Kavuri Samba Siva Rao', gender: 'M', dob: -828388800000, dobStr: '02-Oct-43' })
+CREATE (MEM108)-[:ATTENDED {numDaysRegisterSigned: 6}]->(SES15_1)
+CREATE (lok)<-[:MEMBER_OF]-(MEM108)-[:CONTESTED_FROM]->(CONS73)
+CREATE (MEM108)-[:CONTESTED_FOR]->(Indian_National_Congress)
+CREATE (CONS74:Constituency { name: 'North East Delhi'})
+CREATE (CONS74)-[:PART_OF]->(delhi)
+CREATE (MEM110:Member { seatNum: 110, name: 'Jai Prakash Agarwal', gender: 'M', dob: -793310400000, dobStr: '11-Nov-44' })
+CREATE (MEM110)-[:ATTENDED {numDaysRegisterSigned: 7}]->(SES15_1)
+CREATE (lok)<-[:MEMBER_OF]-(MEM110)-[:CONTESTED_FROM]->(CONS74)
+CREATE (MEM110)-[:CONTESTED_FOR]->(Indian_National_Congress)
+CREATE (CONS75:Constituency { name: 'Mandi'})
+CREATE (himachal_pradesh:State { name: 'Himachal Pradesh'})
+CREATE (CONS75)-[:PART_OF]->(himachal_pradesh)
+CREATE (MEM111:Member { seatNum: 111, name: 'Virbhadra Singh', gender: 'M', dob: -1121112000000, dobStr: '23-Jun-34' })
+CREATE (MEM111)-[:ATTENDED {numDaysRegisterSigned: 0}]->(SES15_1)
+CREATE (lok)<-[:MEMBER_OF]-(MEM111)-[:CONTESTED_FROM]->(CONS75)
+CREATE (MEM111)-[:CONTESTED_FOR]->(Indian_National_Congress)
+CREATE (CONS76:Constituency { name: 'Wardha'})
+CREATE (CONS76)-[:PART_OF]->(maharashtra)
+CREATE (MEM112:Member { seatNum: 112, name: 'Datta Meghe', gender: 'M', dob: -1045767600000, dobStr: '11-Nov-36' })
+CREATE (MEM112)-[:ATTENDED {numDaysRegisterSigned: 6}]->(SES15_1)
+CREATE (lok)<-[:MEMBER_OF]-(MEM112)-[:CONTESTED_FROM]->(CONS76)
+CREATE (MEM112)-[:CONTESTED_FOR]->(Indian_National_Congress)
+CREATE (CONS77:Constituency { name: 'Guntur'})
+CREATE (CONS77)-[:PART_OF]->(andhra_pradesh)
+CREATE (MEM113:Member { seatNum: 113, name: 'Rayapati S. Rao', gender: 'M', dob: -838497600000, dobStr: '07-Jun-43' })
+CREATE (MEM113)-[:ATTENDED {numDaysRegisterSigned: 4}]->(SES15_1)
+CREATE (lok)<-[:MEMBER_OF]-(MEM113)-[:CONTESTED_FROM]->(CONS77)
+CREATE (MEM113)-[:CONTESTED_FOR]->(Indian_National_Congress)
+CREATE (CONS78:Constituency { name: 'Nagarkurnool'})
+CREATE (CONS78)-[:PART_OF]->(andhra_pradesh)
+CREATE (MEM115:Member { seatNum: 115, name: 'Manda Jagannath', gender: 'M', dob: -587419200000, dobStr: '22-May-51' })
+CREATE (MEM115)-[:ATTENDED {numDaysRegisterSigned: 6}]->(SES15_1)
+CREATE (lok)<-[:MEMBER_OF]-(MEM115)-[:CONTESTED_FROM]->(CONS78)
+CREATE (MEM115)-[:CONTESTED_FOR]->(Indian_National_Congress)
+CREATE (CONS79:Constituency { name: 'Anantapur'})
+CREATE (CONS79)-[:PART_OF]->(andhra_pradesh)
+CREATE (MEM116:Member { seatNum: 116, name: 'A. Venkatarami Reddy', gender: 'M', dob: -423432000000, dobStr: '01-Aug-56' })
+CREATE (MEM116)-[:ATTENDED {numDaysRegisterSigned: 7}]->(SES15_1)
+CREATE (lok)<-[:MEMBER_OF]-(MEM116)-[:CONTESTED_FROM]->(CONS79)
+CREATE (MEM116)-[:CONTESTED_FOR]->(Indian_National_Congress)
+----
+ 
+//graph
+ 
+=== What is the legislative branch of India known as and how many houses does it consist?
+[source,cypher]
+----
+MATCH (l:Legislature)-[:CONSISTS_OF]->(h:House) 
+RETURN l.name AS LegislativeBranch, h.name AS NameOfTheHouse, h.desc AS Description
+----
+ 
+//table
+ 
+For brevetiy reasons we focus only on Lok Sabha i.e. House of the People
+ 
+=== Which parties have elected members in the House (Lok Sabha)
+[source,cypher]
+----
+MATCH (m:Member)-[:MEMBER_OF]->(h:House), m-[:CONTESTED_FOR]->(p:Party) 
+RETURN DISTINCT (p.name) AS Party, count(m) AS TotalMembers 
+ORDER BY TotalMembers DESC
+----
+ 
+//table
+ 
+We have elections next year. So let us find our how the elected members have performed.
+ 
+=== How many House (Lok Sabha) sessions were held?
+[source,cypher]
+----
+MATCH (h:House { name: 'Lok Sabha' })-[:SESSION]->(s:Session) 
+RETURN h.name AS House, count(s) AS TotalSessions
+----
+ 
+//table
+ 
+=== Hou many members from my state (Andhra Pradesh) had zero attendance in sessions and who are they?
+[source,cypher]
+----
+MATCH (m:Member)-[r:ATTENDED { numDaysRegisterSigned: 0 }]->(s:Session), m-[:CONTESTED_FROM]->(c:Constituency)-[:PART_OF]->(st:State { name: 'Andhra Pradesh' }) 
+RETURN s.session AS Session, collect(DISTINCT m.name) AS Members, collect(DISTINCT c.name) AS Constituency 
+ORDER BY s.session
+----
+ 
+//table
+ 
+=== Did the member we have elected from our Constituency (Guntur) attend any House session's?
+[source,cypher]
+----
+MATCH (m:Member)-[r:ATTENDED]->(s:Session), m-[:CONTESTED_FROM]->(c:Constituency { name: 'Guntur' }) 
+RETURN DISTINCT (s.session) AS Session, s.totalSittings AS TotalSittings, r.numDaysRegisterSigned AS NumberOfDaysAttended, m.name AS Member 
+ORDER BY s.session
+----
+ 
+//table
+ 
+=== What is the average national attendance in the sessions?
+[source,cypher]
+----
+MATCH (m:Member)-[r:ATTENDED]->(s:Session), m-[:CONTESTED_FROM]->(c:Constituency)-[:PART_OF]->(st:State) 
+RETURN s.session AS Session, s.totalSittings AS TotalSittings, avg(r.numDaysRegisterSigned) AS AverageNationalAttendance 
+ORDER BY AverageNationalAttendance
+----
+ 
+//table
+ 
+=== What is the avergae attendance from my State?
+[source,cypher]
+----
+MATCH (m:Member)-[r:ATTENDED]->(s:Session), m-[:CONTESTED_FROM]->(c:Constituency)-[:PART_OF]->(st:State { name: 'Andhra Pradesh' }) 
+RETURN s.session AS Session, s.totalSittings AS TotalSittings, avg(r.numDaysRegisterSigned) AS AverageAttendance
+----
+ 
+//table
+ 
+=== What is the average attendance by Party?
+[source,cypher]
+----
+MATCH (m:Member)-[r:ATTENDED]->(s:Session), m-[:CONTESTED_FOR]->(p:Party) 
+RETURN p.name AS Party, avg(r.numDaysRegisterSigned) AS AverageAttendance 
+ORDER BY AverageAttendance
+----
+ 
+//table
+ 
+=== What is the avergae attendance by State?
+[source,cypher]
+----
+MATCH (m:Member)-[r:ATTENDED]->(s:Session), m-[:CONTESTED_FROM]->(c:Constituency)-[:PART_OF]->(st:State) 
+RETURN st.name AS State, avg(r.numDaysRegisterSigned) AS AverageAttendance 
+ORDER BY AverageAttendance DESC
+LIMIT 15
+----
+ 
+//table
+ 
+=== Who is the oldest member of the house?
+[source,cypher]
+----
+MATCH (m:Member) 
+RETURN m.name AS Name, m.dobStr AS DateOfBirth 
+ORDER BY m.dob ASC 
+LIMIT 1
+----
+ 
+//table
+ 
+== Getting involved
+ 
+I've lot of ideas on how to leverage the data from India OpenData portal to empower a voter to make better decisions in the upcoming elections in India. Contact me if you can contribute.

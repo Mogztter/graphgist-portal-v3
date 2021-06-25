@@ -1,0 +1,33 @@
+= Hello GraphGist4Xmas
+
+//console
+
+
+[source,cypher]
+----
+
+ CREATE
+(l1 {name:"Santa"}),
+(l2 {name:"MincePie"}),
+(l3 {name:"Rudolf"}),
+(l4 {name:"Carrot"}),
+(l5 {name:"Sherry"}),
+(l6 {name:"Presents"}),
+(l7 {name:"Elves"}),
+ 
+(l1)-[:eats]->(l2),
+(l3)-[:eats]->(l4), 
+(l1)-[:drinks]->(l5), 
+(l1)-[:delivers]->(l6), 
+(l7)-[:make]->(l6),
+(l1)-[:friends_with]->(l3)
+
+----
+
+== This is my Christmas Gist
+
+All the things here
+
+//table
+
+//graph

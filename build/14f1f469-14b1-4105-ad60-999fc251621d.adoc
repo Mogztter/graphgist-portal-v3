@@ -1,0 +1,661 @@
+= Software Development Process Model
+
+:neo4j-version: 3.0.0
+:author: Jeffrey A. Miller
+:twitter: xagronaut
+
+=== Introduction
+
+Sometimes software just seems to happen haphazardly, despite our allegiance to diligence and process. Systems creep into our lives through some combination of people, skills, and tools. The result is often a mass of unfamiliar and unclear components written by many authors, with little understanding of the big picture.
+
+=== Benefits of a Broad Awareness
+
+Software, when managed well, benefits from a broad awareness of the "moving parts" in the ecosystem that surrounds its creation and consumption. Real people interact with the systems we build, and we should build better models to track and describe those systems.
+
+=== Fragmented Functions and Isolated Teams
+
+Many times teams dedicated to a specific function like Quality Assurance have applications and systems that allow management of entities directly relevant to their job function, BUT!&hellip; these teams don't have a master system that ties together concerns across other teams and job functions. Neo4j can solve this with the right modeling in place.
+
+=== Connecting the Concerns
+
+By tracking the parts of a system, how they connect and interact, and who cares about those connections, we can better understand the impact of changes we make, the stakeholders concerned with and impacted by those changes, and, through visualization, we can anticipate and communicate these impacts.
+
+==== About the model
+image::http://i.imgur.com/zRAOaHp.jpg[width=600]
+
+In this model, the following categories have been adopted to group closely-related labels:
+
+[width="80%"]
+|===
+| *Node Domain* | *Labels included*
+| Human | :Audience, :Group, :Organization, :Person, :Role
+| Process | :CheckIn, :Defect, :Feature, :Iteration, :Release, :Requirement, :Task, :TestCase, :TestSuite, :UserProfile, :UserStory
+| Technical | :AppLayer, :CodeProject, :CodeSolution, :Component, :CssFile, :Database, :DbFunction, :DbTable, :DbSchema, :DbView, :Environment, :File, :JsFile, :LocalizationKey, :Location, :MvcController, :MvcView, :Platform, :Permission, :Service, :Server
+| Knowledge | :Audience, :Document, :Term, :Publication, :Skill
+| Testing | :Defect, :Environment, :Feature, :Requirement, :TestCase, :TestSuite, :UserProfile, :UserStory
+| Web | :CssFile, :JsFile, :MvcController, :MvcView
+|===
+
+=== Setup
+
+//hide
+//setup
+//output
+[source,cypher]
+----
+CREATE
+(human:NodeDomain { `description` : 'Organization and people', `name` : 'Human'}),
+(knowledge:NodeDomain { `name` : 'Knowledge', `description` : 'Anyone or anything that is a source of information or knowledge'}),
+(process:NodeDomain { `description` : 'Process-related items', `name` : 'Process'}),
+(technical:NodeDomain { `name` : 'Technical', `description` : 'Anything technical about the system implementation'}),
+(testing:NodeDomain { `name` : 'Testing', `description` : 'Anything related to testing the system'}),
+(web:NodeDomain { `name` : 'Web', `description` : 'Anything related to the Web-facing part of the system'}),
+(audience:NodeType { `name` : 'Audience', `description` : 'The audience for a type of information'}),
+(codefolder:NodeType { `name` : 'CodeFolder', `description` : 'Code folder'}),
+(checkin:NodeType { `name` : 'CheckIn', `description` : 'A check-in or commit to source control'}),
+(component:NodeType { `name` : 'Component', `description` : 'A component or library used in a system.'}),
+(cssfile:NodeType { `name` : 'CssFile', `description` : 'CSS file'}),
+(mvccontroller:NodeType { `name` : 'MvcController', `description` : 'MVC controller'}),
+(database:NodeType { `name` : 'Database', `description` : 'Database'}),
+(dbfunction:NodeType { `description` : 'A database user-defined function', `name` : 'DbFunction'}),
+(dbschema:NodeType { `description` : 'A database schema', `name` : 'DbSchema'}),
+(defect:NodeType { `description` : 'A defect in the system', `name` : 'Defect'}),
+(document:NodeType { `name` : 'Document', `description` : 'Document'}),
+(environment:NodeType { `description` : 'A system deployment environment', `name` : 'Environment'}),
+(feature:NodeType { `description` : 'A feature of the system', `name` : 'Feature'}),
+(file:NodeType { `name` : 'File', `description` : 'A code file'}),
+(group:NodeType { `description` : 'A group of people', `name` : 'Group'}),
+(iteration:NodeType { `name` : 'Iteration', `description` : 'Software development iteration/sprint'}),
+(jsfile:NodeType { `description` : 'JavaScript file', `name` : 'JsFile'}),
+(location:NodeType { `description` : 'Location of an item', `name` : 'Location'}),
+(localizationkey:NodeType { `description` : 'Localization key', `name` : 'LocalizationKey'}),
+(applayer:NodeType { `description` : 'Layer of the application', `name` : 'AppLayer'}),
+(mvcview:NodeType { `name` : 'MvcView', `description` : 'MVC view'}),
+(organization:NodeType { `name` : 'Organization', `description` : 'A company, corporation, or other distinct group of people'}),
+(permission:NodeType { `description` : 'A system permission', `name` : 'Permission'}),
+(person:NodeType { `name` : 'Person', `description` : 'A person'}),
+(platform:NodeType { `description` : 'A technology platform', `name` : 'Platform'}),
+(dbprocedure:NodeType { `description` : 'A database stored procedure', `name` : 'DbProcedure'}),
+(userprofile:NodeType { `description` : 'A class of user', `name` : 'UserProfile'}),
+(publication:NodeType { `description` : 'A document for external consumption', `name` : 'Publication'}),
+(release:NodeType { `description` : 'Application release', `name` : 'Release'}),
+(requirement:NodeType { `description` : 'A software requirement', `name` : 'Requirement'}),
+(role:NodeType { `name` : 'Role', `description` : 'A job role or position'}),
+(server:NodeType { `name` : 'Server', `description` : 'Server (physical or virtual)'}),
+(setting:NodeType { `name` : 'Setting', `description` : 'System setting'}),
+(skill:NodeType { `name` : 'Skill', `description` : 'A job skill (technical or non-technical)'}),
+(codesolution:NodeType { `description` : 'Visual Studio solution file', `name` : 'CodeSolution'}),
+(service:NodeType { `description` : 'Any service used by a consumer', `name` : 'Service'}),
+(task:NodeType { `description` : 'An action to complete a goal', `name` : 'Task'}),
+(dbtable:NodeType { `name` : 'DbTable', `description` : 'Database table'}),
+(term:NodeType { `description` : 'Vocabulary terms and definitions', `name` : 'Term'}),
+(testcase:NodeType { `name` : 'TestCase', `description` : 'A formalized specification for expected system behavior'}),
+(testsuite:NodeType { `name` : 'TestSuite', `description` : 'A set of tests (manual or automated)'}),
+(userstory:NodeType { `name` : 'UserStory', `description` : 'A user story'}),
+(codeproject:NodeType { `description` : 'Code project', `name` : 'CodeProject'}),
+(dbview:NodeType { `description` : 'A database view', `name` : 'DbView'}),
+(software_development:NodeModel { `name` : 'Software Development' }),
+(human)-[:PART_OF]->(software_development),
+(audience)-[:INCLUDED_IN]->(human),
+(role)-[:INCLUDED_IN]->(human),
+(person)-[:INCLUDED_IN]->(human),
+(organization)-[:INCLUDED_IN]->(human),
+(group)-[:INCLUDED_IN]->(human),
+(knowledge)-[:PART_OF]->(software_development),
+(document)-[:INCLUDED_IN]->(knowledge),
+(term)-[:INCLUDED_IN]->(knowledge),
+(skill)-[:INCLUDED_IN]->(knowledge),
+(publication)-[:INCLUDED_IN]->(knowledge),
+(process)-[:PART_OF]->(software_development),
+(feature)-[:INCLUDED_IN]->(process),
+(defect)-[:INCLUDED_IN]->(process),
+(checkin)-[:INCLUDED_IN]->(process),
+(testsuite)-[:INCLUDED_IN]->(process),
+(userstory)-[:INCLUDED_IN]->(process),
+(testcase)-[:INCLUDED_IN]->(process),
+(task)-[:INCLUDED_IN]->(process),
+(userprofile)-[:INCLUDED_IN]->(process),
+(release)-[:INCLUDED_IN]->(process),
+(requirement)-[:INCLUDED_IN]->(process),
+(iteration)-[:INCLUDED_IN]->(process),
+(technical)-[:PART_OF]->(software_development),
+(codeproject)-[:INCLUDED_IN]->(technical),
+(dbview)-[:INCLUDED_IN]->(technical),
+(file)-[:INCLUDED_IN]->(technical),
+(environment)-[:INCLUDED_IN]->(technical),
+(dbschema)-[:INCLUDED_IN]->(technical),
+(dbfunction)-[:INCLUDED_IN]->(technical),
+(database)-[:INCLUDED_IN]->(technical),
+(mvccontroller)-[:INCLUDED_IN]->(technical),
+(cssfile)-[:INCLUDED_IN]->(technical),
+(component)-[:INCLUDED_IN]->(technical),
+(codefolder)-[:INCLUDED_IN]->(technical),
+(dbtable)-[:INCLUDED_IN]->(technical),
+(codesolution)-[:INCLUDED_IN]->(technical),
+(service)-[:INCLUDED_IN]->(technical),
+(setting)-[:INCLUDED_IN]->(technical),
+(server)-[:INCLUDED_IN]->(technical),
+(permission)-[:INCLUDED_IN]->(technical),
+(platform)-[:INCLUDED_IN]->(technical),
+(dbprocedure)-[:INCLUDED_IN]->(technical),
+(localizationkey)-[:INCLUDED_IN]->(technical),
+(applayer)-[:INCLUDED_IN]->(technical),
+(mvcview)-[:INCLUDED_IN]->(technical),
+(jsfile)-[:INCLUDED_IN]->(technical),
+(location)-[:INCLUDED_IN]->(technical),
+(testing)-[:PART_OF]->(software_development),
+(defect)-[:INCLUDED_IN]->(testing),
+(environment)-[:INCLUDED_IN]->(testing),
+(userprofile)-[:INCLUDED_IN]->(testing),
+(feature)-[:INCLUDED_IN]->(testing),
+(testsuite)-[:INCLUDED_IN]->(testing),
+(userstory)-[:INCLUDED_IN]->(testing),
+(testcase)-[:INCLUDED_IN]->(testing),
+(requirement)-[:INCLUDED_IN]->(testing),
+(web)-[:PART_OF]->(software_development),
+(cssfile)-[:INCLUDED_IN]->(web),
+(jsfile)-[:INCLUDED_IN]->(web),
+(mvcview)-[:INCLUDED_IN]->(web),
+(mvccontroller)-[:INCLUDED_IN]->(web),
+(publication)-[:INTENDED_FOR]->(audience),
+(file)-[:LOCATED_IN]->(codefolder),
+(codefolder)-[:LOCATED_IN]->(codefolder),
+(codeproject)-[:LOCATED_IN]->(codefolder),
+(file)-[:INCLUDED_IN]->(checkin),
+(checkin)-[:PART_OF]->(iteration),
+(checkin)-[:INCLUDED_IN]->(release),
+(applayer)-[:USES]->(component),
+(mvcview)-[:REFERENCES]->(cssfile),
+(mvccontroller)-[:REFERENCES]->(mvcview),
+(mvccontroller)-[:USES]->(localizationkey),
+(dbschema)-[:PART_OF]->(database),
+(dbfunction)-[:PART_OF]->(dbschema),
+(dbprocedure)-[:REFERENCES]->(dbfunction),
+(dbprocedure)-[:PART_OF]->(dbschema),
+(dbview)-[:PART_OF]->(dbschema),
+(dbtable)-[:PART_OF]->(dbschema),
+(defect)-[:REPORTED_IN]->(environment),
+(document)-[:LOCATED_IN]->(location),
+(requirement)-[:DEFINED_IN]->(document),
+(release)-[:DEPLOYED_TO]->(environment),
+(server)-[:PART_OF]->(environment),
+(permission)-[:AFFECTS]->(feature),
+(person)-[:KNOWS_ABOUT]->(feature),
+(group)-[:KNOWS_ABOUT]->(feature),
+(userstory)-[:RELATES_TO]->(feature),
+(setting)-[:AFFECTS]->(feature),
+(person)-[:MEMBER_OF]->(group),
+(group)-[:PART_OF]->(organization),
+(userstory)-[:INCLUDED_IN]->(iteration),
+(task)-[:INCLUDED_IN]->(iteration),
+(mvcview)-[:REFERENCES]->(jsfile),
+(jsfile)-[:USES]->(localizationkey),
+(mvcview)-[:USES]->(localizationkey),
+(person)-[:EMPLOYED_BY]->(organization),
+(person)-[:KNOWS_ABOUT]->(skill),
+(task)-[:ASSIGNED_TO]->(person),
+(server)-[:USES]->(platform),
+(dbprocedure)-[:REFERENCES]->(dbview),
+(dbprocedure)-[:REFERENCES]->(dbtable),
+(userstory)-[:APPLIES_TO]->(userprofile),
+(userstory)-[:RELATES_TO]->(requirement),
+(testcase)-[:APPLIES_TO]->(requirement),
+(codeproject)-[:INCLUDED_IN]->(codesolution),
+(dbview)-[:REFERENCES]->(dbtable),
+(dbtable)-[:REFERENCES]->(dbtable),
+(testcase)-[:PART_OF]->(testsuite),
+(testcase)-[:COVERS]->(userstory);
+----
+
+//hide
+//setup
+//output
+[source,cypher]
+----
+CREATE
+(ar_admin:Area { name: "Admin" }),
+(ar_cust:Area { name: "Customer" }),
+(ar_fill:Area { name: "Fulfillment" }),
+(ar_wh:Area { name: "Warehouse" }),
+(chk_1931:CheckIn { name: "Change set 1931" }),
+(chk_1956:CheckIn { name: "Change set 1956" }),
+(chk_2216:CheckIn { name: "Change set 2216" }),
+(css_addr:CssFile { name: "Address.css" }),
+(css_cat:CssFile { name: "Catalog.css" }),
+(css_chk:CssFile { name: "Checkout.css" }),
+(css_global:CssFile { name: "Global.css" }),
+(css_pay:CssFile { name: "Payment.css" }),
+(css_prdet:CssFile { name: "ProductDetails.css" }),
+(css_prlist:CssFile { name: "ProductList.css" }),
+(css_shop:CssFile { name: "Shopping.css" }),
+(css_valid:CssFile { name: "Validation.css" }),
+(ctrl_cart:MvcController { name: "CartController" }),
+(ctrl_check:MvcController { name: "CheckoutController" }),
+(ctrl_content:MvcController { name: "ContentController" }),
+(ctrl_pay:MvcController { name: "PaymentController" }),
+(ctrl_prod:MvcController { name: "ProductController" }),
+(ctrl_promo:MvcController { name: "PromotionController" }),
+(db_bonz:Database { name: "BonzDB" }),
+(dbsc_dbo:DbSchema { name: "dbo" }),
+(df_cart1:Defect { name: "Defect 2819", description : "Quantity can be changed to negative numbers" }),
+(df_cc1:Defect { name: "Defect 2816", description : "Credit card validation has bad regex for billing zip code" }),
+(dfn_discount:DbFunction { name: "dbo.ufnGetDiscountedPrice" }),
+(dfn_exprice:DbFunction { name: "dbo.ufnGetExtendedPrice" }),
+(doc_req1:Document { name: "CartRequirements.docx" }),
+(doc_req2:Document { name: "DisablePurchaseFlag.docx" }),
+(e_ip:DbEntity { name: "InventoryProductEntity" }),
+(e_sp:DbEntity { name: "ShoppingProductEntity" }),
+(env_bfx:Environment { name: "Break Fix Environment" }),
+(env_dev:Environment { name: "Dev Environment" }),
+(env_it:Environment { name: "Integration Test Environment" }),
+(env_prod:Environment { name: "Production Environment" }),
+(env_stage:Environment { name: "Staging Environment" }),
+(env_uat:Environment { name: "UAT Environment" }),
+(fl_prodtable:CodeFile { name: "Product.sql" }),
+(ft_cc:Feature { name: "Credit Card Payments" }),
+(ft_chk:Feature { name: "Checkout" }),
+(ft_content:Feature { name: "Content Management" }),
+(ft_gc:Feature { name: "Gift Card Payments" }),
+(ft_inv:Feature { name: "Inventory" }),
+(ft_pay:Feature { name: "Payments" }),
+(ft_prmg:Feature { name: "Product Management" }),
+(ft_shop:Feature { name: "Shopping" }),
+(grp_dba:Group { name: "Database Administrators" }),
+(grp_dev:Group { name: "Developers" }),
+(grp_help1:Group { name: "Help Desk, Tier 1" }),
+(grp_help2:Group { name: "Help Desk, Tier 2" }),
+(grp_net:Group { name: "Network Administrators" }),
+(grp_pmo:Group { name: "Project Management (PMO)" }),
+(grp_prsupp:Group { name: "Production Support" }),
+(grp_qa:Group { name: "Quality Assurance" }),
+(js_cart:JsFile { name: "Cart.js" }),
+(js_ccpay:JsFile { name: "CreditCardPayment.js" }),
+(js_chk:JsFile { name: "Checkout.js" }),
+(js_gcpay:JsFile { name: "GiftCardPayment.js" }),
+(js_prod:JsFile { name: "Product.js" }),
+(js_valid:JsFile { name: "Validation.js" }),
+(mvw_admin:MvcView { name: "_admin.html" }),
+(mvw_adminnav:MvcView { name: "AdminNavigationView" }),
+(mvw_biladdr:MvcView { name: "BillingAddressView" }),
+(mvw_cart:MvcView { name: "CartView" }),
+(mvw_ccdet:MvcView { name: "CreditCardDetailsView" }),
+(mvw_cedit:MvcView { name: "ContentEditView" }),
+(mvw_checkout:MvcView { name: "CheckoutView" }),
+(mvw_clist:MvcView { name: "ContentListView" }),
+(mvw_custlay:MvcView { name: "_shopping.html" }),
+(mvw_custnav:MvcView { name: "CustomerNavigationView" }),
+(mvw_gcdet:MvcView { name: "GiftCardDetailsView" }),
+(mvw_pay:MvcView { name: "PaymentView" }),
+(mvw_pdet:MvcView { name: "ProductDetailView" }),
+(mvw_pedit:MvcView { name: "ProductEditView" }),
+(mvw_plist:MvcView { name: "ProductListView" }),
+(mvw_shaddr:MvcView { name: "ShippingAddressView" }),
+(prc_sh:DbProcedure { name: "ShoppingProduct_List_Get" }),
+(prc_shd:DbProcedure { name: "ShoppingProduct_Details_Get" }),
+(prs_ba:Person { name: "Busy, Betty" }),
+(prs_cio:Person { name: "CIO, Sylvia" }),
+(prs_dba:Person { name: "Debaron, Chuck" }),
+(prs_dev1:Person { name: "Dev, David" }),
+(prs_dev2:Person { name: "Dev, Donna" }),
+(prs_dev3:Person { name: "Dev, Delilah" }),
+(prs_hlp1:Person { name: "Collins, Sasha" }),
+(prs_hlp2:Person { name: "Porter, Rick E." }),
+(prs_hlp3:Person { name: "Quick, Kelly" }),
+(prs_net1:Person { name: "Williams, Garnet" }),
+(prs_pm:Person { name: "Mendez, Andrew" }),
+(prs_qamgr:Person { name: "Quigby, Susan" }),
+(prs_tst1:Person { name: "Tester, Tommy" }),
+(prs_tst2:Person { name: "Tester, Theresa" }),
+(prs_tst3:Person { name: "Tester, Mihir" }),
+(rel_v1_1:Release { name: "Release v1.1" }),
+(rel_v1_2:Release { name: "Release v1.2" }),
+(rel_v1_3:Release { name: "Release v1.3" }),
+(req_cart1:Requirement { name: "Req CT-3-1", description : "Quantity cannot be less than zero" }),
+(req_cart2:Requirement { name: "Req CT-2-1", description : "Quantity can be changed from the Shopping Cart page" }),
+(req_cart3:Requirement { name: "Req CT-4-1", description : "A Customer can remove an item from the Shopping Cart page" }),
+(rl_ba:Role { name: "Business Analyst" }),
+(rl_cio:Role { name: "CIO" }),
+(rl_dba:Role { name: "DBA" }),
+(rl_dev:Role { name: "Developer" }),
+(rl_pm:Role { name: "Project Manager" }),
+(rl_qamgr:Role { name: "QA Manager" }),
+(rl_qatest:Role { name: "QA Tester" }),
+(sp_iplist:DbProcedure { name: "InventoryProduct_List_Get" }),
+(t_prod:DbTable { name: "Product" }),
+(task_task1:Task { name: "Add Availability Flag" }),
+(tcase_pmgt1:TestCase { name: "ProductManagement_EditProductDetails" }),
+(tcase_prod1:TestCase { name: "ShoppingCart_AddProductToCart" }),
+(tcase_prod2:TestCase { name: "ShoppingCart_RemoveProductFromCart" }),
+(tcase_prod3:TestCase { name: "ShoppingCart_ChangeProductQuantity" }),
+(tcase_prod4:TestCase { name: "ShoppingCart_ViewCart" }),
+(tsuite_pmgt:TestSuite { name: "Product Management Test Suite" }),
+(tsuite_prod:TestSuite { name: "ShoppingCart_TestSuite" }),
+(vm_spdet:ViewModel { name: "ShoppingProductDetailsVM" }),
+(vm_splist:ViewModel { name: "ShoppingProductListVM" }),
+(vw_avail:DbView { name: "AvailableProductsView" }),
+(ft_shop)-[:PART_OF]->(ar_cust),
+(ft_inv)-[:PART_OF]->(ar_fill),
+(fl_prodtable)-[:INCLUDED_IN]->(chk_1931),
+(prs_dba)-[:SUBMITTED]->(chk_1931),
+(prs_dev2)-[:SUBMITTED]->(chk_1956),
+(prs_dev3)-[:SUBMITTED]->(chk_2216),
+(mvw_biladdr)-[:USES]->(css_addr),
+(mvw_cart)-[:USES]->(css_addr),
+(mvw_shaddr)-[:USES]->(css_addr),
+(mvw_custlay)-[:USES]->(css_global),
+(mvw_ccdet)-[:USES]->(css_pay),
+(mvw_gcdet)-[:USES]->(css_pay),
+(mvw_pdet)-[:USES]->(css_prdet),
+(mvw_plist)-[:USES]->(css_prlist),
+(ft_shop)-[:USES]->(ctrl_cart),
+(ft_shop)-[:USES]->(ctrl_pay),
+(ft_shop)-[:USES]->(ctrl_prod),
+(ft_shop)-[:USES]->(ctrl_promo),
+(chk_2216)-[:FIXES]->(df_cart1),
+(chk_1956)-[:FIXES]->(df_cc1),
+(ft_inv)-[:USES]->(e_ip),
+(vm_spdet)-[:USES]->(e_sp),
+(vm_splist)-[:USES]->(e_sp),
+(rel_v1_1)-[:DEPLOYED_IN]->(env_bfx),
+(rel_v1_3)-[:DEPLOYED_IN]->(env_dev),
+(rel_v1_3)-[:DEPLOYED_IN]->(env_it),
+(rel_v1_1)-[:DEPLOYED_IN]->(env_prod),
+(rel_v1_2)-[:DEPLOYED_IN]->(env_stage),
+(rel_v1_2)-[:DEPLOYED_IN]->(env_uat),
+(t_prod)-[:DEFINED_IN]->(fl_prodtable),
+(df_cc1)-[:AFFECTS]->(ft_cc),
+(ar_wh)-[:USES]->(ft_inv),
+(ft_cc)-[:PART_OF]->(ft_pay),
+(ft_gc)-[:PART_OF]->(ft_pay),
+(tsuite_prod)-[:USES]->(ft_shop),
+(prs_dba)-[:MEMBER_OF]->(grp_dba),
+(prs_dev1)-[:MEMBER_OF]->(grp_dev),
+(prs_dev2)-[:MEMBER_OF]->(grp_dev),
+(prs_dev3)-[:MEMBER_OF]->(grp_dev),
+(prs_ba)-[:MEMBER_OF]->(grp_pmo),
+(prs_pm)-[:MEMBER_OF]->(grp_pmo),
+(prs_qamgr)-[:MEMBER_OF]->(grp_qa),
+(prs_tst1)-[:MEMBER_OF]->(grp_qa),
+(prs_tst2)-[:MEMBER_OF]->(grp_qa),
+(prs_tst3)-[:MEMBER_OF]->(grp_qa),
+(mvw_cart)-[:USES]->(js_cart),
+(mvw_ccdet)-[:USES]->(js_ccpay),
+(mvw_checkout)-[:USES]->(js_chk),
+(mvw_gcdet)-[:USES]->(js_gcpay),
+(mvw_pdet)-[:USES]->(js_prod),
+(mvw_plist)-[:USES]->(js_prod),
+(mvw_ccdet)-[:USES]->(js_valid),
+(mvw_gcdet)-[:USES]->(js_valid),
+(mvw_cedit)-[:USES]->(mvw_admin),
+(mvw_clist)-[:USES]->(mvw_admin),
+(mvw_admin)-[:USES]->(mvw_adminnav),
+(ctrl_pay)-[:USES]->(mvw_biladdr),
+(mvw_pay)-[:USES]->(mvw_biladdr),
+(ctrl_cart)-[:USES]->(mvw_cart),
+(tcase_prod1)-[:USES]->(mvw_cart),
+(tcase_prod2)-[:USES]->(mvw_cart),
+(tcase_prod3)-[:USES]->(mvw_cart),
+(tcase_prod4)-[:USES]->(mvw_cart),
+(ctrl_pay)-[:USES]->(mvw_ccdet),
+(ctrl_pay)-[:USES]->(mvw_ccdet),
+(ctrl_content)-[:USES]->(mvw_cedit),
+(ctrl_check)-[:USES]->(mvw_checkout),
+(ctrl_content)-[:USES]->(mvw_clist),
+(mvw_cart)-[:USES]->(mvw_custlay),
+(mvw_checkout)-[:USES]->(mvw_custlay),
+(mvw_plist)-[:USES]->(mvw_custlay),
+(mvw_custlay)-[:USES]->(mvw_custnav),
+(ctrl_pay)-[:USES]->(mvw_gcdet),
+(ctrl_pay)-[:USES]->(mvw_pay),
+(mvw_checkout)-[:USES]->(mvw_pay),
+(ctrl_prod)-[:USES]->(mvw_pdet),
+(tcase_prod1)-[:USES]->(mvw_pdet),
+(ctrl_prod)-[:USES]->(mvw_pedit),
+(ctrl_prod)-[:USES]->(mvw_plist),
+(tcase_prod1)-[:USES]->(mvw_plist),
+(ctrl_cart)-[:USES]->(mvw_shaddr),
+(ctrl_pay)-[:USES]->(mvw_shaddr),
+(mvw_pay)-[:USES]->(mvw_shaddr),
+(chk_1931)-[:INCLUDED_IN]->(rel_v1_2),
+(chk_1931)-[:INCLUDED_IN]->(rel_v1_2),
+(chk_1956)-[:INCLUDED_IN]->(rel_v1_2),
+(chk_2216)-[:INCLUDED_IN]->(rel_v1_3),
+(prs_ba)-[:WORKS_AS]->(rl_ba),
+(prs_cio)-[:WORKS_AS]->(rl_cio),
+(prs_dba)-[:WORKS_AS]->(rl_dba),
+(prs_dev1)-[:WORKS_AS]->(rl_dev),
+(prs_dev2)-[:WORKS_AS]->(rl_dev),
+(prs_dev3)-[:WORKS_AS]->(rl_dev),
+(prs_pm)-[:WORKS_AS]->(rl_pm),
+(prs_qamgr)-[:WORKS_AS]->(rl_qamgr),
+(prs_tst1)-[:WORKS_AS]->(rl_qatest),
+(prs_tst2)-[:WORKS_AS]->(rl_qatest),
+(prs_tst3)-[:WORKS_AS]->(rl_qatest),
+(e_ip)-[:USES]->(t_prod),
+(e_sp)-[:USES]->(t_prod),
+(prc_sh)-[:USES]->(t_prod),
+(prc_shd)-[:USES]->(t_prod),
+(sp_iplist)-[:USES]->(t_prod),
+(tsuite_prod)-[:USES]->(tcase_prod1),
+(tsuite_prod)-[:USES]->(tcase_prod2),
+(tsuite_prod)-[:USES]->(tcase_prod3),
+(tsuite_prod)-[:USES]->(tcase_prod4),
+(ctrl_prod)-[:USES]->(vm_spdet),
+(mvw_pdet)-[:USES]->(vm_spdet),
+(ctrl_prod)-[:USES]->(vm_splist),
+(mvw_plist)-[:USES]->(vm_splist);
+----
+
+//graph
+
+=== The "Human" Node Domain - People and Groups
+
+Having a "map" of the human or organizational environment in which software is built allows us to navigate the challenge of finding answers to questions or fulfilling requests needed to change the system. It also assists our communication efforts when we need to inform stakeholders of impacts on their business processes.
+
+[source,cypher]
+----
+// Find Node Types in the "Human" Node Domain
+MATCH (m) WHERE m:Person OR m:Group OR m:Role OR m:Organization
+RETURN m;
+----
+
+//graph_result
+
+//table
+
+=== The "Process" Node Domain - Tracking Work
+
+In this example, labels included in the Process Node Domain through metadata are used to find instances of such kinds of nodes.
+
+[source,cypher]
+----
+// Find node examples in the "Process" 'Node Domain'
+MATCH (nt:NodeType)--(:NodeDomain { name: "Process" })
+WITH COLLECT(nt.name) AS processNodeTypes
+MATCH (m) WHERE LENGTH(FILTER(lbl IN labels(m) WHERE lbl IN processNodeTypes)) > 0
+RETURN m LIMIT 50;
+----
+
+//graph_result
+
+//table
+
+=== Example: Find connected system elements
+
+When preparing to make modifications to shared code assets in an application, it can be useful to visualize an asset's connections to other parts of the system. For example, consider an e-commerce application that contains a shared stylesheet that affects multiple views in a Web interface. A Cypher query can reveal multiple dependencies on the code being modified.
+
+Here's an example of shared CSS files in a Web e-commerce application.
+
+[source, cypher]
+----
+// CSS to MVC View and MVC Controllers, if present
+MATCH (css:CssFile)--(vw:MvcView)
+OPTIONAL MATCH (vw)--(ctl:MvcController)
+RETURN css, vw, ctl;
+----
+
+//graph_result
+
+=== Example: Modeling source code check-ins
+
+As source code is checked in, it is helpful to trace back the source code updates to the assets and features they affect. In most systems, source control is a silo unto itself, not offering any tracing capability to abstract designations of functional areas within the applications. By modeling code commits in the graph, you can make connections not naturally supported by the tools we use on a regular basis.
+
+//hide
+//setup
+//output
+[source, cypher]
+----
+// Developer checks in changes
+MATCH (dev:Person { name: "Dev, Donna" })
+MATCH (global_css:CssFile { name: "Global.css" })
+MATCH (details_css:CssFile { name: "ProductDetails.css" })
+MERGE (checkin:CheckIn { name: "Change set 2231" })
+	ON CREATE SET checkin.description = "CSS fixes for product details"
+MERGE (global_css)-[:INCLUDED_IN]->(checkin)
+MERGE (details_css)-[:INCLUDED_IN]->(checkin)
+MERGE (dev)-[:SUBMITTED { submitDate : "2015-06-13" }]->(checkin)
+RETURN dev, global_css, details_css, checkin;
+----
+
+//graph_result
+
+=== Example: What features were affected by a check-in?
+
+By using a few "jumps" in a Cypher query, possible impacts on high-level features can be determined, and this information can be used to narrow the list of items on which to focus.
+
+[source, cypher]
+----
+// What features did a checkin affect?
+MATCH (checkin:CheckIn { name: "Change set 2231" })
+MATCH (css_file)-[:INCLUDED_IN]->(checkin)
+MATCH (css_file)--(vw:MvcView)
+MATCH (vw)-[*1..3]-(feature:Feature)
+RETURN DISTINCT checkin, css_file, vw, feature;
+----
+
+//graph_result
+
+=== Example: What tests does QA need to run?
+
+Going beyond Features affected, you can also use associations of Test Suites with Features and associations of Test Cases with Test Suites to build a list of test cases needed to be exercised for a given code check-in.
+
+This can also be taken farther, factoring in Test Cases needed for a Release, based on the code associated with the Release (described later).
+
+[source, cypher]
+----
+// Data: What tests does QA need to run?
+MATCH (checkin:CheckIn { name: "Change set 2231"})
+MATCH (css_file)-[:INCLUDED_IN]->(checkin)
+MATCH (css_file)--(vw:MvcView)
+MATCH (vw)-[*1..3]-(feature:Feature)
+MATCH (t_case:TestCase)--(t_suite:TestSuite)-[*1..2]-(feature)
+RETURN DISTINCT t_suite.name AS `Test Suite`, t_case.name AS `Test Case`;
+----
+
+//table
+
+
+=== Example: Associate a check-in with a release
+
+By associating Check-ins with Releases, you can enable a full analysis on the changes made for a release, including the Features impacted.
+
+//setup
+[source, cypher]
+----
+MATCH (checkin:CheckIn { name: "Change set 2231" })
+MATCH (release { name: "Release v1.3" })
+MERGE (checkin)-[:INCLUDED_IN]->(release)
+RETURN checkin, release;
+----
+
+//graph_result
+
+=== Example: What needs tested for this release?
+
+Conclusions about what Test Cases to run for a Release can be gleaned from the model.
+
+[source, cypher]
+----
+// Data: What needs tested for this release?
+MATCH (rel:Release { name: "Release v1.3" })--(checkin:CheckIn)-[*1..4]-(feature:Feature)--(suite:TestSuite)--(testCase:TestCase)
+RETURN DISTINCT rel.name AS `Release`, checkin.name AS `Check-In`, suite.name AS `Test Suite`, testCase.name AS `Test Case`;
+----
+
+//table
+
+=== Example: What's scheduled for a given release?
+
+In addition to projecting test needs for a Release, a high-level overview of the "contents" of a Release can be modeled.
+
+[source, cypher]
+----
+// What's scheduled for Release v1.3?
+MATCH (release_v1_3:Release { name : "Release v1.3" })
+OPTIONAL MATCH (release_v1_3)<--(n)
+RETURN release_v1_3, n;
+----
+
+//graph_result
+
+=== Example: What's in a given release (release notes from check-ins)
+
+A raw view of Check-ins associated with a Release can allow release notes to be compiled and then published to stakeholders.
+
+[source, cypher]
+----
+// Data: What's in release v1.3?
+MATCH (rel_v1_3:Release { name: "Release v1.3" })
+OPTIONAL MATCH (rel_v1_3)--(checkin:CheckIn)
+RETURN rel_v1_3.name AS `Release`, checkin.name AS `Check-In`, COALESCE(checkin.description, "No description provided") AS `Description`;
+----
+
+//table
+
+=== Example: What release versions exist in each environment?
+
+One challenge for software development teams is keeping track of versions by environment. If you have a limited number of environments to select, this is even more crucial to know.
+
+==== Part 1: Add a release to the UAT environment
+//setup
+[source, cypher]
+----
+// Add v1.3 to UAT
+MATCH (rel_v1_3:Release { name: "Release v1.3" })
+MATCH (uat:Environment { name: "UAT Environment"})
+MERGE (rel_v1_3)-[r_1_3:DEPLOYED_IN]->(uat)
+RETURN uat, rel_v1_3, r_1_3;
+----
+
+//graph_result
+
+==== Part 2: Check releases by environment
+
+[source, cypher]
+----
+// Releases in environments
+MATCH (rel:Release)--(env:Environment)
+RETURN rel, env;
+----
+
+//graph_result
+
+[source, cypher]
+----
+// Data: Releases in environments
+MATCH (rel:Release)-[i]-(env:Environment)
+RETURN rel.name AS `Version`, TYPE(i) AS `is`, env.name AS `in Environment`;
+----
+
+//table
+
+== Try it out
+
+Execute some queries for yourself to explore the model descibed above.
+
+//console
+
+== Conclusions
+
+By modeling the disparate parts of the software development process, a better understanding of risks and impacts can be visualized as software is being developed. This can prevent wasted time and effort fixing unanticipated problems that the model can reveal.
+
+---

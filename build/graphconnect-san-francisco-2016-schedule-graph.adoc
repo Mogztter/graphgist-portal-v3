@@ -1,0 +1,198 @@
+= The GraphConnect San Francisco 2016 Schedule Graph
+
+:author: Rik Van Bruggen
+:twitter: @rvanbruggen
+:style: red:Person(name), silver:Day(date), silver:Time(time), yellow:TopicTag(name), green:Session(name)
+
+Yey! It's that time of the year again! We are full-steam getting ready for the Bi-Yearly Festival of Graphs also known as https://graphconnect.com/[GraphConnect]. There's another great conference lined up for us in San Francisco. The entire http://www.neo4j.com[Neo4j] crew will be there in full force - and of course we had to create another Schedule graph - just for fun. The fact that we had 14hrs on a very tight airplane seat with a guy *my size* sitting next to me had _nothing_ to do with it. At all.
+
+== A Google Sheet as the main repository
+I had to of course start from the schedule on the http://graphconnect.com/#agenda[GraphConnect website], and convert that into a https://docs.google.com/spreadsheets/d/1DfPZY4gpK1LjNhD8DSzPBBbHsQN1bqjnQQQZaEA1yQ4/edit?usp=sharing[google sheet with all the data]. Turned out to be a bit more work this time (thanks, HTML!), but hey - 14hrs on a plane, remember.
+
+Once I had that, I could add the data pretty easily with this model:
+
+image::https://www.dropbox.com/s/e7z7edyfz85diaz/model.png?dl=1[]
+
+Very simple - the only thing different about this version of a schedule-graph is that we now no longer have something called a "track" or similar, but we have "TopicTags". A "topictag" is basically something like a tag or a label that you may use in things like https://www.google.com/gmail[Gmail] or https://evernote.com/[Evernote] - to indicate that something belongs to one or more categories.
+
+Of course it's so much nicer when you can make it interactive and load it into Neo4j. Let's do that. Let's load that data into this graphgist. I have added some comments for every step of the way...
+
+//setup
+[source,cypher]
+----
+//add the days - all two of them
+load csv with headers from "https://docs.google.com/spreadsheets/u/0/d/1DfPZY4gpK1LjNhD8DSzPBBbHsQN1bqjnQQQZaEA1yQ4/export?format=csv&id=1DfPZY4gpK1LjNhD8DSzPBBbHsQN1bqjnQQQZaEA1yQ4&gid=0" as csv
+merge (d:Day {date: toInt(csv.Day)});
+
+//connect the days to one another
+match (d:Day), (d2:Day)
+where d.date = d2.date-1
+merge (d)-[:PRECEDES]-(d2);
+
+//add the rooms, topics, speakers and speaker's companies. Connect the speakers to their Companies.
+load csv with headers from "https://docs.google.com/spreadsheets/u/0/d/1DfPZY4gpK1LjNhD8DSzPBBbHsQN1bqjnQQQZaEA1yQ4/export?format=csv&id=1DfPZY4gpK1LjNhD8DSzPBBbHsQN1bqjnQQQZaEA1yQ4&gid=0" as csv
+with csv
+where csv.Title is not null
+merge (r:Room {name: csv.Room})
+merge (p:Person {name: csv.Speaker, title: csv.Title})
+set p.URL = csv.URL
+merge (c:Company {name: csv.Company})
+merge (p)-[:WORKS_FOR]->(c);
+
+//add the start- and end-timeslots to each day
+load csv with headers from "https://docs.google.com/spreadsheets/u/0/d/1DfPZY4gpK1LjNhD8DSzPBBbHsQN1bqjnQQQZaEA1yQ4/export?format=csv&id=1DfPZY4gpK1LjNhD8DSzPBBbHsQN1bqjnQQQZaEA1yQ4&gid=0" as csv
+match (d:Day {date: toInt(csv.Day)})
+merge (t1:Time {time: toInt(csv.Starttime)})-[:PART_OF]->(d)
+merge (t2:Time {time: toInt(csv.Endtime)})-[:PART_OF]->(d);
+----
+
+Now, we want to add all the different topictags. This is a bit special as you will see that all topictags are in the same "column" of the CSV file, and they are separated by a "special character", *§§*. So I would basically have to
+. pull these out of the CSV file column,
+. split them up into individual collections per session,
+. _unwind_ them into their individual topictags,
+. remove the "empty" ones (because the CSV column ends with *§§*),
+. add them to the graph.
+
+So let's continue with that.
+
+[source,cypher]
+----
+//add all the different topictags
+load csv with headers from "https://docs.google.com/spreadsheets/u/0/d/1DfPZY4gpK1LjNhD8DSzPBBbHsQN1bqjnQQQZaEA1yQ4/export?format=csv&id=1DfPZY4gpK1LjNhD8DSzPBBbHsQN1bqjnQQQZaEA1yQ4&gid=0" as csv
+with split(csv.Type,"§§") as topictagcollection
+unwind topictagcollection as topictags
+with distinct topictags as topictag
+where not topictag = ""
+merge (tt:TopicTag {name: topictag})
+return tt.name as First10TopicTags
+order by tt.name ASC
+limit 10;
+----
+
+As you can see, this gives me the correct result:
+//table
+
+Now we'll continue by connecting things up.
+
+[source,cypher]
+----
+//add the sessions and connect them up
+load csv with headers from "https://docs.google.com/spreadsheets/u/0/d/1DfPZY4gpK1LjNhD8DSzPBBbHsQN1bqjnQQQZaEA1yQ4/export?format=csv&id=1DfPZY4gpK1LjNhD8DSzPBBbHsQN1bqjnQQQZaEA1yQ4&gid=0" as csv
+match (t2:Time {time: toInt(csv.Endtime)})-[:PART_OF]->(d:Day {date: toInt(csv.Day)})<-[:PART_OF]-(t1:Time {time: toInt(csv.Starttime)}), (r:Room {name: csv.Room}), (p:Person {name: csv.Speaker, title: csv.Title})
+merge (s:Session {name: csv.Topic})
+set s.description = csv.Comments
+merge (s)<-[:SPEAKS_IN]-(p)
+merge (s)-[:IN_ROOM]->(r)
+merge (s)-[:STARTS_AT]->(t1)
+merge (s)-[:ENDS_AT]->(t2);
+
+//connect the sessions to topictags
+load csv with headers from "https://docs.google.com/spreadsheets/u/0/d/1DfPZY4gpK1LjNhD8DSzPBBbHsQN1bqjnQQQZaEA1yQ4/export?format=csv&id=1DfPZY4gpK1LjNhD8DSzPBBbHsQN1bqjnQQQZaEA1yQ4&gid=0" as csv
+with split(csv.Type,"§§") as topictagcollection, csv.Topic as session
+unwind topictagcollection as topictag
+with session, topictag
+where not( topictag = "" )
+match (s:Session {name: session}), (tt:TopicTag {name: topictag})
+merge (s)-[:HAS_TOPIC]->(tt);
+
+//Connecting the timeslots
+match (t:Time)--(d:Day {date:20161013})
+with t
+order by t.time ASC
+with collect(t) as times
+  foreach (i in range(0,length(times)-2) |
+    foreach (t1 in [times[i]] |
+      foreach (t2 in [times[i+1]] |
+        merge (t1)-[:FOLLOWED_BY]->(t2))));
+
+match (t:Time)--(d:Day {date:20161014})
+with t
+order by t.time ASC
+with collect(t) as times
+  foreach (i in range(0,length(times)-2) |
+    foreach (t1 in [times[i]] |
+      foreach (t2 in [times[i+1]] |
+        merge (t1)-[:FOLLOWED_BY]->(t2))));
+----
+
+Let's take a look at what we have now, by taking a little sample with the following query:
+
+[source,cypher]
+----
+MATCH (n) where rand() <= 0.1
+MATCH (n)-[r]->(m)
+WITH n, type(r) as via, m
+RETURN labels(n) as from,
+   reduce(keys = [], keys_n in collect(keys(n)) | keys + filter(k in keys_n WHERE NOT k IN keys)) as props_from,
+   via,
+   labels(m) as to,
+   reduce(keys = [], keys_m in collect(keys(m)) | keys + filter(k in keys_m WHERE NOT k IN keys)) as props_to,
+   count(*) as freq
+----
+
+//table
+
+Ok - so that gives us a bit of insight. So let's try to zoom in a bit, and run a simple query over our graph: let's find a couple of sessions in Day 1:
+
+[source,cypher]
+----
+match (d:Day {date:20161013})<--(t:Time)<--(s:Session)--(connections)
+return d,t,s,connections
+limit 50
+----
+
+and here's a sample of the graph:
+
+//graph_result
+
+Let's do another query. Here's the path between my dear friend http://jimwebber.org/[Jim Webber] and https://neo4j.com/blog/dan-murphy-senior-metadata-devops-financial-times/[Dan Murphy] of the https://www.ft.com/[Financial Times]:
+
+[source,cypher]
+----
+match path = allshortestpaths( (p1:Person)-[*]-(p2:Person) )
+where p1.name contains "MURPHY"
+and p2.name contains "WEBBER"
+return path
+----
+
+and display the result
+
+//graph_result
+
+Let's now look at a link between a person (http://jimwebber.org/[Jim Webber], of Neo fame) and an Organisation (https://www.icij.org/[ICIJ], of https://panamapapers.icij.org/[PanamaPaper] fame).
+
+[source,cypher]
+----
+match (c:Company {name:"ICIJ"}), (p:Person {name:"JIM WEBBER"}),
+path = allshortestpaths( (c)-[*]-(p) )
+return path
+----
+and again display the result:
+//graph_result
+
+Last one for fun: let's look at the sessions that have more than one speaker:
+[source,cypher]
+----
+match (s:Session)-[r:SPEAKS_IN]-(p:Person)
+with s, collect(p) as person, count(p) as count
+where count > 1
+return s,person
+----
+and display it:
+//graph_result
+
+= Just a start...
+There are so many other things that we could look at. Use the console below to explore if you are interested in more.
+
+//console
+
+I hope this gist was interesting for you, and that we will see each other soon.
+
+This gist was created by link:mailto:rik@neotechnology.com[Rik Van Bruggen]
+
+* link:http://blog.bruggen.com[My Blog]
+* link:http://blog.bruggen.com/p/podcast_13.html[the Graphistania Neo4j Graph Database Podcast]
+* link:http://learningneo4j.net[My Book]
+* link:http://twitter.com/rvanbruggen[On Twitter]
+* link:http://be.linkedin.com/in/rikvanbruggen/[On LinkedIn]
+* link:https://gist.github.com/rvanbruggen/186e630d06c3e1b92174142a0b5e5bda[All the material in this GraphGist] on GitHub.

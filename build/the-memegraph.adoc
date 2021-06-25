@@ -1,0 +1,442 @@
+= The Reddit Meme Graph
+:img: https://dl.dropboxusercontent.com/u/14493611/
+
+ifdef::env-graphgist[]
+:limit: 100
+endif::env-graphgist[]
+
+ifndef::env-graphgist[]
+:limit: 10000
+endif::env-graphgist[]
+
+Saturday night after not enough drinks, I came across these tweets by http://twitter.com/@LeFloatingGhost[@LeFloatingGhost^].
+
+image::{img}/memegraph-tweet.jpg[link="https://twitter.com/LeFloatingGhost/status/832699676323229697",window="_blank",width=400]
+
+*This definitely looks like a meme graph.*
+
+== We can do that too
+
+image::{img}/memegraph-meme.jpg[width=400]
+
+== Recorded Session
+
+If you want to see me struggle get this going live, watch my session here:
+
+image::{img}/memegraph-gif-preview.jpg[link={img}/neo4j-memes.gif,window="_blank",width=500]
+
+ifndef::env-graphgist[]
+If you want to see an _interactive version of this post_, check it out at the Graph Gist Collection.
+
+image::{img}/memegraph-graphgist.jpg[link="http://portal.graphgist.org/graph_gists/8fefa959-176b-4cc9-b4eb-9b8f7bf577fe",window="_blank",width=300]
+endif::env-graphgist[]
+
+== Find us some memes
+
+image::https://lmgtfy.com/assets/sticker-b222a421fb6cf257985abfab188be7d6746866850efe2a800a3e57052e1a2411.png[link="http://lmgtfy.com/?q=csv+meme+github",window="_blank"]
+
+There is this really nice CSV from *Reddit* of the top memes around:
+
+https://github.com/umbrae/reddit-top-2.5-million/blob/master/data/memes.csv
+
+We want to grab the raw URL: https://raw.githubusercontent.com/umbrae/reddit-top-2.5-million/master/data/memes.csv
+
+*And grab an empty Neo4j Sandbox from http://neo4jsandbox.com.*
+
+== What's the data like?
+
+=== Check CSV
+
+[source,cypher]
+----
+WITH 'https://raw.githubusercontent.com/umbrae/reddit-top-2.5-million/master/data/memes.csv' as url
+LOAD CSV WITH HEADERS FROM url AS row
+RETURN count(*);
+----
+
+//table
+
+ifndef::env-graphgist[]
+----
+╒══════════╕
+│"count(*)"│
+╞══════════╡
+│"1000"    │
+└──────────┘
+----
+endif::env-graphgist[]
+
+
+[source,cypher]
+----
+WITH 'https://raw.githubusercontent.com/umbrae/reddit-top-2.5-million/master/data/memes.csv' as url
+LOAD CSV WITH HEADERS FROM url AS row
+RETURN row limit 3;
+----
+
+//table
+
+ifndef::env-graphgist[]
+----
+╒════════════════════════════════════════════════════════════════════════════════════════════════════╕
+│"row"                                                                                               │
+╞════════════════════════════════════════════════════════════════════════════════════════════════════╡
+│{"over_18":"False","name":"t3_1edsw9","permalink":"http://www.reddit.com/r/memes/comments/1edsw9/can│
+│_we_please_start_a_crazy_amy_meme_for_amy_of/","url":"http://www.quickmeme.com/meme/3uer85/","domain│
+│":"quickmeme.com","distinguished":null,"score":"1831","downs":"1010","link_flair_css_class":null,"su│
+│breddit_id":"t5_2qjpg","thumbnail":"http://b.thumbs.redditmedia.com/qpz4enS1CCFIs8Ys.jpg","id":"1eds│
+│w9","author_flair_css_class":null,"link_flair_text":null,"selftext":null,"ups":"2841","num_comments"│
+│:"120","edited":"False","title":"Can We Please Start a Crazy Amy Meme For Amy of Amy's Baking Compan│
+│y?","created_utc":"1368627364.0","is_self":"False"}                                                 │
+├────────────────────────────────────────────────────────────────────────────────────────────────────┤
+...
+----
+endif::env-graphgist[]
+
+
+== Load them memes
+
+//setup
+//output
+[source,cypher,subs=attributes]
+----
+WITH 'https://raw.githubusercontent.com/umbrae/reddit-top-2.5-million/master/data/memes.csv' as url
+LOAD CSV WITH HEADERS FROM url AS row
+WITH row LIMIT {limit}
+CREATE (m:Meme) SET m=row // we take it all into Meme nodes
+----
+
+ifndef::env-graphgist[]
++Added 100 labels, created 100 nodes, set 1700 properties, statement completed in 120 ms.+
+endif::env-graphgist[]
+
+=== Get some memes
+
+[source,cypher]
+----
+MATCH (m:Meme) return m limit 25;
+----
+
+//graph_result
+
+ifndef::env-graphgist[]
+image::{img}/memegraph-memes.jpg[width=400]
+endif::env-graphgist[]
+
+[source,cypher]
+----
+MATCH (m:Meme) return m.id, m.title limit 5;
+----
+//table
+
+ifndef::env-graphgist[]
+----
+╒════════╤════════════════════════════════════════════════════════════════════════════════╕
+│"m.id"  │"m.title"                                                                       │
+╞════════╪════════════════════════════════════════════════════════════════════════════════╡
+│"1edsw9"│"Can We Please Start a Crazy Amy Meme For Amy of Amy's Baking Company?"         │
+├────────┼────────────────────────────────────────────────────────────────────────────────┤
+│"1ihc34"│"Given the competitive nature of redditors, I assume you all feel the same way."│
+├────────┼────────────────────────────────────────────────────────────────────────────────┤
+│"1gmt99"│"This man left this woman..."                                                   │
+├────────┼────────────────────────────────────────────────────────────────────────────────┤
+│"1ds9y4"│"How to cure bad breath..."                                                     │
+├────────┼────────────────────────────────────────────────────────────────────────────────┤
+----
+endif::env-graphgist[]
+
+== But we want the words !
+
+Let's grab the first meme and get going.
+
+=== Split the text into words.
+
+[source,cypher]
+----
+MATCH (m:Meme) WITH m limit 1
+RETURN split(m.title, " ") as words;
+----
+//table
+
+ifndef::env-graphgist[]
+----
+["Can","We","Please","Start","a","Crazy","Amy","Meme","For","Amy","of","Amy's","Baking","Company?"]
+----
+endif::env-graphgist[]
+
+=== CAN YOU HEAR ME?
+
+[source,cypher]
+----
+MATCH (m:Meme) WITH m limit 1
+RETURN split(toUpper(m.title), " ") as words;
+----
+//table
+
+ifndef::env-graphgist[]
+----
+["CAN","WE","PLEASE","START","A","CRAZY","AMY","MEME","FOR","AMY","OF","AMY'S","BAKING","COMPANY?"]
+----
+endif::env-graphgist[]
+
+== Remove Punctuation
+
+Create an array of punctuation with split on empty string.
+
+[source,cypher]
+----
+return split(",!?'.","") as chars;
+----
+
+//table
+
+ifndef::env-graphgist[]
+----
+[",","!","?","'","."]
+----
+endif::env-graphgist[]
+
+=== And replace each of the characters with nothing ''
+
+[source,cypher]
+----
+with "a?b.c,d" as word
+return word,
+       reduce(s=word, c IN split(",!?'.","") | replace(s,c,'')) as no_chars;
+----
+//table
+
+ifndef::env-graphgist[]
+----
+╒═════════╤══════════╕
+│"word"   │"no_chars"│
+╞═════════╪══════════╡
+│"a?b.c,d"│"abcd"    │
+└─────────┴──────────┘
+----
+endif::env-graphgist[]
+
+
+=== We got us some nice words
+
+[source,cypher]
+----
+MATCH (m:Meme)  WITH m limit 1
+// lets split the text into words
+RETURN split(reduce(s=toUpper(m.title), c IN split(",!?'.","") | replace(s,c,'')), " ") as words;
+----
+
+//table
+
+ifndef::env-graphgist[]
+----
+╒═════════════════════════════════════════════════════════════════════════════════════════════════╕
+│"words"                                                                                          │
+╞═════════════════════════════════════════════════════════════════════════════════════════════════╡
+│["CAN","WE","PLEASE","START","A","CRAZY","AMY","MEME","FOR","AMY","OF","AMYS","BAKING","COMPANY"]│
+└─────────────────────────────────────────────────────────────────────────────────────────────────┘
+----
+endif::env-graphgist[]
+
+
+== Enough words, where are the nodes?
+
+=== Let's create some word nodes 
+
+(merge does get-or-create)
+
+//setup
+//output
+[source,cypher]
+----
+MATCH (m:Meme)  WITH m limit 1
+WITH split(reduce(s=toUpper(m.title), c IN split(",!?'.","") | replace(s,c,'')), " ") as words, m
+MERGE (a:Word {text:words[0]})
+MERGE (b:Word {text:words[1]});
+----
+
+=== Our first two words
+
+[source,cypher]
+----
+MATCH (n:Word) RETURN n;
+----
+//graph_result
+
+ifndef::env-graphgist[]
+image::{img}/memegraph-two-words.jpg[width=400]
+endif::env-graphgist[]
+
+=== Unwind the ra(n)ge
+
+But we want all in the array, so let's unwind a range.
+
+//setup
+//output
+[source,cypher]
+----
+MATCH (m:Meme)  WITH m limit 1
+WITH split(reduce(s=toUpper(m.title), c IN split(",!?'.","") | replace(s,c,'')), " ") as words, m
+
+UNWIND range(0,size(words)-2) as idx // turn the range into rows of idx
+
+MERGE (a:Word {text:words[idx]})
+MERGE (b:Word {text:words[idx+1]});
+----
+
+[source,cypher]
+----
+MATCH (n:Word) RETURN n;
+----
+//graph_result
+
+== No Limits
+
+//setup
+//output
+[source,cypher]
+----
+MATCH (m:Meme) WITH m // no limits
+WITH split(reduce(s=toUpper(m.title), c IN split(",!?'.","") | replace(s,c,'')), " ") as words, m
+
+UNWIND range(0,size(words)-2) as idx // turn the range into rows of idx
+
+MERGE (a:Word {text:words[idx]})
+MERGE (b:Word {text:words[idx+1]});
+----
+
+ifndef::env-graphgist[]
+image::{img}/memegraph-all-words.jpg[width=400]
+endif::env-graphgist[]
+
+[source,cypher]
+----
+MATCH (n:Word) RETURN count(*);
+----
+//table
+
+== Chain up the memes
+
+Connect the words via `:NEXT` and store the meme-ids on each rel in an `ids` property
+
+And for the first word `(idx = 0)` let's also connect the `Meme` node to the first `Word`
+
+//setup
+//output
+[source,cypher]
+----
+MATCH (m:Meme) WITH m 
+WITH split(reduce(s=toUpper(m.title), c IN split(",!?'.","") | replace(s,c,'')), " ") as words, m
+UNWIND range(0,size(words)-2) as idx // turn the range into rows of idx
+MERGE (a:Word {text:words[idx]})
+MERGE (b:Word {text:words[idx+1]})
+
+// Connect the words via :NEXT and store the meme-ids on each rel in an `ids` property
+MERGE (a)-[rel:NEXT]->(b) SET rel.ids = coalesce(rel.ids,[]) + [m.id]
+
+// to later recreate the meme along the next chain
+// connect the first word to the meme itself
+WITH * WHERE idx = 0
+MERGE (m)-[:FIRST]->(a);
+----
+
+ifndef::env-graphgist[]
++Set 546 properties, created 614 relationships, statement completed in 65 ms.+
+endif::env-graphgist[]
+
+== *Yay done!*
+
+[source,cypher]
+----
+MATCH (m:Meme)-[:FIRST]->(w:Word)-[:NEXT]->(w2:Word)
+RETURN * LIMIT 33;
+----
+//graph_result
+
+ifndef::env-graphgist[]
+image::{img}/memegraph-example.jpg[width=400]
+endif::env-graphgist[]
+
+== Which words appear most often
+
+[source,cypher]
+----
+MATCH (w:Word)
+WHERE length(w.text) > 4
+RETURN w.text, size( (w)--() ) as relCount
+ORDER BY relCount DESC LIMIT 10;
+----
+//table
+
+ifndef::env-graphgist[]
+----
+╒══════════════════╤══════════╕
+│"w"               │"relCount"│
+╞══════════════════╪══════════╡
+│{"text":"AFTER"}  │"56"      │
+├──────────────────┼──────────┤
+│{"text":"REDDIT"} │"34"      │
+├──────────────────┼──────────┤
+│{"text":"ABOUT"}  │"33"      │
+├──────────────────┼──────────┤
+│{"text":"TODAY"}  │"33"      │
+├──────────────────┼──────────┤
+│{"text":"SCUMBAG"}│"32"      │
+├──────────────────┼──────────┤
+│{"text":"EVERY"}  │"31"      │
+├──────────────────┼──────────┤
+│{"text":"FIRST"}  │"30"      │
+├──────────────────┼──────────┤
+│{"text":"ALWAYS"} │"28"      │
+├──────────────────┼──────────┤
+│{"text":"FRIEND"} │"27"      │
+├──────────────────┼──────────┤
+│{"text":"THOUGHT"}│"24"      │
+└──────────────────┴──────────┘
+----
+endif::env-graphgist[]
+
+== Now let's find our memes again
+
+[source,cypher]
+----
+// first meme
+MATCH (m:Meme) WITH m limit 1
+// from the :FIRST :Word follow the :NEXT chain
+MATCH path = (m)-[:FIRST]->(w)-[rels:NEXT*..15]->() // let's follow the chain of words starting 
+// from the meme, where all relationships contain the meme-id
+WHERE ALL(r in rels WHERE m.id IN r.ids)
+RETURN *;
+----
+
+//graph_result
+
+ifndef::env-graphgist[]
+image::https://dl.dropboxusercontent.com/u/14493611/memegraph.jpg[]
+endif::env-graphgist[]
+
+=== Show meme by id
+
+We can also get meme from the CSV list, 
+e.g. id '1kc9p2' - 'As stupid as memes are they can actually make valid points' 
+
+[source,cypher]
+----
+MATCH (m:Meme) WHERE m.id = '1kc9p2'
+
+MATCH path = (m)-[:FIRST]->(w)-[rels:NEXT*..15]->()
+WHERE ALL(r in rels WHERE m.id IN r.ids)
+
+RETURN *;
+----
+
+//graph_result
+
+ifndef::env-graphgist[]
+image::https://dl.dropboxusercontent.com/u/14493611/memegraph-2.jpg[]
+endif::env-graphgist[]
+
+Done. Enjoy !
+
+PS: If you want to connect your own stuff, grab a http://neo4jsandbox.com[Neo4j Sandbox] or use http://neo4j.com/developer[Neo4j] on your machine.
+If you have questions, ask me, Michael, http://twitter.com/mesirii[on Twitter^] or on http://neo4j.com/slack[Slack^]

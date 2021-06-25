@@ -1,0 +1,111 @@
+= Quick Look at Mainstream Renewables Energies
+
+== Introduction
+
+Hey yo homies!
+
+A common expression that is often used nowadays, since Al Gore's book "An Inconvenient Truth", is renewables-energies. However, most people may ask themselves: _lol, wat the hell is dat? watchu mean bro?_
+
+*Urbandictionary.com* defines the concept as "_energy that is renewable_" or "_a ploy which government officials use to get elected, and which has no further useful practice, due to the fact of the immense cost and low effectiveness of the materials used_". But the best way of summing up is, in my honest opinion, a little graph which provides a global quick look at *mainstream* renewable energies.
+
+//console
+
+== Gettin' started
+
+//hide
+[source, cypher]
+----
+create (_0:`Energy` {`name`:"Solar Energy"})
+create (_1:`Energy` {`name`:"Wind Power"})
+create (_2:`Energy` {`name`:"Hydropower"})
+create (_3:`Energy` {`name`:"Geothermal Energy"})
+create (_4:`Energy` {`name`:"Biofuel"})
+create (_5:`Application` {`name`:"Domestic applications"})
+create (_6:`Application` {`name`:"Windmills"})
+create (_7:`Target` {`name`:"Electricity production"})
+create (_8:`Application` {`name`:"Propel ships"})
+create (_10:`Target` {`name`:"Fuel production"})
+create (_11:`Application` {`name`:"Agriculture"})
+create (_12:`Application` {`name`:"Urban planning"})
+create (_13:`Application` {`name`:"Alternative transports"})
+create (_22:`Application` {`name`:"HVAC systems"})
+create (_23:`Fuel` {`name`:"Bioalcohols"})
+create (_24:`Fuel` {`name`:"Biodiesel"})
+create (_25:`Fuel` {`name`:"Vegetable oil fuel"})
+create (_26:`Fuel` {`name`:"Syngas"})
+create (_41:`Target` {`name`:"Ventilation"})
+create (_42:`Target` {`name`:"Cooling"})
+create (_43:`Target` {`name`:"Heating"})
+create (_51:`Application` {`name`:"Conventional hydroelectricity"})
+create (_52:`Application` {`name`:"Run-of-the-river hydroelectricity"})
+create (_53:`Application` {`name`:"Pumped-storage hydroelectricity"})
+create _0-[:`USED_FOR`]->_13
+create _0-[:`USED_FOR`]->_12
+create _0-[:`USED_FOR`]->_11
+create _0-[:`USED_FOR`]->_7
+create _0-[:`USED_FOR`]->_5
+create _1-[:`USED_FOR`]->_7
+create _1-[:`USED_FOR`]->_8
+create _1-[:`USED_FOR`]->_6
+create _2-[:`USED_FOR`]->_7
+create _2-[:`USED_FOR`]->_7
+create _2-[:`AS`]->_51
+create _2-[:`AS`]->_52
+create _2-[:`AS`]->_53
+create _3-[:`USED_FOR`]->_7
+create _4-[:`USED_FOR`]->_43
+create _4-[:`USED_FOR`]->_10
+create _5-[:`AS`]->_43
+create _5-[:`AS`]->_42
+create _5-[:`AS`]->_41
+create _10-[:`AS`]->_23
+create _10-[:`AS`]->_24
+create _10-[:`AS`]->_25
+create _10-[:`AS`]->_26
+create _41-[:`USED_FOR`]->_22
+create _42-[:`USED_FOR`]->_22
+create _43-[:`USED_FOR`]->_22
+----
+
+== Graph
+
+//graph 
+
+
+
+== Names of mainstream renewables-energies
+
+[source, cypher]
+----
+match (n:Energy) return distinct n.name as renewableEnergy;
+----
+
+It is a well-known fact that great majority of people only knows five kinds of renewable-energies or even less. Before continue reading this Gist, can you say more than five? Exactly, you can't. Nobody! 
+
+//table
+
+== What targets they chase?
+
+As The Law of Conservation of Energy states, energy may neither be created nor destroyed but can change form! The next query show the most popular transformations.
+
+[source, cypher]
+----
+match (n:Energy)-[*1..2]-(t:Target) return distinct t.name as target, collect(n.name) as renewablesEnergies;
+----
+
+//table
+
+== Common uses
+
+Okay, so much random words but... what they do?
+
+[source, cypher]
+----
+match (n:Energy)-[*1..2]-(a:Application) return distinct a.name as application, collect(n.name) as renewablesEnergies;
+----
+
+//table
+
+Peace!
+
+

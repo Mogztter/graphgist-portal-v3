@@ -1,0 +1,183 @@
+= Cyber security and attack analysis
+:neo4j-version: 2.1
+:author: Jean Villedieu
+:twitter: @jvilledieu
+:tags: domain:cybersecurity, use-case:data-analysis
+ 
+This http://gist.neo4j.org/?40caddf1d7537bce962e[interactive Neo4j graph tutorial] shows how to run an attack analysis and improve IT security.
+ 
+'''
+
+*Table of Contents*
+ 
+* *Introduction*
+** <<_introduction_to_problem, Introduction to Problem>>
+* *Data Model*
+** <<_our_data_model_for_data_analysis, Our data model for attack analysis>>
+* *Database Setup*
+** <<_sample_data_set, Sample Data Set>>
+* *Cypher Queries*
+** <<_Which_are_the_known_domains_controlled_by_hackers, Which are the known domains controlled by hackers>>
+** <<_what_other_domains_are_they_connected_to, What other domains are they connected to>>
+* *Conclusion*
+ 
+'''
+ 
+== Introduction to Problem
+ 
+A zero-day exploit is a previously undiscovered security flaw in a software. Between the moment it is discovered and until the software is patched by those who use it, hackers can use the flaw to compromise systems. The flaw can be used in a phishing attack where a criminal masquerades as a trustworthy entity to obtain sensitive information. We are going to study an example of a phishing attack that uses a zero-day exploit.
+
+Recently an Internet Explorer zero-day exploit (http://tools.cisco.com/security/center/viewAlert.x?alertId=33961[CVE-2014-1776]) became public. Following the announcement of the IE security flaw, a group of hackers sent mails to victims who were asked to login into a website where their identification information was captured.
+
+We are going to use graphs to analyse the origin the attack and block potential new mails.
+ 
+'''
+
+== Our data model for attack analysis
+ 
+Just like any other web domains, the domains used in the phishing attack are linked to a couple of entities :
+
+* an IP address : a numerical label assigned to each device (e.g., computer, printer) participating in a computer network that uses the Internet Protocol for communication ;
+* a name server : a name server is a computer hardware or software server that implements a network service for providing responses to queries against a directory service (it turns a domain name into an IP address) ;
+* a registar :  an organization or commercial entity that manages the reservation of Internet domain names ;
+
+The IP address are unique but the name servers and registars can link the domain names to other domain names.
+
+A graph model is ideal to represent these entities and their connections :
+
+image::https://linkurio.us/wp-content/uploads/2014/07/graph_image_1.gif[A graph data model for attack analysis made by Cisco]
+
+Here the domains, IP addresses, and DNS information are nodes nodes. They are linked by relationships. Here for example, we can see that domains A and B are connected through a shared name server and MX record despite being hosted on different servers. Domain C is linked to domain B through a shared host, but has no direct association with domain A.
+ 
+'''
+ 
+== Sample Data Set
+
+For this GraphGist, we are going to use data from http://blogs.cisco.com/security/attack-analysis-with-a-fast-graph/[Cisco's blog]. It mixes proprietary information from Cisco's data collection program and open-source information like DNS registries.
+//hide
+//setup
+[source,cypher]
+----
+ 
+// Create entities
+CREATE (ip1:IP_address {name :'70.91.148.193', reputation:'Unknown reputation', data_origin:'Open-source'})
+CREATE (ip2:IP_address {name :'78.189.30.48', reputation:'Unknown reputation', data_origin:'Open-source'})
+CREATE (neonbilismcom:Domain_name {name :'neonbilism.com', reputation:'Very negative reputation', data_origin:'Proprietary'})
+CREATE (googlecomtr:Domain_name {name :'google.com.tr', reputation:'Very positive reputation', data_origin:'Open-source'})
+CREATE (googleanalyticscom:Domain_name {name :'google-analytics.com', reputation:'Very positive reputation', data_origin:'Open-source'})
+CREATE (neonlneonbilisimcom:Domain_name {name :'neonl.neonbilisim.com', reputation:'Very negative reputation', data_origin:'Proprietary'})
+CREATE (alantron_billism_ltd:Registar {name :'alantron billism ltd sti.', reputation:'', data_origin:'Proprietary'})
+CREATE (anicicekcilikcom:Domain_name {name :'anicicekcilik.com', reputation:'Unknown reputation', data_origin:'Open-source'})
+CREATE (bedircaticom:Domain_name {name :'bedircati.com', reputation:'Unknown reputation', data_origin:'Open-source'})
+CREATE (hnghngwebtr:Domain_name {name :'hng.hng.web.tr', reputation:'Very negative reputation', data_origin:'Proprietary'})
+CREATE (bedircatinet:Domain_name {name :'bedircati.net', reputation:'Unknown reputation', data_origin:'Open-source'})
+CREATE (tekinhaliyikamacom:Domain_name {name :'tekinhaliyikama.com', reputation:'Unknown reputation', data_origin:'Open-source'})
+CREATE (tepsanmakinadokumcom:Domain_name {name :'tepsanmakinadokum.com', reputation:'Unknown reputation', data_origin:'Open-source'})
+CREATE (kureselhaberlesmenet:Domain_name {name :'kureselhaberlesme.net', reputation:'Unknown reputation', data_origin:'Open-source'})
+CREATE (guclutekelectrikcom:Domain_name {name :'guclutekelectrik.com', reputation:'Unknown reputation', data_origin:'Open-source'})
+CREATE (karasoyemlakcom:Domain_name {name :'karasoyemlak.com', reputation:'Unknown reputation', data_origin:'Open-source'})
+CREATE (neatechguvenlikcom:Domain_name {name :'neatechguvenlik.com', reputation:'Unknown reputation', data_origin:'Open-source'})
+CREATE (toplualsatcom:Domain_name {name :'toplualsat.com', reputation:'Unknown reputation', data_origin:'Open-source'})
+CREATE (ozkimboyanet:Domain_name {name :'ozkimboya.net', reputation:'Unknown reputation', data_origin:'Open-source'})
+CREATE (ekkahostcom:Domain_name {name :'ekkahost.com', reputation:'Unknown reputation', data_origin:'Open-source'})
+CREATE (demirogullaridugunsarayicom:Domain_name {name :'demirogullaridugunsarayi.com', reputation:'Unknown reputation', data_origin:'Open-source'})
+CREATE (kurtkoysafrancom:Domain_name {name :'kurtkoysafran.com', reputation:'Unknown reputation', data_origin:'Open-source'})
+CREATE (neonneonbilisimcom:Domain_name {name :'neon.neonbilisim.com', reputation:'Very negative reputation', data_origin:'Proprietary'})
+CREATE (cekmekoymiracom:Domain_name {name :'cekmekoymira.com', reputation:'Unknown reputation', data_origin:'Open-source'})
+CREATE (hazarhaliyikamacom:Domain_name {name :'hazarhaliyikama.com', reputation:'Unknown reputation', data_origin:'Open-source'})
+CREATE (boverboyacom:Domain_name {name :'boverboya.com', reputation:'Unknown reputation', data_origin:'Open-source'})
+CREATE (kuruogullaricom:Domain_name {name :'kuruogullari.com', reputation:'Unknown reputation', data_origin:'Open-source'})
+CREATE (akfiratgayrimenkulcom:Domain_name {name :'akfiratgayrimenkul.com', reputation:'Unknown reputation', data_origin:'Open-source'})
+
+// Create relationships
+CREATE (bedircaticom)-[:IS_LINKED]->(ip1)
+CREATE (neonbilismcom)-[:IS_LINKED]->(ip2)
+CREATE (hnghngwebtr)-[:IS_LINKED]->(bedircaticom)
+CREATE (neonneonbilisimcom)-[:IS_LINKED]->(bedircaticom)
+CREATE (neonneonbilisimcom)-[:IS_LINKED]->(anicicekcilikcom)
+CREATE (googlecomtr)-[:IS_LINKED]->(neonbilismcom)
+CREATE (googleanalyticscom)-[:IS_LINKED]->(neonbilismcom)
+CREATE (neonlneonbilisimcom)-[:IS_LINKED]->(neonbilismcom)
+CREATE (neonneonbilisimcom)-[:IS_LINKED]->(neonbilismcom)
+CREATE (kureselhaberlesmenet)-[:IS_LINKED]->(neonlneonbilisimcom)
+CREATE (guclutekelectrikcom)-[:IS_LINKED]->(neonlneonbilisimcom)
+CREATE (karasoyemlakcom)-[:IS_LINKED]->(neonlneonbilisimcom)
+CREATE (neatechguvenlikcom)-[:IS_LINKED]->(neonlneonbilisimcom)
+CREATE (toplualsatcom)-[:IS_LINKED]->(neonlneonbilisimcom)
+CREATE (ozkimboyanet)-[:IS_LINKED]->(neonlneonbilisimcom)
+CREATE (ekkahostcom)-[:IS_LINKED]->(neonlneonbilisimcom)
+CREATE (demirogullaridugunsarayicom)-[:IS_LINKED]->(neonlneonbilisimcom)
+CREATE (kurtkoysafrancom)-[:IS_LINKED]->(neonlneonbilisimcom)
+CREATE (neonbilismcom)-[:IS_LINKED]->(neonlneonbilisimcom)
+CREATE (bedircaticom)-[:IS_LINKED]->(neonlneonbilisimcom)
+CREATE (kureselhaberlesmenet)-[:IS_LINKED]->(alantron_billism_ltd)
+CREATE (guclutekelectrikcom)-[:IS_LINKED]->(alantron_billism_ltd)
+CREATE (karasoyemlakcom)-[:IS_LINKED]->(alantron_billism_ltd)
+CREATE (neatechguvenlikcom)-[:IS_LINKED]->(alantron_billism_ltd)
+CREATE (toplualsatcom)-[:IS_LINKED]->(alantron_billism_ltd)
+CREATE (ozkimboyanet)-[:IS_LINKED]->(alantron_billism_ltd)
+CREATE (ekkahostcom)-[:IS_LINKED]->(alantron_billism_ltd)
+CREATE (demirogullaridugunsarayicom)-[:IS_LINKED]->(alantron_billism_ltd)
+CREATE (kurtkoysafrancom)-[:IS_LINKED]->(alantron_billism_ltd)
+CREATE (kureselhaberlesmenet)-[:IS_LINKED]->(neonneonbilisimcom)
+CREATE (guclutekelectrikcom)-[:IS_LINKED]->(neonneonbilisimcom)
+CREATE (karasoyemlakcom)-[:IS_LINKED]->(neonneonbilisimcom)
+CREATE (neatechguvenlikcom)-[:IS_LINKED]->(neonneonbilisimcom)
+CREATE (toplualsatcom)-[:IS_LINKED]->(neonneonbilisimcom)
+CREATE (ozkimboyanet)-[:IS_LINKED]->(neonneonbilisimcom)
+CREATE (ekkahostcom)-[:IS_LINKED]->(neonneonbilisimcom)
+CREATE (demirogullaridugunsarayicom)-[:IS_LINKED]->(neonneonbilisimcom)
+CREATE (kurtkoysafrancom)-[:IS_LINKED]->(neonneonbilisimcom)
+CREATE (cekmekoymiracom)-[:IS_LINKED]->(neonneonbilisimcom)
+CREATE (hazarhaliyikamacom)-[:IS_LINKED]->(neonneonbilisimcom)
+CREATE (boverboyacom)-[:IS_LINKED]->(neonneonbilisimcom)
+CREATE (kuruogullaricom)-[:IS_LINKED]->(neonneonbilisimcom)
+CREATE (akfiratgayrimenkulcom)-[:IS_LINKED]->(neonneonbilisimcom)
+CREATE (bedircatinet)-[:IS_LINKED]->(neonneonbilisimcom)
+CREATE (tekinhaliyikamacom)-[:IS_LINKED]->(neonneonbilisimcom)
+CREATE (tepsanmakinadokumcom)-[:IS_LINKED]->(neonneonbilisimcom)
+
+RETURN *
+----
+//graph
+ 
+'''
+You can download the complete dataset here : https://www.dropbox.com/s/7vburpnl4yik8z1/Attack%20Analysis.zip
+
+== Which are the known domains controlled by hackers
+ 
+We look for the domains that have a very negative reputation.
+ 
+[source,cypher]
+----
+MATCH (baddomain:Domain_name)
+WHERE baddomain.reputation = 'Very negative reputation'
+RETURN baddomain.name as domain_name
+----
+//table
+ 
+== What other domains are they connected to
+We want to see what other domains the rogue domains share connections with.
+
+The idea here is that these other domains might also be controlled by hackers. If it is the case, we want to blacklist them and prevent them for being used in other attacks.
+[source,cypher]
+----
+MATCH (baddomain:Domain_name)-[r*2]-(suspiciousdomains:Domain_name)
+WHERE baddomain.reputation = 'Very negative reputation'
+RETURN suspiciousdomains
+----
+//graph
+
+
+These domains could be controlled by the same hackers who sent the first mails. We should monitor them and block any mails including links to these domains.
+
+Graph visualization allows us to quickly understand how the domains are connected and interpret the result of the investigation. In the picture below captured with http://Linkurio.us[Linkurious], we seen in black the know rogue domains and in pink the newly identified domains. The visualization show how exactly they are connected.
+
+image::https://linkurio.us/wp-content/uploads/2014/08/data-with-reputation.png[Visualizing the attackers]
+
+== Conclusion
+After the initial emails were sent, we collected the domains used in the phishing attack. We then used open source-information and graph analysis to identify potential links to other domains. Based on this analysis, we have identified potential threats...before they become active.
+Cyber security is a huge challenge. Today, the emerging graph technologies offer new ways to tackle security data and use it to prevent attacks or react faster.
+
+
+For more graph-related use cases, make sure to check the blog of Linkurious : http://linkurio.us/blog 

@@ -1,0 +1,260 @@
+= Neo4j for Neo4j Dependency Graph using Maven dependency:list converted to Cypher
+
+:neo4j-version: 3.3.1
+:author: Paul McIntosh
+:twitter: @internetscooter
+
+:toc:
+
+== Introduction
+
+https://github.com/neo4j/neo4j[Neo4j github] is missing an overview document due to difficulty 
+in maintaining an up to date version manually.
+
+This GIST is a first version of a way of using Neo4j to understand Neo4j!
+
+== Maven -> Neo4j
+
+Maven is the build tool used for Neo4j and comes with plugins for listing dependencies. Unfortunately 
+the graphml output does not play nicely with the graphml APOC import tool due to naming conventions.
+This could be fixed by updating the APOC code to support Maven graphml formats but this GIST shows a 
+way of converting tgf output into Cypher to get it working as-is.
+
+On Windows if you have built Neo4j successfully you can create a ***pom.tgf*** file for each ***pom.xml***
+with the following command.
+
+----
+mvn dependency:tree "-DoutputFile=pom.tgf" "-DoutputType=tgf"
+----
+
+The tgf format is very simple and easy to convert to Cypher. To do this I split the tgf file in to two 
+parts. The nodes.tgf and the edges.tgf, nodes are above the # marker and edges are below the # marker. I 
+then used awk (via Cygwin) to generate the Cypher to load the dependencies.
+
+For this example I use the pom.tgf in neo4j\packaging\standalone\standalone-community
+
+----
+cat nodes.tgf | awk -F "[ :]" '{print "CREATE (n:Package {name:'"'"'"$3"'"'"', mvnid:'"'"'"$1"'"'"', org:'"'"'"$2"'"'"', build:'"'"'"$4"'"'"', version:'                   "'"'"$5"'"'"'});" }' > nodes.cypher
+----
+
+and
+
+----
+ cat edges.tgf | awk '{print "MATCH (a:Package),(b:Package) WHERE a.mvnid = '"'"'"$1"'"'"' AND b.mvnid = '"'"'"$2"'"'"' CREATE (a)-[r:"$3"]->(b);"}' > ed                   ges.cypher
+----
+
+Then cypher-shell to run nodes.cypher and then edges.cypher.
+
+== Setup
+
+//hide
+//setup
+[source,cypher]
+----
+CREATE (n:Package {name:'neo4j-community-standalone', mvnid:'2066339729', org:'org.neo4j.assembly', build:'pom', version:'3.4.0-SNAPSHOT'});
+CREATE (n:Package {name:'neo4j', mvnid:'1967943387', org:'org.neo4j', build:'jar', version:'3.4.0-SNAPSHOT'});
+CREATE (n:Package {name:'neo4j-kernel', mvnid:'1251888103', org:'org.neo4j', build:'jar', version:'3.4.0-SNAPSHOT'});
+CREATE (n:Package {name:'neo4j-graphdb-api', mvnid:'1978823220', org:'org.neo4j', build:'jar', version:'3.4.0-SNAPSHOT'});
+CREATE (n:Package {name:'neo4j-resource', mvnid:'1087546948', org:'org.neo4j', build:'jar', version:'3.4.0-SNAPSHOT'});
+CREATE (n:Package {name:'neo4j-kernel-api', mvnid:'1459495475', org:'org.neo4j', build:'jar', version:'3.4.0-SNAPSHOT'});
+CREATE (n:Package {name:'neo4j-common', mvnid:'1854380664', org:'org.neo4j', build:'jar', version:'3.4.0-SNAPSHOT'});
+CREATE (n:Package {name:'neo4j-values', mvnid:'142751310', org:'org.neo4j', build:'jar', version:'3.4.0-SNAPSHOT'});
+CREATE (n:Package {name:'neo4j-collections', mvnid:'1572290972', org:'org.neo4j', build:'jar', version:'3.4.0-SNAPSHOT'});
+CREATE (n:Package {name:'neo4j-primitive-collections', mvnid:'2063540131', org:'org.neo4j', build:'jar', version:'3.4.0-SNAPSHOT'});
+CREATE (n:Package {name:'neo4j-unsafe', mvnid:'679022302', org:'org.neo4j', build:'jar', version:'3.4.0-SNAPSHOT'});
+CREATE (n:Package {name:'neo4j-io', mvnid:'835747289', org:'org.neo4j', build:'jar', version:'3.4.0-SNAPSHOT'});
+CREATE (n:Package {name:'neo4j-csv', mvnid:'1452044766', org:'org.neo4j', build:'jar', version:'3.4.0-SNAPSHOT'});
+CREATE (n:Package {name:'neo4j-logging', mvnid:'1418493611', org:'org.neo4j', build:'jar', version:'3.4.0-SNAPSHOT'});
+CREATE (n:Package {name:'neo4j-lucene-upgrade', mvnid:'878937370', org:'org.neo4j', build:'jar', version:'3.4.0-SNAPSHOT'});
+CREATE (n:Package {name:'lucene-backward-codecs', mvnid:'107944186', org:'org.apache.lucene', build:'jar', version:'5.5.0'});
+CREATE (n:Package {name:'neo4j-configuration', mvnid:'861440872', org:'org.neo4j', build:'jar', version:'3.4.0-SNAPSHOT'});
+CREATE (n:Package {name:'neo4j-index', mvnid:'68600462', org:'org.neo4j', build:'jar', version:'3.4.0-SNAPSHOT'});
+CREATE (n:Package {name:'neo4j-ssl', mvnid:'754306115', org:'org.neo4j', build:'jar', version:'3.4.0-SNAPSHOT'});
+CREATE (n:Package {name:'neo4j-lucene-index', mvnid:'1386457583', org:'org.neo4j', build:'jar', version:'3.4.0-SNAPSHOT'});
+CREATE (n:Package {name:'lucene-analyzers-common', mvnid:'634878744', org:'org.apache.lucene', build:'jar', version:'5.5.0'});
+CREATE (n:Package {name:'lucene-core', mvnid:'401072030', org:'org.apache.lucene', build:'jar', version:'5.5.0'});
+CREATE (n:Package {name:'lucene-queryparser', mvnid:'368217845', org:'org.apache.lucene', build:'jar', version:'5.5.0'});
+CREATE (n:Package {name:'lucene-codecs', mvnid:'1523691893', org:'org.apache.lucene', build:'jar', version:'5.5.0'});
+CREATE (n:Package {name:'neo4j-graph-algo', mvnid:'1153441420', org:'org.neo4j', build:'jar', version:'3.4.0-SNAPSHOT'});
+CREATE (n:Package {name:'neo4j-udc', mvnid:'1836200613', org:'org.neo4j', build:'jar', version:'3.4.0-SNAPSHOT'});
+CREATE (n:Package {name:'neo4j-cypher', mvnid:'1819712728', org:'org.neo4j', build:'jar', version:'3.4.0-SNAPSHOT'});
+CREATE (n:Package {name:'scala-library', mvnid:'997966394', org:'org.scala-lang', build:'jar', version:'2.11.12'});
+CREATE (n:Package {name:'scala-reflect', mvnid:'2139856807', org:'org.scala-lang', build:'jar', version:'2.11.12'});
+CREATE (n:Package {name:'neo4j-graph-matching', mvnid:'59796969', org:'org.neo4j', build:'jar', version:'3.1.6'});
+CREATE (n:Package {name:'neo4j-codegen', mvnid:'1532539167', org:'org.neo4j', build:'jar', version:'3.4.0-SNAPSHOT'});
+CREATE (n:Package {name:'asm', mvnid:'1045942876', org:'org.ow2.asm', build:'jar', version:'6.0'});
+CREATE (n:Package {name:'asm-util', mvnid:'486675606', org:'org.ow2.asm', build:'jar', version:'6.0'});
+CREATE (n:Package {name:'asm-analysis', mvnid:'503176698', org:'org.ow2.asm', build:'jar', version:'6.0'});
+CREATE (n:Package {name:'asm-tree', mvnid:'53696275', org:'org.ow2.asm', build:'jar', version:'6.0'});
+CREATE (n:Package {name:'neo4j-cypher-compiler-2.3', mvnid:'66498587', org:'org.neo4j', build:'jar', version:'2.3.11'});
+CREATE (n:Package {name:'neo4j-cypher-frontend-2.3', mvnid:'249406039', org:'org.neo4j', build:'jar', version:'2.3.11'});
+CREATE (n:Package {name:'concurrentlinkedhashmap-lru', mvnid:'2109521019', org:'com.googlecode.concurrentlinkedhashmap', build:'jar', version:'1.4.2'});
+CREATE (n:Package {name:'neo4j-cypher-compiler-3.1', mvnid:'1680799504', org:'org.neo4j', build:'jar', version:'3.1.6'});
+CREATE (n:Package {name:'neo4j-cypher-frontend-3.1', mvnid:'1382999526', org:'org.neo4j', build:'jar', version:'3.1.6'});
+CREATE (n:Package {name:'caffeine', mvnid:'826424038', org:'com.github.ben-manes.caffeine', build:'jar', version:'2.3.3'});
+CREATE (n:Package {name:'neo4j-cypher-compiler-3.3', mvnid:'696588241', org:'org.neo4j', build:'jar', version:'3.3.1'});
+CREATE (n:Package {name:'neo4j-cypher-frontend-3.3', mvnid:'973140870', org:'org.neo4j', build:'jar', version:'3.3.1'});
+CREATE (n:Package {name:'neo4j-cypher-ir-3.3', mvnid:'526672117', org:'org.neo4j', build:'jar', version:'3.3.1'});
+CREATE (n:Package {name:'neo4j-cypher-logical-plans-3.3', mvnid:'1062337781', org:'org.neo4j', build:'jar', version:'3.3.1'});
+CREATE (n:Package {name:'neo4j-cypher-util-3.4', mvnid:'1047220049', org:'org.neo4j', build:'jar', version:'3.4.0-SNAPSHOT'});
+CREATE (n:Package {name:'neo4j-cypher-planner-3.4', mvnid:'63571929', org:'org.neo4j', build:'jar', version:'3.4.0-SNAPSHOT'});
+CREATE (n:Package {name:'neo4j-cypher-frontend-3.4', mvnid:'1066777757', org:'org.neo4j', build:'jar', version:'3.4.0-SNAPSHOT'});
+CREATE (n:Package {name:'neo4j-cypher-expression-3.4', mvnid:'252922318', org:'org.neo4j', build:'jar', version:'3.4.0-SNAPSHOT'});
+CREATE (n:Package {name:'neo4j-cypher-ir-3.4', mvnid:'1810271930', org:'org.neo4j', build:'jar', version:'3.4.0-SNAPSHOT'});
+CREATE (n:Package {name:'neo4j-cypher-logical-plans-3.4', mvnid:'952219856', org:'org.neo4j', build:'jar', version:'3.4.0-SNAPSHOT'});
+CREATE (n:Package {name:'neo4j-cypher-planner-spi-3.4', mvnid:'715295233', org:'org.neo4j', build:'jar', version:'3.4.0-SNAPSHOT'});
+CREATE (n:Package {name:'neo4j-cypher-runtime-util', mvnid:'1072364450', org:'org.neo4j', build:'jar', version:'3.4.0-SNAPSHOT'});
+CREATE (n:Package {name:'neo4j-cypher-interpreted-runtime', mvnid:'1613111739', org:'org.neo4j', build:'jar', version:'3.4.0-SNAPSHOT'});
+CREATE (n:Package {name:'parboiled-scala_2.11', mvnid:'1435763287', org:'org.parboiled', build:'jar', version:'1.1.7'});
+CREATE (n:Package {name:'parboiled-core', mvnid:'1809348710', org:'org.parboiled', build:'jar', version:'1.1.7'});
+CREATE (n:Package {name:'opencsv', mvnid:'50837844', org:'net.sf.opencsv', build:'jar', version:'2.3'});
+CREATE (n:Package {name:'commons-lang3', mvnid:'1392339830', org:'org.apache.commons', build:'jar', version:'3.5'});
+CREATE (n:Package {name:'neo4j-jmx', mvnid:'663637444', org:'org.neo4j', build:'jar', version:'3.4.0-SNAPSHOT'});
+CREATE (n:Package {name:'neo4j-consistency-check', mvnid:'264051227', org:'org.neo4j', build:'jar', version:'3.4.0-SNAPSHOT'});
+CREATE (n:Package {name:'neo4j-server', mvnid:'827248545', org:'org.neo4j.app', build:'jar', version:'3.4.0-SNAPSHOT'});
+CREATE (n:Package {name:'neo4j', mvnid:'147960869', org:'org.neo4j', build:'pom', version:'3.4.0-SNAPSHOT'});
+CREATE (n:Package {name:'neo4j-security', mvnid:'1566849174', org:'org.neo4j', build:'jar', version:'3.4.0-SNAPSHOT'});
+CREATE (n:Package {name:'neo4j-dbms', mvnid:'988716259', org:'org.neo4j', build:'jar', version:'3.4.0-SNAPSHOT'});
+CREATE (n:Package {name:'commons-compress', mvnid:'2107277272', org:'org.apache.commons', build:'jar', version:'1.12'});
+CREATE (n:Package {name:'neo4j-command-line', mvnid:'2020576466', org:'org.neo4j', build:'jar', version:'3.4.0-SNAPSHOT'});
+CREATE (n:Package {name:'commons-text', mvnid:'78883777', org:'org.apache.commons', build:'jar', version:'1.1'});
+CREATE (n:Package {name:'server-api', mvnid:'1249125936', org:'org.neo4j', build:'jar', version:'3.4.0-SNAPSHOT'});
+CREATE (n:Package {name:'jsr311-api', mvnid:'1681843225', org:'org.neo4j.3rdparty.javax.ws.rs', build:'jar', version:'1.1.2.r612'});
+CREATE (n:Package {name:'neo4j-bolt', mvnid:'1614015824', org:'org.neo4j', build:'jar', version:'3.4.0-SNAPSHOT'});
+CREATE (n:Package {name:'netty-all', mvnid:'2034745140', org:'io.netty', build:'jar', version:'4.1.17.Final'});
+CREATE (n:Package {name:'jackson-mapper-asl', mvnid:'308892554', org:'org.codehaus.jackson', build:'jar', version:'1.9.13'});
+CREATE (n:Package {name:'neo4j-browser', mvnid:'23356402', org:'org.neo4j.client', build:'jar', version:'3.1.4'});
+CREATE (n:Package {name:'neo4j-shell', mvnid:'2118277091', org:'org.neo4j', build:'jar', version:'3.4.0-SNAPSHOT'});
+CREATE (n:Package {name:'jline', mvnid:'985200896', org:'jline', build:'jar', version:'2.12'});
+CREATE (n:Package {name:'jetty-server', mvnid:'1645545694', org:'org.eclipse.jetty', build:'jar', version:'9.2.22.v20170606'});
+CREATE (n:Package {name:'javax.servlet-api', mvnid:'1078758557', org:'javax.servlet', build:'jar', version:'3.1.0'});
+CREATE (n:Package {name:'jetty-http', mvnid:'752694840', org:'org.eclipse.jetty', build:'jar', version:'9.2.22.v20170606'});
+CREATE (n:Package {name:'jetty-util', mvnid:'1364245082', org:'org.eclipse.jetty', build:'jar', version:'9.2.22.v20170606'});
+CREATE (n:Package {name:'jetty-io', mvnid:'466160470', org:'org.eclipse.jetty', build:'jar', version:'9.2.22.v20170606'});
+CREATE (n:Package {name:'jetty-webapp', mvnid:'1069892822', org:'org.eclipse.jetty', build:'jar', version:'9.2.22.v20170606'});
+CREATE (n:Package {name:'jetty-xml', mvnid:'2053954016', org:'org.eclipse.jetty', build:'jar', version:'9.2.22.v20170606'});
+CREATE (n:Package {name:'jetty-servlet', mvnid:'783953565', org:'org.eclipse.jetty', build:'jar', version:'9.2.22.v20170606'});
+CREATE (n:Package {name:'jetty-security', mvnid:'2105152423', org:'org.eclipse.jetty', build:'jar', version:'9.2.22.v20170606'});
+CREATE (n:Package {name:'jersey-server', mvnid:'1754012458', org:'com.sun.jersey', build:'jar', version:'1.19'});
+CREATE (n:Package {name:'jersey-core', mvnid:'1957919746', org:'com.sun.jersey', build:'jar', version:'1.19'});
+CREATE (n:Package {name:'jersey-servlet', mvnid:'184711887', org:'com.sun.jersey', build:'jar', version:'1.19'});
+CREATE (n:Package {name:'commons-configuration', mvnid:'650688291', org:'commons-configuration', build:'jar', version:'1.10'});
+CREATE (n:Package {name:'commons-lang', mvnid:'773172635', org:'commons-lang', build:'jar', version:'2.6'});
+CREATE (n:Package {name:'commons-logging', mvnid:'1101629239', org:'commons-logging', build:'jar', version:'1.1.1'});
+CREATE (n:Package {name:'commons-io', mvnid:'1499814351', org:'commons-io', build:'jar', version:'2.4'});
+CREATE (n:Package {name:'jackson-jaxrs', mvnid:'980913263', org:'org.codehaus.jackson', build:'jar', version:'1.9.13'});
+CREATE (n:Package {name:'jackson-core-asl', mvnid:'957188047', org:'org.codehaus.jackson', build:'jar', version:'1.9.13'});
+CREATE (n:Package {name:'rhino', mvnid:'881864678', org:'org.mozilla', build:'jar', version:'1.7R4'});
+CREATE (n:Package {name:'bcprov-jdk15on', mvnid:'1195942810', org:'org.bouncycastle', build:'jar', version:'1.53'});
+CREATE (n:Package {name:'bcpkix-jdk15on', mvnid:'1104825320', org:'org.bouncycastle', build:'jar', version:'1.53'});
+CREATE (n:Package {name:'jersey-multipart', mvnid:'347906019', org:'com.sun.jersey.contribs', build:'jar', version:'1.19'});
+CREATE (n:Package {name:'mimepull', mvnid:'568753549', org:'org.jvnet.mimepull', build:'jar', version:'1.9.3'});
+CREATE (n:Package {name:'neo4j-import-tool', mvnid:'598761048', org:'org.neo4j', build:'jar', version:'3.4.0-SNAPSHOT'});
+CREATE (n:Package {name:'licensecheck-config', mvnid:'807851213', org:'org.neo4j.build', build:'jar', version:'3.4.0-SNAPSHOT'});
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1978823220' AND b.mvnid = '1087546948' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1251888103' AND b.mvnid = '1978823220' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1251888103' AND b.mvnid = '1459495475' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1251888103' AND b.mvnid = '1854380664' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1251888103' AND b.mvnid = '142751310' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1251888103' AND b.mvnid = '1572290972' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '2063540131' AND b.mvnid = '679022302' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1251888103' AND b.mvnid = '2063540131' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1251888103' AND b.mvnid = '835747289' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1251888103' AND b.mvnid = '1452044766' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1251888103' AND b.mvnid = '1418493611' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '878937370' AND b.mvnid = '107944186' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1251888103' AND b.mvnid = '878937370' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1251888103' AND b.mvnid = '861440872' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1251888103' AND b.mvnid = '68600462' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1251888103' AND b.mvnid = '754306115' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1967943387' AND b.mvnid = '1251888103' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1386457583' AND b.mvnid = '634878744' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1386457583' AND b.mvnid = '401072030' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1386457583' AND b.mvnid = '368217845' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1386457583' AND b.mvnid = '1523691893' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1967943387' AND b.mvnid = '1386457583' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1967943387' AND b.mvnid = '1153441420' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1967943387' AND b.mvnid = '1836200613' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1819712728' AND b.mvnid = '997966394' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1819712728' AND b.mvnid = '2139856807' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1819712728' AND b.mvnid = '59796969' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1532539167' AND b.mvnid = '1045942876' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1532539167' AND b.mvnid = '486675606' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1532539167' AND b.mvnid = '503176698' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1532539167' AND b.mvnid = '53696275' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1819712728' AND b.mvnid = '1532539167' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '66498587' AND b.mvnid = '249406039' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '66498587' AND b.mvnid = '2109521019' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1819712728' AND b.mvnid = '66498587' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1680799504' AND b.mvnid = '1382999526' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1680799504' AND b.mvnid = '826424038' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1819712728' AND b.mvnid = '1680799504' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '696588241' AND b.mvnid = '973140870' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '696588241' AND b.mvnid = '526672117' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '696588241' AND b.mvnid = '1062337781' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1819712728' AND b.mvnid = '696588241' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1819712728' AND b.mvnid = '1047220049' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1066777757' AND b.mvnid = '252922318' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '63571929' AND b.mvnid = '1066777757' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '63571929' AND b.mvnid = '1810271930' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '63571929' AND b.mvnid = '952219856' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1819712728' AND b.mvnid = '63571929' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1819712728' AND b.mvnid = '715295233' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1819712728' AND b.mvnid = '1072364450' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1819712728' AND b.mvnid = '1613111739' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1435763287' AND b.mvnid = '1809348710' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1819712728' AND b.mvnid = '1435763287' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1819712728' AND b.mvnid = '50837844' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1819712728' AND b.mvnid = '1392339830' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1967943387' AND b.mvnid = '1819712728' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1967943387' AND b.mvnid = '663637444' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1967943387' AND b.mvnid = '264051227' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '2066339729' AND b.mvnid = '1967943387' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '827248545' AND b.mvnid = '147960869' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '827248545' AND b.mvnid = '1566849174' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '988716259' AND b.mvnid = '2107277272' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '827248545' AND b.mvnid = '988716259' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '2020576466' AND b.mvnid = '78883777' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '827248545' AND b.mvnid = '2020576466' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1249125936' AND b.mvnid = '1681843225' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '827248545' AND b.mvnid = '1249125936' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1614015824' AND b.mvnid = '2034745140' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1614015824' AND b.mvnid = '308892554' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '827248545' AND b.mvnid = '1614015824' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '827248545' AND b.mvnid = '23356402' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '2118277091' AND b.mvnid = '985200896' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '827248545' AND b.mvnid = '2118277091' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1645545694' AND b.mvnid = '1078758557' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '752694840' AND b.mvnid = '1364245082' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1645545694' AND b.mvnid = '752694840' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1645545694' AND b.mvnid = '466160470' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '827248545' AND b.mvnid = '1645545694' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1069892822' AND b.mvnid = '2053954016' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '783953565' AND b.mvnid = '2105152423' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1069892822' AND b.mvnid = '783953565' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '827248545' AND b.mvnid = '1069892822' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '1754012458' AND b.mvnid = '1957919746' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '827248545' AND b.mvnid = '1754012458' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '827248545' AND b.mvnid = '184711887' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '650688291' AND b.mvnid = '773172635' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '650688291' AND b.mvnid = '1101629239' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '827248545' AND b.mvnid = '650688291' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '827248545' AND b.mvnid = '1499814351' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '980913263' AND b.mvnid = '957188047' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '827248545' AND b.mvnid = '980913263' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '827248545' AND b.mvnid = '881864678' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '827248545' AND b.mvnid = '1195942810' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '827248545' AND b.mvnid = '1104825320' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '347906019' AND b.mvnid = '568753549' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '827248545' AND b.mvnid = '347906019' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '2066339729' AND b.mvnid = '827248545' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '2066339729' AND b.mvnid = '598761048' CREATE (a)-[r:compile]->(b);
+MATCH (a:Package),(b:Package) WHERE a.mvnid = '2066339729' AND b.mvnid = '807851213' CREATE (a)-[r:provided]->(b);
+----
+
+[source,cypher]
+----
+MATCH (n1)-[r]->(n2) RETURN r, n1, n2 LIMIT 250;
+----
+//graph_result
+

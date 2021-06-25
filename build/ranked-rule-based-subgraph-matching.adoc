@@ -1,0 +1,67 @@
+= Ranked rule-based subgraph matching
+
+In a number of cases, graph patterns need to be matched individually and scored in order to find partially matching entities and subgraphs. The more aspects and patterns of a number of search parameters and patterns are found in the match, the higher the result ranking gets. Thanks to https://twitter.com/tekiegirl[@tekiegirl] for this example.
+
+== Setup of known data
+
+[source,cypher]
+----
+CREATE Index ON :Address(zip)
+----
+[source,cypher]
+----
+CREATE Index ON :Address(line1)
+----
+
+[source,cypher]
+----
+CREATE (p1:Person{first_name:'Emil',last_name:'Graphstr'})-[:HAS_ADDRESS]->(a1:Address{line1:'Awesome street',zip:'xxx'})
+CREATE (p2:Person{first_name:'Emil',last_name:'Tablr'})-[:HAS_ADDRESS]->(a2:Address{line1:'Union square',zip:'0000'})
+----
+
+//graph
+
+//graph
+
+
+== Find a person by partly matching graph patterns
+
+In this example, find the persons that best match the scored pattern of
+
+- have a mandatory first name `Emil`
+- have a last name if `Graphstr`
+- live on a street name with `square` in it
+
+In order to also mark the matched rules during the scoring, even return the array of matched rules.
+
+[source,cypher]
+----
+MATCH (p:Person)
+WHERE p.first_name='Emil'
+WITH p, 1 as score, ["first_name"] as matched_rules
+//last_name match
+WITH p,
+  CASE WHEN p.last_name='Graphstr' 
+  THEN score+1
+  ELSE score
+  END as score,
+  CASE WHEN p.last_name='Graphstr' 
+  THEN matched_rules+["last_name"]
+  ELSE matched_rules
+  END as matched_rules
+//address_match
+MATCH p-[:HAS_ADDRESS]->(a:Address)
+WITH p,
+  CASE WHEN a.line1=~'.*square.*' 
+  THEN score+0.5
+  ELSE score
+  END as score,
+  CASE WHEN a.line1=~'.*square.*' 
+  THEN matched_rules+["address_line1"]
+  ELSE matched_rules
+  END as matched_rules
+RETURN p, score, matched_rules
+----
+
+//table
+

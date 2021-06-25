@@ -1,0 +1,200 @@
+= GraphGist
+:neo4j-version: 3.5
+:author: Andrey Tutolmin
+:twitter: @tutolmin
+:style: #54A835/#1078B5/white:Colorized(name)
+
+This GraphGist will show how to set up a rich connected chessboard for later use by Neo4j-enabled application.
+
+Let us start with the basics. We are going to create a classic 8x8 chessboard as described in link:https://en.wikipedia.org/wiki/Chessboard[Wikipedia article].
+
+=== Creating Files
+
+The files are labelled by the letters _a_ to _h_ from left to right from the white player's point of view. So, let us create eight *(:File)* nodes with *{letter:<letter>}* as a property and connect them with *(:File)-[:RIGHT]->(:File)* relationships.
+
+//setup
+//hide
+[source,cypher]
+----
+CREATE CONSTRAINT ON (f:File) ASSERT f.letter IS UNIQUE;
+WITH ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'] AS files
+UNWIND files AS file
+MERGE (:File{letter:file});
+MATCH (a:File{letter:"a"}) MATCH (b:File{letter:"b"})
+MATCH (c:File{letter:"c"}) MATCH (d:File{letter:"d"})
+MATCH (e:File{letter:"e"}) MATCH (f:File{letter:"f"})
+MATCH (g:File{letter:"g"}) MATCH (h:File{letter:"h"})
+MERGE (a)-[:RIGHT]->(b)-[:RIGHT]->(c)-[:RIGHT]->(d)-[:RIGHT]->(e)-[:RIGHT]->(f)-[:RIGHT]->(g)-[:RIGHT]->(h);
+----
+
+Let us have a look at the *(:File)* nodes and their connections:
+
+[source,cypher]
+----
+MATCH (f:File) RETURN f
+----
+
+=== Creating Ranks
+
+Now we are going to create eight rank nodes *(:Rank)* numbered from _1_ to _8_, with 1 being closest to the white player. Ranks are  connected to each other using *(:Rank)-[:TOP]->(:Rank)* relationships.
+
+//setup
+//hide
+[source,cypher]
+----
+CREATE CONSTRAINT ON (r:Rank) ASSERT r.number IS UNIQUE;
+WITH range(1,8) AS ranks
+UNWIND ranks AS rank
+MERGE (:Rank{number:rank});
+MATCH (r1:Rank) MATCH (r2:Rank) WHERE (r1.number+1)=r2.number
+MERGE (r1)-[:TOP]->(r2);
+----
+
+Let us have a look at the *(:Rank)* nodes and their connections:
+
+[source,cypher]
+----
+MATCH (r:Rank) RETURN r
+----
+
+=== Creating Squares
+
+Creating 64 *(:Square)* nodes is easy, thanks to existing *(:Rank)* and *(:File)* nodes. Each square has a link to the corresponding rank *(:Rank)<-[:VERTICAL]-(:Square)* and file *(:File)<-[:HORIZONTAL]-(:File)*. Also, each square inherits properties from rank and file nodes and has it's own property *{san}* from _a1_ to _h8_, thus providing a standard notation called link:https://en.wikipedia.org/wiki/Algebraic_notation_(chess)[algebraic chess notation].
+
+//setup
+//hide
+[source,cypher]
+----
+CREATE CONSTRAINT ON (s:Square) ASSERT s.san IS UNIQUE;
+WITH ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'] AS files, range(1,8) AS ranks
+UNWIND files AS file UNWIND ranks AS rank
+MATCH (r:Rank{number:rank}) MATCH (f:File{letter:file})
+MERGE (s:Square{san:file+rank})
+MERGE (s)-[:VERTICAL]->(r) MERGE (s)-[:HORIZONTAL]->(f);
+----
+
+Let us have a look at the _e4_ square node *(:Square{san:'e4'})* and their connection to corresponding rank and file nodes:
+
+[source,cypher]
+----
+MATCH (r:Rank)<-[:VERTICAL]-(s:Square{san:"e4"})-[:HORIZONTAL]-(f:File) RETURN s,r,f
+----
+
+=== Interconnecting Squares
+
+Now we will connect the squares of the board with relationships representing possible chess piece relocations. Each *(:Square)-[:HOP]-(:Square)* relationship has *{type:<type>}* and *{length:<length>}* properties. 
+
+First, we create all possible horizontal relationships. Chess pieces such as King, Queen and Rook can move in this direction.
+
+//setup
+//hide
+[source,cypher]
+----
+CREATE INDEX ON :HOP(type);
+CREATE INDEX ON :HOP(length);
+WITH range(1,8) AS ranks
+UNWIND ranks AS rank
+MATCH (q:Square)-[:VERTICAL]->(:Rank{number:rank})<-[:VERTICAL]-(s:Square)
+MATCH p=(q)-[:HORIZONTAL]->(:File)-[:RIGHT*]->(:File)<-[:HORIZONTAL]-(s)
+WITH *,size(relationships(p))-2 AS l
+MERGE (q)-[:HOP{type:"horizontal",length:l}]->(s);
+----
+
+Let us have a look at the _d4_ square node connected horizontally:
+
+[source,cypher]
+----
+MATCH (s:Square{san:'d4'})-[h:HOP{type:'horizontal'}]-(q:Square) RETURN s,q,h
+----
+
+In a similar way we create possible vertical relationships. Chess pieces such as King, Queen, Rook and Pawn can move in this direction.
+
+//setup
+//hide
+[source,cypher]
+----
+WITH ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'] AS files
+UNWIND files AS file
+MATCH (q:Square)-[:HORIZONTAL]->(:File{letter:file})<-[:HORIZONTAL]-(s:Square)
+MATCH p=(q)-[:VERTICAL]->(:Rank)-[:TOP*]->(:Rank)<-[:VERTICAL]-(s)
+WITH *,size(relationships(p))-2 AS l
+MERGE (q)-[:HOP{type:"vertical",length:l}]->(s);
+----
+
+Let us have a look at the _c4_ square node connected vertically:
+
+[source,cypher]
+----
+MATCH (s:Square{san:'c4'})-[h:HOP{type:'vertical'}]-(q:Square) RETURN s,q,h
+----
+
+We can now utilize existing horizontal and vertical *[:HOP]* relationships to easily create diagonal relationships between squares. Chess pieces such as King, Queen, Bishop and Pawn can move in this direction.
+
+//setup
+//hide
+[source,cypher]
+----
+MATCH (q:Square)-[h:HOP{type:"horizontal"}]-(:Square)-[o:HOP{type:"vertical"}]-(s:Square)
+WITH *, h.length AS l WHERE h.length=o.length
+MERGE (q)-[:HOP{type:"diagonal",length:l}]-(s);
+----
+
+Let us have a look at the _e5_ square node connected diagonally:
+
+[source,cypher]
+----
+MATCH (s:Square{san:'e5'})-[h:HOP{type:'diagonal'}]-(q:Square) RETURN s,q,h
+----
+
+Finally we need to create *[:HOP]* relationship for the very special chess piece - Knight. Again, we will use existing horizontal and vertical *[:HOP]* relationships to do it.
+
+//setup
+//hide
+[source,cypher]
+----
+MATCH (q:Square)-[h:HOP{type:"horizontal"}]-(:Square)-[o:HOP{type:"vertical"}]-(s:Square)
+WITH *, h.length AS l
+WHERE (h.length=1 AND o.length=2) OR (h.length=2 AND o.length=1)
+MERGE (q)-[:HOP{type:"knight",length:3}]-(s);
+----
+
+Let us have a look at the _d5_ square node and possible Knight jumps from it. We should not pay much attention to the relationship directions since Cypher allows us to build quieries in both ways.
+
+[source,cypher]
+----
+MATCH (s:Square{san:'d5'})-[h:HOP{type:'knight'}]-(q:Square) RETURN s,q,h
+----
+
+=== Fun part
+
+OK, we now have eight *(:Rank)* nodes, eight *(:File)* nodes and sixty four *(:Square)* nodes with a lot of different connections between them. How do we use them to get anything valuable?
+
+*Example 1*: Let us calculate the _total number of possible Bishop moves_. We will query for all the *[:HOP]* relationships with the *{type:'diagonal'}* property. Since there are two Bishops on the board (light-squared and dark-squared) we need to divide the total number by two. Please note, we do not specifiy relationship direction in order to account for opposite direction moves such as _a1h8_ and _h8a1_.
+
+[source,cypher]
+----
+MATCH (s:Square)-[h:HOP{type:'diagonal'}]-(q:Square) RETURN count(h)/2
+----
+
+*Example 2*: Below is the query to get _all possible Queen moves_ from _e4_ square. It will show the longest moves first. Overall there are 27 possible moves. This is why Queen in the center of the board is the most powerful chess piece.
+
+[source,cypher]
+----
+MATCH (s:Square{san:'e4'})-[h:HOP]-(q:Square) WHERE h.type <> 'knight' RETURN s.san+q.san, h.type, h.length ORDER BY h.length DESC
+----
+
+*Example 3*: Finding the _shortest_ Knight tour from _a1_ to _h8_ square. It appears six moves are required for Knight to reach the opposite side of the board.
+
+[source,cypher]
+----
+MATCH p=(s:Square{san:"a1"})-[:HOP*..6{type:"knight"}]-(b:Square{san:"h8"}) WITH p,nodes(p) AS n LIMIT 1 UNWIND n as nodes RETURN length(p),collect(nodes.san)
+----
+
+Obviously, these are just a few simple examples but one can build more sophisticated queries utilizing the power of Cypher and the graph theory. The chessboard described in this graph can be used as a fundamental part for other chess related graphs.
+
+I would really love to get any feedback. If you found an error, have a suggestion or comment, please do not mind to hit me back.
+
+This gist was created by link:mailto:tutolmin@gmail.com[Andrey Tutolmin]
+
+* link:http://tutolmin.ru[My Web Site]
+* link:https://twitter.com/tutolmin[On Twitter]

@@ -1,0 +1,219 @@
+### Evaluating a logical tree with Cypher / APOC
+
+I'm looking at a set of logical ports that together determine which rules apply to given entities, based on the existence of properties. This is the dataset:
+
+//setup
+[source,cypher]
+----
+CREATE (_181732:Entity {`name`:'A'}) 
+CREATE (_181733:Entity {`name`:'B'}) 
+CREATE (_181735:Entity {`name`:'C'}) 
+CREATE (_181738:Entity {`name`:'D'}) 
+
+CREATE (_181746:Property {`name`:'Prop 1'}) 
+CREATE (_181748:Property {`name`:'Prop 2'}) 
+CREATE (_181749:Property {`name`:'Prop 3'}) 
+CREATE (_181750:Property {`name`:'Prop 4'})
+
+CREATE (_181755:Rule {`name`:'Rule 1'}) 
+CREATE (_181757:Rule {`name`:'Rule 2'}) 
+CREATE (_181759:Rule {`name`:'Rule 3'}) 
+CREATE (_181767:Rule {`name`:'Rule 4'}) 
+CREATE (_181773:Rule {`name`:'Rule 5'}) 
+
+CREATE (_181742:Port {`name`:'AND'}) 
+CREATE (_181743:Port {`name`:'OR'}) 
+CREATE (_181763:Port {`name`:'AND'}) 
+CREATE (_181769:Port {`name`:'AND'}) 
+CREATE (_181771:Port {`name`:'OR'}) 
+CREATE (_181775:Port {`name`:'OR'}) 
+CREATE (_181777:Port {`name`:'AND'}) 
+CREATE (_181779:Port {`name`:'AND'})  
+
+CREATE (_181742)-[:IF {}]->(_181746) 
+CREATE (_181742)-[:IF {}]->(_181748) 
+CREATE (_181755)-[:IF {}]->(_181742) 
+CREATE (_181743)-[:IF {}]->(_181746) 
+CREATE (_181743)-[:IF {}]->(_181748) 
+CREATE (_181759)-[:IF {}]->(_181763) 
+CREATE (_181757)-[:IF {}]->(_181743) 
+CREATE (_181767)-[:IF {}]->(_181769) 
+CREATE (_181769)-[:IF {}]->(_181750) 
+CREATE (_181769)-[:IF {}]->(_181771) 
+CREATE (_181771)-[:IF {}]->(_181749) 
+CREATE (_181771)-[:IF {}]->(_181748) 
+CREATE (_181773)-[:IF {}]->(_181775) 
+CREATE (_181775)-[:IF {}]->(_181777) 
+CREATE (_181777)-[:IF {}]->(_181750) 
+CREATE (_181777)-[:IF {}]->(_181749) 
+CREATE (_181775)-[:IF {}]->(_181779) 
+CREATE (_181779)-[:IF {}]->(_181748) 
+CREATE (_181779)-[:IF {}]->(_181746) 
+CREATE (_181763)-[:IF {}]->(_181748) 
+CREATE (_181763)-[:IF {}]->(_181750) 
+CREATE (_181743)-[:IF {}]->(_181750) 
+
+CREATE (_181746)-[:IS_PROPERTY_OF {}]->(_181732) 
+CREATE (_181746)-[:IS_PROPERTY_OF {}]->(_181733) 
+CREATE (_181748)-[:IS_PROPERTY_OF {}]->(_181733) 
+CREATE (_181749)-[:IS_PROPERTY_OF {}]->(_181732) 
+CREATE (_181748)-[:IS_PROPERTY_OF {}]->(_181735) 
+CREATE (_181749)-[:IS_PROPERTY_OF {}]->(_181735) 
+CREATE (_181749)-[:IS_PROPERTY_OF {}]->(_181738) 
+CREATE (_181750)-[:IS_PROPERTY_OF {}]->(_181738)
+
+WITH "foo" AS  foo
+MATCH (n) RETURN n
+----
+
+//graph_result
+
+### Which rules to evaluate?
+
+To check which rules have to evaluated for a specific entity, we look for paths between the rules and the entity.
+
+For entity "A" 
+[source,cypher]
+----
+MATCH (r:Rule)-[:IF|IS_PROPERTY_OF*]->(e:Entity)  
+WHERE e.name="A"
+RETURN DISTINCT r.name AS Rule ORDER BY Rule
+----
+
+//table
+
+
+For entity "C" 
+[source,cypher]
+----
+MATCH (r:Rule)-[:IF|IS_PROPERTY_OF*]->(e:Entity)  
+WHERE e.name="C"
+RETURN DISTINCT r.name AS Rule ORDER BY Rule
+----
+
+//table
+### Evaluation tree for a given Rule
+
+Once we know which rules have to be evaluated, we build the evaluation tree. First, let's ignore the enitities.
+For "Rule 4"
+[source,cypher]
+----
+MATCH path=(r:Rule)-[:IF*]->(p:Property)
+WHERE r.name="Rule 4"
+RETURN path
+----
+
+//graph_result
+
+
+For "Rule 5"
+[source,cypher]
+----
+MATCH path=(r:Rule)-[:IF*]->(p:Property)
+WHERE r.name="Rule 5"
+RETURN path
+----
+
+//graph_result
+
+### Evaluation tree for a each Rule / Entity
+
+For entity  "A"
+[source,cypher]
+----
+MATCH (r:Rule)-[:IF|IS_PROPERTY_OF*]->(e:Entity) 
+WHERE e.name="A"
+// For each rule that must be evaluated, create the evaluation tree as a map
+WITH r,e
+MATCH path=(r)-[:IF|IS_PROPERTY_OF*]->(pe)
+WHERE (pe=e OR pe:Property)
+RETURN path
+----
+
+//graph_result
+
+
+### APOCing 
+
+APOC does not work in a graphgist, but if you would do
+
+```
+MATCH (r:Rule)-[:IF|IS_PROPERTY_OF*]->(e:Entity) 
+WHERE e.name="A"
+// For each rule that must be evaluated, create the evaluation tree as a map
+WITH r,e
+MATCH path=(r)-[:IF|IS_PROPERTY_OF*]->(pe)
+WHERE (pe=e OR pe:Property)
+WITH r, COLLECT(path) AS paths
+CALL apoc.convert.toTree(paths) yield value
+RETURN value
+```
+
+it would return, for each rule, a map like this  (this is the one for "Rule 5" and entity "A")
+```
+{
+  "_id": 181773,
+  "_type": "Rule",
+  "name": "Rule 5",
+  "if": [
+    {
+      "_id": 181775,
+      "_type": "Port",
+      "name": "OR",
+      "if": [
+        {
+          "_id": 181777,
+          "_type": "Port",
+          "name": "AND",
+          "if": [
+            {
+              "_id": 181750,
+              "_type": "Property",
+              "name": "Prop 4"
+            },
+            {
+              "_id": 181749,
+              "_type": "Property",
+              "name": "Prop 3",
+              "is_property_of": [
+                {
+                  "_id": 181732,
+                  "_type": "Entity",
+                  "name": "A"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_id": 181779,
+          "_type": "Port",
+          "name": "AND",
+          "if": [
+            {
+              "_id": 181748,
+              "_type": "Property",
+              "name": "Prop 2"
+            },
+            {
+              "_id": 181746,
+              "_type": "Property",
+              "name": "Prop 1",
+              "is_property_of": [
+                {
+                  "_id": 181732,
+                  "_type": "Entity",
+                  "name": "A"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+
+```
+
+When we start at the all elements with `_type:Property` and consider them `false` when they do not have a child with `_type:Entity` and  `true` if they have, and then climb the hierarchy, it should be possible to evaluate whether the rule applies to the entity.

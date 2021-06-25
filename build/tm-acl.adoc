@@ -1,0 +1,69 @@
+= GraphGist
+:neo4j-version:
+:style: #54A835/#1078B5/white:Colorized(name)
+
+//setup
+//hide
+[source,cypher]
+----
+CREATE (theo:User{name:"theo"})
+CREATE (ben:User{name:"ben"})
+CREATE (bob:User{name:"bob"})
+CREATE (sara:User{name:"sara"})
+
+CREATE (c:Asset{name:"Credits"})
+CREATE (i:Asset{name:"Invoices"})
+CREATE (g:Asset{name:"Glossaries"})
+CREATE (p:Asset{name:"Projects"})
+
+CREATE (root:Group{name:"SushiShop"})
+CREATE (pm:Group{name:"ProjectManager"})
+CREATE (f:Group{name:"Financer"})
+
+CREATE (ben)-[:MEMBER_OF]->(pm)
+CREATE (bob)-[:MEMBER_OF]->(pm)
+CREATE (sara)-[:MEMBER_OF]->(pm)
+CREATE (sara)-[:MEMBER_OF]->(f)
+CREATE (theo)-[:MEMBER_OF]->(root)
+
+CREATE (root)-[:CAN_MANAGE]->(g)
+CREATE (pm)-[:CAN_MANAGE]->(p)
+CREATE (pm)-[:CAN_SPEND{n:100}]->(c)
+CREATE (f)-[:CAN_MANAGE]->(i)
+CREATE (f)-[:CAN_BUY]->(c)
+CREATE (f)-[:CAN_LOAN]->(c)
+
+CREATE (pm)-[:CHILD_OF]->(root)
+CREATE (f)-[:CHILD_OF]->(root)
+----
+
+//graph
+
+
+* Who are the users who can view glossaries like Bob?
+
+[source,cypher]
+----
+MATCH       (bob:User{name:"bob"})-[:MEMBER_OF]->(g:Group),
+            (g)-[:CAN_MANAGE|:CAN_VIEW]->(Asset{name:"Glossaries"}),
+            (g)<-[:MEMBER_OF]-(users:User)
+RETURN bob.name AS Bob, collect(users.name) AS Users
+UNION MATCH (bob:User{name:"bob"})-[:MEMBER_OF]->(g:Group)-[:CHILD_OF*]->(groups:Group),
+            (groups)-[:CAN_MANAGE|:CAN_VIEW]->(Asset{name:"Glossaries"}),
+            (g)<-[:MEMBER_OF]-(users:User)
+RETURN bob.name AS Bob, collect(users.name) AS Users
+UNION MATCH (bob:User{name:"bob"})-[:MEMBER_OF]->()-[:CHILD_OF*]->(g:Group),
+            (groups)-[:CAN_MANAGE|:CAN_VIEW]->(Asset{name:"Glossaries"}),
+            (groups)<-[:MEMBER_OF]-(users:User)
+RETURN bob.name AS Bob, collect(users.name) AS Users
+----
+
+* How much credits can Bob spend?
+
+[source,cypher]
+----
+MATCH (bob:User{name:"bob"})-[:MEMBER_OF]->(g:Group),
+      (g)-[r:CAN_SPEND]->(Asset{name:"Credits"})
+RETURN bob.name AS Bob, r AS Rels
+----
+

@@ -1,0 +1,72 @@
+= Random Thoughts
+:author: Michael Hunger
+:twitter: @mesirii
+:tags: documentation
+
+There was a question on the Neo4j Google Group about returning results in a random order in Cypher.
+
+//setup
+//hide
+[source,cypher]
+----
+CREATE (Neo:Crew { name:'Neo' }),
+  (Morpheus:Crew { name: 'Morpheus' }),
+ (Trinity:Crew { name: 'Trinity' }),
+ (Cypher:Crew:Matrix { name: 'Cypher' }),
+ (Smith:Matrix { name: 'Agent Smith' }), 
+ (Architect:Matrix { name:'The Architect'}),
+ (Neo)-[:KNOWS]->(Morpheus),(Neo)-[:LOVES]->(Trinity),
+ (Morpheus)-[:KNOWS]->(Trinity),(Morpheus)-[:KNOWS]->(Cypher),
+ (Cypher)-[:KNOWS]->(Smith),(Smith)-[:CODED_BY]->(Architect)
+----
+
+== First Try
+
+The naive approach is just to order by +rand()+:
+
+[source]
+----
+MATCH (n:Crew)
+RETURN n
+ORDER BY rand()
+----
+
+Which fails with:
+
+----
+ORDER BY expressions must be deterministic. For instance, you cannot use the rand() function in the expression
+----
+
+That's explainable, how would you order by something that generates a new value on each call. 
+
+== Working Query
+
+So we have to associate a random value with each row. Fortunately that's easy with +WITH+:
+
+[source,cypher]
+----
+MATCH (n:Crew)
+WITH n, rand() AS r
+ORDER BY r
+RETURN n
+----
+
+//table
+
+So +WITH n, rand() as r+ adds a new column called +r+ (we need the alias) to each row, then we can order by that as part of with (we could even paginate) but in the +RETURN+ clause we only return +n+ and don't expose +r+.
+
+This approach is also handy if you want to order by things that you don't want to expose later on.
+
+== Useful concept
+
+Like ordering by the name of the person, but returning the friends in that order:
+
+[source,cypher]
+----
+MATCH (n:Crew)-[:KNOWS]->(o)
+WITH n.name as name, o
+ORDER BY name DESC
+RETURN o
+----
+
+//table

@@ -1,0 +1,295 @@
+[[TOP]]
+= Ditching Grandma - Graphical Accounts
+
+== Inspiration
+
+The accounts sheets your grandma used are lacking. The whole point of published accounts is to help us assess risk, make valuations and decide where to put our money: how much should we put into a particular stock, what rate should we charge on loans to this business, how much funding should we make available? If businesses can't communicate this well, then we can't fund them and the investment doesn't happen - jobs are not created, consumers are not satisfied, taxes don't get paid and the world is forever poorer.
+
+Balance sheets, cash flow statements and profit & loss tables are designed for easy hand-drafting, but they do a lousy job of communicating value and risk in a business. Accounts composition is increasingly automated - we shouldn’t allow accounts to be constrained by ease-of-hand-drafting conventions. With the entrance of graph databases like neo4j, we don’t have to be constrained by relational database limitations either.
+
+In the real world, income, costs, assets and liabilities involve dense networks with thousands of sparse associations. What currencies (of the dozens that exist) are revenues and costs denominated in (are profits sensitive to euro-yen movements? Or euro - lei movements)? How were revenues distributed over products (is the business driven by a single product or a portfolio)? How dependent is the business on particular key employees? What are the valuations of each asset - in terms of purchase cost, replacement cost, opportunity cost and liquidation value? Try to model 1% of it in SQL and you’ll have to sink man-years in designing join tables. And nobody will be able to query it. With neo4j, this entire process can be automated - far richer data can be opened on the structure of a business, in a manner that can be independently assessed by third party algorithms. That should allow more SMEs to access finance on terms closer to what corporations enjoy. And if accounts communicate more crucial details of how a business is run, insider knowledge might become less important - small savers and online bourses should increasingly be able to get in on the game.
+
+
+== Case Study
+
+Imagine truck company APITruck, based in Poland and serving clients across Europe. They are modern and fancy: they provide live GPS traces to their clients, optional video streams of the goods in-transit, offer an API for scheduling and job prioritization, and offer premium services like driver relays (when a driver stops for a break, another steps into the truck - getting priority freight across Europe faster). APITruck want to issue bonds through an online bourse (bypassing banks) to fund the purchase of a larger truck fleet.
+
+APITruck knows grandma's tables aren't enough for this. So APITruck supplies a comprehensive set of neo4j accounts.
+
+//hide
+//setup
+
+[source, cypher]
+----
+//Type
+CREATE (Income        {name:'income'}),
+       (Expenditure   {name:'expenditure'})
+
+//Category
+CREATE (Fuel                  {name:'fuel'}),
+       (DebtService           {name:'debt service'}),
+       (Wage                  {name:'wage'}),
+       (SoftwareMaintenance   {name:'software maintenance'}),
+       (Contract              {name:'contract'}),
+       (APIJob                {name:'api job'})
+
+//Currencies
+CREATE (EUR      	{name:'euro'}),
+       (PLN      	{name:'zloty'}),
+       (CHF        	{name:'swiss franc'})
+
+//Industries
+CREATE (Const   	{name:'construction'}),
+       (Retail      	{name:'retail'}),
+       (Wareh      	{name:'warehouse stocking'})
+//Income
+CREATE 	(i1 ),
+	(i2 ),
+	(i3),
+	(i4 ),
+	(i5 ),
+	(i6),
+	(i7 ),
+	(i8 ),
+	(i9),
+	(i10),
+	(i11 ),
+	(i12 ),
+	(i13),
+	(i14 ),
+	(i15 ),
+	(i16),
+	(i17 ),
+	(i18 ),
+	(i19),
+	(i20)
+
+//Income Associations
+CREATE (i1)-[:TYPE]->(Income), (i1)-[:CATEGORY]->(Contract), (i1)-[:VALUE {value:8000}]->(EUR), (i1)-[:INDUSTRY]->(Const),
+	(i2)-[:TYPE]->(Income), (i2)-[:CATEGORY]->(Contract), (i2)-[:VALUE {value:5000}]->(EUR), (i2)-[:INDUSTRY]->(Retail),
+	(i3)-[:TYPE]->(Income), (i3)-[:CATEGORY]->(Contract), (i3)-[:VALUE {value:8700}]->(EUR), (i3)-[:INDUSTRY]->(Const),
+	(i4)-[:TYPE]->(Income), (i4)-[:CATEGORY]->(API), (i4)-[:VALUE {value:1400}]->(EUR), (i4)-[:INDUSTRY]->(Wareh),
+	(i5)-[:TYPE]->(Income), (i5)-[:CATEGORY]->(API), (i5)-[:VALUE {value:1600}]->(EUR), (i5)-[:INDUSTRY]->(Retail),
+	(i6)-[:TYPE]->(Income), (i6)-[:CATEGORY]->(API), (i6)-[:VALUE {value:1700}]->(EUR), (i6)-[:INDUSTRY]->(Const),
+	(i7)-[:TYPE]->(Income), (i7)-[:CATEGORY]->(API), (i7)-[:VALUE {value:1300}]->(EUR), (i7)-[:INDUSTRY]->(Wareh),
+	(i8)-[:TYPE]->(Income), (i8)-[:CATEGORY]->(API), (i8)-[:VALUE {value:1800}]->(EUR), (i8)-[:INDUSTRY]->(Const),
+	(i9)-[:TYPE]->(Income), (i9)-[:CATEGORY]->(API), (i9)-[:VALUE {value:1500}]->(EUR), (i9)-[:INDUSTRY]->(Wareh),
+	(i10)-[:TYPE]->(Income), (i10)-[:CATEGORY]->(API), (i10)-[:VALUE {value:1300}]->(EUR), (i10)-[:INDUSTRY]->(Wareh),
+	(i11)-[:TYPE]->(Income), (i11)-[:CATEGORY]->(API), (i11)-[:VALUE {value:1300}]->(EUR), (i11)-[:INDUSTRY]->(Wareh),
+	(i12)-[:TYPE]->(Income), (i12)-[:CATEGORY]->(API), (i12)-[:VALUE {value:2300}]->(EUR), (i12)-[:INDUSTRY]->(Wareh),
+	(i13)-[:TYPE]->(Income), (i13)-[:CATEGORY]->(API), (i13)-[:VALUE {value:1100}]->(EUR), (i13)-[:INDUSTRY]->(Retail),
+	(i14)-[:TYPE]->(Income), (i14)-[:CATEGORY]->(API), (i14)-[:VALUE {value:1500}]->(EUR), (i14)-[:INDUSTRY]->(Wareh),
+	(i15)-[:TYPE]->(Income), (i15)-[:CATEGORY]->(API), (i15)-[:VALUE {value:1400}]->(EUR), (i15)-[:INDUSTRY]->(Wareh),
+	(i16)-[:TYPE]->(Income), (i16)-[:CATEGORY]->(API), (i16)-[:VALUE {value:1200}]->(EUR), (i16)-[:INDUSTRY]->(Wareh),
+	(i17)-[:TYPE]->(Income), (i17)-[:CATEGORY]->(API), (i17)-[:VALUE {value:1100}]->(EUR), (i17)-[:INDUSTRY]->(Wareh),
+	(i18)-[:TYPE]->(Income), (i18)-[:CATEGORY]->(API), (i18)-[:VALUE {value:1900}]->(EUR), (i18)-[:INDUSTRY]->(Const),
+	(i19)-[:TYPE]->(Income), (i19)-[:CATEGORY]->(API), (i19)-[:VALUE {value:1700}]->(EUR), (i19)-[:INDUSTRY]->(Const),
+	(i20)-[:TYPE]->(Income), (i20)-[:CATEGORY]->(API), (i20)-[:VALUE {value:1600}]->(EUR), (i20)-[:INDUSTRY]->(Wareh)
+
+
+//Expenditure
+CREATE 	(e1 ),
+	(e2 ),
+	(e3),
+	(e4 ),
+	(e5 ),
+	(e6),
+	(e7 ),
+	(e8 ),
+	(e9),
+	(e10),
+	(e11 ),
+	(e12 ),
+	(e13),
+	(e14 ),
+	(e15 ),
+	(e16),
+	(e17 ),
+	(e18 ),
+	(e19),
+	(e20),
+	(e21 ),
+	(e22 ),
+	(e23),
+	(e24 ),
+	(e25 ),
+	(e26),
+	(e27 ),
+	(e28 ),
+	(e29),
+	(e30),
+	(e31 ),
+	(e32 ),
+	(e33),
+	(e34 ),
+	(e35 ),
+	(e36),
+	(e37 ),
+	(e38 ),
+	(e39),
+	(e40)
+
+// Expenditure Associations
+CREATE (e1)-[:TYPE]->(Expenditure), (e1)-[:CATEGORY]->(Wage), (e1)-[:VALUE {value:3000}]->(PLN),
+	(e2)-[:TYPE]->(Expenditure), (e2)-[:CATEGORY]->(Wage), (e2)-[:VALUE {value:3000}]->(PLN),
+	(e3)-[:TYPE]->(Expenditure), (e3)-[:CATEGORY]->(Wage), (e3)-[:VALUE {value:2800}]->(PLN),
+	(e4)-[:TYPE]->(Expenditure), (e4)-[:CATEGORY]->(Wage), (e4)-[:VALUE {value:3100}]->(PLN),
+	(e5)-[:TYPE]->(Expenditure), (e5)-[:CATEGORY]->(DebtService), (e5)-[:VALUE {value:15000}]->(CHF),
+	(e6)-[:TYPE]->(Expenditure), (e6)-[:CATEGORY]->(SoftwareMaintenance), (e6)-[:VALUE {value:2000}]->(PLN),
+	(e7)-[:TYPE]->(Expenditure), (e7)-[:CATEGORY]->(Fuel), (e7)-[:VALUE {value:328.80}]->(EUR),
+	(e8)-[:TYPE]->(Expenditure), (e8)-[:CATEGORY]->(Fuel), (e8)-[:VALUE {value:270.00}]->(EUR),
+	(e9)-[:TYPE]->(Expenditure), (e9)-[:CATEGORY]->(Fuel), (e9)-[:VALUE {value:328.80}]->(EUR),
+	(e10)-[:TYPE]->(Expenditure), (e10)-[:CATEGORY]->(Fuel), (e10)-[:VALUE {value:270.00}]->(EUR),
+	(e11)-[:TYPE]->(Expenditure), (e11)-[:CATEGORY]->(Fuel), (e11)-[:VALUE {value:270.00}]->(EUR),
+	(e12)-[:TYPE]->(Expenditure), (e12)-[:CATEGORY]->(Fuel), (e12)-[:VALUE {value:1122}]->(PLN),
+	(e13)-[:TYPE]->(Expenditure), (e13)-[:CATEGORY]->(Fuel), (e13)-[:VALUE {value:334.60}]->(EUR),
+	(e14)-[:TYPE]->(Expenditure), (e14)-[:CATEGORY]->(Fuel), (e14)-[:VALUE {value:334.60}]->(EUR),
+	(e15)-[:TYPE]->(Expenditure), (e15)-[:CATEGORY]->(Fuel), (e15)-[:VALUE {value:270.00}]->(EUR),
+	(e16)-[:TYPE]->(Expenditure), (e16)-[:CATEGORY]->(Fuel), (e16)-[:VALUE {value:1122}]->(PLN),
+	(e17)-[:TYPE]->(Expenditure), (e17)-[:CATEGORY]->(Fuel), (e17)-[:VALUE {value:292.60}]->(EUR),
+	(e18)-[:TYPE]->(Expenditure), (e18)-[:CATEGORY]->(Fuel), (e18)-[:VALUE {value:334.60}]->(EUR),
+	(e19)-[:TYPE]->(Expenditure), (e19)-[:CATEGORY]->(Fuel), (e19)-[:VALUE {value:328.80}]->(EUR),
+	(e20)-[:TYPE]->(Expenditure), (e20)-[:CATEGORY]->(Fuel), (e20)-[:VALUE {value:292.60}]->(EUR),
+	(e21)-[:TYPE]->(Expenditure), (e21)-[:CATEGORY]->(Fuel), (e21)-[:VALUE {value:270.00}]->(EUR),
+	(e22)-[:TYPE]->(Expenditure), (e22)-[:CATEGORY]->(Fuel), (e22)-[:VALUE {value:1122}]->(PLN),
+	(e23)-[:TYPE]->(Expenditure), (e23)-[:CATEGORY]->(Fuel), (e23)-[:VALUE {value:1122}]->(PLN),
+	(e24)-[:TYPE]->(Expenditure), (e24)-[:CATEGORY]->(Fuel), (e24)-[:VALUE {value:1122}]->(PLN),
+	(e25)-[:TYPE]->(Expenditure), (e25)-[:CATEGORY]->(Fuel), (e25)-[:VALUE {value:328.80}]->(EUR),
+	(e26)-[:TYPE]->(Expenditure), (e26)-[:CATEGORY]->(Fuel), (e26)-[:VALUE {value:334.60}]->(EUR),
+	(e27)-[:TYPE]->(Expenditure), (e27)-[:CATEGORY]->(Fuel), (e27)-[:VALUE {value:334.60}]->(EUR),
+	(e28)-[:TYPE]->(Expenditure), (e28)-[:CATEGORY]->(Fuel), (e28)-[:VALUE {value:270.00}]->(EUR),
+	(e29)-[:TYPE]->(Expenditure), (e29)-[:CATEGORY]->(Fuel), (e29)-[:VALUE {value:292.60}]->(EUR),
+	(e30)-[:TYPE]->(Expenditure), (e30)-[:CATEGORY]->(Fuel), (e30)-[:VALUE {value:334.60}]->(EUR),
+	(e31)-[:TYPE]->(Expenditure), (e31)-[:CATEGORY]->(Fuel), (e31)-[:VALUE {value:1122}]->(PLN),
+	(e32)-[:TYPE]->(Expenditure), (e32)-[:CATEGORY]->(Fuel), (e32)-[:VALUE {value:328.80}]->(EUR),
+	(e33)-[:TYPE]->(Expenditure), (e33)-[:CATEGORY]->(Fuel), (e33)-[:VALUE {value:328.80}]->(EUR),
+	(e34)-[:TYPE]->(Expenditure), (e34)-[:CATEGORY]->(Fuel), (e34)-[:VALUE {value:1122}]->(PLN),
+	(e35)-[:TYPE]->(Expenditure), (e35)-[:CATEGORY]->(Fuel), (e35)-[:VALUE {value:270}]->(EUR),
+	(e36)-[:TYPE]->(Expenditure), (e36)-[:CATEGORY]->(Fuel), (e36)-[:VALUE {value:328.80}]->(EUR),
+	(e37)-[:TYPE]->(Expenditure), (e37)-[:CATEGORY]->(Fuel), (e37)-[:VALUE {value:1122}]->(PLN),
+	(e38)-[:TYPE]->(Expenditure), (e38)-[:CATEGORY]->(Fuel), (e38)-[:VALUE {value:270}]->(EUR),
+	(e39)-[:TYPE]->(Expenditure), (e39)-[:CATEGORY]->(Fuel), (e39)-[:VALUE {value:328.80}]->(EUR),
+	(e40)-[:TYPE]->(Expenditure), (e40)-[:CATEGORY]->(Fuel), (e40)-[:VALUE {value:1122}]->(PLN)
+----
+
+== Currency Risk
+
+With revenues, expenditures and debt service requirements distributed over multiple currencies, a European trucking business faces horrendous exposure to currency movements. That poses enough risk for profitability; it poses even greater risk to cash flow.
+
+image::https://dl.dropboxusercontent.com/s/hetug5owu0uac1w/incomecostcurrency.png[]
+link:http://www.apcjones.com/arrows/#[Source]
+
+//hide
+[source, cypher]
+----
+MATCH (i)<-[:TYPE]-(f)-[q :VALUE]->(c)
+WHERE i.name = "income" AND c.name = "euro"
+WITH sum(q.value) AS totaleuro 
+RETURN totaleuro AS `euro in`
+----
+//graph
+//table
+
+//hide
+[source, cypher]
+----
+MATCH (i)<-[:TYPE]-(f)-[q :VALUE]->(c)
+WHERE i.name = "income" AND c.name = "zloty"
+WITH sum(q.value) AS zloty 
+RETURN zloty AS `zloty in`
+----
+//table
+
+//hide
+[source, cypher]
+----
+MATCH (i)<-[:TYPE]-(f)-[q :VALUE]->(c)
+WHERE i.name = "income" AND c.name = "swiss franc"
+WITH sum(q.value) AS totalfranc 
+RETURN totalfranc AS `swiss francs in`
+----
+//table
+
+//hide
+[source, cypher]
+----
+MATCH (i)<-[:TYPE]-(f)-[q :VALUE]->(c)
+WHERE i.name = "expenditure" AND c.name = "euro"
+WITH sum(q.value) AS totaleuro 
+RETURN totaleuro AS `euro out`
+----
+//table
+
+//hide
+[source, cypher]
+----
+MATCH (i)<-[:TYPE]-(f)-[q :VALUE]->(c)
+WHERE i.name = "expenditure" AND c.name = "zloty"
+WITH sum(q.value) AS zloty 
+RETURN zloty AS `zloty out`
+----
+//table
+
+//hide
+[source, cypher]
+----
+MATCH (i)<-[:TYPE]-(f)-[q :VALUE]->(c)
+WHERE i.name = "expenditure" AND c.name = "swiss franc"
+WITH sum(q.value) AS totalfranc 
+RETURN totalfranc AS `swiss francs out`
+----
+//table
+
+With simple queries on the neo4j model, third parties can breakdown cash flow by currency (or other arbitrary attributes and patterns), to assess individual risks. In this currency example, third parties might explore currency volatility and relative exchange movement contingencies, and use cash flow forecasts based on the numbers above to estimate the level of risk. Indeed, given enough businesses following common standards here, third parties could develop analytical query tools for this specific purpose (risk assessments and valuations).
+
+== Client Exposure
+
+How concentrated are revenues with individual clients or industries?
+
+//hide
+[source, cypher]
+----
+MATCH (i)<-[:TYPE]-(f)-[q :VALUE]->(c), (f)-[:INDUSTRY]->(d)
+WHERE i.name = "income" AND d.name = "construction" AND c.name = "euro"
+RETURN sum(q.value) AS `construction industry revenue (euro)`
+----
+//graph
+//table
+
+
+//hide
+[source, cypher]
+----
+MATCH (i)<-[:TYPE]-(f)-[q :VALUE]->(c), (f)-[:INDUSTRY]->(d)
+WHERE i.name = "income" AND d.name = "retail" AND c.name = "euro"
+RETURN sum(q.value) AS `retail industry revenue (euro)`
+----
+//table
+
+
+
+
+//hide
+[source, cypher]
+----
+MATCH (i)<-[:TYPE]-(f)-[q :VALUE]->(c), (f)-[:INDUSTRY]->(d)
+WHERE i.name = "income" AND d.name = "warehouse stocking" AND c.name = "euro"
+RETURN sum(q.value) AS `warehouse stocking revenue (euro)`
+----
+//table
+
+== Fuel Price and Other Risks
+
+While prices can generally be adjusted with fuel price for short notice haulage orders (majority of API traffic) contract and long-lead-time jobs have fixed prices. That introduces risk in both directions - rising fuel prices can cause costs to rise above expected levels; falling fuel prices could boost both profits and cash flow. Graphical accounts open the necessary data for independent third parties to run simulations of contingencies such as this (changing cost of inputs, a liquidity shock, impact of shifting interest rates, impact of changing relative prices, supplier problems for a key product, etc).
+
+== Continued Development
+==== Cashflow Risk
+Extending the above to include date-times of payments and current balances in each currency along with current assets and liabilities (in their different denominations) allows for currency-specific cash flow to be modelled (allowing early recognition of funding requirements). A wider range of associations allows more diverse risk factors to be modelled by third parties (independently, with different assumptions, reducing likelihood of bad valuations). 
+
+When third parties are confident that cash flow is well managed, they can safely attribute lower risk to investments in the business (both bonds and equity), facilitating more rapid expansion of productive businesses.
+
+==== Balance Sheets and More
+Business assets and liabilities can be modelled in a similar manner to the above, supporting a similar diversity of queries (the kind grandma would ask, along with countless new possibilities). Models of products and their interaction with cash flow events an assets/ liabilities provides further evidence for risk, profitability and good resource allocation. Models of employees and their interaction with products, cash flow and assets/liabilities may also support better human development and allocation decisions (and provide evidence to potential investors that a business is well managed).
+
+==== Trial
+The above will be implemented with a small online retail business, and an API built around supported operations. At very least, that will slash the number of hours on the accountants' bill. Then we'll see whether we can engage accountants, bankers or online finance community with the richer possibilities here.

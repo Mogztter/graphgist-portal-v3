@@ -1,0 +1,77 @@
+= Union and Intersection
+
+This Gist tries to anwser https://groups.google.com/forum/#!searchin/neo4j/bipartite/neo4j/8jrZUIrb_Xo/0qa0hAcIrBkJ[This question on the Neoj4 mailing list]:
+
+I have networks, which have many "egos" that appear in those networks. These egos, in turn, occur in many different networks - basic many-to-many relationship, and in the context of a graph db, a bipartite network. In practice, my data looks something like this (pardon whatever silly format I'm about to write it as):
+
+----
+Network 1: [Ego 1, Ego 2, Ego, 3, Ego 4]
+Network 2: [Ego 2, Ego 4, Ego, 5, Ego 6]
+Network 3: [Ego 4, Ego 5, Ego, 7, Ego 8, Ego 9, Ego 10]
+----
+
+What I would like *out* of this data is something like the following:
+
+I want to know the relationship that Network 1 has with Networks 2 and 3. Specifically, I want to measure the overlap in a specific way - the count of the intersection of egos for two networks divided by the count of the union of egos. In other words, a comparison of Network 1 and Network 2 would yield the following steps: 
+
+intersection = [Ego 2, Ego 4], 2 total
+union = [Ego 1, Ego 2, Ego 3, Ego 4, Ego 5, Ego 6], 6 total
+intersection/union = 1/3
+
+I would then say that these two networks are 33% similar (I'm open to other ways to calculate similarity in the spirit of what I'm trying to do here).
+
+
+//setup
+[source,cypher]
+----
+CREATE (n1:Network{name:'Network1'})
+CREATE (n2:Network{name:'Network2'})
+CREATE (n3:Network{name:'Network3'})
+CREATE (e1:Ego{name:'Ego1'})
+CREATE (e2:Ego{name:'Ego2'})
+CREATE (e3:Ego{name:'Ego3'})
+CREATE (e4:Ego{name:'Ego4'})
+CREATE (e5:Ego{name:'Ego5'})
+CREATE (e6:Ego{name:'Ego6'})
+CREATE (e7:Ego{name:'Ego7'})
+CREATE (e8:Ego{name:'Ego8'})
+CREATE (e9:Ego{name:'Ego9'})
+CREATE (e10:Ego{name:'Ego10'})
+CREATE (n1)<-[:APPEARANCE]-(e1)
+CREATE (n1)<-[:APPEARANCE]-(e2)
+CREATE (n1)<-[:APPEARANCE]-(e3)
+CREATE (n1)<-[:APPEARANCE]-(e4)
+CREATE (n2)<-[:APPEARANCE]-(e2)
+CREATE (n2)<-[:APPEARANCE]-(e4)
+CREATE (n2)<-[:APPEARANCE]-(e5)
+CREATE (n2)<-[:APPEARANCE]-(e6)
+CREATE (n3)<-[:APPEARANCE]-(e4)
+CREATE (n3)<-[:APPEARANCE]-(e5)
+CREATE (n3)<-[:APPEARANCE]-(e7)
+CREATE (n3)<-[:APPEARANCE]-(e8)
+CREATE (n3)<-[:APPEARANCE]-(e9)
+CREATE (n3)<-[:APPEARANCE]-(e10)
+----
+
+//graph
+
+= The intersection between Network 1 and the other Networks
+
+[source,cypher]
+----
+MATCH (network:Network {name: 'Network1'})<-[:APPEARANCE]-(ego:Ego)-[:APPEARANCE]->(alter_network:Network) return distinct(alter_network.name), count(ego), collect(ego.name)
+----
+
+//table
+
+
+= The union between Network 1 and Network 2
+
+[source,cypher]
+----
+MATCH (n1:Network {name: 'Network1'}),(ego:Ego),(n2:Network{name:'Network2'}) 
+WHERE (n1)<-[:APPEARANCE]-(ego) OR (n2)<-[:APPEARANCE]-(ego)
+return count(ego), collect(ego.name)
+----
+
+//table

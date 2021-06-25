@@ -1,0 +1,67 @@
+= A small graph of Belgian Beer 2
+
+This is based on the nice blog posts by Rik Van Bruggen and the general http://www.neo4j.org/misc/beer[interest of Neoj4 graphistas in good beer].
+
+image::http://www.travelandbeer.com/wp-content/uploads/2011/05/belgian-beers.jpg[]
+
+//setup
+//hide
+[source,cypher]
+----
+CREATE 
+(orval:Trappist:Beerbrand { name:'Orval'}),
+(chimay:Trappist:BeerBrand { name:'Chimay'}),
+(westvleteren:Trappist:BeerBrand { name:'Westvleteren'}),
+(westmalle:Trappist:BeerBrand { name:'Westmalle'}),
+(la_trappe:Trappist:BeerBrand { name:'La Trappe'}),
+(duvel:Commodity:BeerBrand { name:'Duvel'}),
+(leffe:Commodity:BeerBrand { name:'Leffe'}),
+(rodenbach:Commodity:BeerBrand { name:'Rodenbach'}),
+(heksemiebier:Commodity:BeerBrand { name:'Heksemiebier'}),
+(wilderengoud:Commodity:BeerBrand { name:'Wilderen Goud'}),
+(seef:Local:BeerBrand { name:'Seef'}),
+(de_koninck:Local:BeerBrand { name:'De Koninck'}),
+(malheur:Local:BeerBrand { name:'Malheur'}),
+(andorval:Brewery { name:'Abdij Notre-Dame d Orval'}),
+(moortgat:Brewery { name:'Brouwerij Duvel Moortgat'}),
+(wilderen:Brewery { name:'Brouwerij Wilderen'}),
+(achilles:Brewery { name:'Microbrouwerij Achilles'}),
+(hogegisting:Beertype {name:'Hoge gisting'}),
+(sixtwo:AlcoholPercentage { name:'6.2'}),
+(eightfive:AlcoholPercentage { name:'8.5'}), 
+(duvel)-[:IS_A]->(hogegisting), 
+(duvel)-[:ALCOHOL_PERCENTAGE]->(eightfive), 
+(duvel)-[:BREWED_BY]->(moortgat), 
+(orval)-[:ALCOHOL_PERCENTAGE]->(sixtwo), 
+orval-[:BREWED_BY]->(andorval), 
+heksemiebier-[:IS_A]->(hogegisting), 
+heksemiebier-[:ALCOHOL_PERCENTAGE]->(sixtwo), 
+heksemiebier-[:BREWED_BY]->(achilles), 
+wilderengoud-[:IS_A]->(hogegisting), 
+wilderengoud-[:ALCOHOL_PERCENTAGE]->(sixtwo), 
+wilderengoud-[:BREWED_BY]->(wilderen)
+----
+
+//graph
+
+
+== What popupar beer categories are in the graph?
+
+[source,cypher]
+----
+MATCH (beer:BeerBrand)
+RETURN Labels(beer) AS type , count(*) AS count, collect(beer.name) AS beers
+----
+
+//table
+
+== What are the closest beers to both Orval and Duvel?
+
+[source,cypher]
+----
+MATCH p = AllshortestPaths((duvel)-[*]-(orval)) WHERE duvel.name ="Duvel" and orval.name ="Orval" 
+RETURN EXTRACT(rel IN relationships(p) | COALESCE(rel.name,TYPE(rel))) AS path
+----
+
+//table
+

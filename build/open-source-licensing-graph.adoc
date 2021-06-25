@@ -1,0 +1,227 @@
+= Open Source Licensing Graph =
+ 
+This gist is explain the Open Source Licensing Graph, based on the wonderful data from http://choosealicense.com/[ChoosALicense.com], a http://www.github.com[github] service. I wrote a small blogpost around it too on http://blog.bruggen.com/2014/01/the-open-source-licensing-graph.html[my blog].
+
+First we have to load the data into the graph. This was a bit of work - but not difficult at all:
+ 
+//hide
+//setup
+//output
+[source,cypher]
+----
+// create the nodes
+create (n1:License {id:1,name:'Apache'}),
+(n2:License {id:2,name:'GPLv3'}),
+(n3:License {id:3,name:'GPLv2'}),
+(n4:License {id:4,name:'Affero GPLv3'}),
+(n5:License {id:5,name:'MIT'}),
+(n6:License {id:6,name:'Artistic'}),
+(n7:License {id:7,name:'BSD-2clause'}),
+(n8:License {id:8,name:'BSD-3clause'}),
+(n9:License {id:9,name:'Eclipse'}),
+(n10:License {id:10,name:'LGPLv2.1'}),
+(n11:License {id:11,name:'LGPLv3'}),
+(n12:License {id:12,name:'Mozilla'}),
+(n13:License {id:13,name:'No License'}),
+(n14:License {id:14,name:'Public Domain Dedication - Unlicense'}),
+(n15:License {id:15,name:'Public Domain Dedication - CCO 1.0 Universal'}),
+(n100:Characteristic {id:100,name:'License and copyright notice'}),
+(n101:Characteristic {id:101,name:' State Changes'}),
+(n102:Characteristic {id:102,name:' Commercial Use'}),
+(n103:Characteristic {id:103,name:' Distribution'}),
+(n104:Characteristic {id:104,name:' Modification'}),
+(n105:Characteristic {id:105,name:' Patent Grant'}),
+(n106:Characteristic {id:106,name:' Private Use'}),
+(n107:Characteristic {id:107,name:' Sublicensing'}),
+(n108:Characteristic {id:108,name:' Hold Liable'}),
+(n109:Characteristic {id:109,name:' Use Trademark'}),
+(n110:Characteristic {id:110,name:'Disclose Source'}),
+(n111:Characteristic {id:111,name:' License and copyright notice'}),
+(n112:Characteristic {id:112,name:' Library usage'}),
+ // create the relationships
+ 
+n1-[:REQUIRES]->n100,
+n1-[:REQUIRES]->n101,
+n1-[:PERMITS]->n102,
+n1-[:PERMITS]->n103,
+n1-[:PERMITS]->n104,
+n1-[:PERMITS]->n105,
+n1-[:PERMITS]->n106,
+n1-[:PERMITS]->n107,
+n1-[:FORBIDS]->n108,
+n1-[:FORBIDS]->n109,
+n2-[:REQUIRES]->n110,
+n2-[:REQUIRES]->n111,
+n2-[:REQUIRES]->n101,
+n2-[:PERMITS]->n102,
+n2-[:PERMITS]->n103,
+n2-[:PERMITS]->n104,
+n2-[:PERMITS]->n105,
+n2-[:PERMITS]->n106,
+n2-[:FORBIDS]->n108,
+n2-[:FORBIDS]->n107,
+n3-[:REQUIRES]->n110,
+n3-[:REQUIRES]->n111,
+n3-[:REQUIRES]->n101,
+n3-[:PERMITS]->n102,
+n3-[:PERMITS]->n103,
+n3-[:PERMITS]->n104,
+n3-[:PERMITS]->n105,
+n3-[:PERMITS]->n106,
+n3-[:FORBIDS]->n108,
+n3-[:FORBIDS]->n107,
+n4-[:REQUIRES]->n110,
+n4-[:REQUIRES]->n111,
+n4-[:REQUIRES]->n101,
+n4-[:PERMITS]->n102,
+n4-[:PERMITS]->n103,
+n4-[:PERMITS]->n104,
+n4-[:PERMITS]->n106,
+n4-[:FORBIDS]->n108,
+n4-[:FORBIDS]->n107,
+n5-[:REQUIRES]->n100,
+n5-[:PERMITS]->n102,
+n5-[:PERMITS]->n103,
+n5-[:PERMITS]->n104,
+n5-[:PERMITS]->n106,
+n5-[:PERMITS]->n107,
+n5-[:FORBIDS]->n108,
+n6-[:REQUIRES]->n100,
+n6-[:REQUIRES]->n101,
+n6-[:PERMITS]->n102,
+n6-[:PERMITS]->n103,
+n6-[:PERMITS]->n104,
+n6-[:PERMITS]->n106,
+n6-[:PERMITS]->n107,
+n6-[:FORBIDS]->n108,
+n6-[:FORBIDS]->n109,
+n7-[:REQUIRES]->n100,
+n7-[:PERMITS]->n102,
+n7-[:PERMITS]->n103,
+n7-[:PERMITS]->n104,
+n7-[:PERMITS]->n106,
+n7-[:PERMITS]->n107,
+n7-[:FORBIDS]->n108,
+n8-[:REQUIRES]->n100,
+n8-[:PERMITS]->n102,
+n8-[:PERMITS]->n103,
+n8-[:PERMITS]->n104,
+n8-[:PERMITS]->n106,
+n8-[:PERMITS]->n107,
+n8-[:FORBIDS]->n108,
+n8-[:FORBIDS]->n109,
+n9-[:REQUIRES]->n110,
+n9-[:REQUIRES]->n111,
+n9-[:PERMITS]->n102,
+n9-[:PERMITS]->n103,
+n9-[:PERMITS]->n104,
+n9-[:PERMITS]->n105,
+n9-[:PERMITS]->n106,
+n9-[:PERMITS]->n107,
+n9-[:FORBIDS]->n108,
+n10-[:REQUIRES]->n110,
+n10-[:REQUIRES]->n112,
+n10-[:REQUIRES]->n111,
+n10-[:PERMITS]->n102,
+n10-[:PERMITS]->n103,
+n10-[:PERMITS]->n104,
+n10-[:PERMITS]->n105,
+n10-[:PERMITS]->n106,
+n10-[:PERMITS]->n107,
+n10-[:FORBIDS]->n108,
+n11-[:REQUIRES]->n110,
+n11-[:REQUIRES]->n112,
+n11-[:REQUIRES]->n111,
+n11-[:PERMITS]->n102,
+n11-[:PERMITS]->n103,
+n11-[:PERMITS]->n104,
+n11-[:PERMITS]->n105,
+n11-[:PERMITS]->n106,
+n11-[:PERMITS]->n107,
+n11-[:FORBIDS]->n108,
+n12-[:REQUIRES]->n110,
+n12-[:REQUIRES]->n111,
+n12-[:PERMITS]->n102,
+n12-[:PERMITS]->n103,
+n12-[:PERMITS]->n104,
+n12-[:PERMITS]->n105,
+n12-[:PERMITS]->n106,
+n12-[:PERMITS]->n107,
+n12-[:FORBIDS]->n108,
+n12-[:FORBIDS]->n109,
+n13-[:REQUIRES]->n100,
+n13-[:PERMITS]->n102,
+n13-[:PERMITS]->n106,
+n13-[:FORBIDS]->n103,
+n13-[:FORBIDS]->n104,
+n13-[:FORBIDS]->n107,
+n14-[:PERMITS]->n102,
+n14-[:PERMITS]->n103,
+n14-[:PERMITS]->n104,
+n14-[:PERMITS]->n106,
+n14-[:FORBIDS]->n108,
+n15-[:PERMITS]->n102,
+n15-[:PERMITS]->n103,
+n15-[:PERMITS]->n104,
+n15-[:PERMITS]->n106,
+n15-[:FORBIDS]->n108;
+----
+ 
+The actual graph then looks like this:
+
+//graph
+
+Then we can do some easy queries. Like for example: show me the requirements of the GPLv3:
+
+[source,cypher]
+----
+MATCH (n:License {name:"GPLv3"})-[r]-(m:Characteristic)
+RETURN n.name as License, type(r) as Qualifier, m.name as Characteristic;
+----
+
+The results are interesting:
+
+//table
+
+Or lets try to see how the GPLv3 and Apache licenses are connected:
+
+[source,cypher]
+----
+MATCH p = AllShortestPaths((n:License {name:"GPLv3"})-[*]-(m:License {name:"Apache"}))
+RETURN p;
+----
+
+//table
+
+This is interesting: there seems to be a contradiction here, which we can explore:
+[source, cypher]
+----
+MATCH (n:License {name:"GPLv3"})-[r1]-(c:Characteristic)-[r2]-(m:License {name:"Apache"})
+WHERE type(r1)<>type(r2)
+RETURN n.name as License1, type(r1) as Qualifier1, c.name as Characteristic, type(r2) as Qualifier2, m.name as License2;
+----
+
+//table
+
+Let's see if we can do something similar for other licenses?
+
+[source, cypher]
+----
+MATCH (n:License)-[r1:PERMITS|FORBIDS]->(c:Characteristic)<-[r2:PERMITS|FORBIDS]-(m:License)
+WHERE type(r1)<>type(r2)
+RETURN distinct n.name as License1, type(r1) as Qualifier1, c.name as Characteristic, type(r2) as Qualifier2, m.name as License2;
+----
+
+//table
+
+So there we go! All the contradictions between all of the different licenses!
+
+To play some more, use the console below. Enjoy!
+ 
+//console
+
+This gist was created by link:mailto:rik@neotechnology.com[Rik Van Bruggen]
+
+* link:http://blog.bruggen.com[My Blog]
+* link:http://twitter.com/rvanbruggen[On Twitter]
+* link:http://be.linkedin.com/in/rikvanbruggen/[On LinkedIn]

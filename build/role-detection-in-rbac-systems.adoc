@@ -1,0 +1,61 @@
+= Role detection in RBAC systems
+
+This GraphGist is based on https://groups.google.com/forum/#!topicsearchin/neo4j/after$3A2013$2F06$2F01$20before$3A2013$2F07$2F01/neo4j/B5mfj2d3LMQ[A discussion on the Neoj4 mailing list]
+.
+This represents (part of) a very simple subset of an RBAC model (role based access control) and identity provisioning system where 
+
+1. a few role definitions have been made (r1 member of g1 etc)
+2. a person is assigned a role
+3. since a role is a member of a group  the provisioning system creates  a user(id)  on some server with groupmembership based on the role definition
+i have used the RECON as type since normally the actual relation will be reconciled back to the provisiningsystem
+4. through this userid the person can access a service
+
+so in the sample   p1 has received r1 which should have given him a userid (u1)  connected to group 1 (g1) allowing the person to acccess service 1
+
+This is a faked situation where some  local administrator has changed the group membership of U1 to G2 (iso G1)..
+
+in real life this can happen and lead to a situation where ones role memberships (and derived authorizations)  (SOLL)  are not in line with  the actual situation (IST)
+
+it would be great to detect such   "incomplancies"
+
+== Setup
+
+//setup
+//hide
+[source,cypher]
+----
+CREATE (p1:Person{name:'P1'})
+CREATE (p2:Person{name:'P2'})
+
+CREATE (r1:Role{name:'R1'})
+CREATE (r2:Role{name:'R2'})
+
+CREATE (u1:User{name:'U1'})
+CREATE (u2:User{name:'U2'})
+
+CREATE (g1:Group{name:'G1'})
+CREATE (g2:Group{name:'G2'})
+
+CREATE (s1:Service{name:'S1'})
+CREATE (s2:Service{name:'S2'})
+
+CREATE (p1)-[:MEMBER_OF]->(r1)-[:MEMBER_OF]->(g1)<-[:GRANTS_PERMISSION]-(s1),
+  (g2)-[:RECON_MEMBER_OF]->(u1)-[:RECON_MEMBER_OF]->(p1),
+
+  (g2)-[:RECON_MEMBER_OF]->(u2)-[:RECON_MEMBER_OF]->(p2),
+  (p2)-[:MEMBER_OF]->(r2)-[:MEMBER_OF]->(g2)<-[:GRANTS_PERMISSION]-(s2)
+----
+
+//graph
+
+== Find reconciliation loops
+
+[source,cypher]
+----
+MATCH (p:Person)-[:MEMBER_OF]->(r:Role)-[:MEMBER_OF]->(g:Group)-[:RECON_MEMBER_OF]->(u:User)-[:RECON_MEMBER_OF]-(p) 
+RETURN p
+----
+
+//table
+
+

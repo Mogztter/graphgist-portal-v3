@@ -1,0 +1,140 @@
+== Importing Data
+
+=== Developing a Graph Model
+
+Throughout this course, we have been assuming data already exists in a database or is small enough to enter and jot down by hand.
+However, what if you want to explore an already existing external dataset?
+How would you import data from a spreadsheet or relational database? 
+
+If you want to import data from, say, a CSV, first you will need to develop a graph model describing what piece of source data goes where in your graph. 
+
+=== Importing Normalized Data using LOAD CSV
+
+Cypher provides an elegant built-in way to import tabular CSV data into graph structures.
+
+The `LOAD CSV` clause parses a local or remote file into a stream of rows which represent maps (with headers) or lists.
+Then you can use whatever Cypher operations you want to apply to either `CREATE` nodes or relationships or to `MERGE` with existing graph structures.
+
+As CSV files usually represent either node- or relationship-lists, you run multiple passes to create nodes and relationships separately.
+
+The `movies.csv` file (sample below) holds the data that will populate the Movie nodes. 
+
+----
+id,title,country,year
+1,Wall Street,USA,1987
+2,The American President,USA,1995
+3,The Shawshank Redemption,USA,1994
+----
+
+The following query `CREATE`s the `Movie` nodes using the data from `movies.csv` as properties. 
+
+----
+LOAD CSV WITH HEADERS 
+FROM "http://neo4j.com/docs/stable/csv/intro/movies.csv" 
+AS line
+CREATE (m:Movie { id:line.id, title:line.title, released:toInt(line.year) });
+----
+
+The `persons.csv` file (sample below) holds the data that will populate the `:Person` nodes. 
+
+----
+id,name
+1,Charlie Sheen
+2,Oliver Stone
+3,Michael Douglas
+4,Martin Sheen
+5,Morgan Freeman
+----
+
+In case you already have people in your database, you want to make sure not to create duplicates. 
+That's why instead of just creating them, we use `MERGE` to ensure unique entries after the import.
+We only have to set the name of a person, when it was created so we use the `ON CREATE` feature.
+
+----
+LOAD CSV WITH HEADERS 
+FROM "http://neo4j.com/docs/stable/csv/intro/persons.csv" 
+AS line
+MERGE (a:Person { id:line.id })
+ON CREATE SET a.name=line.name;
+----
+
+The `roles.csv` file (sample below) holds the data that will populate the relationships between the nodes. 
+
+----
+personId,movieId,role
+1,1,Bud Fox
+4,1,Carl Fox
+3,1,Gordon Gekko
+4,2,A.J. MacInerney
+3,2,President Andrew Shepherd
+5,3,Ellis Boyd 'Red' Redding
+----
+
+The query below matches entry of `line.personId` and `line.movieId` to their respective `:Movie` and `:Person` node via their key property - _id_, and `CREATE`s an `ACTED_IN` relationship between the person and the movie.
+This model includes a relationship property of _role_, which is passed via `line.role`.
+
+----
+LOAD CSV WITH HEADERS 
+FROM "http://neo4j.com/docs/stable/csv/intro/roles.csv" 
+AS line
+MATCH (m:Movie { id:line.movieId })
+MATCH (p:Person { id:line.personId })
+CREATE (p)-[:ACTED_IN { roles: [line.role]}]->(m);
+----
+
+=== Importing Denormalized Data
+
+If your file contains denormalized data, you can either run the same file with multiple passes and simple operations as shown above or you might have to use `MERGE` to create nodes and relationships (if need be) uniquely.
+
+For our use-case we can import the data using a CSV structure like this:
+
+`movie_actor_roles.csv`
+
+----
+title;released;actor;born;characters
+Back to the Future;1985;Michael J. Fox;1961;Marty McFly
+Back to the Future;1985;Christopher Lloyd;1938;Dr. Emmet Brown
+----
+
+----
+LOAD CSV WITH HEADERS 
+FROM "http://neo4j.com/docs/stable/csv/intro/movie_actor_roles.csv" 
+AS line FIELDTERMINATOR ";"
+MERGE (m:Movie { title:line.title })
+ON CREATE SET m.released = toInt(line.released)
+MERGE (a:Person { name:line.actor })
+ON CREATE SET a.born = toInt(line.born)
+MERGE (a)-[r:ACTED_IN]->(m)
+ON CREATE SET r.roles = split(line.characters,",")
+----
+
+For large denormalized files, it might still make sense to create nodes and relationships separately in multiple passes.
+That would depend on the complexity of the operations and the experienced performance.
+
+=== Importing a Large Dataset
+
+If you import a larger amount of data (more than 10000 rows), it is recommended to prefix your `LOAD CSV` clause with a `PERIODIC COMMIT` hint.
+This allows the database to regularly commit the import transactions to avoid memory churn for large transaction-states.
+
+=== Resources
+
+http://neo4j.com/docs/stable/query-operators.html[Boolean and Mathematical Operators]
+
+http://neo4j.com/docs/stable/query-create.html[Create]
+
+http://neo4j.com/docs/stable/query-load-csv.html[Load CSV]
+
+http://neo4j.com/docs/stable/cypherdoc-importing-csv-files-with-cypher.html[Importing CSV Files with Cypher]
+
+http://neo4j.com/docs/stable/query-match.html[Match]
+
+http://neo4j.com/docs/stable/query-merge.html[Merge]
+
+http://neo4j.com/docs/stable/query-return.html[Return]
+
+http://neo4j.com/docs/stable/query-set.html[Set]
+
+http://neo4j.com/docs/stable/query-periodic-commit.html[Using Periodic Commit]
+
+http://neo4j.com/docs/stable/query-where.html[Where]
+

@@ -1,0 +1,265 @@
+// = BFS: An Outbreak
+
+:neo4j-version: 3.5
+ 
+== Setup
+
+BFS, a genetically engineered, highly-infective disease has arrived to the asteroid mining station THX 1138. The station computer is watching as the infection passes from crew member to crew member, and waits for the decimation the crew. Immediately before the outbreak, a team of transportation engineers, each from different space stations, arrived to the THX 1138 to survey the mining operation, and it is presumed the disease was carried by one of these transportation engineers. 
+
+Highly infectious, BFS has completely wiped out entire trees, stopping only when there are no more members to infect or it has found and killed its target in an infected network. Unlike its cousin, DFS, which is used more often in targeted strikes against individuals in communities (assuming proper planning, intelligence, and a general knowledge of which branch to target the disease), depending on the situation, BFS usually used at highly effective at spreading disease across many members of different branches of a community. Naturally, both BFS and DFS can be effective at spreading disease, but which is more effective depends on many factors includiing how ideally-connected the index case is and the general anatomy of the network.
+
+After initial infection with BFS, a community member infects everyone he/she knows. After a pre-programmed time unit has passed, these first-degree connections infect everyone they know, and so on until the target of the disease is found or everyone reachable is infected. This breadth-first method ensures the disease is spread into as many corners of a social network as possible, heightening confusion, spreading out resources, and encouraging general chaos. 
+
+
+//hide
+//setup
+[source,cypher]
+----
+//create the crew nodes
+CREATE (`1`:crew {crew_id:1, name:'Abeer Fathy'}), (`2`:crew {crew_id:2, name:'An Yu-bao'}), (`3`:crew {crew_id:3, name:'Anastasiya Vasilyev'}), (`4`:crew {crew_id:4, name:'Anna Zaytesev'}), (`5`:crew {crew_id:5, name:'Asley Leger'}), (`6`:crew {crew_id:6, name:'Aziza Hsuang-tsung'}), (`7`:crew {crew_id:7, name:'Bai Vasilyev'}), (`8`:crew {crew_id:8, name:'Barbra Schon'}), (`9`:crew {crew_id:9, name:'Bart Kosana'}), (`10`:crew {crew_id:10, name:'Bill Hinzman'}), (`11`:crew {crew_id:11, name:'Bill Cardille'}), (`12`:crew {crew_id:12, name:'Bobba Fett'}), (`13`:crew {crew_id:13, name:'Cai Shen'}), (`14`:crew {crew_id:14, name:'Cammy Schott'}), (`15`:crew {crew_id:15, name:'Cammy Vinogradov'}), (`16`:crew {crew_id:16, name:'Cammy Sokolov'}), (`17`:crew {crew_id:17, name:'Chan Morozov'}), (`18`:crew {crew_id:18, name:'Chan Bang'}), (`19`:crew {crew_id:19, name:'Charles Craig'}), (`20`:crew {crew_id:20, name:'Chew Kwan-yew'}), (`21`:crew {crew_id:21, name:'Chiang Popov'}), (`22`:crew {crew_id:22, name:'Chiu Xiao-yong'}), (`23`:crew {crew_id:23, name:'Dai Lu-fang'}), (`24`:crew {crew_id:24, name:'Dariya Solovynov'}), (`25`:crew {crew_id:25, name:'Dariya Semyonov'}), (`26`:crew {crew_id:26, name:'Dariya Vorobyrov'}), (`27`:crew {crew_id:27, name:'David Cardille'}), (`28`:crew {crew_id:28, name:'Deeanna Lacroix'}), (`29`:crew {crew_id:29, name:'Deng Szeto'}), (`30`:crew {crew_id:30, name:'Dina Schott'}), (`31`:crew {crew_id:31, name:'Dina Sokolov'}), (`32`:crew {crew_id:32, name:'Dina Vinogradov'}), (`33`:crew {crew_id:33, name:'Duane Jones'}), (`34`:crew {crew_id:34, name:'Duane Kuznetsov'}), (`35`:crew {crew_id:35, name:'Efra Man'}), (`36`:crew {crew_id:36, name:'Efra Chih-tui'}), (`37`:crew {crew_id:37, name:'Elena Morozov'}), (`38`:crew {crew_id:38, name:'Elwood Mead'}), (`39`:crew {crew_id:39, name:'Esmeralda Duggan'}), (`40`:crew {crew_id:40, name:'Fathia Xiao-yong'}), (`41`:crew {crew_id:41, name:'Fernanda Bassett'}), (`42`:crew {crew_id:42, name:'Fernanda Bang'}), (`43`:crew {crew_id:43, name:'Fong Chih'}), (`44`:crew {crew_id:44, name:'Francie Koonce'}), (`45`:crew {crew_id:45, name:'Francisco Read'}), (`46`:crew {crew_id:46, name:'Gearldine Mead'}), (`47`:crew {crew_id:47, name:'George Kosana'}), (`48`:crew {crew_id:48, name:'Halima Yu-bao'}), (`49`:crew {crew_id:49, name:'Hind Iamam'}), (`50`:crew {crew_id:50, name:'Hind Chih'}), (`51`:crew {crew_id:51, name:'Hind Kang'}), (`52`:crew {crew_id:52, name:'Hsi Kozlov'}), (`53`:crew {crew_id:53, name:'Hsi Shen'}), (`54`:crew {crew_id:54, name:'Hsi Jin-guo'}), (`55`:crew {crew_id:55, name:'Hsieh Xing-li'}), (`56`:crew {crew_id:56, name:'Hsieh Xun'}), (`57`:crew {crew_id:57, name:'Hua Hen-to'}), (`58`:crew {crew_id:58, name:'Huda Kuznetsov'}), (`59`:crew {crew_id:59, name:'Huda Szeto'}), (`60`:crew {crew_id:60, name:'Huda Qian-fu'}), (`61`:crew {crew_id:61, name:'Huda Jones'}), (`62`:crew {crew_id:62, name:'Huda ODea'}), (`63`:crew {crew_id:63, name:'Huda Ridley'}), (`64`:crew {crew_id:64, name:'Hui Kang'}), (`65`:crew {crew_id:65, name:'Inna Pavlov'}), (`66`:crew {crew_id:66, name:'Inna Vinogradov'}), (`67`:crew {crew_id:67, name:'Inna Smirnov'}), (`68`:crew {crew_id:68, name:'Inna Morozov'}), (`69`:crew {crew_id:69, name:'Jackqueline WayneÊ'}), (`70`:crew {crew_id:70, name:'Jiao Tso-lin'}), (`71`:crew {crew_id:71, name:'Judith ODea'}), (`72`:crew {crew_id:72, name:'Judith Ridley'}), (`73`:crew {crew_id:73, name:'Karl Hardman'}), (`74`:crew {crew_id:74, name:'Karon Hardman'}), (`75`:crew {crew_id:75, name:'Keith WayneÊ'}), (`76`:crew {crew_id:76, name:'Keva Duggan'}), (`77`:crew {crew_id:77, name:'King Man'}), (`78`:crew {crew_id:78, name:'Kylie Eastman'}), (`79`:crew {crew_id:79, name:'Kyra Schon'}), (`80`:crew {crew_id:80, name:'Kyra Smirnov'}), (`81`:crew {crew_id:81, name:'Kyra Vinogradov'}), (`82`:crew {crew_id:82, name:'Lai Wu-ji'}), (`83`:crew {crew_id:83, name:'Lasandra Dew'}), (`84`:crew {crew_id:84, name:'Leong Kwan-yew'}), (`85`:crew {crew_id:85, name:'Lesia Ridley'}), (`86`:crew {crew_id:86, name:'Lotus Xiao-yong'}), (`87`:crew {crew_id:87, name:'Lu Ah-cy'}), (`88`:crew {crew_id:88, name:'Ludmilla Golyubev'}), (`89`:crew {crew_id:89, name:'Luo Chih-tui'}), (`90`:crew {crew_id:90, name:'Maha Ah-cy'}), (`91`:crew {crew_id:91, name:'Mahasin Sindhom'}), (`92`:crew {crew_id:92, name:'Mahasin Xing-li'}), (`93`:crew {crew_id:93, name:'Maria Zaytesev'}), (`94`:crew {crew_id:94, name:'Marilyn Eastman'}), (`95`:crew {crew_id:95, name:'Marina Golyubev'}), (`96`:crew {crew_id:96, name:'Marita Bittner'}), (`97`:crew {crew_id:97, name:'Michael Solovynov'}), (`98`:crew {crew_id:98, name:'Michael Vorobyrov'}), (`99`:crew {crew_id:99, name:'Michael Scott'}), (`100`:crew {crew_id:100, name:'Nabeela Iamam'})
+
+
+//create the dormitory and department nodes
+
+CREATE (`dorm1`:dormitory {dorm_id:1, name:'Salyut'}), (`dorm2`:dormitory {dorm_id:2, name:'Tiangong'}), (`dorm3`:dormitory {dorm_id:3, name:'Mir'}), (`dorm4`:dormitory {dorm_id:4, name:'Kosmos'}), (`dorm5`:dormitory {dorm_id:5, name:'Zvezda'}), (`dorm6`:dormitory {dorm_id:6, name:'Skylab'}), (`dorm7`:dormitory {dorm_id:7, name:'Genesis'}),
+(`dept1`:department {dept_id:1, name:'Medical '}),(`dept2`:department {dept_id:2, name:'Mining'}), (`dept3`:department {dept_id:3, name:'Engineering'}),(`dept4`:department {dept_id:4, name:'Transportation'}), (`dept5`:department {dept_id:5, name:'Management'})
+
+
+//create the crew-crew relationships
+CREATE (`2`)-[:KNOWS]->(`48`), (`2`)-[:KNOWS]->(`6`), (`3`)-[:KNOWS]->(`7`), (`3`)-[:KNOWS]->(`5`), (`4`)-[:KNOWS]->(`93`), (`5`)-[:KNOWS]->(`3`), (`6`)-[:KNOWS]->(`2`), (`7`)-[:KNOWS]->(`3`), (`8`)-[:KNOWS]->(`79`), (`8`)-[:KNOWS]->(`4`), (`9`)-[:KNOWS]->(`47`), (`9`)-[:KNOWS]->(`3`), (`9`)-[:KNOWS]->(`5`), (`10`)-[:KNOWS]->(`2`), (`10`)-[:KNOWS]->(`4`), (`10`)-[:KNOWS]->(`6`), (`11`)-[:KNOWS]->(`27`), (`11`)-[:KNOWS]->(`1`), (`11`)-[:KNOWS]->(`3`), (`11`)-[:KNOWS]->(`5`), (`12`)-[:KNOWS]->(`4`), (`12`)-[:KNOWS]->(`6`), (`13`)-[:KNOWS]->(`53`), (`13`)-[:KNOWS]->(`1`), (`14`)-[:KNOWS]->(`30`), (`14`)-[:KNOWS]->(`4`), (`15`)-[:KNOWS]->(`32`), (`15`)-[:KNOWS]->(`66`), (`15`)-[:KNOWS]->(`81`), (`15`)-[:KNOWS]->(`3`), (`15`)-[:KNOWS]->(`5`), (`16`)-[:KNOWS]->(`31`), (`16`)-[:KNOWS]->(`4`), (`17`)-[:KNOWS]->(`37`), (`17`)-[:KNOWS]->(`68`), (`18`)-[:KNOWS]->(`42`), (`18`)-[:KNOWS]->(`2`), (`19`)-[:KNOWS]->(`3`), (`19`)-[:KNOWS]->(`5`), (`20`)-[:KNOWS]->(`84`), (`20`)-[:KNOWS]->(`2`), (`21`)-[:KNOWS]->(`1`), (`21`)-[:KNOWS]->(`3`), (`21`)-[:KNOWS]->(`5`), (`22`)-[:KNOWS]->(`40`), (`22`)-[:KNOWS]->(`86`), (`22`)-[:KNOWS]->(`2`), (`24`)-[:KNOWS]->(`97`), (`24`)-[:KNOWS]->(`4`), (`25`)-[:KNOWS]->(`3`), (`25`)-[:KNOWS]->(`5`), (`26`)-[:KNOWS]->(`98`), (`26`)-[:KNOWS]->(`2`), (`26`)-[:KNOWS]->(`4`), (`26`)-[:KNOWS]->(`6`), (`27`)-[:KNOWS]->(`11`), (`27`)-[:KNOWS]->(`1`), (`27`)-[:KNOWS]->(`3`), (`27`)-[:KNOWS]->(`5`), (`28`)-[:KNOWS]->(`4`), (`29`)-[:KNOWS]->(`59`), (`29`)-[:KNOWS]->(`1`), (`30`)-[:KNOWS]->(`14`), (`30`)-[:KNOWS]->(`4`), (`31`)-[:KNOWS]->(`16`), (`31`)-[:KNOWS]->(`3`), (`31`)-[:KNOWS]->(`5`), (`32`)-[:KNOWS]->(`15`), (`32`)-[:KNOWS]->(`66`), (`32`)-[:KNOWS]->(`81`), (`32`)-[:KNOWS]->(`4`), (`33`)-[:KNOWS]->(`61`), (`33`)-[:KNOWS]->(`3`), (`33`)-[:KNOWS]->(`5`), (`34`)-[:KNOWS]->(`58`), (`34`)-[:KNOWS]->(`4`), (`35`)-[:KNOWS]->(`77`), (`35`)-[:KNOWS]->(`1`), (`35`)-[:KNOWS]->(`3`), (`35`)-[:KNOWS]->(`5`), (`36`)-[:KNOWS]->(`89`), (`37`)-[:KNOWS]->(`17`), (`37`)-[:KNOWS]->(`68`), (`37`)-[:KNOWS]->(`3`), (`37`)-[:KNOWS]->(`5`), (`38`)-[:KNOWS]->(`46`), (`38`)-[:KNOWS]->(`4`), (`39`)-[:KNOWS]->(`76`), (`39`)-[:KNOWS]->(`3`), (`39`)-[:KNOWS]->(`5`), (`40`)-[:KNOWS]->(`22`), (`40`)-[:KNOWS]->(`86`), (`41`)-[:KNOWS]->(`3`), (`41`)-[:KNOWS]->(`5`), (`42`)-[:KNOWS]->(`18`), (`42`)-[:KNOWS]->(`6`), (`43`)-[:KNOWS]->(`50`), (`44`)-[:KNOWS]->(`4`), (`45`)-[:KNOWS]->(`3`), (`45`)-[:KNOWS]->(`5`), (`46`)-[:KNOWS]->(`38`), (`46`)-[:KNOWS]->(`4`), (`47`)-[:KNOWS]->(`9`), (`47`)-[:KNOWS]->(`3`), (`47`)-[:KNOWS]->(`5`), (`48`)-[:KNOWS]->(`2`), (`49`)-[:KNOWS]->(`100`), (`49`)-[:KNOWS]->(`1`), (`50`)-[:KNOWS]->(`43`), (`50`)-[:KNOWS]->(`2`), (`51`)-[:KNOWS]->(`64`), (`52`)-[:KNOWS]->(`4`), (`53`)-[:KNOWS]->(`13`), (`53`)-[:KNOWS]->(`3`), (`53`)-[:KNOWS]->(`5`), (`54`)-[:KNOWS]->(`2`), (`55`)-[:KNOWS]->(`92`), (`55`)-[:KNOWS]->(`1`), (`56`)-[:KNOWS]->(`2`), (`56`)-[:KNOWS]->(`6`), (`58`)-[:KNOWS]->(`34`), (`58`)-[:KNOWS]->(`4`), (`59`)-[:KNOWS]->(`29`), (`60`)-[:KNOWS]->(`6`), (`61`)-[:KNOWS]->(`33`), (`62`)-[:KNOWS]->(`71`), (`62`)-[:KNOWS]->(`6`), (`63`)-[:KNOWS]->(`72`), (`63`)-[:KNOWS]->(`85`), (`64`)-[:KNOWS]->(`51`), (`64`)-[:KNOWS]->(`2`), (`65`)-[:KNOWS]->(`3`), (`65`)-[:KNOWS]->(`5`), (`66`)-[:KNOWS]->(`15`), (`66`)-[:KNOWS]->(`32`), (`66`)-[:KNOWS]->(`81`), (`66`)-[:KNOWS]->(`4`), (`67`)-[:KNOWS]->(`80`), (`67`)-[:KNOWS]->(`3`), (`67`)-[:KNOWS]->(`5`), (`68`)-[:KNOWS]->(`17`), (`68`)-[:KNOWS]->(`37`), (`68`)-[:KNOWS]->(`4`), (`69`)-[:KNOWS]->(`75`), (`69`)-[:KNOWS]->(`1`), (`69`)-[:KNOWS]->(`3`), (`69`)-[:KNOWS]->(`5`), (`70`)-[:KNOWS]->(`2`), (`70`)-[:KNOWS]->(`4`), (`71`)-[:KNOWS]->(`62`), (`71`)-[:KNOWS]->(`1`), (`71`)-[:KNOWS]->(`3`), (`71`)-[:KNOWS]->(`5`), (`72`)-[:KNOWS]->(`63`), (`72`)-[:KNOWS]->(`85`), (`72`)-[:KNOWS]->(`4`), (`73`)-[:KNOWS]->(`74`), (`73`)-[:KNOWS]->(`3`), (`73`)-[:KNOWS]->(`5`), (`74`)-[:KNOWS]->(`73`), (`74`)-[:KNOWS]->(`4`), (`75`)-[:KNOWS]->(`69`), (`75`)-[:KNOWS]->(`1`), (`75`)-[:KNOWS]->(`3`), (`75`)-[:KNOWS]->(`5`), (`76`)-[:KNOWS]->(`39`), (`76`)-[:KNOWS]->(`4`), (`77`)-[:KNOWS]->(`35`), (`77`)-[:KNOWS]->(`3`), (`77`)-[:KNOWS]->(`5`), (`78`)-[:KNOWS]->(`94`), (`78`)-[:KNOWS]->(`4`), (`79`)-[:KNOWS]->(`8`), (`79`)-[:KNOWS]->(`1`), (`79`)-[:KNOWS]->(`3`), (`79`)-[:KNOWS]->(`5`), (`80`)-[:KNOWS]->(`67`), (`80`)-[:KNOWS]->(`2`), (`80`)-[:KNOWS]->(`4`), (`80`)-[:KNOWS]->(`6`), (`81`)-[:KNOWS]->(`15`), (`81`)-[:KNOWS]->(`32`), (`81`)-[:KNOWS]->(`66`), (`81`)-[:KNOWS]->(`1`), (`81`)-[:KNOWS]->(`3`), (`81`)-[:KNOWS]->(`5`), (`82`)-[:KNOWS]->(`2`), (`83`)-[:KNOWS]->(`3`), (`83`)-[:KNOWS]->(`5`), (`84`)-[:KNOWS]->(`20`), (`85`)-[:KNOWS]->(`63`), (`85`)-[:KNOWS]->(`72`), (`85`)-[:KNOWS]->(`3`), (`85`)-[:KNOWS]->(`5`), (`86`)-[:KNOWS]->(`22`), (`86`)-[:KNOWS]->(`40`), (`86`)-[:KNOWS]->(`2`), (`86`)-[:KNOWS]->(`4`), (`87`)-[:KNOWS]->(`90`), (`87`)-[:KNOWS]->(`1`), (`87`)-[:KNOWS]->(`3`), (`87`)-[:KNOWS]->(`5`), (`88`)-[:KNOWS]->(`95`), (`88`)-[:KNOWS]->(`4`), (`89`)-[:KNOWS]->(`36`), (`89`)-[:KNOWS]->(`1`), (`89`)-[:KNOWS]->(`3`), (`89`)-[:KNOWS]->(`5`), (`90`)-[:KNOWS]->(`87`), (`92`)-[:KNOWS]->(`55`), (`92`)-[:KNOWS]->(`4`), (`92`)-[:KNOWS]->(`6`), (`93`)-[:KNOWS]->(`4`), (`93`)-[:KNOWS]->(`3`), (`93`)-[:KNOWS]->(`5`), (`94`)-[:KNOWS]->(`78`), (`94`)-[:KNOWS]->(`4`), (`95`)-[:KNOWS]->(`88`), (`95`)-[:KNOWS]->(`3`), (`95`)-[:KNOWS]->(`5`), (`96`)-[:KNOWS]->(`4`), (`97`)-[:KNOWS]->(`24`), (`97`)-[:KNOWS]->(`3`), (`97`)-[:KNOWS]->(`5`), (`98`)-[:KNOWS]->(`26`), (`98`)-[:KNOWS]->(`4`), (`100`)-[:KNOWS]->(`49`)
+
+
+//create the crew-dormitory relationships
+
+CREATE (`3`)-[:LIVES_IN]->(`dorm1`), (`4`)-[:LIVES_IN]->(`dorm1`), (`5`)-[:LIVES_IN]->(`dorm1`), (`9`)-[:LIVES_IN]->(`dorm1`), (`12`)-[:LIVES_IN]->(`dorm1`), (`15`)-[:LIVES_IN]->(`dorm1`), (`30`)-[:LIVES_IN]->(`dorm1`), (`31`)-[:LIVES_IN]->(`dorm1`), (`35`)-[:LIVES_IN]->(`dorm1`), (`39`)-[:LIVES_IN]->(`dorm1`), (`47`)-[:LIVES_IN]->(`dorm1`), (`53`)-[:LIVES_IN]->(`dorm1`), (`70`)-[:LIVES_IN]->(`dorm1`), (`76`)-[:LIVES_IN]->(`dorm1`), (`77`)-[:LIVES_IN]->(`dorm1`), (`86`)-[:LIVES_IN]->(`dorm1`), (`87`)-[:LIVES_IN]->(`dorm1`), (`89`)-[:LIVES_IN]->(`dorm1`), (`92`)-[:LIVES_IN]->(`dorm1`), (`93`)-[:LIVES_IN]->(`dorm1`), (`97`)-[:LIVES_IN]->(`dorm1`), (`2`)-[:LIVES_IN]->(`dorm2`), (`6`)-[:LIVES_IN]->(`dorm2`), (`10`)-[:LIVES_IN]->(`dorm2`), (`13`)-[:LIVES_IN]->(`dorm2`), (`26`)-[:LIVES_IN]->(`dorm2`), (`56`)-[:LIVES_IN]->(`dorm2`), (`63`)-[:LIVES_IN]->(`dorm2`), (`80`)-[:LIVES_IN]->(`dorm2`), (`83`)-[:LIVES_IN]->(`dorm2`), (`36`)-[:LIVES_IN]->(`dorm3`), (`40`)-[:LIVES_IN]->(`dorm3`), (`48`)-[:LIVES_IN]->(`dorm3`), (`51`)-[:LIVES_IN]->(`dorm3`), (`90`)-[:LIVES_IN]->(`dorm3`), (`91`)-[:LIVES_IN]->(`dorm3`), (`100`)-[:LIVES_IN]->(`dorm3`), (`25`)-[:LIVES_IN]->(`dorm4`), (`28`)-[:LIVES_IN]->(`dorm4`), (`29`)-[:LIVES_IN]->(`dorm4`), (`32`)-[:LIVES_IN]->(`dorm4`), (`33`)-[:LIVES_IN]->(`dorm4`), (`34`)-[:LIVES_IN]->(`dorm4`), (`58`)-[:LIVES_IN]->(`dorm4`), (`61`)-[:LIVES_IN]->(`dorm4`), (`78`)-[:LIVES_IN]->(`dorm4`), (`82`)-[:LIVES_IN]->(`dorm4`), (`88`)-[:LIVES_IN]->(`dorm4`), (`94`)-[:LIVES_IN]->(`dorm4`), (`95`)-[:LIVES_IN]->(`dorm4`), (`96`)-[:LIVES_IN]->(`dorm4`), (`99`)-[:LIVES_IN]->(`dorm4`), (`1`)-[:LIVES_IN]->(`dorm5`), (`8`)-[:LIVES_IN]->(`dorm5`), (`11`)-[:LIVES_IN]->(`dorm5`), (`16`)-[:LIVES_IN]->(`dorm5`), (`18`)-[:LIVES_IN]->(`dorm5`), (`20`)-[:LIVES_IN]->(`dorm5`), (`21`)-[:LIVES_IN]->(`dorm5`), (`27`)-[:LIVES_IN]->(`dorm5`), (`38`)-[:LIVES_IN]->(`dorm5`), (`42`)-[:LIVES_IN]->(`dorm5`), (`46`)-[:LIVES_IN]->(`dorm5`), (`52`)-[:LIVES_IN]->(`dorm5`), (`54`)-[:LIVES_IN]->(`dorm5`), (`60`)-[:LIVES_IN]->(`dorm5`), (`62`)-[:LIVES_IN]->(`dorm5`), (`69`)-[:LIVES_IN]->(`dorm5`), (`71`)-[:LIVES_IN]->(`dorm5`), (`75`)-[:LIVES_IN]->(`dorm5`), (`79`)-[:LIVES_IN]->(`dorm5`), (`81`)-[:LIVES_IN]->(`dorm5`), (`84`)-[:LIVES_IN]->(`dorm5`), (`7`)-[:LIVES_IN]->(`dorm6`), (`14`)-[:LIVES_IN]->(`dorm6`), (`17`)-[:LIVES_IN]->(`dorm6`), (`19`)-[:LIVES_IN]->(`dorm6`), (`22`)-[:LIVES_IN]->(`dorm6`), (`23`)-[:LIVES_IN]->(`dorm6`), (`24`)-[:LIVES_IN]->(`dorm6`), (`37`)-[:LIVES_IN]->(`dorm6`), (`41`)-[:LIVES_IN]->(`dorm6`), (`43`)-[:LIVES_IN]->(`dorm6`), (`44`)-[:LIVES_IN]->(`dorm6`), (`45`)-[:LIVES_IN]->(`dorm6`), (`49`)-[:LIVES_IN]->(`dorm6`), (`50`)-[:LIVES_IN]->(`dorm6`), (`55`)-[:LIVES_IN]->(`dorm6`), (`57`)-[:LIVES_IN]->(`dorm6`), (`59`)-[:LIVES_IN]->(`dorm6`), (`64`)-[:LIVES_IN]->(`dorm6`), (`65`)-[:LIVES_IN]->(`dorm6`), (`66`)-[:LIVES_IN]->(`dorm6`), (`67`)-[:LIVES_IN]->(`dorm6`), (`68`)-[:LIVES_IN]->(`dorm6`), (`72`)-[:LIVES_IN]->(`dorm6`), (`73`)-[:LIVES_IN]->(`dorm6`), (`74`)-[:LIVES_IN]->(`dorm6`), (`85`)-[:LIVES_IN]->(`dorm6`), (`98`)-[:LIVES_IN]->(`dorm6`)
+
+
+//create the crew-department relationships
+
+CREATE (`7`)-[:WORKS_IN]->(`dept1`), (`17`)-[:WORKS_IN]->(`dept1`), (`23`)-[:WORKS_IN]->(`dept1`), (`43`)-[:WORKS_IN]->(`dept1`), (`53`)-[:WORKS_IN]->(`dept1`), (`57`)-[:WORKS_IN]->(`dept1`), (`77`)-[:WORKS_IN]->(`dept1`), (`84`)-[:WORKS_IN]->(`dept1`), (`3`)-[:WORKS_IN]->(`dept2`), (`4`)-[:WORKS_IN]->(`dept2`), (`5`)-[:WORKS_IN]->(`dept2`), (`8`)-[:WORKS_IN]->(`dept2`), (`9`)-[:WORKS_IN]->(`dept2`), (`10`)-[:WORKS_IN]->(`dept2`), (`11`)-[:WORKS_IN]->(`dept2`), (`14`)-[:WORKS_IN]->(`dept2`), (`15`)-[:WORKS_IN]->(`dept2`), (`16`)-[:WORKS_IN]->(`dept2`), (`19`)-[:WORKS_IN]->(`dept2`), (`21`)-[:WORKS_IN]->(`dept2`), (`24`)-[:WORKS_IN]->(`dept2`), (`25`)-[:WORKS_IN]->(`dept2`), (`26`)-[:WORKS_IN]->(`dept2`), (`27`)-[:WORKS_IN]->(`dept2`), (`28`)-[:WORKS_IN]->(`dept2`), (`30`)-[:WORKS_IN]->(`dept2`), (`31`)-[:WORKS_IN]->(`dept2`), (`32`)-[:WORKS_IN]->(`dept2`), (`33`)-[:WORKS_IN]->(`dept2`), (`34`)-[:WORKS_IN]->(`dept2`), (`37`)-[:WORKS_IN]->(`dept2`), (`38`)-[:WORKS_IN]->(`dept2`), (`39`)-[:WORKS_IN]->(`dept2`), (`41`)-[:WORKS_IN]->(`dept2`), (`44`)-[:WORKS_IN]->(`dept2`), (`45`)-[:WORKS_IN]->(`dept2`), (`46`)-[:WORKS_IN]->(`dept2`), (`47`)-[:WORKS_IN]->(`dept2`), (`52`)-[:WORKS_IN]->(`dept2`), (`58`)-[:WORKS_IN]->(`dept2`), (`65`)-[:WORKS_IN]->(`dept2`), (`66`)-[:WORKS_IN]->(`dept2`), (`67`)-[:WORKS_IN]->(`dept2`), (`68`)-[:WORKS_IN]->(`dept2`), (`69`)-[:WORKS_IN]->(`dept2`), (`71`)-[:WORKS_IN]->(`dept2`), (`72`)-[:WORKS_IN]->(`dept2`), (`73`)-[:WORKS_IN]->(`dept2`), (`74`)-[:WORKS_IN]->(`dept2`), (`75`)-[:WORKS_IN]->(`dept2`), (`76`)-[:WORKS_IN]->(`dept2`), (`78`)-[:WORKS_IN]->(`dept2`), (`79`)-[:WORKS_IN]->(`dept2`), (`80`)-[:WORKS_IN]->(`dept2`), (`81`)-[:WORKS_IN]->(`dept2`), (`83`)-[:WORKS_IN]->(`dept2`), (`85`)-[:WORKS_IN]->(`dept2`), (`88`)-[:WORKS_IN]->(`dept2`), (`93`)-[:WORKS_IN]->(`dept2`), (`94`)-[:WORKS_IN]->(`dept2`), (`95`)-[:WORKS_IN]->(`dept2`), (`96`)-[:WORKS_IN]->(`dept2`), (`97`)-[:WORKS_IN]->(`dept2`), (`98`)-[:WORKS_IN]->(`dept2`), (`1`)-[:WORKS_IN]->(`dept3`), (`2`)-[:WORKS_IN]->(`dept3`), (`13`)-[:WORKS_IN]->(`dept3`), (`18`)-[:WORKS_IN]->(`dept3`), (`20`)-[:WORKS_IN]->(`dept3`), (`22`)-[:WORKS_IN]->(`dept3`), (`29`)-[:WORKS_IN]->(`dept3`), (`35`)-[:WORKS_IN]->(`dept3`), (`49`)-[:WORKS_IN]->(`dept3`), (`50`)-[:WORKS_IN]->(`dept3`), (`54`)-[:WORKS_IN]->(`dept3`), (`55`)-[:WORKS_IN]->(`dept3`), (`56`)-[:WORKS_IN]->(`dept3`), (`64`)-[:WORKS_IN]->(`dept3`), (`70`)-[:WORKS_IN]->(`dept3`), (`82`)-[:WORKS_IN]->(`dept3`), (`86`)-[:WORKS_IN]->(`dept3`), (`87`)-[:WORKS_IN]->(`dept3`), (`89`)-[:WORKS_IN]->(`dept3`), (`36`)-[:WORKS_IN]->(`dept4`), (`40`)-[:WORKS_IN]->(`dept4`), (`48`)-[:WORKS_IN]->(`dept4`), (`51`)-[:WORKS_IN]->(`dept4`), (`90`)-[:WORKS_IN]->(`dept4`), (`91`)-[:WORKS_IN]->(`dept4`), (`100`)-[:WORKS_IN]->(`dept4`), (`6`)-[:WORKS_IN]->(`dept5`), (`12`)-[:WORKS_IN]->(`dept5`), (`42`)-[:WORKS_IN]->(`dept5`), (`59`)-[:WORKS_IN]->(`dept5`), (`60`)-[:WORKS_IN]->(`dept5`), (`61`)-[:WORKS_IN]->(`dept5`), (`62`)-[:WORKS_IN]->(`dept5`), (`63`)-[:WORKS_IN]->(`dept5`), (`92`)-[:WORKS_IN]->(`dept5`), (`99`)-[:WORKS_IN]->(`dept5`)
+----
+
+
+== First, some background about the network: 
+
+Operating in mostly non-overlapping day/night shifts (reflected in their crew_ids as odd/even), the crew of THX 1138 are members of one of 5 departments, including a visiting Transportation department:
+
+[source,cypher]
+----
+MATCH (a:department)-[]-(b:crew)
+RETURN DISTINCT a.name AS `Department`, count(b) AS `Count` ORDER BY COUNT(b)
+----
+//table
+
+The following graph describes the number of crew members from each dormitory that work in each department. 
+
+image::http://i.imgur.com/xoUkM8x.png[department/dorm map]
+
+Although it is more likely that a crew members sharing the same department or dormitory know each other, it is not always the case. Similarly, although it is much more likely that crew members don't know each other if they share neither a dormitory or department, there is a chance that they do have a relationship. 
+
+Sleeping in mostly non-overlapping shifts, the crew of THX 1138 are members of one of 5 dormitories, including the visiting Transportation department, which is residing in dormitory Mir:
+
+[source,cypher]
+----
+MATCH (b:crew)-[]-(c:dormitory)
+RETURN DISTINCT c.name AS `Dormitory`, count(b) AS `Count` ORDER BY COUNT(b)
+----
+//table
+
+
+=== The Transportation Department
+
+Lets take a closer look at the Transportation Department. They seem to be mostly unrelated (different last names) and they are all staying in the dormitory Mir. 
+//hide
+[source,cypher]
+----
+MATCH  info = (transdept:department {dept_id:4})-[:WORKS_IN]-(a:crew)-[:LIVES_IN]-(d:dormitory)
+RETURN a.name AS `Name`,a.crew_id AS `ID#`,  d.name AS `Dormitory`
+----
+//table
+
+They don’t seem to know each other:
+[source,cypher]
+----
+MATCH  (transdept:department {dept_id:4})-[:WORKS_IN]-(a:crew)-[:KNOWS]-(b:crew)-[:WORKS_IN]-(transdept)
+RETURN COUNT(b)
+----
+
+They seem to be the only inhabitants of the dormitory Mir:
+[source,cypher]
+----
+MATCH (transdept:department)-[:WORKS_IN]-(a:crew)-[:LIVES_IN]-(d:dormitory {dorm_id:3})
+RETURN a.name AS `Resident of Mir`,a.crew_id AS `ID#`,  transdept.name AS `Department`
+----
+//table
+
+They seem to be at the station to meet with the Engineering department:
+[source,cypher]
+----
+MATCH bridge = (transdept:department {dept_id:4})-[:WORKS_IN]-(a:crew)-[:KNOWS]-(b:crew), do = (b)-[:LIVES_IN]-(w1:dormitory), de = (b)-[:WORKS_IN]-(w2:department)
+WHERE NOT (b)-[:LIVES_IN]-(:dormitory {dorm_id:3})
+AND NOT (b)-[:WORKS_IN]-(:department {dept_id:4})
+RETURN DISTINCT a.name AS `Transportation`, b.name AS `Contact`, w2.name as `Department`, w1.name AS `Dormitory` ORDER BY a.name
+----
+//table
+
+
+== Infection
+
+Crew member #36 arrived, in stasis, presumably to meet with his contact in the Engineering department. Knowingly or unknowingly, he was the carrier of the BFS disease. Whoever comes into contact with him will become infected. 
+
+Lets infect #36.
+[source,cypher]
+----
+MATCH (n:crew {crew_id:36}) SET n:infected RETURN n
+----
+
+The disease starts to spread from #36's first connections to second connections.
+[source,cypher]
+----
+MATCH (n:infected)-[:KNOWS*1..2]-(m:crew) 
+WHERE NOT (m:infected)
+SET m:infected RETURN DISTINCT m.name AS `Infected`
+----
+
+Now the disease has made it's way into Engineering, Transportation, and Mining. 
+
+[source,cypher]
+----
+MATCH (n:`crew`)--(b:department), (m:infected:crew)--(b)
+RETURN  b.name AS `Department`, count(distinct m) as `Infected`, COUNT(DISTINCT n) AS `Crew`
+----
+//table
+
+A few more steps into the fourth degree relationships...
+//hide
+[source,cypher]
+----
+MATCH (n:infected)-[:KNOWS*1..2]-(m:crew) SET m:infected RETURN DISTINCT m.name AS `Infected`
+----
+
+Now most of the station is infected. The computer continues to watch as, pale and deranged, the crewmembers' bodies start to shut down.
+//hide
+[source,cypher]
+----
+MATCH (n:`crew`)--(b:department), (m:infected:crew)--(b)
+RETURN  b.name AS `Department`, count(distinct m) AS `Infected`,COUNT(distinct n) AS `Crew`
+----
+//table
+
+= A Closer Look
+
+Although infinitely useful, breadth-first search leaves little to the imagination when the "infected" network is relatively trivial tree. Social networks, with their nooks and crannies, have some interesting emergent properties. Lets take a closer look at the Engineering department and see how the infection spread from the night-shift workers to the day-shift workers. 
+
+Crew member #36, our index case, is connected to only one other crew member. This crew member happens to be on the odd numbered side of the Engineering department: 
+
+[source,cypher]
+----
+MATCH (n:crew {crew_id:36})-[:KNOWS]-(m:crew)--(d:department)
+RETURN DISTINCT m.crew_id AS `Crew ID`, m.name AS `CREW Name`, d.name AS `Department Name`
+----
+
+[source,cypher]
+----
+MATCH engineering = (d:department {dept_id:3})--(a:crew)-[:KNOWS]-(b:crew)--(d)
+RETURN DISTINCT a.crew_id%2 AS Evens, b.crew_id%2 AS Odds
+----
+
+Since the two halves of the Engineering department never interact, the disease must have found a path outside the department in order to jump sides. Let's see if we can find the path the disease took as it jumped from #36 and Engineering Odds to Engineering Evens. 
+
+[source,cypher]
+----
+MATCH eng_index = (d:department {dept_id:3})--(a:crew)-[:KNOWS]-(:crew {crew_id:36}),
+(e:crew)--(d),
+path = (a)-[r:KNOWS]-(e)
+WHERE e.crew_id%2 = 0
+RETURN DISTINCT EXTRACT(x IN nodes( path) | x.crew_id) AS `Path to Evens`
+----
+
+Alright, so there's no clean one-node path between evens and odds, but there are several paths, the shortest being 4 hops long. The query illustrating these paths just kills the graph gist so it is ommitted here. The distance between the two subgraphs explains the rather slow spread of the disease across the Engineering subgraph. 
+
+== Adding a Path & Starting Over
+
+A bridge refers to an edge (or in Neo4j, a relationship), that when deleted, increases the number of connected components. In the example below, both edge a or b could be bridges, as their deletion would result in two connected components, only one of which would include Bob. 
+
+image::http://i.imgur.com/DvwWxMI.png[example]
+
+Let's add a one-node path between the the odds and the evens of the Engineering department and take a look at the effects on the spread of the disease anew. Although the odds and evens are not strictly independent of each other, they are far away enough that we might consider them independent, and the connection from the even (or odd) node to Bob a bridge.  
+
+[source,cypher]
+----
+MATCH (a:crew {crew_id: 2 }),(b:crew {crew_id: 89}) 
+MERGE (a)-[:KNOWS]->(new:crew {crew_id:102, name:'Bob Ralph'})-[:KNOWS]->(b)
+RETURN new.name
+----
+
+It will now take 2 hops to get from the infected node to Bob, so the fun will start at or after 3 hops. 
+[source,cypher]
+----
+MATCH (a:crew {crew_id: 36 })-[r:KNOWS*1..2]-(b:crew {crew_id: 102}) 
+RETURN LENGTH(r)
+----
+
+Removing the infection fom everyone but crew member #36:
+
+[source,cypher]
+----
+MATCH (a:infected) 
+WHERE NOT a.crew_id = 36
+REMOVE a:infected
+----
+
+Again, the disease starts to spread from #36's first connections to second connections.
+
+[source,cypher]
+----
+MATCH (n:infected)-[:KNOWS*1..2]-(m:crew) 
+WHERE NOT (m:infected)
+SET m:infected RETURN DISTINCT m.name AS `Infected`
+----
+
+Again, the disease has made it's way into Engineering, Transportation, and Mining, but this time, the (node attatched to the) bridge is infected. Since the node, Bob, does not belong to any department, he does not appear in the chart below. 
+
+
+[source,cypher]
+----
+MATCH (n:`crew`)--(b:department), (m:infected:crew)--(b)
+RETURN  b.name AS `Department`, COUNT(DISTINCT m) AS `Infected`,COUNT(DISTINCT n) AS `Crew`
+----
+//table
+
+Lets see what happens with two more hops:
+
+[source,cypher]
+----
+MATCH (n:infected)-[:KNOWS*1..2]-(m:crew) 
+WHERE NOT (m:infected)
+SET m:infected RETURN DISTINCT m.name AS `Infected`
+----
+
+//hide
+[source,cypher]
+----
+MATCH (n:`crew`)--(b:department), (m:infected:crew)--(b)
+RETURN  b.name AS `Department`, COUNT(DISTINCT m) AS `Infected`,COUNT(DISTINCT n) AS `Crew`
+----
+//table
+[width="30%",cols="2",options="header"]
+|==========================
+|Department      |Number Infected, Pre-Bob
+
+|Management|5
+|Medical|4
+|Engineering|8
+|Transportation|3
+|Mining|41
+|==========================
+
+Although there are slightly more infected members of Management, Medical, Transportation, and Mining, the proportion of infected Engineers after 4 hops doubled after the addition of the bridge. 
+
+
+= Conclusion
+
+Classically taught to undergraduates on rather uncomplicated trees, breadth-first search is an excellent method to traverse or search a graph. However, throw in a social network, with loops, dead ends, and isolated subgraphs, and things get more interesting. 
+
+Although a toy example, there are parallels between the spread of disease in this space station and the spread of disease in other, presumably well-connected social networks. For example, in the city of Baltimore, tuberculosis and syphillis infect a large number of people walking the same streets and taking the same busses as other Baltimore residents that may be blissfully unaware of the high proportion of infectious disease in their cities, much like the even and odd members of our Engineering department. 

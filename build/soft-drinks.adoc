@@ -1,0 +1,181 @@
+= Soft drinks
+
+This graph contains the top 15 leading brands of soft drinks as of 2013 according to brand value (in million USD).
+
+It will serve as a classification system based on the qualities of the drink as well as the company manufacturing it.
+We will also have access to the brand value statistics, allowing us to make certain queries pertaining to tendencies in the market.
+
+It uses a simple domain model that will nevertheless allow for some interesting queries.
+
+image::https://dl.dropboxusercontent.com/u/47527342/drinks.jpg[DataModel]
+
+
+//hide
+
+//setup
+[source, cypher]
+----
+//Drinks
+CREATE (CocaCola:Drink {name: "Coca Cola" , brandValue :64698}),
+(DietCoke:Drink {name: "Diet Coke" , brandValue :13717}),
+(RedBull:Drink {name: "Red Bull" , brandValue :10558}),
+(Pepsi:Drink {name: "Pepsi" , brandValue :9799}),
+(Nescafe:Drink {name: "Nescafe" , brandValue :5639}),
+(Tropicana:Drink {name: "Tropicana" , brandValue :4808}),
+(Nespresso:Drink {name: "Nespresso" , brandValue :4478}),
+(Sprite:Drink {name: "Sprite" , brandValue :4127}),
+(Fanta:Drink {name: "Fanta" , brandValue :3974}),
+(Gatorade:Drink {name: "Gatorade" , brandValue :3750}),
+(MountainDew:Drink {name: "Mountain Dew" , brandValue :2495}),
+(MinuteMaid:Drink {name: "Minute Maid" , brandValue :2296}),
+(DrPepper:Drink {name: "Dr Pepper" , brandValue :2236}),
+(DietPepsi:Drink {name: "Diet Pepsi" , brandValue :2230}),
+(Nestea:Drink {name: "Nestea" , brandValue :1852})
+
+//Companies
+CREATE (TheCocaColaCompany:Company {name: "The Coca Cola Company"}),
+(RedBullGmbH:Company {name: "Red Bull GmbH"}),
+(PepsiCo:Company {name: "PepsiCo"}),
+(Nestle:Company {name: "Nestle"}),
+(TropicanaProducts:Company {name: "Tropicana Products"}),
+(DrPepperSnappleGroup:Company {name: "Dr Pepper Snapple Group"})
+
+
+//Types
+CREATE (Caffeinated:Type{type:"Caffeinated",description:"Drink which contains caffeine"}),
+(Carbonated:Type{type:"Carbonated",description:"Drinks that include carbon dioxide dissolved in water"}),
+(Flat:Type{type:"Flat",description:"Drinks that do not include carbon dioxide dissolved in water"}),
+(NonCaffeinated:Type{type:"NonCaffeinated",description:"Drink which does not contain caffeine"})
+
+CREATE(CocaCola)-[:MANUFACTUREDBY]->(TheCocaColaCompany),
+(DietCoke)-[:MANUFACTUREDBY]->(TheCocaColaCompany),
+(RedBull)-[:MANUFACTUREDBY]->(RedBullGmbH),
+(Pepsi)-[:MANUFACTUREDBY]->(PepsiCo),
+(Nescafe)-[:MANUFACTUREDBY]->(Nestle),
+(Tropicana)-[:MANUFACTUREDBY]->(TropicanaProducts),
+(Nespresso)-[:MANUFACTUREDBY]->(Nestle),
+(Sprite)-[:MANUFACTUREDBY]->(TheCocaColaCompany),
+(Fanta)-[:MANUFACTUREDBY]->(TheCocaColaCompany),
+(Gatorade)-[:MANUFACTUREDBY]->(PepsiCo),
+(MountainDew)-[:MANUFACTUREDBY]->(PepsiCo),
+(MinuteMaid)-[:MANUFACTUREDBY]->(TheCocaColaCompany),
+(DrPepper)-[:MANUFACTUREDBY]->(DrPepperSnappleGroup),
+(DietPepsi)-[:MANUFACTUREDBY]->(PepsiCo),
+(Nestea)-[:MANUFACTUREDBY]->(Nestle),
+(PepsiCo)-[:OWNS]->(TropicanaProducts),
+(CocaCola)-[:IS]->(Carbonated),
+(CocaCola)-[:IS]->(Caffeinated),
+(DietCoke)-[:IS]->(Carbonated),
+(DietCoke)-[:IS]->(Caffeinated),
+(RedBull)-[:IS]->(Carbonated),
+(RedBull)-[:IS]->(Caffeinated),
+(Pepsi)-[:IS]->(Carbonated),
+(Pepsi)-[:IS]->(Caffeinated),
+(Nescafe)-[:IS]->(Flat),
+(Nescafe)-[:IS]->(Caffeinated),
+(Tropicana)-[:IS]->(Flat),
+(Tropicana)-[:IS]->(NonCaffeinated),
+(Nespresso)-[:IS]->(Flat),
+(Nespresso)-[:IS]->(Caffeinated),
+(Sprite)-[:IS]->(Carbonated),
+(Sprite)-[:IS]->(NonCaffeinated),
+(Fanta)-[:IS]->(Carbonated),
+(Fanta)-[:IS]->(NonCaffeinated),
+(Gatorade)-[:IS]->(Flat),
+(Gatorade)-[:IS]->(NonCaffeinated),
+(MountainDew)-[:IS]->(Carbonated),
+(MountainDew)-[:IS]->(Caffeinated),
+(MinuteMaid)-[:IS]->(Flat),
+(MinuteMaid)-[:IS]->(NonCaffeinated),
+(DrPepper)-[:IS]->(Carbonated),
+(DrPepper)-[:IS]->(Caffeinated),
+(DietPepsi)-[:IS]->(Carbonated),
+(DietPepsi)-[:IS]->(Caffeinated),
+(Nestea)-[:IS]->(Flat),
+(Nestea)-[:IS]->(Caffeinated)
+----
+//graph
+
+== Drinks ordered by brand value
+All the drinks in the graph, ordered by their brand value in 2013
+[source,cypher]
+----
+MATCH (drink:Drink)
+RETURN drink.name AS Name, drink.brandValue as BrandValue
+ORDER BY drink.brandValue DESC
+----
+//table
+
+== Drinks sorted by manufacturer
+Here we can see all the drinks sorted by manufacturer
+[source,cypher]
+----
+MATCH (manuf:Company)-[:MANUFACTUREDBY]-(x)
+RETURN manuf.name AS Manufacturer, collect((x.name)) as Drinks
+----
+//table
+
+== Top flat drink
+The flat drink with the hightest brand value.
+[source,cypher]
+----
+MATCH (drink:Drink)-[:IS]-(x)
+WHERE x.type="Flat"
+RETURN drink.name AS Name
+ORDER BY drink.brandValue DESC
+LIMIT 1
+----
+//table
+
+== Carbonated drinks without caffeine
+[source,cypher]
+---- 
+MATCH (y{type:"Carbonated"})-[:IS]-(drink:Drink)-[:IS]-(x{type:"NonCaffeinated"})
+RETURN drink.name AS Name
+----
+//table
+
+== Value per company
+Sum of all the brand values for each manufacturing company.
+
+This query will give us an estimation of which companies are selling the most on the soft drink market right now.
+
+[source,cypher]
+----
+MATCH (manuf:Company)-[:MANUFACTUREDBY]-(x)
+RETURN manuf.name AS Manufacturer, sum((x.brandValue)) as MillionsDollars
+ORDER BY MillionsDollars DESC
+----
+//table
+
+== Caffeinated drinks not manufactured by Coca cola or Pepsico
+[source,cypher]
+----
+MATCH (c)-[:MANUFACTUREDBY]-(drink:Drink)-[:IS]-(x)
+WHERE x.type="Caffeinated" and c.name<>"The Coca Cola Company" 
+and c.name<>"PepsiCo"
+RETURN drink.name AS Name
+ORDER BY drink.brandValue DESC
+----
+//table
+
+== Value by type
+Here is the sum of the brand value for each type of drink (caffeinated, flat...) .
+This will allow us to guess which type of soft drink is more or less popular.
+[source,cypher]
+----
+MATCH (drink:Drink)-[:IS]-(x)
+RETURN x.type AS Type, sum (drink.brandValue) as MillionsDollars
+ORDER BY MillionsDollars DESC
+
+----
+//table
+=== Conclusion
+This simple graph has allowed us to not only discover the most popular drinks, and to classify them,
+but also to make guesses and estimations on the sales or companies or what type of drink people buy the most.
+
+This goes to show how we can very easily think of ways to extract interesting information from data when it is
+in an intuitively understandable format like a graph.
+
+=== Console
+Finally, if you can think of  any more interesting queries please try them out on the console.

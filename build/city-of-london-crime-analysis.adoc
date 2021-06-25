@@ -1,0 +1,122 @@
+= City of London - Crime Analysis
+:neo4j-version: 2.3.0
+:author: xun
+:twitter: @xun91
+
+
+I've been working on link:https://data.police.uk/data/[Police UK Open Data] dataset for quite some time. But it requires server side scripting to do the scraping and importing the data into database for further process. It was a pain. Fortunately Neo4j has now come with a data import functionality. Therefore I'm now taking this challenge to re-do a small part of my existing application using Neo4j. :)
+
+image::http://i.imgur.com/K9TW81d.png[]
+
+Here's what it does:
+
+* stores the crime case as :Case node 
+* stores when the crime happened in :Month and :Year
+* stores where the crime happened in :Place 
+* stores crime's type by :Category
+
+
+== Police UK open data ==
+
+To develop a demo using small dataset. We gonna directly import data from link:https://policeuk-data.s3.amazonaws.com/download/68b494549fcf5605a0bd87068f8316cbd372b14e.zip[this dataset].  
+
+Update: Was facing little issue while directly importing from police UK due to the stray quotes ' in the csv file. 
+So I created a clean csv where it strips all stray quotes.
+
+It consists of over 400 crime cases recorded in September 2015 in the City of London. 
+Setup index on nodes
+
+//setup
+[source,cypher]
+----
+create index on :Year(value);
+create index on :Month(value);
+create index on :Place(name);
+create index on :Category(name);
+
+load csv with headers from 
+"https://www.dropbox.com/s/0uffu7j65dn2uz1/2015-09-city-of-london-street.csv?dl=1" as csv
+with csv as crimecsv
+where crimecsv.`Location` is not null
+merge (p:Place {name: crimecsv.`Location`})
+with crimecsv, split(crimecsv.`Month`, "-") AS yearMonth
+where yearMonth[0] is not null
+merge (y:Year {value: toInt(yearMonth[0])})
+with crimecsv, split(crimecsv.`Month`, "-") AS yearMonth
+where yearMonth[1] is not null
+merge (m:Month {value: toInt(yearMonth[1])})
+with crimecsv
+where crimecsv.`Crime type` is not null
+merge (ctg:Category {name: crimecsv.`Crime type`})
+with crimecsv
+where crimecsv.`Latitude` is not null
+merge (c:Case {ref: case when crimecsv.`Crime ID` is null then '' else crimecsv.`Crime ID` end ,lat: toFloat(crimecsv.`Latitude`), lon: toFloat(crimecsv.`Longitude`), outcome: case when crimecsv.`Last outcome category` is null then 'n/a' else crimecsv.`Last outcome category` end })
+
+with crimecsv, split(crimecsv.`Month`, "-") AS yearMonth
+match (xc:Case {ref: case when crimecsv.`Crime ID` is null then '' else crimecsv.`Crime ID` end ,lat: toFloat(crimecsv.`Latitude`), lon: toFloat(crimecsv.`Longitude`), outcome: case when crimecsv.`Last outcome category` is null then 'n/a' else crimecsv.`Last outcome category` end }),
+(xy:Year {value: toInt(yearMonth[0])}),
+(xm:Month {value: toInt(yearMonth[1])}),
+(xp:Place {name: crimecsv.`Location`}),
+(xctg:Category {name: crimecsv.`Crime type`})
+
+create (xm)-[:YEAR_OF]->(xy),
+(xc)-[:HAPPEN_IN]->(xm),
+(xc)-[:TYPE_OF]->(xctg),
+(xc)-[:AT]->(xp);
+
+----
+
+
+== High crime rates places
+
+Show me top 5 places where the most crimes happen in September 2015!
+
+[source,cypher]
+----
+MATCH (y:Year {value:2015})<-[:YEAR_OF]-(m:Month {value:9})<-[:HAPPEN_IN]-(c:Case)-[:AT]->(p:Place)
+RETURN p.name AS `Places`, count(DISTINCT c) AS Occurrences
+ORDER BY Occurrences DESC LIMIT 5
+----
+
+//table
+
+
+== Common of crimes
+
+What type of crimes happen the most in September 2015.
+
+[source,cypher]
+----
+MATCH (y:Year {value:2015})<-[:YEAR_OF]-(m:Month {value:9})<-[:HAPPEN_IN]-(c:Case)-[:TYPE_OF]->(ctg:Category)
+RETURN ctg.name AS `Crimes`, count(DISTINCT c) AS Occurrences
+ORDER BY Occurrences DESC LIMIT 5
+----
+
+//table
+
+
+== Crime cases status
+
+How many cases are under investigation, completed, etc.
+
+[source,cypher]
+----
+MATCH (y:Year {value:2015})<-[:YEAR_OF]-(m:Month {value:9})<-[:HAPPEN_IN]-(c:Case)
+RETURN c.outcome AS `Status`, count(DISTINCT c) AS Occurrences
+ORDER BY Occurrences DESC
+----
+
+//table
+
+
+
+== FUTURE WORKS ==
+
+
+This is a very simple application that only do the import and simple aggreation and count. Looking forward to use spatial query and openstreetmap api in the future. 
+
+
+It's been a long time that I didn't work on Neo4j and it now has lots of new features that were not available in the past. It's good to try it again now. By the way, this application is directly coded in ascii doc without running neo4j server in my computer. How great it is! 
+
+
+

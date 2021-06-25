@@ -1,0 +1,123 @@
+= Mystery Science Theater 3000 Actors and Characters - GraphGist for the Neo4j GraphGist challenge =
+
+This Graph is based on the MST3K TV-series that ran during the 1990s. Awesome TV-serie, my favourite actually. I created this Graph based on the characters of the show and where they live/reside/hunt, and which actors played them. As the Actors usually played several characters, and many characters were played by several actors, the graph get's a bit interesting :)
+Enjoy!
+
+image::http://rtfm.nu/imgup/1380475993.png[]
+
+//hide
+//setup
+[source,cypher]
+----
+//Locations
+CREATE (sol:Location{name:'Satellite of Love'})
+CREATE (deep13:Location{name:'Deep 13'})
+CREATE (widowmaker:Location{name:'Widowmaker'})
+
+//Actors
+CREATE (michael:Actor{name:'Michael J. Nelson'})
+CREATE (trace:Actor{name:'Trace Beaulieu'})
+CREATE (kevin:Actor{name:'Kevin Murphy'})
+CREATE (mary:Actor{name:'Mary Jo Pehl'})
+CREATE (josh:Actor{name:'Josh Weinstein'})
+CREATE (joelhodgson:Actor{name:'Joel Hodgson'})
+CREATE (bill:Actor{name:'Bill Corbett'})
+CREATE (jim:Actor{name:'Jim Mallon'})
+CREATE (patrick:Actor{name:'Patrick Brantseg'})
+CREATE (frankconniff:Actor{name:'Frank Conniff'})
+
+
+//Characters
+
+CREATE (tom:Character{name:'Tom Servo'})
+CREATE (crow:Character{name:'Crow T. Robot'})
+CREATE (mike:Character{name:'Mike Nelson'})
+CREATE (joel:Character{name:'Joel Robinson'})
+CREATE (gypsy:Character{name:'Gypsy'})
+CREATE (cambot:Character{name:'Cambot'})
+CREATE (frank:Character{name:'TV\'s Frank'})
+CREATE (forrester:Character{name:'Dr. Clayton Forrester'})
+CREATE (pearl:Character{name:'Pearl Forrester'})
+CREATE (erhardt:Character{name:'Dr. Laurence "Larry" Erhardt'})
+CREATE (bobo:Character{name:'Professor Bobo'})
+CREATE (observer:Character{name:'Observer ("Brain Guy")'})
+
+//Played by
+CREATE tom-[:PLAYED_BY]->kevin
+CREATE tom-[:PLAYED_BY]->josh
+CREATE crow-[:PLAYED_BY]->trace
+CREATE crow-[:PLAYED_BY]->bill
+CREATE mike-[:PLAYED_BY]->michael
+CREATE joel-[:PLAYED_BY]->joelhodgson
+CREATE gypsy-[:PLAYED_BY]->josh
+CREATE gypsy-[:PLAYED_BY]->jim
+CREATE gypsy-[:PLAYED_BY]->patrick
+CREATE cambot-[:PLAYED_BY]->kevin
+CREATE frank-[:PLAYED_BY]->frankconniff
+CREATE forrester-[:PLAYED_BY]->trace
+CREATE pearl-[:PLAYED_BY]->mary
+CREATE erhardt-[:PLAYED_BY]->josh
+CREATE bobo-[:PLAYED_BY]->kevin
+CREATE observer-[:PLAYED_BY]->bill
+
+//Character Locations
+CREATE sol<-[:IS_IN]-tom
+CREATE sol<-[:IS_IN]-crow
+CREATE sol<-[:IS_IN]-mike
+CREATE sol<-[:IS_IN]-joel
+CREATE sol<-[:IS_IN]-gypsy
+CREATE sol<-[:IS_IN]-cambot
+CREATE deep13<-[:IS_IN]-forrester
+CREATE deep13<-[:IS_IN]-frank
+CREATE deep13<-[:IS_IN]-erhardt
+CREATE widowmaker<-[:IS_IN]-pearl
+CREATE widowmaker<-[:IS_IN]-bobo
+CREATE widowmaker<-[:IS_IN]-observer
+----
+
+//graph
+
+=== Who lives where?
+[source,cypher]
+----
+MATCH l<-[:IS_IN]-c
+RETURN l.name AS Location, c.name AS Character
+----
+//table
+
+=== Who plays Crow and Tom Servo?
+[source,cypher]
+----
+MATCH c-[:PLAYED_BY]->a
+WHERE c.name='Tom Servo' OR c.name='Crow T. Robot'
+RETURN c.name AS Character, a.name AS Actor
+----
+//table
+
+
+==== Who lives on the SOL?
+[source,cypher]
+----
+MATCH l<-[:IS_IN]-c
+WHERE l.name='Satellite of Love' 
+RETURN l.name AS Location, c.name AS Character
+----
+//table
+
+==== Who lives in Deep 13?
+[source,cypher]
+----
+MATCH l<-[:IS_IN]-c
+WHERE l.name='Deep 13' 
+RETURN l.name AS Location, c.name AS Character
+----
+//table
+
+==== Who rides around in the Widowmaker?
+[source,cypher]
+----
+MATCH l<-[:IS_IN]-c
+WHERE l.name='Widowmaker' 
+RETURN l.name AS Location, c.name AS Character
+----
+//table

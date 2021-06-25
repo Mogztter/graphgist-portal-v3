@@ -1,0 +1,48 @@
+= Graphs in Insurance
+
+
+== The domain
+
+The setup is based on the slideshow below.
+
+++++
+<iframe src="http://fr.slideshare.net/slideshow/embed_code/12604356?startSlide=111" width="427" height="356" frameborder="0" marginwidth="0" marginheight="0" scrolling="no" style="border:1px solid #CCC;border-width:1px 1px 0;margin-bottom:5px" allowfullscreen webkitallowfullscreen mozallowfullscreen> </iframe> <div style="margin-bottom:5px"> <strong> <a href="http://fr.slideshare.net/peterneubauer/2012-04-introduction-to-graph-databases-insurances" title="Intro to Neo4j or why insurances should love graphs" target="_blank">Intro to Neo4j or why insurances should love graphs</a> </strong> from <strong><a href="http://fr.slideshare.net/peterneubauer" target="_blank">Peter Neubauer</a></strong> </div>
+++++
+
+//hide
+[source,cypher]
+----
+CREATE (home1{name:'home1'})-[:sub_product]->(buildingA{name:'Building A'})
+CREATE (buildingA)-[:attribute]->(size120{name:'120m2'})
+CREATE (buildingA)-[:covered_by]->(coverage_super{name:'Coverage Super'})
+CREATE (coverage_super)-[:sub_cover]->(coverage_fire{name:'Coverage Fire'})
+CREATE (coverage_super)-[:covers_risk]->(risk_bsmall{name:'Risk - Building Small'})
+CREATE (risk_bsmall)-[:risk_has_attribute]->(size120)
+CREATE (home1)<-[:concerns]-(questionaire1{name:'Questionaire 1'})
+CREATE (home1)<-[:owns]-(customer1{name:'John Doe'})
+CREATE (customer1)-[:fills_in]->(questionaire1)
+CREATE (questionaire1)-[:contains_question]->(size120)
+CREATE (customer1)-[:is_offered]->(quote1)
+CREATE (quote1)-[:includes]->(risk_bsmall)
+CREATE (quote1)-[:includes]->(coverage_fire)
+CREATE (quote1)<-[:made]-(agent1{name:'Agent 1'})
+CREATE (quote1)-[:based_on]->(policy1{name:'Policy 1'})
+CREATE (customer1)-[:is_offered]->(policy1)
+CREATE (policy1)<-[:made]-(agent1)
+CREATE (customer1)-[:signed]->(agreement1)
+CREATE (agreement1)<-[:owns]-(agent1)
+----
+
+== Find a Custumers asset based on an agent
+
+
+[source,cypher]
+----
+MATCH agent-[:owns]->agreement<-[:signed]-customer-[:owns]->asset
+WHERE HAS(agent.name) AND agent.name='Agent 1'
+RETURN agent.name as Agent, customer.name as Customer, asset.name as Asset
+----
+
+//table
+
+//console

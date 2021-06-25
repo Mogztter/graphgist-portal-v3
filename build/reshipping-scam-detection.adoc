@@ -1,0 +1,184 @@
+:author: Jean Villedieu
+:twitter: @jvilledieu
+:tags: domain:retail, use-case:fraud-detection
+ 
+This http://gist.neo4j.org/?6873cf244c0611533029[interactive Neo4j graph tutorial] shows how ecommerce websites can use their data to identify reshipping scams.
+ 
+'''
+
+*Table of Contents*
+ 
+* *Introduction*
+** <<_introduction_to_problem, Introduction to Problem>>
+* *Data Model*
+** <<_our_data_model_for_reshipping_detection, Our data model for reshipping detection>>
+* *Database Setup*
+** <<_sample_data_set, Sample Data Set>>
+* *Cypher Query*
+** <<_see_the_list_of_transactions, See the list of transactions>>
+** <<_see_the_transactions_where_the_billing_and_shipping_addresses_are_different, See the transactions where the billing and shipping addresses are different>>
+** <<_are_there_some_suspicious_IPs, Are there some suspicious IPs>>
+* *Conclusion*
+ 
+'''
+ 
+== Introduction to Problem
+
+If you have been frequenting the internet at any point during the past 10 years you may have come into contact with a job ad for re-shipping. Reshipping is used by fraudsters to launder the money from their stolen credit card.
+
+It works like this :
+
+* the criminals steal credit cards information ;
+* they buy goods on ecommerce websites ;
+* the goods are sent to a third party ;
+* the third party receives the goods and re-ships them to the criminal ;
+* the criminal sells the goods and receives cash ;
+
+The third party, recruited via a job ad promising a generous compensation, acts as mule.
+
+Money-laundering is the last stage in credit card fraud…and the last opportunity to act before it is too late. We are going to see how ecommerce websites can identify reshipping scams and save money.
+ 
+'''
+
+== Our data model for fraud detection
+
+A typical ecommerce website can model its orders data as this :
+
+image::https://linkurio.us/wp-content/uploads/2014/08/Data-model-for-reshipping-scam-detection-600x337.png[A graph data model to detect reshipping scams.]
+
+There is a couple of things we can do with that data to identify fraud. A first step might be to compare the billing and shipping address. A difference between a billing and a shipping address might be indicative of a reshipping scam. Furthermore we can look into the IP address. If the IP address localization does not match the billing address or the shipping address, the situation is highly suspicious.
+
+We are going to see how to perform these security checks with a graph database.
+ 
+'''
+ 
+== Sample Data Set
+
+I have prepared a small dataset with a few (fake) ecommerce orders. It includes regular transactions and fraudulent transactions.
+//hide
+//setup
+[source,cypher]
+----
+ 
+// Create entities
+CREATE (address1:Address)
+CREATE (address2:Address)
+CREATE (address3:Address)
+CREATE (address4:Address)
+CREATE (Address5:Address)
+CREATE (Address6:Address)
+CREATE (Address7:Address)
+CREATE (paris:City {name :'Paris'})
+CREATE (chicago:City {name :'Chicago'})
+CREATE (san_francisco:City {name :'San Francisco'})
+CREATE (detroit:City {name :'Detroit'})
+CREATE (lagos:City {name :'Lagos'})
+CREATE (france:Country {name :'France'})
+CREATE (usa:Country {name :'USA'})
+CREATE (nigeria:Country {name :'Nigeria'})
+CREATE (ip1:IP_Address {ip_address :'214.77.224.225'})
+CREATE (ip2:IP_Address {ip_address :'48.215.250.22'})
+CREATE (ip3:IP_Address {ip_address :'147.170.219.106'})
+CREATE (ip4:IP_Address {ip_address :'217.54.121.65'})
+CREATE (rue_dareau:Street {name :'Rue Dareau'})
+CREATE (the47th_street:Street {name :'47th street'})
+CREATE (folsom_street:Street {name :'Folsom Street'})
+CREATE (the23th_street:Street {name :'23th street'})
+CREATE (duboce_avenue:Street {name :'Duboce Avenue'})
+CREATE (octavia_boulevard:Street {name :'Octavia Boulevard'})
+CREATE (carney_street:Street {name :'Carney Street'})
+CREATE (order1:Transaction {date :'11/08/2014', items:'A Wonderful World', amount:'10$'})
+CREATE (order2:Transaction {date :'11/08/2014', items:'Nike sneakers, Football jersey', amount:'299$'})
+CREATE (order3:Transaction {date :'11/08/2014', items:'Perfume', amount:'99$'})
+CREATE (order4:Transaction {date :'11/08/2014', items:'Mobile phone', amount:'499$'})
+CREATE (order5:Transaction {date :'11/08/2014', items:'Laptop, gifcard', amount:'878$'})
+
+
+// Create relationships
+CREATE (address1)-[:IS_LOCATED_IN {number :'9'}]->(rue_dareau)
+CREATE (Address6)-[:IS_LOCATED_IN {number :'9'}]->(duboce_avenue)
+CREATE (Address7)-[:IS_LOCATED_IN {number :'16'}]->(carney_street)
+CREATE (address2)-[:IS_LOCATED_IN {number :'21'}]->(the47th_street)
+CREATE (address3)-[:IS_LOCATED_IN {number :'98'}]->(folsom_street)
+CREATE (address4)-[:IS_LOCATED_IN {number :'123'}]->(the23th_street)
+CREATE (Address5)-[:IS_LOCATED_IN {number :'211'}]->(octavia_boulevard)
+CREATE (address1)-[:IS_BILLING_ADDRESS]->(order1)
+CREATE (address1)-[:IS_SHIPPING_ADDRESS]->(order1)
+CREATE (address1)-[:IS_LOCATED_IN]->(paris)
+CREATE (address2)-[:IS_BILLING_ADDRESS]->(order2)
+CREATE (address2)-[:IS_SHIPPING_ADDRESS]->(order2)
+CREATE (address2)-[:IS_LOCATED_IN]->(chicago)
+CREATE (address3)-[:IS_BILLING_ADDRESS]->(order3)
+CREATE (address3)-[:IS_LOCATED_IN]->(san_francisco)
+CREATE (address4)-[:IS_SHIPPING_ADDRESS]->(order3)
+CREATE (address4)-[:IS_LOCATED_IN]->(chicago)
+CREATE (Address5)-[:IS_BILLING_ADDRESS]->(order4)
+CREATE (Address5)-[:IS_LOCATED_IN]->(san_francisco)
+CREATE (Address6)-[:IS_BILLING_ADDRESS]->(order5)
+CREATE (Address6)-[:IS_LOCATED_IN]->(san_francisco)
+CREATE (Address7)-[:IS_SHIPPING_ADDRESS]->(order4)
+CREATE (Address7)-[:IS_SHIPPING_ADDRESS]->(order5)
+CREATE (Address7)-[:IS_LOCATED_IN]->(detroit)
+CREATE (chicago)-[:IS_LOCATED_IN]->(usa)
+CREATE (detroit)-[:IS_LOCATED_IN]->(usa)
+CREATE (ip1)-[:IS_LOCATED_IN]->(paris)
+CREATE (ip1)-[:IS_USED_FOR]->(order1)
+CREATE (ip2)-[:IS_LOCATED_IN]->(chicago)
+CREATE (ip2)-[:IS_USED_FOR]->(order2)
+CREATE (ip3)-[:IS_LOCATED_IN]->(san_francisco)
+CREATE (ip3)-[:IS_USED_FOR]->(order3)
+CREATE (ip4)-[:IS_LOCATED_IN]->(lagos)
+CREATE (ip4)-[:IS_USED_FOR]->(order4)
+CREATE (ip4)-[:IS_USED_FOR]->(order5)
+CREATE (lagos)-[:IS_LOCATED_IN]->(nigeria)
+CREATE (paris)-[:IS_LOCATED_IN]->(france)
+CREATE (san_francisco)-[:IS_LOCATED_IN]->(usa)
+
+RETURN *
+----
+//graph
+ 
+'''
+You can download the complete dataset https://www.dropbox.com/s/aca6rhmz7vx2hgp/reshipping%20scam%20dataset.zip[here].
+
+== See the list of transactions
+
+Let's start by looking at the transactions recorded on our website.
+
+[source,cypher]
+----
+MATCH (orders:Transaction)
+RETURN DISTINCT orders.date as date, orders.items as items, orders.amount as amount
+ORDER BY amount DESC
+----
+//table
+ 
+== See the transactions where the billing and shipping addresses are different
+
+If the shipping address and the billing address are different, maybe we are looking at a reshipping scam. We want to identify these transactions for analysis.
+
+[source,cypher]
+----
+MATCH (address1:Address)-[IS_SHIPPING_ADDRESS]->(suspiciousorder:Transaction)<-[:IS_BILLING_ADDRESS]-(address2:Address)
+WHERE address1 <> address2
+RETURN DISTINCT suspiciousorder
+----
+//table
+
+== Are there some suspicious IPs
+
+Even more suspicious are the transactions where the IP address is coming from a location different from the billing and shipping addresses. Here is how to do identify this pattern :
+
+[source,cypher]
+----
+MATCH (a:Transaction)-[r*2..3]-(b:City)
+WITH a, COUNT(DISTINCT b) AS group_size, COLLECT(DISTINCT b) AS cities
+WHERE group_size > 2
+RETURN a, cities
+----
+//table
+
+== Conclusion
+Of course the data we have used is here is fake. Furthermore, the fraudsters could use more advanced techniques (a simple proxy for example) to avoid detection. Nevertheless, improving the approach of identifying fraudulent patterns and looking for them can be used successfully to fight against reshipping and ecommerce fraud.
+
+For more graph-related use cases, make sure to check http://linkurio.us/blog[the blog of Linkurious]. 

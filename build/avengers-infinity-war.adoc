@@ -1,0 +1,1711 @@
+:neo4j-version: 3.5
+:author: Eric Monk
+:style: #FF756E/#E06760/white:InfinityStone(name),#68BDF6/#5CA8DB/white:Character(name),#A5ABB6/#9AA1AC/black:PlotPoint(description),#FFD86E/#EDBA39/black:Location(name)
+
+# Avengers: Infinity War
+
+_Avengers: Infinity War_ is the latest installment in the Marvel Cinematic Universe (MCU). It serves as the culmination of 18 prior movies which introduced the Avengers, more Avengers, and other characters in the Marvel universe such as the Guardians of the Galaxy, Doctor Strange, Spider-Man, and Black Panther. One way to prepare for the film would be to view all prior 18 movies.  While that would make for a super-extreme weekend of binge watching, many of us don't have the time to do that. Not to worry! This GraphGist will help you understand the key points you need to know.
+
+The film will center around Thanos, the Avengers, and the Infinity Stones introduced in the previous films. In short, Thanos wants the Infinity Stones and the Avengers want to stop him. But who are the Avengers? Will they fight Thanos alone? Will they fight themselves? This Gist hopes to answer these questions. Unfortunately we won't have time to go into Vibranium, Captain America's beard, or Thor's destroyed Hammer, but don't worry, we'll have plenty to talk about!
+
+//hide
+//setup
+[source,cypher]
+----
+MERGE (n:Character {name: 'Gamora'});
+
+MERGE (n:Character {name: 'Thanos'});
+
+MERGE (n:Character {name: 'Nebula'});
+
+MERGE (n:Character {name: 'Thanos'});
+
+MERGE (n:Character {name: 'Gamora'});
+
+MERGE (n:Character {name: 'Nebula'});
+
+MERGE (n:Character {name: 'Star-Lord'});
+
+MERGE (n:Group {name: 'Guardians of the Galaxy'});
+
+MERGE (n:Character {name: 'Gamora'});
+
+MERGE (n:Group {name: 'Guardians of the Galaxy'});
+
+MERGE (n:Character {name: 'Groot'});
+
+MERGE (n:Group {name: 'Guardians of the Galaxy'});
+
+MERGE (n:Character {name: 'Drax'});
+
+MERGE (n:Group {name: 'Guardians of the Galaxy'});
+
+MERGE (n:Character {name: 'Rocket'});
+
+MERGE (n:Group {name: 'Guardians of the Galaxy'});
+
+MERGE (n:InfinityStone {name: 'Orb'});
+
+MERGE (n:PlotPoint {name: 'Orb_1'})
+  ON CREATE SET n.description = 'Star-Lord acquires the Orb'
+  ON MATCH SET n.description = 'Star-Lord acquires the Orb';
+
+MERGE (n:PlotPoint {name: 'Orb_2'})
+  ON CREATE SET n.description = 'Orb Power Stone destroys the Collector\'s lab'
+  ON MATCH SET n.description = 'Orb Power Stone destroys the Collector\'s lab';
+
+MERGE (n:PlotPoint {name: 'Orb_3'})
+  ON CREATE SET n.description = 'Ronan acquires the Orb'
+  ON MATCH SET n.description = 'Ronan acquires the Orb';
+
+MERGE (n:PlotPoint {name: 'Orb_4'})
+  ON CREATE SET n.description = 'Ronan threatens Xandar with the Power Stone'
+  ON MATCH SET n.description = 'Ronan threatens Xandar with the Power Stone';
+
+MERGE (n:PlotPoint {name: 'Orb_5'})
+  ON CREATE SET n.description = 'Star-Lord grabs the Infinity Stone and nearly dies'
+  ON MATCH SET n.description = 'Star-Lord grabs the Infinity Stone and nearly dies';
+
+MERGE (n:PlotPoint {name: 'Orb_6'})
+  ON CREATE SET n.description = 'Star-Lord leaves the Orb with the Nova Corps for safe-keeping',n.wrapUpEndCredits = 'Yes'
+  ON MATCH SET n.description = 'Star-Lord leaves the Orb with the Nova Corps for safe-keeping',n.wrapUpEndCredits = 'Yes';
+
+MERGE (start:Character {name: 'Gamora'})
+MERGE (end:Character {name: 'Thanos'})
+MERGE (start)-[:HAS_FATHER]->(end);
+
+MERGE (start:Character {name: 'Nebula'})
+MERGE (end:Character {name: 'Thanos'})
+MERGE (start)-[:HAS_FATHER]->(end);
+
+MERGE (start:Character {name: 'Gamora'})
+MERGE (end:Character {name: 'Nebula'})
+MERGE (start)-[:HAS_SISTER]->(end);
+
+MERGE (start:Character {name: 'Star-Lord'})
+MERGE (end:Group {name: 'Guardians of the Galaxy'})
+MERGE (start)-[:PART_OF]->(end);
+
+MERGE (start:Character {name: 'Gamora'})
+MERGE (end:Group {name: 'Guardians of the Galaxy'})
+MERGE (start)-[:PART_OF]->(end);
+
+MERGE (start:Character {name: 'Groot'})
+MERGE (end:Group {name: 'Guardians of the Galaxy'})
+MERGE (start)-[:PART_OF]->(end);
+
+MERGE (start:Character {name: 'Drax'})
+MERGE (end:Group {name: 'Guardians of the Galaxy'})
+MERGE (start)-[:PART_OF]->(end);
+
+MERGE (start:Character {name: 'Rocket'})
+MERGE (end:Group {name: 'Guardians of the Galaxy'})
+MERGE (start)-[:PART_OF]->(end);
+
+MERGE (start:PlotPoint {name: 'Orb_1'})
+MERGE (end:Location {name: 'Morag'})
+MERGE (start)-[:HAS_LOCATION]->(end);
+
+MERGE (start:PlotPoint {name: 'Orb_1'})
+MERGE (end:Character {name: 'Star-Lord'})
+MERGE (start)-[:POSSESSED_BY]->(end);
+
+MERGE (start:PlotPoint {name: 'Orb_1'})
+MERGE (end:InfinityStone {name: 'Orb'})
+MERGE (start)-[:ABOUT]->(end);
+
+MERGE (start:PlotPoint {name: 'Orb_1'})
+MERGE (end:Movie {name: 'Guardians of the Galaxy'})
+MERGE (start)-[:IN_MOVIE]->(end);
+
+MERGE (start:PlotPoint {name: 'Orb_2'})
+MERGE (end:Location {name: 'Knowhere'})
+MERGE (start)-[:HAS_LOCATION]->(end);
+
+MERGE (start:PlotPoint {name: 'Orb_2'})
+MERGE (end:Character {name: 'Star-Lord'})
+MERGE (start)-[:POSSESSED_BY]->(end);
+
+MERGE (start:PlotPoint {name: 'Orb_1'})
+MERGE (end:PlotPoint {name: 'Orb_2'})
+MERGE (start)-[:NEXT_PLOT_POINT]->(end);
+
+MERGE (start:PlotPoint {name: 'Orb_2'})
+MERGE (end:InfinityStone {name: 'Orb'})
+MERGE (start)-[:ABOUT]->(end);
+
+MERGE (start:PlotPoint {name: 'Orb_2'})
+MERGE (end:Movie {name: 'Guardians of the Galaxy'})
+MERGE (start)-[:IN_MOVIE]->(end);
+
+MERGE (start:PlotPoint {name: 'Orb_3'})
+MERGE (end:Location {name: 'Knowhere'})
+MERGE (start)-[:HAS_LOCATION]->(end);
+
+MERGE (start:PlotPoint {name: 'Orb_3'})
+MERGE (end:Character {name: 'Ronan'})
+MERGE (start)-[:POSSESSED_BY]->(end);
+
+MERGE (start:PlotPoint {name: 'Orb_2'})
+MERGE (end:PlotPoint {name: 'Orb_3'})
+MERGE (start)-[:NEXT_PLOT_POINT]->(end);
+
+MERGE (start:PlotPoint {name: 'Orb_3'})
+MERGE (end:InfinityStone {name: 'Orb'})
+MERGE (start)-[:ABOUT]->(end);
+
+MERGE (start:PlotPoint {name: 'Orb_3'})
+MERGE (end:Movie {name: 'Guardians of the Galaxy'})
+MERGE (start)-[:IN_MOVIE]->(end);
+
+MERGE (start:PlotPoint {name: 'Orb_4'})
+MERGE (end:Location {name: 'Xandar'})
+MERGE (start)-[:HAS_LOCATION]->(end);
+
+MERGE (start:PlotPoint {name: 'Orb_4'})
+MERGE (end:Character {name: 'Ronan'})
+MERGE (start)-[:POSSESSED_BY]->(end);
+
+MERGE (start:PlotPoint {name: 'Orb_3'})
+MERGE (end:PlotPoint {name: 'Orb_4'})
+MERGE (start)-[:NEXT_PLOT_POINT]->(end);
+
+MERGE (start:PlotPoint {name: 'Orb_4'})
+MERGE (end:InfinityStone {name: 'Orb'})
+MERGE (start)-[:ABOUT]->(end);
+
+MERGE (start:PlotPoint {name: 'Orb_4'})
+MERGE (end:Movie {name: 'Guardians of the Galaxy'})
+MERGE (start)-[:IN_MOVIE]->(end);
+
+MERGE (start:PlotPoint {name: 'Orb_5'})
+MERGE (end:Location {name: 'Xandar'})
+MERGE (start)-[:HAS_LOCATION]->(end);
+
+MERGE (start:PlotPoint {name: 'Orb_5'})
+MERGE (end:Group {name: 'Guardians of the Galaxy'})
+MERGE (start)-[:POSSESSED_BY]->(end);
+
+MERGE (start:PlotPoint {name: 'Orb_4'})
+MERGE (end:PlotPoint {name: 'Orb_5'})
+MERGE (start)-[:NEXT_PLOT_POINT]->(end);
+
+MERGE (start:PlotPoint {name: 'Orb_5'})
+MERGE (end:InfinityStone {name: 'Orb'})
+MERGE (start)-[:ABOUT]->(end);
+
+MERGE (start:PlotPoint {name: 'Orb_5'})
+MERGE (end:Movie {name: 'Guardians of the Galaxy'})
+MERGE (start)-[:IN_MOVIE]->(end);
+
+MERGE (start:PlotPoint {name: 'Orb_6'})
+MERGE (end:Location {name: 'Xandar'})
+MERGE (start)-[:HAS_LOCATION]->(end);
+
+MERGE (start:PlotPoint {name: 'Orb_6'})
+MERGE (end:Group {name: 'Nova Corps'})
+MERGE (start)-[:POSSESSED_BY]->(end);
+
+MERGE (start:PlotPoint {name: 'Orb_5'})
+MERGE (end:PlotPoint {name: 'Orb_6'})
+MERGE (start)-[:NEXT_PLOT_POINT]->(end);
+
+MERGE (start:PlotPoint {name: 'Orb_6'})
+MERGE (end:InfinityStone {name: 'Orb'})
+MERGE (start)-[:ABOUT]->(end);
+
+MERGE (start:PlotPoint {name: 'Orb_6'})
+MERGE (end:Movie {name: 'Guardians of the Galaxy'})
+MERGE (start)-[:IN_MOVIE]->(end);
+
+MERGE (n:Character {name: 'Hawkeye'});
+
+MERGE (n:Group {name: 'Avengers'});
+
+MERGE (n:Character {name: 'Hulk'});
+
+MERGE (n:Group {name: 'Avengers'});
+
+MERGE (n:Character {name: 'Thor'});
+
+MERGE (n:Group {name: 'Avengers'});
+
+MERGE (n:Character {name: 'Iron Man'});
+
+MERGE (n:Group {name: 'Avengers'});
+
+MERGE (n:Character {name: 'Natasha Romanoff'});
+
+MERGE (n:Group {name: 'Avengers'});
+
+MERGE (n:Character {name: 'Captain America'});
+
+MERGE (n:Group {name: 'Avengers'});
+
+MERGE (n:Character {name: 'Wanda Maximoff'});
+
+MERGE (n:Character {name: 'Scarlet Witch'});
+
+MERGE (n:Character {name: 'Iron Man'});
+
+MERGE (n:Character {name: 'Ultron'});
+
+MERGE (n:InfinityStone {name: 'Mind Stone'});
+
+MERGE (n:PlotPoint {name: 'Mind Stone_1'})
+  ON CREATE SET n.description = 'Loki uses staff to mind control Erik Selvig and Hawkeye'
+  ON MATCH SET n.description = 'Loki uses staff to mind control Erik Selvig and Hawkeye';
+
+MERGE (n:PlotPoint {name: 'Mind Stone_2'})
+  ON CREATE SET n.description = 'Avengers capture Loki'
+  ON MATCH SET n.description = 'Avengers capture Loki';
+
+MERGE (n:PlotPoint {name: 'Mind Stone_3'})
+  ON CREATE SET n.description = 'Hawkeye attacks and frees Loki who gets staff back'
+  ON MATCH SET n.description = 'Hawkeye attacks and frees Loki who gets staff back';
+
+MERGE (n:PlotPoint {name: 'Mind Stone_4'})
+  ON CREATE SET n.description = 'Natasha uses Loki\'s staff to close portal'
+  ON MATCH SET n.description = 'Natasha uses Loki\'s staff to close portal';
+
+MERGE (n:PlotPoint {name: 'Mind Stone_5'})
+  ON CREATE SET n.description = 'Hydra uses staff to create Scarlet Witch and Quicksilver',n.wrapUpEndCredits = 'Yes'
+  ON MATCH SET n.description = 'Hydra uses staff to create Scarlet Witch and Quicksilver',n.wrapUpEndCredits = 'Yes';
+
+MERGE (n:PlotPoint {name: 'Mind Stone_6'})
+  ON CREATE SET n.description = 'The Avengers get the staff back from Hydra'
+  ON MATCH SET n.description = 'The Avengers get the staff back from Hydra';
+
+MERGE (n:PlotPoint {name: 'Mind Stone_7'})
+  ON CREATE SET n.description = 'Tony and Bruce use staff to create an AI called Ultron'
+  ON MATCH SET n.description = 'Tony and Bruce use staff to create an AI called Ultron';
+
+MERGE (n:PlotPoint {name: 'Mind Stone_8'})
+  ON CREATE SET n.description = 'Ultron minds control Helen Cho to create a body for him'
+  ON MATCH SET n.description = 'Ultron minds control Helen Cho to create a body for him';
+
+MERGE (n:PlotPoint {name: 'Mind Stone_9'})
+  ON CREATE SET n.description = 'J.A.R.V.I.S. plus the staff Mind stone create Vision'
+  ON MATCH SET n.description = 'J.A.R.V.I.S. plus the staff Mind stone create Vision';
+
+MERGE (n:PlotPoint {name: 'Mind Stone_10'})
+  ON CREATE SET n.description = 'Thanos says \"Fine, I\'ll do it myself\"',n.wrapUpEndCredits = 'Yes'
+  ON MATCH SET n.description = 'Thanos says \"Fine, I\'ll do it myself\"',n.wrapUpEndCredits = 'Yes';
+
+MERGE (start:Character {name: 'Hawkeye'})
+MERGE (end:Group {name: 'Avengers'})
+MERGE (start)-[:PART_OF]->(end);
+
+MERGE (start:Character {name: 'Hulk'})
+MERGE (end:Group {name: 'Avengers'})
+MERGE (start)-[:PART_OF]->(end);
+
+MERGE (start:Character {name: 'Thor'})
+MERGE (end:Group {name: 'Avengers'})
+MERGE (start)-[:PART_OF]->(end);
+
+MERGE (start:Character {name: 'Iron Man'})
+MERGE (end:Group {name: 'Avengers'})
+MERGE (start)-[:PART_OF]->(end);
+
+MERGE (start:Character {name: 'Natasha Romanoff'})
+MERGE (end:Group {name: 'Avengers'})
+MERGE (start)-[:PART_OF]->(end);
+
+MERGE (start:Character {name: 'Captain America'})
+MERGE (end:Group {name: 'Avengers'})
+MERGE (start)-[:PART_OF]->(end);
+
+MERGE (start:Character {name: 'Wanda Maximoff'})
+MERGE (end:Character {name: 'Scarlet Witch'})
+MERGE (start)-[:IS]->(end);
+
+MERGE (start:Character {name: 'Iron Man'})
+MERGE (end:Character {name: 'Ultron'})
+MERGE (start)-[:CREATED]->(end);
+
+MERGE (start:PlotPoint {name: 'Mind Stone_1'})
+MERGE (end:Location {name: 'S.H.I.E.L.D Lab'})
+MERGE (start)-[:HAS_LOCATION]->(end);
+
+MERGE (start:PlotPoint {name: 'Mind Stone_1'})
+MERGE (end:Character {name: 'Loki'})
+MERGE (start)-[:POSSESSED_BY]->(end);
+
+MERGE (start:PlotPoint {name: 'Mind Stone_1'})
+MERGE (end:InfinityStone {name: 'Mind Stone'})
+MERGE (start)-[:ABOUT]->(end);
+
+MERGE (start:PlotPoint {name: 'Mind Stone_1'})
+MERGE (end:Movie {name: 'The Avengers'})
+MERGE (start)-[:IN_MOVIE]->(end);
+
+MERGE (start:PlotPoint {name: 'Mind Stone_2'})
+MERGE (end:Location {name: 'Austria'})
+MERGE (start)-[:HAS_LOCATION]->(end);
+
+MERGE (start:PlotPoint {name: 'Mind Stone_2'})
+MERGE (end:Group {name: 'Avengers'})
+MERGE (start)-[:POSSESSED_BY]->(end);
+
+MERGE (start:PlotPoint {name: 'Mind Stone_1'})
+MERGE (end:PlotPoint {name: 'Mind Stone_2'})
+MERGE (start)-[:NEXT_PLOT_POINT]->(end);
+
+MERGE (start:PlotPoint {name: 'Mind Stone_2'})
+MERGE (end:InfinityStone {name: 'Mind Stone'})
+MERGE (start)-[:ABOUT]->(end);
+
+MERGE (start:PlotPoint {name: 'Mind Stone_2'})
+MERGE (end:Movie {name: 'The Avengers'})
+MERGE (start)-[:IN_MOVIE]->(end);
+
+MERGE (start:PlotPoint {name: 'Mind Stone_3'})
+MERGE (end:Location {name: 'S.H.I.E.L.D. Helicarrier'})
+MERGE (start)-[:HAS_LOCATION]->(end);
+
+MERGE (start:PlotPoint {name: 'Mind Stone_3'})
+MERGE (end:Character {name: 'Loki'})
+MERGE (start)-[:POSSESSED_BY]->(end);
+
+MERGE (start:PlotPoint {name: 'Mind Stone_2'})
+MERGE (end:PlotPoint {name: 'Mind Stone_3'})
+MERGE (start)-[:NEXT_PLOT_POINT]->(end);
+
+MERGE (start:PlotPoint {name: 'Mind Stone_3'})
+MERGE (end:InfinityStone {name: 'Mind Stone'})
+MERGE (start)-[:ABOUT]->(end);
+
+MERGE (start:PlotPoint {name: 'Mind Stone_3'})
+MERGE (end:Movie {name: 'The Avengers'})
+MERGE (start)-[:IN_MOVIE]->(end);
+
+MERGE (start:PlotPoint {name: 'Mind Stone_4'})
+MERGE (end:Location {name: 'Stark Tower in New York City'})
+MERGE (start)-[:HAS_LOCATION]->(end);
+
+MERGE (start:PlotPoint {name: 'Mind Stone_4'})
+MERGE (end:Character {name: 'Natasha Romanoff'})
+MERGE (start)-[:POSSESSED_BY]->(end);
+
+MERGE (start:PlotPoint {name: 'Mind Stone_3'})
+MERGE (end:PlotPoint {name: 'Mind Stone_4'})
+MERGE (start)-[:NEXT_PLOT_POINT]->(end);
+
+MERGE (start:PlotPoint {name: 'Mind Stone_4'})
+MERGE (end:InfinityStone {name: 'Mind Stone'})
+MERGE (start)-[:ABOUT]->(end);
+
+MERGE (start:PlotPoint {name: 'Mind Stone_4'})
+MERGE (end:Movie {name: 'The Avengers'})
+MERGE (start)-[:IN_MOVIE]->(end);
+
+MERGE (start:PlotPoint {name: 'Mind Stone_5'})
+MERGE (end:Location {name: 'Sokovia'})
+MERGE (start)-[:HAS_LOCATION]->(end);
+
+MERGE (start:PlotPoint {name: 'Mind Stone_5'})
+MERGE (end:Group {name: 'Hydra'})
+MERGE (start)-[:POSSESSED_BY]->(end);
+
+MERGE (start:PlotPoint {name: 'Mind Stone_4'})
+MERGE (end:PlotPoint {name: 'Mind Stone_5'})
+MERGE (start)-[:NEXT_PLOT_POINT]->(end);
+
+MERGE (start:PlotPoint {name: 'Mind Stone_5'})
+MERGE (end:InfinityStone {name: 'Mind Stone'})
+MERGE (start)-[:ABOUT]->(end);
+
+MERGE (start:PlotPoint {name: 'Mind Stone_5'})
+MERGE (end:Movie {name: 'Captain America: The Winter Soldier'})
+MERGE (start)-[:IN_MOVIE]->(end);
+
+MERGE (start:PlotPoint {name: 'Mind Stone_6'})
+MERGE (end:Location {name: 'Sokovia'})
+MERGE (start)-[:HAS_LOCATION]->(end);
+
+MERGE (start:PlotPoint {name: 'Mind Stone_6'})
+MERGE (end:Group {name: 'Avengers'})
+MERGE (start)-[:POSSESSED_BY]->(end);
+
+MERGE (start:PlotPoint {name: 'Mind Stone_5'})
+MERGE (end:PlotPoint {name: 'Mind Stone_6'})
+MERGE (start)-[:NEXT_PLOT_POINT]->(end);
+
+MERGE (start:PlotPoint {name: 'Mind Stone_6'})
+MERGE (end:InfinityStone {name: 'Mind Stone'})
+MERGE (start)-[:ABOUT]->(end);
+
+MERGE (start:PlotPoint {name: 'Mind Stone_6'})
+MERGE (end:Movie {name: 'Avengers: Age of Ultron'})
+MERGE (start)-[:IN_MOVIE]->(end);
+
+MERGE (start:PlotPoint {name: 'Mind Stone_7'})
+MERGE (end:Location {name: 'Top of Stark Tower in New York City'})
+MERGE (start)-[:HAS_LOCATION]->(end);
+
+MERGE (start:PlotPoint {name: 'Mind Stone_7'})
+MERGE (end:Character {name: 'Tony Stark'})
+MERGE (start)-[:POSSESSED_BY]->(end);
+
+MERGE (start:PlotPoint {name: 'Mind Stone_6'})
+MERGE (end:PlotPoint {name: 'Mind Stone_7'})
+MERGE (start)-[:NEXT_PLOT_POINT]->(end);
+
+MERGE (start:PlotPoint {name: 'Mind Stone_7'})
+MERGE (end:InfinityStone {name: 'Mind Stone'})
+MERGE (start)-[:ABOUT]->(end);
+
+MERGE (start:PlotPoint {name: 'Mind Stone_7'})
+MERGE (end:Movie {name: 'Avengers: Age of Ultron'})
+MERGE (start)-[:IN_MOVIE]->(end);
+
+MERGE (start:PlotPoint {name: 'Mind Stone_8'})
+MERGE (end:Location {name: 'Sokovia'})
+MERGE (start)-[:HAS_LOCATION]->(end);
+
+MERGE (start:PlotPoint {name: 'Mind Stone_8'})
+MERGE (end:Character {name: 'Ultron'})
+MERGE (start)-[:POSSESSED_BY]->(end);
+
+MERGE (start:PlotPoint {name: 'Mind Stone_7'})
+MERGE (end:PlotPoint {name: 'Mind Stone_8'})
+MERGE (start)-[:NEXT_PLOT_POINT]->(end);
+
+MERGE (start:PlotPoint {name: 'Mind Stone_8'})
+MERGE (end:InfinityStone {name: 'Mind Stone'})
+MERGE (start)-[:ABOUT]->(end);
+
+MERGE (start:PlotPoint {name: 'Mind Stone_8'})
+MERGE (end:Movie {name: 'Avengers: Age of Ultron'})
+MERGE (start)-[:IN_MOVIE]->(end);
+
+MERGE (start:PlotPoint {name: 'Mind Stone_9'})
+MERGE (end:Location {name: 'Seoul, Korea'})
+MERGE (start)-[:HAS_LOCATION]->(end);
+
+MERGE (start:PlotPoint {name: 'Mind Stone_9'})
+MERGE (end:Character {name: 'Vision'})
+MERGE (start)-[:POSSESSED_BY]->(end);
+
+MERGE (start:PlotPoint {name: 'Mind Stone_8'})
+MERGE (end:PlotPoint {name: 'Mind Stone_9'})
+MERGE (start)-[:NEXT_PLOT_POINT]->(end);
+
+MERGE (start:PlotPoint {name: 'Mind Stone_9'})
+MERGE (end:InfinityStone {name: 'Mind Stone'})
+MERGE (start)-[:ABOUT]->(end);
+
+MERGE (start:PlotPoint {name: 'Mind Stone_9'})
+MERGE (end:Movie {name: 'Avengers: Age of Ultron'})
+MERGE (start)-[:IN_MOVIE]->(end);
+
+MERGE (start:PlotPoint {name: 'Mind Stone_10'})
+MERGE (end:Character {name: 'Thanos'})
+MERGE (start)-[:HAS_CHARACTER]->(end);
+
+MERGE (start:PlotPoint {name: 'Mind Stone_9'})
+MERGE (end:PlotPoint {name: 'Mind Stone_10'})
+MERGE (start)-[:NEXT_PLOT_POINT]->(end);
+
+MERGE (start:PlotPoint {name: 'Mind Stone_10'})
+MERGE (end:InfinityStone {name: 'Mind Stone'})
+MERGE (start)-[:ABOUT]->(end);
+
+MERGE (start:PlotPoint {name: 'Mind Stone_10'})
+MERGE (end:Movie {name: 'Avengers: Age of Ultron'})
+MERGE (start)-[:IN_MOVIE]->(end);
+
+MERGE (n:Character {name: 'Red Skull'});
+
+MERGE (n:Group {name: 'Hydra'});
+
+MERGE (n:Character {name: 'Tony Stark'});
+
+MERGE (n:Character {name: 'Howard Stark'});
+
+MERGE (n:Character {name: 'Hawkeye'});
+
+MERGE (n:Group {name: 'Avengers'});
+
+MERGE (n:Character {name: 'Hulk'});
+
+MERGE (n:Group {name: 'Avengers'});
+
+MERGE (n:Character {name: 'Thor'});
+
+MERGE (n:Group {name: 'Avengers'});
+
+MERGE (n:Character {name: 'Iron Man'});
+
+MERGE (n:Group {name: 'Avengers'});
+
+MERGE (n:Character {name: 'Natasha Romanoff'});
+
+MERGE (n:Group {name: 'Avengers'});
+
+MERGE (n:Character {name: 'Captain America'});
+
+MERGE (n:Group {name: 'Avengers'});
+
+MERGE (n:Character {name: 'Tony Stark'});
+
+MERGE (n:Character {name: 'Iron Man'});
+
+MERGE (n:Character {name: 'Bruce Banner'});
+
+MERGE (n:Character {name: 'The Hulk'});
+
+MERGE (n:InfinityStone {name: 'Tesseract'});
+
+MERGE (n:PlotPoint {name: 'Tesseract_1'})
+  ON CREATE SET n.description = 'Red Skull acquires Tesseract from a location in Norway'
+  ON MATCH SET n.description = 'Red Skull acquires Tesseract from a location in Norway';
+
+MERGE (n:PlotPoint {name: 'Tesseract_2'})
+  ON CREATE SET n.description = 'Hydra develops energy weapons using the Tesseract'
+  ON MATCH SET n.description = 'Hydra develops energy weapons using the Tesseract';
+
+MERGE (n:PlotPoint {name: 'Tesseract_3'})
+  ON CREATE SET n.description = 'Captain America and Red Skull battle on a plane with the Tesseract aboard'
+  ON MATCH SET n.description = 'Captain America and Red Skull battle on a plane with the Tesseract aboard';
+
+MERGE (n:PlotPoint {name: 'Tesseract_4'})
+  ON CREATE SET n.description = 'Tesseract burns through plane floor after destroying Red Skull'
+  ON MATCH SET n.description = 'Tesseract burns through plane floor after destroying Red Skull';
+
+MERGE (n:PlotPoint {name: 'Tesseract_5'})
+  ON CREATE SET n.description = 'Howard Stark uses robotic arm to grab Tesseract from Ocean',n.wrapUpEndCredits = 'Yes'
+  ON MATCH SET n.description = 'Howard Stark uses robotic arm to grab Tesseract from Ocean',n.wrapUpEndCredits = 'Yes';
+
+MERGE (n:PlotPoint {name: 'Tesseract_6'})
+  ON CREATE SET n.description = 'Nick Fury authorized Tesseract to be used for weapons research'
+  ON MATCH SET n.description = 'Nick Fury authorized Tesseract to be used for weapons research';
+
+MERGE (n:PlotPoint {name: 'Tesseract_7'})
+  ON CREATE SET n.description = 'Loki teleports to the S.H.I.E.L.D lab and takes the Tesseract'
+  ON MATCH SET n.description = 'Loki teleports to the S.H.I.E.L.D lab and takes the Tesseract';
+
+MERGE (n:PlotPoint {name: 'Tesseract_8'})
+  ON CREATE SET n.description = 'Loki gives Erik Selvig the Tesseract for portal research'
+  ON MATCH SET n.description = 'Loki gives Erik Selvig the Tesseract for portal research';
+
+MERGE (n:PlotPoint {name: 'Tesseract_9'})
+  ON CREATE SET n.description = 'Chitauri invade through space portal, the Avengers defeat the Chitauri'
+  ON MATCH SET n.description = 'Chitauri invade through space portal, the Avengers defeat the Chitauri';
+
+MERGE (n:PlotPoint {name: 'Tesseract_10'})
+  ON CREATE SET n.description = 'Thor is given the Tesseract to take back to Asgard',n.wrapUpEndCredits = 'Yes'
+  ON MATCH SET n.description = 'Thor is given the Tesseract to take back to Asgard',n.wrapUpEndCredits = 'Yes';
+
+MERGE (n:PlotPoint {name: 'Tesseract_11'})
+  ON CREATE SET n.description = 'Tesseract shown when Hela walks through artifact room'
+  ON MATCH SET n.description = 'Tesseract shown when Hela walks through artifact room';
+
+MERGE (n:PlotPoint {name: 'Tesseract_12'})
+  ON CREATE SET n.description = 'Loki suspected of grabbing Tesseract',n.wrapUpEndCredits = 'Yes'
+  ON MATCH SET n.description = 'Loki suspected of grabbing Tesseract',n.wrapUpEndCredits = 'Yes';
+
+MERGE (start:Character {name: 'Red Skull'})
+MERGE (end:Group {name: 'Hydra'})
+MERGE (start)-[:PART_OF]->(end);
+
+MERGE (start:Character {name: 'Tony Stark'})
+MERGE (end:Character {name: 'Howard Stark'})
+MERGE (start)-[:HAS_FATHER]->(end);
+
+MERGE (start:Character {name: 'Hawkeye'})
+MERGE (end:Group {name: 'Avengers'})
+MERGE (start)-[:PART_OF]->(end);
+
+MERGE (start:Character {name: 'Hulk'})
+MERGE (end:Group {name: 'Avengers'})
+MERGE (start)-[:PART_OF]->(end);
+
+MERGE (start:Character {name: 'Thor'})
+MERGE (end:Group {name: 'Avengers'})
+MERGE (start)-[:PART_OF]->(end);
+
+MERGE (start:Character {name: 'Iron Man'})
+MERGE (end:Group {name: 'Avengers'})
+MERGE (start)-[:PART_OF]->(end);
+
+MERGE (start:Character {name: 'Natasha Romanoff'})
+MERGE (end:Group {name: 'Avengers'})
+MERGE (start)-[:PART_OF]->(end);
+
+MERGE (start:Character {name: 'Captain America'})
+MERGE (end:Group {name: 'Avengers'})
+MERGE (start)-[:PART_OF]->(end);
+
+MERGE (start:Character {name: 'Tony Stark'})
+MERGE (end:Character {name: 'Iron Man'})
+MERGE (start)-[:IS]->(end);
+
+MERGE (start:Character {name: 'Bruce Banner'})
+MERGE (end:Character {name: 'The Hulk'})
+MERGE (start)-[:IS]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_1'})
+MERGE (end:Location {name: 'Norway'})
+MERGE (start)-[:HAS_LOCATION]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_1'})
+MERGE (end:Character {name: 'Red Skull'})
+MERGE (start)-[:POSSESSED_BY]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_1'})
+MERGE (end:InfinityStone {name: 'Tesseract'})
+MERGE (start)-[:ABOUT]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_1'})
+MERGE (end:Movie {name: 'Captain America: The First Avenger'})
+MERGE (start)-[:IN_MOVIE]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_2'})
+MERGE (end:Location {name: 'Hydra Lab'})
+MERGE (start)-[:HAS_LOCATION]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_2'})
+MERGE (end:Group {name: 'Hydra'})
+MERGE (start)-[:POSSESSED_BY]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_1'})
+MERGE (end:PlotPoint {name: 'Tesseract_2'})
+MERGE (start)-[:NEXT_PLOT_POINT]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_2'})
+MERGE (end:InfinityStone {name: 'Tesseract'})
+MERGE (start)-[:ABOUT]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_2'})
+MERGE (end:Movie {name: 'Captain America: The First Avenger'})
+MERGE (start)-[:IN_MOVIE]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_3'})
+MERGE (end:Location {name: 'Plane'})
+MERGE (start)-[:HAS_LOCATION]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_3'})
+MERGE (end:Character {name: 'Red Skull'})
+MERGE (start)-[:POSSESSED_BY]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_2'})
+MERGE (end:PlotPoint {name: 'Tesseract_3'})
+MERGE (start)-[:NEXT_PLOT_POINT]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_3'})
+MERGE (end:InfinityStone {name: 'Tesseract'})
+MERGE (start)-[:ABOUT]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_3'})
+MERGE (end:Movie {name: 'Captain America: The First Avenger'})
+MERGE (start)-[:IN_MOVIE]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_4'})
+MERGE (end:Location {name: 'Ocean'})
+MERGE (start)-[:HAS_LOCATION]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_3'})
+MERGE (end:PlotPoint {name: 'Tesseract_4'})
+MERGE (start)-[:NEXT_PLOT_POINT]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_4'})
+MERGE (end:InfinityStone {name: 'Tesseract'})
+MERGE (start)-[:ABOUT]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_4'})
+MERGE (end:Movie {name: 'Captain America: The First Avenger'})
+MERGE (start)-[:IN_MOVIE]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_5'})
+MERGE (end:Location {name: 'Ocean'})
+MERGE (start)-[:HAS_LOCATION]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_5'})
+MERGE (end:Character {name: 'Howard Stark'})
+MERGE (start)-[:POSSESSED_BY]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_4'})
+MERGE (end:PlotPoint {name: 'Tesseract_5'})
+MERGE (start)-[:NEXT_PLOT_POINT]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_5'})
+MERGE (end:InfinityStone {name: 'Tesseract'})
+MERGE (start)-[:ABOUT]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_5'})
+MERGE (end:Movie {name: 'Captain America: The First Avenger'})
+MERGE (start)-[:IN_MOVIE]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_6'})
+MERGE (end:Location {name: 'S.H.I.E.L.D Lab'})
+MERGE (start)-[:HAS_LOCATION]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_6'})
+MERGE (end:Group {name: 'S.H.I.E.L.D'})
+MERGE (start)-[:POSSESSED_BY]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_5'})
+MERGE (end:PlotPoint {name: 'Tesseract_6'})
+MERGE (start)-[:NEXT_PLOT_POINT]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_6'})
+MERGE (end:InfinityStone {name: 'Tesseract'})
+MERGE (start)-[:ABOUT]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_6'})
+MERGE (end:Movie {name: 'The Avengers'})
+MERGE (start)-[:IN_MOVIE]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_7'})
+MERGE (end:Location {name: 'S.H.I.E.L.D Lab'})
+MERGE (start)-[:HAS_LOCATION]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_7'})
+MERGE (end:Character {name: 'Loki'})
+MERGE (start)-[:POSSESSED_BY]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_6'})
+MERGE (end:PlotPoint {name: 'Tesseract_7'})
+MERGE (start)-[:NEXT_PLOT_POINT]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_7'})
+MERGE (end:InfinityStone {name: 'Tesseract'})
+MERGE (start)-[:ABOUT]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_7'})
+MERGE (end:Movie {name: 'The Avengers'})
+MERGE (start)-[:IN_MOVIE]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_8'})
+MERGE (end:Location {name: 'Unknown lab'})
+MERGE (start)-[:HAS_LOCATION]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_8'})
+MERGE (end:Character {name: 'Erik Selvig'})
+MERGE (start)-[:POSSESSED_BY]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_7'})
+MERGE (end:PlotPoint {name: 'Tesseract_8'})
+MERGE (start)-[:NEXT_PLOT_POINT]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_8'})
+MERGE (end:InfinityStone {name: 'Tesseract'})
+MERGE (start)-[:ABOUT]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_8'})
+MERGE (end:Movie {name: 'The Avengers'})
+MERGE (start)-[:IN_MOVIE]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_9'})
+MERGE (end:Location {name: 'Stark Tower in New York City'})
+MERGE (start)-[:HAS_LOCATION]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_9'})
+MERGE (end:Character {name: 'Erik Selvig'})
+MERGE (start)-[:POSSESSED_BY]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_8'})
+MERGE (end:PlotPoint {name: 'Tesseract_9'})
+MERGE (start)-[:NEXT_PLOT_POINT]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_9'})
+MERGE (end:InfinityStone {name: 'Tesseract'})
+MERGE (start)-[:ABOUT]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_9'})
+MERGE (end:Movie {name: 'The Avengers'})
+MERGE (start)-[:IN_MOVIE]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_10'})
+MERGE (end:Location {name: 'New York City'})
+MERGE (start)-[:HAS_LOCATION]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_10'})
+MERGE (end:Character {name: 'Thor'})
+MERGE (start)-[:POSSESSED_BY]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_9'})
+MERGE (end:PlotPoint {name: 'Tesseract_10'})
+MERGE (start)-[:NEXT_PLOT_POINT]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_10'})
+MERGE (end:InfinityStone {name: 'Tesseract'})
+MERGE (start)-[:ABOUT]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_10'})
+MERGE (end:Movie {name: 'The Avengers'})
+MERGE (start)-[:IN_MOVIE]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_11'})
+MERGE (end:Location {name: 'Asgard artifact room'})
+MERGE (start)-[:HAS_LOCATION]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_11'})
+MERGE (end:Group {name: 'Asgardians'})
+MERGE (start)-[:POSSESSED_BY]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_10'})
+MERGE (end:PlotPoint {name: 'Tesseract_11'})
+MERGE (start)-[:NEXT_PLOT_POINT]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_11'})
+MERGE (end:InfinityStone {name: 'Tesseract'})
+MERGE (start)-[:ABOUT]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_11'})
+MERGE (end:Movie {name: 'Thor: Ragnarok'})
+MERGE (start)-[:IN_MOVIE]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_12'})
+MERGE (end:Location {name: 'Asgardian escape ship'})
+MERGE (start)-[:HAS_LOCATION]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_12'})
+MERGE (end:Character {name: 'Loki'})
+MERGE (start)-[:POSSESSED_BY]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_11'})
+MERGE (end:PlotPoint {name: 'Tesseract_12'})
+MERGE (start)-[:NEXT_PLOT_POINT]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_12'})
+MERGE (end:InfinityStone {name: 'Tesseract'})
+MERGE (start)-[:ABOUT]->(end);
+
+MERGE (start:PlotPoint {name: 'Tesseract_12'})
+MERGE (end:Movie {name: 'Thor: Ragnarok'})
+MERGE (start)-[:IN_MOVIE]->(end);
+
+MERGE (n:Group {name: 'Guardians of the Galaxy'});
+
+MERGE (n:Group {name: 'AvengersPlus'});
+
+MERGE (n:Character {name: 'Iron Man'});
+
+MERGE (n:Group {name: 'AvengersPlus'});
+
+MERGE (n:Character {name: 'Captain America'});
+
+MERGE (n:Group {name: 'AvengersPlus'});
+
+MERGE (n:Character {name: 'Natasha Romanoff'});
+
+MERGE (n:Group {name: 'AvengersPlus'});
+
+MERGE (n:Character {name: 'Hawkeye'});
+
+MERGE (n:Group {name: 'AvengersPlus'});
+
+MERGE (n:Character {name: 'The Hulk'});
+
+MERGE (n:Group {name: 'AvengersPlus'});
+
+MERGE (n:Character {name: 'Thor'});
+
+MERGE (n:Group {name: 'AvengersPlus'});
+
+MERGE (n:Character {name: 'Wanda Maximoff'});
+
+MERGE (n:Group {name: 'AvengersPlus'});
+
+MERGE (n:Character {name: 'Spider-Man'});
+
+MERGE (n:Group {name: 'AvengersPlus'});
+
+MERGE (n:Character {name: 'Doctor Strange'});
+
+MERGE (n:Group {name: 'AvengersPlus'});
+
+MERGE (n:Character {name: 'Wong'});
+
+MERGE (n:Group {name: 'AvengersPlus'});
+
+MERGE (n:Character {name: 'Black Panther'});
+
+MERGE (n:Group {name: 'AvengersPlus'});
+
+MERGE (n:Character {name: 'White Wolf'});
+
+MERGE (n:Group {name: 'AvengersPlus'});
+
+MERGE (n:Character {name: 'War Machine'});
+
+MERGE (n:Group {name: 'AvengersPlus'});
+
+MERGE (n:Character {name: 'Ant-Man'});
+
+MERGE (n:Group {name: 'AvengersPlus'});
+
+MERGE (n:Character {name: 'Falcon'});
+
+MERGE (n:Group {name: 'AvengersPlus'});
+
+MERGE (n:Character {name: 'Heimdall'});
+
+MERGE (n:Group {name: 'AvengersPlus'});
+
+MERGE (n:Character {name: 'Vision'});
+
+MERGE (n:Group {name: 'AvengersPlus'});
+
+MERGE (n:Character {name: 'Captain America'});
+
+MERGE (n:Group {name: 'CapSide'});
+
+MERGE (n:Character {name: 'Falcon'});
+
+MERGE (n:Group {name: 'CapSide'});
+
+MERGE (n:Character {name: 'Ant-Man'});
+
+MERGE (n:Group {name: 'CapSide'});
+
+MERGE (n:Character {name: 'Hawkeye'});
+
+MERGE (n:Group {name: 'CapSide'});
+
+MERGE (n:Character {name: 'Wanda Maximoff'});
+
+MERGE (n:Group {name: 'CapSide'});
+
+MERGE (n:Character {name: 'Winter Soldier'});
+
+MERGE (n:Group {name: 'CapSide'});
+
+MERGE (n:Character {name: 'Iron Man'});
+
+MERGE (n:Group {name: 'IronSide'});
+
+MERGE (n:Character {name: 'War Machine'});
+
+MERGE (n:Group {name: 'IronSide'});
+
+MERGE (n:Character {name: 'Spider-Man'});
+
+MERGE (n:Group {name: 'IronSide'});
+
+MERGE (n:Character {name: 'Natasha Romanoff'});
+
+MERGE (n:Group {name: 'IronSide'});
+
+MERGE (n:Character {name: 'Vision'});
+
+MERGE (n:Group {name: 'IronSide'});
+
+MERGE (n:Character {name: 'Black Panther'});
+
+MERGE (n:Group {name: 'IronSide'});
+
+MERGE (n:Character {name: 'Iron Man'});
+
+MERGE (n:Event {name: 'Avengers Assemble'});
+
+MERGE (n:Character {name: 'Captain America'});
+
+MERGE (n:Event {name: 'Avengers Assemble'});
+
+MERGE (n:Character {name: 'Natasha Romanoff'});
+
+MERGE (n:Event {name: 'Avengers Assemble'});
+
+MERGE (n:Character {name: 'Hawkeye'});
+
+MERGE (n:Event {name: 'Avengers Assemble'});
+
+MERGE (n:Character {name: 'The Hulk'});
+
+MERGE (n:Event {name: 'Avengers Assemble'});
+
+MERGE (n:Character {name: 'Thor'});
+
+MERGE (n:Event {name: 'Avengers Assemble'});
+
+MERGE (n:Event {name: 'Avengers Assemble'});
+
+MERGE (n:Movie {name: 'The Avengers'});
+
+MERGE (n:Event {name: 'Avengers Assemble'});
+
+MERGE (n:Character {name: 'Loki'});
+
+MERGE (n:Character {name: 'Iron Man'});
+
+MERGE (n:Event {name: 'Add Avengers'});
+
+MERGE (n:Character {name: 'Captain America'});
+
+MERGE (n:Event {name: 'Add Avengers'});
+
+MERGE (n:Character {name: 'Natasha Romanoff'});
+
+MERGE (n:Event {name: 'Add Avengers'});
+
+MERGE (n:Character {name: 'Hawkeye'});
+
+MERGE (n:Event {name: 'Add Avengers'});
+
+MERGE (n:Character {name: 'The Hulk'});
+
+MERGE (n:Event {name: 'Add Avengers'});
+
+MERGE (n:Character {name: 'Thor'});
+
+MERGE (n:Event {name: 'Add Avengers'});
+
+MERGE (n:Character {name: 'Wanda Maximoff'});
+
+MERGE (n:Event {name: 'Add Avengers'});
+
+MERGE (n:Character {name: 'War Machine'});
+
+MERGE (n:Event {name: 'Add Avengers'});
+
+MERGE (n:Character {name: 'Vision'});
+
+MERGE (n:Event {name: 'Add Avengers'});
+
+MERGE (n:Character {name: 'Falcon'});
+
+MERGE (n:Event {name: 'Add Avengers'});
+
+MERGE (n:Event {name: 'Add Avengers'});
+
+MERGE (n:Character {name: 'Ultron'});
+
+MERGE (n:Event {name: 'Add Avengers'});
+
+MERGE (n:Movie {name: 'Avengers: Age of Ultron'});
+
+MERGE (n:Group {name: 'CapSide'});
+
+MERGE (n:Event {name: 'Avengers Dissasemble'});
+
+MERGE (n:Group {name: 'IronSide'});
+
+MERGE (n:Event {name: 'Avengers Dissasemble'});
+
+MERGE (n:Event {name: 'Avengers Dissasemble'});
+
+MERGE (n:Movie {name: 'Captain America: Civil War'});
+
+MERGE (n:Group {name: 'AvengersPlus'});
+
+MERGE (n:Movie {name: 'Avengers: Infinity War'});
+
+MERGE (n:Group {name: 'AvengersPlus'});
+
+MERGE (n:Character {name: 'Thanos'});
+
+MERGE (n:InfinityStone {name: 'Soul Stone'});
+
+MERGE (start:Group {name: 'Guardians of the Galaxy'})
+MERGE (end:Group {name: 'AvengersPlus'})
+MERGE (start)-[:PART_OF]->(end);
+
+MERGE (start:Character {name: 'Iron Man'})
+MERGE (end:Group {name: 'AvengersPlus'})
+MERGE (start)-[:PART_OF]->(end);
+
+MERGE (start:Character {name: 'Captain America'})
+MERGE (end:Group {name: 'AvengersPlus'})
+MERGE (start)-[:PART_OF]->(end);
+
+MERGE (start:Character {name: 'Natasha Romanoff'})
+MERGE (end:Group {name: 'AvengersPlus'})
+MERGE (start)-[:PART_OF]->(end);
+
+MERGE (start:Character {name: 'Hawkeye'})
+MERGE (end:Group {name: 'AvengersPlus'})
+MERGE (start)-[:PART_OF]->(end);
+
+MERGE (start:Character {name: 'The Hulk'})
+MERGE (end:Group {name: 'AvengersPlus'})
+MERGE (start)-[:PART_OF]->(end);
+
+MERGE (start:Character {name: 'Thor'})
+MERGE (end:Group {name: 'AvengersPlus'})
+MERGE (start)-[:PART_OF]->(end);
+
+MERGE (start:Character {name: 'Wanda Maximoff'})
+MERGE (end:Group {name: 'AvengersPlus'})
+MERGE (start)-[:PART_OF]->(end);
+
+MERGE (start:Character {name: 'Spider-Man'})
+MERGE (end:Group {name: 'AvengersPlus'})
+MERGE (start)-[:PART_OF]->(end);
+
+MERGE (start:Character {name: 'Doctor Strange'})
+MERGE (end:Group {name: 'AvengersPlus'})
+MERGE (start)-[:PART_OF]->(end);
+
+MERGE (start:Character {name: 'Wong'})
+MERGE (end:Group {name: 'AvengersPlus'})
+MERGE (start)-[:PART_OF]->(end);
+
+MERGE (start:Character {name: 'Black Panther'})
+MERGE (end:Group {name: 'AvengersPlus'})
+MERGE (start)-[:PART_OF]->(end);
+
+MERGE (start:Character {name: 'White Wolf'})
+MERGE (end:Group {name: 'AvengersPlus'})
+MERGE (start)-[:PART_OF]->(end);
+
+MERGE (start:Character {name: 'War Machine'})
+MERGE (end:Group {name: 'AvengersPlus'})
+MERGE (start)-[:PART_OF]->(end);
+
+MERGE (start:Character {name: 'Ant-Man'})
+MERGE (end:Group {name: 'AvengersPlus'})
+MERGE (start)-[:PART_OF]->(end);
+
+MERGE (start:Character {name: 'Falcon'})
+MERGE (end:Group {name: 'AvengersPlus'})
+MERGE (start)-[:PART_OF]->(end);
+
+MERGE (start:Character {name: 'Heimdall'})
+MERGE (end:Group {name: 'AvengersPlus'})
+MERGE (start)-[:PART_OF]->(end);
+
+MERGE (start:Character {name: 'Vision'})
+MERGE (end:Group {name: 'AvengersPlus'})
+MERGE (start)-[:PART_OF]->(end);
+
+MERGE (start:Character {name: 'Captain America'})
+MERGE (end:Group {name: 'CapSide'})
+MERGE (start)-[:PART_OF]->(end);
+
+MERGE (start:Character {name: 'Falcon'})
+MERGE (end:Group {name: 'CapSide'})
+MERGE (start)-[:PART_OF]->(end);
+
+MERGE (start:Character {name: 'Ant-Man'})
+MERGE (end:Group {name: 'CapSide'})
+MERGE (start)-[:PART_OF]->(end);
+
+MERGE (start:Character {name: 'Hawkeye'})
+MERGE (end:Group {name: 'CapSide'})
+MERGE (start)-[:PART_OF]->(end);
+
+MERGE (start:Character {name: 'Wanda Maximoff'})
+MERGE (end:Group {name: 'CapSide'})
+MERGE (start)-[:PART_OF]->(end);
+
+MERGE (start:Character {name: 'Winter Soldier'})
+MERGE (end:Group {name: 'CapSide'})
+MERGE (start)-[:PART_OF]->(end);
+
+MERGE (start:Character {name: 'Iron Man'})
+MERGE (end:Group {name: 'IronSide'})
+MERGE (start)-[:PART_OF]->(end);
+
+MERGE (start:Character {name: 'War Machine'})
+MERGE (end:Group {name: 'IronSide'})
+MERGE (start)-[:PART_OF]->(end);
+
+MERGE (start:Character {name: 'Spider-Man'})
+MERGE (end:Group {name: 'IronSide'})
+MERGE (start)-[:PART_OF]->(end);
+
+MERGE (start:Character {name: 'Natasha Romanoff'})
+MERGE (end:Group {name: 'IronSide'})
+MERGE (start)-[:PART_OF]->(end);
+
+MERGE (start:Character {name: 'Vision'})
+MERGE (end:Group {name: 'IronSide'})
+MERGE (start)-[:PART_OF]->(end);
+
+MERGE (start:Character {name: 'Black Panther'})
+MERGE (end:Group {name: 'IronSide'})
+MERGE (start)-[:PART_OF]->(end);
+
+MERGE (start:Character {name: 'Iron Man'})
+MERGE (end:Event {name: 'Avengers Assemble'})
+MERGE (start)-[:BECOMES_AVENGER]->(end);
+
+MERGE (start:Character {name: 'Captain America'})
+MERGE (end:Event {name: 'Avengers Assemble'})
+MERGE (start)-[:BECOMES_AVENGER]->(end);
+
+MERGE (start:Character {name: 'Natasha Romanoff'})
+MERGE (end:Event {name: 'Avengers Assemble'})
+MERGE (start)-[:BECOMES_AVENGER]->(end);
+
+MERGE (start:Character {name: 'Hawkeye'})
+MERGE (end:Event {name: 'Avengers Assemble'})
+MERGE (start)-[:BECOMES_AVENGER]->(end);
+
+MERGE (start:Character {name: 'The Hulk'})
+MERGE (end:Event {name: 'Avengers Assemble'})
+MERGE (start)-[:BECOMES_AVENGER]->(end);
+
+MERGE (start:Character {name: 'Thor'})
+MERGE (end:Event {name: 'Avengers Assemble'})
+MERGE (start)-[:BECOMES_AVENGER]->(end);
+
+MERGE (start:Event {name: 'Avengers Assemble'})
+MERGE (end:Movie {name: 'The Avengers'})
+MERGE (start)-[:IN_MOVIE]->(end);
+
+MERGE (start:Event {name: 'Avengers Assemble'})
+MERGE (end:Character {name: 'Loki'})
+MERGE (start)-[:TO_FIGHT]->(end);
+
+MERGE (start:Character {name: 'Iron Man'})
+MERGE (end:Event {name: 'Add Avengers'})
+MERGE (start)-[:IS_AVENGER]->(end);
+
+MERGE (start:Character {name: 'Captain America'})
+MERGE (end:Event {name: 'Add Avengers'})
+MERGE (start)-[:IS_AVENGER]->(end);
+
+MERGE (start:Character {name: 'Natasha Romanoff'})
+MERGE (end:Event {name: 'Add Avengers'})
+MERGE (start)-[:IS_AVENGER]->(end);
+
+MERGE (start:Character {name: 'Hawkeye'})
+MERGE (end:Event {name: 'Add Avengers'})
+MERGE (start)-[:IS_AVENGER]->(end);
+
+MERGE (start:Character {name: 'The Hulk'})
+MERGE (end:Event {name: 'Add Avengers'})
+MERGE (start)-[:IS_AVENGER]->(end);
+
+MERGE (start:Character {name: 'Thor'})
+MERGE (end:Event {name: 'Add Avengers'})
+MERGE (start)-[:IS_AVENGER]->(end);
+
+MERGE (start:Character {name: 'Wanda Maximoff'})
+MERGE (end:Event {name: 'Add Avengers'})
+MERGE (start)-[:BECOMES_AVENGER]->(end);
+
+MERGE (start:Character {name: 'War Machine'})
+MERGE (end:Event {name: 'Add Avengers'})
+MERGE (start)-[:BECOMES_AVENGER]->(end);
+
+MERGE (start:Character {name: 'Vision'})
+MERGE (end:Event {name: 'Add Avengers'})
+MERGE (start)-[:BECOMES_AVENGER]->(end);
+
+MERGE (start:Character {name: 'Falcon'})
+MERGE (end:Event {name: 'Add Avengers'})
+MERGE (start)-[:BECOMES_AVENGER]->(end);
+
+MERGE (start:Event {name: 'Add Avengers'})
+MERGE (end:Character {name: 'Ultron'})
+MERGE (start)-[:TO_FIGHT]->(end);
+
+MERGE (start:Event {name: 'Add Avengers'})
+MERGE (end:Movie {name: 'Avengers: Age of Ultron'})
+MERGE (start)-[:IN_MOVIE]->(end);
+
+MERGE (start:Group {name: 'CapSide'})
+MERGE (end:Event {name: 'Avengers Dissasemble'})
+MERGE (start)-[:AVENGERS_SPLIT]->(end);
+
+MERGE (start:Group {name: 'IronSide'})
+MERGE (end:Event {name: 'Avengers Dissasemble'})
+MERGE (start)-[:AVENGERS_SPLIT]->(end);
+
+MERGE (start:Event {name: 'Avengers Dissasemble'})
+MERGE (end:Movie {name: 'Captain America: Civil War'})
+MERGE (start)-[:IN_MOVIE]->(end);
+
+MERGE (start:Group {name: 'AvengersPlus'})
+MERGE (end:Movie {name: 'Avengers: Infinity War'})
+MERGE (start)-[:IN_MOVIE]->(end);
+
+MERGE (start:Group {name: 'AvengersPlus'})
+MERGE (end:Character {name: 'Thanos'})
+MERGE (start)-[:TO_FIGHT]->(end);
+
+MERGE (n:Character {name: 'Thor'});
+
+MERGE (n:Character {name: 'Jane Foster'});
+
+MERGE (n:Character {name: 'Thor'});
+
+MERGE (n:Character {name: 'Odin'});
+
+MERGE (n:Character {name: 'Thor'});
+
+MERGE (n:Character {name: 'Loki'});
+
+MERGE (n:InfinityStone {name: 'Aether'});
+
+MERGE (n:PlotPoint {name: 'Aether_1'})
+  ON CREATE SET n.description = 'Asgardians battle Dark Elves, Bor defeats Malekith and takes the Aether'
+  ON MATCH SET n.description = 'Asgardians battle Dark Elves, Bor defeats Malekith and takes the Aether';
+
+MERGE (n:PlotPoint {name: 'Aether_2'})
+  ON CREATE SET n.description = 'Odin\'s father Bor stashes the Aether away in a stone column'
+  ON MATCH SET n.description = 'Odin\'s father Bor stashes the Aether away in a stone column';
+
+MERGE (n:PlotPoint {name: 'Aether_3'})
+  ON CREATE SET n.description = 'Jane gets sucked into a portal and is infected by the Aether'
+  ON MATCH SET n.description = 'Jane gets sucked into a portal and is infected by the Aether';
+
+MERGE (n:PlotPoint {name: 'Aether_4'})
+  ON CREATE SET n.description = 'Thor takes Jane to Asgard'
+  ON MATCH SET n.description = 'Thor takes Jane to Asgard';
+
+MERGE (n:PlotPoint {name: 'Aether_5'})
+  ON CREATE SET n.description = 'Loki tricks Malekith into drawing the Aether out of Jane'
+  ON MATCH SET n.description = 'Loki tricks Malekith into drawing the Aether out of Jane';
+
+MERGE (n:PlotPoint {name: 'Aether_6'})
+  ON CREATE SET n.description = 'Erik Selvig opens a portal to send Malekith back to Svartalfheim'
+  ON MATCH SET n.description = 'Erik Selvig opens a portal to send Malekith back to Svartalfheim';
+
+MERGE (n:PlotPoint {name: 'Aether_7'})
+  ON CREATE SET n.description = 'Volstagg and Sif deliver the Aether to The Collector',n.wrapUpEndCredits = 'Yes'
+  ON MATCH SET n.description = 'Volstagg and Sif deliver the Aether to The Collector',n.wrapUpEndCredits = 'Yes';
+
+MERGE (start:Character {name: 'Thor'})
+MERGE (end:Character {name: 'Jane Foster'})
+MERGE (start)-[:HAS_GIRLFRIEND]->(end);
+
+MERGE (start:Character {name: 'Thor'})
+MERGE (end:Character {name: 'Odin'})
+MERGE (start)-[:HAS_FATHER]->(end);
+
+MERGE (start:Character {name: 'Thor'})
+MERGE (end:Character {name: 'Loki'})
+MERGE (start)-[:HAS_BROTHER]->(end);
+
+MERGE (start:PlotPoint {name: 'Aether_1'})
+MERGE (end:Location {name: 'Svartalfheim'})
+MERGE (start)-[:HAS_LOCATION]->(end);
+
+MERGE (start:PlotPoint {name: 'Aether_1'})
+MERGE (end:Character {name: 'Malekith'})
+MERGE (start)-[:POSSESSED_BY]->(end);
+
+MERGE (start:PlotPoint {name: 'Aether_1'})
+MERGE (end:InfinityStone {name: 'Aether'})
+MERGE (start)-[:ABOUT]->(end);
+
+MERGE (start:PlotPoint {name: 'Aether_1'})
+MERGE (end:Movie {name: 'Thor: The Dark World'})
+MERGE (start)-[:IN_MOVIE]->(end);
+
+MERGE (start:PlotPoint {name: 'Aether_2'})
+MERGE (end:Location {name: 'Stone column in hidden dimension'})
+MERGE (start)-[:HAS_LOCATION]->(end);
+
+MERGE (start:PlotPoint {name: 'Aether_1'})
+MERGE (end:PlotPoint {name: 'Aether_2'})
+MERGE (start)-[:NEXT_PLOT_POINT]->(end);
+
+MERGE (start:PlotPoint {name: 'Aether_2'})
+MERGE (end:InfinityStone {name: 'Aether'})
+MERGE (start)-[:ABOUT]->(end);
+
+MERGE (start:PlotPoint {name: 'Aether_2'})
+MERGE (end:Movie {name: 'Thor: The Dark World'})
+MERGE (start)-[:IN_MOVIE]->(end);
+
+MERGE (start:PlotPoint {name: 'Aether_3'})
+MERGE (end:Location {name: 'London'})
+MERGE (start)-[:HAS_LOCATION]->(end);
+
+MERGE (start:PlotPoint {name: 'Aether_3'})
+MERGE (end:Character {name: 'Jane Foster'})
+MERGE (start)-[:POSSESSED_BY]->(end);
+
+MERGE (start:PlotPoint {name: 'Aether_2'})
+MERGE (end:PlotPoint {name: 'Aether_3'})
+MERGE (start)-[:NEXT_PLOT_POINT]->(end);
+
+MERGE (start:PlotPoint {name: 'Aether_3'})
+MERGE (end:InfinityStone {name: 'Aether'})
+MERGE (start)-[:ABOUT]->(end);
+
+MERGE (start:PlotPoint {name: 'Aether_3'})
+MERGE (end:Movie {name: 'Thor: The Dark World'})
+MERGE (start)-[:IN_MOVIE]->(end);
+
+MERGE (start:PlotPoint {name: 'Aether_4'})
+MERGE (end:Location {name: 'Asgard'})
+MERGE (start)-[:HAS_LOCATION]->(end);
+
+MERGE (start:PlotPoint {name: 'Aether_4'})
+MERGE (end:Character {name: 'Jane Foster'})
+MERGE (start)-[:POSSESSED_BY]->(end);
+
+MERGE (start:PlotPoint {name: 'Aether_3'})
+MERGE (end:PlotPoint {name: 'Aether_4'})
+MERGE (start)-[:NEXT_PLOT_POINT]->(end);
+
+MERGE (start:PlotPoint {name: 'Aether_4'})
+MERGE (end:InfinityStone {name: 'Aether'})
+MERGE (start)-[:ABOUT]->(end);
+
+MERGE (start:PlotPoint {name: 'Aether_4'})
+MERGE (end:Movie {name: 'Thor: The Dark World'})
+MERGE (start)-[:IN_MOVIE]->(end);
+
+MERGE (start:PlotPoint {name: 'Aether_5'})
+MERGE (end:Location {name: 'Svartalfheim'})
+MERGE (start)-[:HAS_LOCATION]->(end);
+
+MERGE (start:PlotPoint {name: 'Aether_5'})
+MERGE (end:Character {name: 'Malekith'})
+MERGE (start)-[:POSSESSED_BY]->(end);
+
+MERGE (start:PlotPoint {name: 'Aether_4'})
+MERGE (end:PlotPoint {name: 'Aether_5'})
+MERGE (start)-[:NEXT_PLOT_POINT]->(end);
+
+MERGE (start:PlotPoint {name: 'Aether_5'})
+MERGE (end:InfinityStone {name: 'Aether'})
+MERGE (start)-[:ABOUT]->(end);
+
+MERGE (start:PlotPoint {name: 'Aether_5'})
+MERGE (end:Movie {name: 'Thor: The Dark World'})
+MERGE (start)-[:IN_MOVIE]->(end);
+
+MERGE (start:PlotPoint {name: 'Aether_6'})
+MERGE (end:Location {name: 'Earth'})
+MERGE (start)-[:HAS_LOCATION]->(end);
+
+MERGE (start:PlotPoint {name: 'Aether_6'})
+MERGE (end:Character {name: 'Malekith'})
+MERGE (start)-[:POSSESSED_BY]->(end);
+
+MERGE (start:PlotPoint {name: 'Aether_5'})
+MERGE (end:PlotPoint {name: 'Aether_6'})
+MERGE (start)-[:NEXT_PLOT_POINT]->(end);
+
+MERGE (start:PlotPoint {name: 'Aether_6'})
+MERGE (end:InfinityStone {name: 'Aether'})
+MERGE (start)-[:ABOUT]->(end);
+
+MERGE (start:PlotPoint {name: 'Aether_6'})
+MERGE (end:Movie {name: 'Thor: The Dark World'})
+MERGE (start)-[:IN_MOVIE]->(end);
+
+MERGE (start:PlotPoint {name: 'Aether_7'})
+MERGE (end:Location {name: 'Knowhere'})
+MERGE (start)-[:HAS_LOCATION]->(end);
+
+MERGE (start:PlotPoint {name: 'Aether_7'})
+MERGE (end:Character {name: 'The Collector'})
+MERGE (start)-[:POSSESSED_BY]->(end);
+
+MERGE (start:PlotPoint {name: 'Aether_6'})
+MERGE (end:PlotPoint {name: 'Aether_7'})
+MERGE (start)-[:NEXT_PLOT_POINT]->(end);
+
+MERGE (start:PlotPoint {name: 'Aether_7'})
+MERGE (end:InfinityStone {name: 'Aether'})
+MERGE (start)-[:ABOUT]->(end);
+
+MERGE (start:PlotPoint {name: 'Aether_7'})
+MERGE (end:Movie {name: 'Thor: The Dark World'})
+MERGE (start)-[:IN_MOVIE]->(end);
+
+MERGE (n:InfinityStone {name: 'Eye of Agamotto'});
+
+MERGE (n:PlotPoint {name: 'Eye of Agamotto_1'})
+  ON CREATE SET n.description = 'Doctor Strange uses the Eye of Agamotto to manipulate time'
+  ON MATCH SET n.description = 'Doctor Strange uses the Eye of Agamotto to manipulate time';
+
+MERGE (n:PlotPoint {name: 'Eye of Agamotto_2'})
+  ON CREATE SET n.description = 'Dormammu is destroying the Earth, Doctor Strange reverses time to undo it'
+  ON MATCH SET n.description = 'Dormammu is destroying the Earth, Doctor Strange reverses time to undo it';
+
+MERGE (n:PlotPoint {name: 'Eye of Agamotto_3'})
+  ON CREATE SET n.description = 'Doctor Strange travels to Dark Dimension and traps Dormammu in a time loop'
+  ON MATCH SET n.description = 'Doctor Strange travels to Dark Dimension and traps Dormammu in a time loop';
+
+MERGE (n:PlotPoint {name: 'Eye of Agamotto_4'})
+  ON CREATE SET n.description = 'Doctor Strange puts the Eye of Agamotto back where he found it'
+  ON MATCH SET n.description = 'Doctor Strange puts the Eye of Agamotto back where he found it';
+
+MERGE (start:PlotPoint {name: 'Eye of Agamotto_1'})
+MERGE (end:Location {name: 'Kamar-Taj'})
+MERGE (start)-[:HAS_LOCATION]->(end);
+
+MERGE (start:PlotPoint {name: 'Eye of Agamotto_1'})
+MERGE (end:Character {name: 'Doctor Strange'})
+MERGE (start)-[:POSSESSED_BY]->(end);
+
+MERGE (start:PlotPoint {name: 'Eye of Agamotto_1'})
+MERGE (end:InfinityStone {name: 'Eye of Agamotto'})
+MERGE (start)-[:ABOUT]->(end);
+
+MERGE (start:PlotPoint {name: 'Eye of Agamotto_1'})
+MERGE (end:Movie {name: 'Doctor Strange'})
+MERGE (start)-[:IN_MOVIE]->(end);
+
+MERGE (start:PlotPoint {name: 'Eye of Agamotto_2'})
+MERGE (end:Location {name: 'Hong Kong'})
+MERGE (start)-[:HAS_LOCATION]->(end);
+
+MERGE (start:PlotPoint {name: 'Eye of Agamotto_2'})
+MERGE (end:Character {name: 'Doctor Strange'})
+MERGE (start)-[:POSSESSED_BY]->(end);
+
+MERGE (start:PlotPoint {name: 'Eye of Agamotto_1'})
+MERGE (end:PlotPoint {name: 'Eye of Agamotto_2'})
+MERGE (start)-[:NEXT_PLOT_POINT]->(end);
+
+MERGE (start:PlotPoint {name: 'Eye of Agamotto_2'})
+MERGE (end:InfinityStone {name: 'Eye of Agamotto'})
+MERGE (start)-[:ABOUT]->(end);
+
+MERGE (start:PlotPoint {name: 'Eye of Agamotto_2'})
+MERGE (end:Movie {name: 'Doctor Strange'})
+MERGE (start)-[:IN_MOVIE]->(end);
+
+MERGE (start:PlotPoint {name: 'Eye of Agamotto_3'})
+MERGE (end:Location {name: 'Dark Dimension'})
+MERGE (start)-[:HAS_LOCATION]->(end);
+
+MERGE (start:PlotPoint {name: 'Eye of Agamotto_3'})
+MERGE (end:Character {name: 'Doctor Strange'})
+MERGE (start)-[:POSSESSED_BY]->(end);
+
+MERGE (start:PlotPoint {name: 'Eye of Agamotto_2'})
+MERGE (end:PlotPoint {name: 'Eye of Agamotto_3'})
+MERGE (start)-[:NEXT_PLOT_POINT]->(end);
+
+MERGE (start:PlotPoint {name: 'Eye of Agamotto_3'})
+MERGE (end:InfinityStone {name: 'Eye of Agamotto'})
+MERGE (start)-[:ABOUT]->(end);
+
+MERGE (start:PlotPoint {name: 'Eye of Agamotto_3'})
+MERGE (end:Movie {name: 'Doctor Strange'})
+MERGE (start)-[:IN_MOVIE]->(end);
+
+MERGE (start:PlotPoint {name: 'Eye of Agamotto_4'})
+MERGE (end:Location {name: 'Kamar-Taj'})
+MERGE (start)-[:HAS_LOCATION]->(end);
+
+MERGE (start:PlotPoint {name: 'Eye of Agamotto_4'})
+MERGE (end:Character {name: 'Nobody'})
+MERGE (start)-[:POSSESSED_BY]->(end);
+
+MERGE (start:PlotPoint {name: 'Eye of Agamotto_3'})
+MERGE (end:PlotPoint {name: 'Eye of Agamotto_4'})
+MERGE (start)-[:NEXT_PLOT_POINT]->(end);
+
+MERGE (start:PlotPoint {name: 'Eye of Agamotto_4'})
+MERGE (end:InfinityStone {name: 'Eye of Agamotto'})
+MERGE (start)-[:ABOUT]->(end);
+
+MERGE (start:PlotPoint {name: 'Eye of Agamotto_4'})
+MERGE (end:Movie {name: 'Doctor Strange'})
+MERGE (start)-[:IN_MOVIE]->(end);
+----
+
+[source,cypher]
+----
+MATCH (stone:InfinityStone)
+OPTIONAL MATCH (pp:PlotPoint)-[:ABOUT]->(stone:InfinityStone),
+(pp:PlotPoint)-[:IN_MOVIE]->(m:Movie)
+WITH stone, m.name as movieName
+ORDER BY movieName
+RETURN stone.name as infinityStone, collect(distinct movieName) as movies
+ORDER BY infinityStone
+----
+//table
+
+## The Avengers - The Early Years
+
+The Avengers are a group of super-human characters put together by Nick Fury of S.H.I.E.L.D. Iron Man, Captain America, Thor, and The Hulk all had their own movie leading into _The Avengers_, where they were joined by Natasha Romanoff and Hawkeye to round out the team. They battled Loki, Thor's brother, who opened a space portal to let an alien race called the Chitauri invade. This set of movies is called Phase 1 of the MCU.
+
+[source,cypher]
+----
+MATCH (c:Character)-[:PART_OF]->(g:Group {name:'Avengers'})
+RETURN c.name as avenger
+ORDER BY avenger
+----
+//table
+
+In Phase 1, we are introduced to the Tesseract, a blue cube that initially surfaced in _Captain America: The First Avenger_. The Tesseract powered energy weapons wielded by Hydra. Later on, in _The Avengers_, it is revealed that the Tesseract's true purpose is to open portals into space. The Tesseract houses an Infinity Stone, one of six stones that Thanos is after. In _The Avengers_, Thanos is acting through the Chitauri and Loki, so he isn't directly involved yet. The Avengers save the world from the Chitauri invasion, but not without giving Iron Man (Tony Stark) some mental issues that affect his decisions in future films. Thor takes the Tesseract to Asgard, they eat shawarma, and all is good.
+
+image::https://raw.githubusercontent.com/ericmonk/InfinityWar/master/avengers.png[float=right,width=800]
+
+## The Avengers - Phase 2
+
+The second block of MCU movies is referred to as Phase 2, and culminates in _Avengers: Age of Ultron_. In Phase 2, we have new chapters in Iron Man, Captain America, and Thor, and we add a new non-avengers Marvel group called the Guardians of the Galaxy. We start adding more characters, and more Infinity Stones in Phase 2.  In _Thor: The Dark World_, Thor's girlfriend Jane Foster gets infected with the Aether, which is an amorphous energy that can be very powerful when wielded by the correct person. It eventually ends up with the Collector, given to him by Thor's Asgardian companions, who did not want two Infinity Stones on Asgard (they already had the Tesseract).
+
+### Guardians of the Galaxy
+
+The _Guardians of the Galaxy_ introduces the Orb, also called the Power Stone, when Star-Lord acquires it on the planet Morag. Ronan is the antagonist, and he sends Gamora to retrieve the Orb. Gamora and her sister Nebula happen to be the daughters of Thanos. Gamora and Star-Lord fight, Rocket and Groot get involved, they get imprisoned, and then are joined by Drax as they escape from prison. They try to sell the Orb to the Collector, but things don't work out (lab goes ka-boom!) so Ronan gets the Orb and tries to destroy Xandar. Ronan is stopped with an epic air/space battle followed by an epic dance battle, where by the Guardians win and leave the Orb with the NOVA Corps of Xandar.
+
+[source,cypher]
+----
+MATCH (c:Character)-[:PART_OF]->(g:Group {name:'Guardians of the Galaxy'})
+RETURN c.name as guardianOfGalaxy
+ORDER BY guardianOfGalaxy
+----
+//table
+
+### Ultron
+
+Meanwhile, following along with Avengers plot-line, Tony is concerned that another threat like the Chitauri will surface, so he creates an A.I. called Ultron. Tony and Bruce Banner use Loki's staff from the first movie, and it is revealed later that the staff actually contains the Mind Stone, another Infinity Stone. The Mind Stone brings the total count of Infinity Stones to 4 (Tesseract, Aether, Orb, Mind Stone) out of 6. Ultron is supposed to protect the Earth, but instead decides not to protect the Earth (are you surprised?) by attempting to create an extinction level event. Ultron also wanted a new body for himself, but that plan fails, and instead an android called Vision is created - by combining the Mind Stone, a body made out of Vibranium, and Tony Stark's previous A.I. assistant called J.A.R.V.I.S. The Mind Stone actually becomes embedded in Vision's forehead. In order to thwart Ultron's final plan, new members Falcon, War Machine, Vision, and Wanda Maximoff (Scarlet Witch) help out and eventually join the Avengers. At the very end of the movie, Thanos is shown saying "Fine, I'll do it myself", referring to his desire to obtain the Infinity Stones.
+
+[source,cypher]
+----
+MATCH (c:Character)-[r:BECOMES_AVENGER|IS_AVENGER]->(e:Event {name:'Add Avengers'})
+WITH c, CASE WHEN type(r) = 'BECOMES_AVENGER' THEN 'New Avenger' ELSE 'Existing Avenger' END as isNew
+RETURN c.name as avenger, isNew
+ORDER BY avenger
+----
+//table
+
+image::https://raw.githubusercontent.com/ericmonk/InfinityWar/master/avengers_age_of_ultron.png[float=right,width=800]
+
+## Avengers Disassemble
+
+In Phase 3, we find out good things never last, and the Avengers start infighting over something called the Sokovia accords. Not only that, but it turns out Captain America's good buddy Bucky Barnes, who was previously brain-washed to become the deadly assassin the Winter Soldier, is blamed for also killing the King of Wakanda. The King of Wakanda also happens to be the father of Black Panther who wants revenge on the Winter Soldier. There was previously some infighting amongst the Avengers anyway - Thor vs Iron Man, Thor vs Hulk, Iron Man vs Hulk, but this takes it to a new level. The Avengers eventually split into two sides, and recruit additional super-powered folks to join in the fray. I have named the two sides CapSide (for Captain America and friends) and IronSide (for Iron Man and friends). Don't be surprised if in _Avengers: Infinity War_, the avengers start off not-assembled. This in-fighting occurs primarily in _Captain America: Civil War_, but serves to tie in Ant-Man, and to introduce Spider-Man and Black Panther, each of which had their own films.
+
+image::https://raw.githubusercontent.com/ericmonk/InfinityWar/master/captain_america_civil_war.png[float=right,width=1000]
+
+[source,cypher]
+----
+MATCH (c:Character)-[:PART_OF]->(g:Group)
+WHERE g.name IN ['CapSide','IronSide']
+RETURN c.name as cantWeJustGetAlong, g.name as groupName
+ORDER BY groupName, cantWeJustGetAlong
+----
+//table
+
+## The Time Stone
+
+In yet another parallel thread, Doctor Strange learns how to counter super-natural, mystical threats by learning what is for all intents and purposes, magic. One of the special artifacts Doctor Strange encounters and learns to use is the Eye of Agamotto, which contains the 5th Infinity Stone, the Time Stone. Of course, Earth faces yet another grave threat, but with the Time Stone, Doctor Strange is able to defeat Dormammu (from the Dark Dimension), and save Earth. Except for the Time Stone, Phase 3 really doesn't delve too much into the Infinity Stones. There is a brief glimpse of Loki passing the Tesseract in Asgard, so it is presumed that Loki has it as this point. This image shows the important plot points that link the movies to the Infinity Stones.
+
+image::https://raw.githubusercontent.com/ericmonk/InfinityWar/master/infinity_stones.png[float=right,width=1000]
+
+## Avengers: Infinity War
+
+Finally, we cap off these first 18 movies, with the 19th movie, _Avengers: Infinity War_. The Soul Stone has yet to surface. Does Thor's companion Heimdall have it? Is it in Wakanda somewhere? Based on previews and sneak-peak articles it appears that Avengers, the Guardians of the Galaxy, and any other Marvel character already introduced who is not Thanos are going to be fighting on the "AvengersPlus" side, against Thanos. Previously, we have Thanos cameos and mentions in both the Avengers films and the Guardians of the Galaxy, so this film should bring them together.
+
+But I just remembered something - I think the 19th movie might actually be Part 1 of a 2-Part installment, so will it really be over? I guess there is only one thing to do, see the movie, and don't leave when the credits start rolling. You know important future movie info is usually revealed sometime half-way through the credits.
+
+[source,cypher]
+----
+MATCH (c:Character)-[:PART_OF]->(g:Group)
+WHERE g.name IN ['AvengersPlus','Guardians of the Galaxy']
+RETURN c.name as aLotOfSuperHeroes, g.name as groupName
+ORDER BY aLotOfSuperHeroes
+----
+//table
+
+image::https://raw.githubusercontent.com/ericmonk/InfinityWar/master/avengers_infinity_war.png[float=right,width=1000]
+
+There is a lot more to explore in the data, so feel free to poke around!
+
+[source,cypher]
+----
+MATCH (pp:PlotPoint)-[r:ABOUT]->(stone:InfinityStone),
+(pp)-[r2:POSSESSED_BY]->(c:Character),
+(pp)-[r3:HAS_LOCATION]->(l:Location)
+RETURN pp, r, stone, r2, c, r3, l
+----
+//console
+//graph_result

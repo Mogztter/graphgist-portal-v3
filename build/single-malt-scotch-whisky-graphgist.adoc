@@ -1,0 +1,291 @@
+= Single Malt Scotch Whisky GraphGist 
+
+:author: Patrick Baumgartner
+:twitter: @patbaumgartner
+:tags: whisky, single malt, graph
+
+
+[cols="2*"]
+|===
+a|image::https://upload.wikimedia.org/wikipedia/commons/6/67/Eilean_Donan_Castle,_Scotland_-_Jan_2011.jpg[Eilean Donan Castle, 460, 270]
+a|image::https://upload.wikimedia.org/wikipedia/commons/9/9a/Ardbeg_bottle_detail.jpg[Ardbeg Bottle, 360, 270]
+|===
+
+== Motivation
+
+During Christmas holidays, I was thinking of how I could get some new ideas to explore the world of whisky in near future. I was looking for some specific attributes like location and taste (based on the book 'Whisky Classified Choosing Single Malts by Flavour'). So why not create a GraphGist which will suggest some adventures ...
+
+== Query console
+
+//console
+
+//hide
+//setup
+[source,cypher]
+----
+CREATE (w_aberlour:Whisky{name:'Aberlour'}),
+ (w_ardbeg:Whisky{name:'Ardbeg'}),
+ (w_arran:Whisky{name:'Arran'}),
+ (w_auchentoshan:Whisky{name:'Auchentoshan'}),
+ (w_auchroisk:Whisky{name:'Auchroisk'}),
+ (w_aultmore:Whisky{name:'Aultmore'}),
+ (w_bennevis:Whisky{name:'Ben Nevis'}),
+ (w_benriach:Whisky{name:'BenRiach'}),
+ (w_benrinnes:Whisky{name:'Benrinnes'}),
+ (w_benromach:Whisky{name:'Benromach'}),
+ (w_blairathol:Whisky{name:'Blair Athol'}),
+ (w_bowmore:Whisky{name:'Bowmore'}),
+ (w_bruichladdich:Whisky{name:'Bruichladdich'}),
+ (w_bunnahabhain:Whisky{name:'Bunnahabhain'}),
+ (w_caolila:Whisky{name:'Caol Ila'}),
+ (w_cardhu:Whisky{name:'Cardhu'}),
+ (w_clynelish:Whisky{name:'Clynelish'}),
+ (w_cragganmore:Whisky{name:'Cragganmore'}),
+ (w_craigellachie:Whisky{name:'Craigellachie'}),
+ (w_dailuaine:Whisky{name:'Dailuaine'}),
+ (w_dalmore:Whisky{name:'Dalmore'}),
+ (w_dalwhinnie:Whisky{name:'Dalwhinnie'}),
+ (w_deanston:Whisky{name:'Deanston'}),
+ (w_dufftown:Whisky{name:'Dufftown'}),
+ (w_edradour:Whisky{name:'Edradour'}),
+ (w_glendeveron:Whisky{name:'Glen Deveron'}),
+ (w_glengarioch:Whisky{name:'Glen Garioch'}),
+ (w_glengrant:Whisky{name:'Glen Grant'}),
+ (w_glenkeith:Whisky{name:'Glen Keith'}),
+ (w_glenmoray:Whisky{name:'Glen Moray'}),
+ (w_glenord:Whisky{name:'Glen Ord'}),
+ (w_glenscotia:Whisky{name:'Glen Scotia'}),
+ (w_glendronach:Whisky{name:'Glendronach'}),
+ (w_glendullan:Whisky{name:'Glendullan'}),
+ (w_glenfarclas:Whisky{name:'Glenfarclas'}),
+ (w_glenfiddich:Whisky{name:'Glenfiddich'}),
+ (w_glengoyne:Whisky{name:'Glengoyne'}),
+ (w_glenkinchie:Whisky{name:'Glenkinchie'}),
+ (w_glenlivet:Whisky{name:'Glenlivet'}),
+ (w_glenlossie:Whisky{name:'Glenlossie'}),
+ (w_glenmorangie:Whisky{name:'Glenmorangie'}),
+ (w_glenrothes:Whisky{name:'Glenrothes'}),
+ (w_glenturret:Whisky{name:'Glenturret'}),
+ (w_highlandpark:Whisky{name:'Highland Park'}),
+ (w_inchgower:Whisky{name:'Inchgower'}),
+ (w_inchmurrin:Whisky{name:'Inchmurrin'}),
+ (w_isleofjura:Whisky{name:'Isle of Jura'}),
+ (w_knockando:Whisky{name:'Knockando'}),
+ (w_lagavulin:Whisky{name:'Lagavulin'}),
+ (w_laphroaig:Whisky{name:'Laphroaig'}),
+ (w_linkwood:Whisky{name:'Linkwood'}),
+ (w_longmorn:Whisky{name:'Longmorn'}),
+ (w_macallan:Whisky{name:'Macallan'}),
+ (w_miltonduff:Whisky{name:'Miltonduff'}),
+ (w_mortlach:Whisky{name:'Mortlach'}),
+ (w_oban:Whisky{name:'Oban'}),
+ (w_oldfettercairn:Whisky{name:'Old Fettercairn'}),
+ (w_oldpulteney:Whisky{name:'Old Pulteney'}),
+ (w_royalbrackla:Whisky{name:'Royal Brackla'}),
+ (w_royallochnagar:Whisky{name:'Royal Lochnagar'}),
+ (w_scapa:Whisky{name:'Scapa'}),
+ (w_speyburn:Whisky{name:'Speyburn'}),
+ (w_springbank:Whisky{name:'Springbank'}),
+ (w_strathisla:Whisky{name:'Strathisla'}),
+ (w_talisker:Whisky{name:'Talisker'}),
+ (w_tamdhu:Whisky{name:'Tamdhu'}),
+ (w_teaninch:Whisky{name:'Teaninch'}),
+ (w_tobermory:Whisky{name:'Tobermory'}),
+ (w_tomatin:Whisky{name:'Tomatin'}),
+ (w_tomintoul:Whisky{name:'Tomintoul'}),
+ (w_tormore:Whisky{name:'Tormore'}),
+ (w_tullibardine:Whisky{name:'Tullibardine'}),
+
+ (l_mullofkintyre:Location{name:'Mull of Kintyre'}),
+ (l_tomatin:Location{name:'Tomatin'}),
+ (l_fortwilliam:Location{name:'Fort William'}),
+ (l_pitlochry:Location{name:'Pitlochry'}),
+ (l_brora:Location{name:'Brora'}),
+ (l_alness:Location{name:'Alness'}),
+ (l_dalwhinnie:Location{name:'Dalwhinnie'}),
+ (l_doune:Location{name:'Doune'}),
+ (l_banff:Location{name:'Banff'}),
+ (l_oldmeldrum:Location{name:'Oldmeldrum'}),
+ (l_dumgoyne:Location{name:'Dumgoyne'}),
+ (l_tain:Location{name:'Tain'}),
+ (l_crieff:Location{name:'Crieff'}),
+ (l_alexandria:Location{name:'Alexandria'}),
+ (l_oban:Location{name:'Oban'}),
+ (l_laurencekirk:Location{name:'Laurencekirk'}),
+ (l_wick:Location{name:'Wick'}),
+ (l_ballater:Location{name:'Ballater'}),
+ (l_rothes:Location{name:'Rothes'}),
+ (l_blackford:Location{name:'Blackford'}),
+ (l_lochranza:Location{name:'Lochranza'}),
+ (l_kirkwall:Location{name:'Kirkwall'}),
+ (l_jura:Location{name:'Jura'}),
+ (l_isleofskye:Location{name:'Isle of Skye'}),
+ (l_isleofmull:Location{name:'Isle of Mull'}),
+ (l_portellen:Location{name:'Port Ellen'}),
+ (l_isleofislay:Location{name:'Isle of Islay'}),
+ (l_portaskaig:Location{name:'Port Askaig'}),
+ (l_dalmuir:Location{name:'Dalmuir'}),
+ (l_pencaitland:Location{name:'Pencaitland'}),
+ (l_muiroford:Location{name:'Muir of Ord'}),
+ (l_aberlour:Location{name:'Aberlour'}),
+ (l_mulben:Location{name:'Mulben'}),
+ (l_keith:Location{name:'Keith'}),
+ (l_moray:Location{name:'Moray'}),
+ (l_forres:Location{name:'Forres'}),
+ (l_knockando:Location{name:'Knockando'}),
+ (l_ballindalloch:Location{name:'Ballindalloch'}),
+ (l_dufftown:Location{name:'Dufftown'}),
+ (l_elgin:Location{name:'Elgin'}),
+ (l_forgue:Location{name:'Forgue'}),
+ (l_ballindollach:Location{name:'Ballindollach'}),
+ (l_buckie:Location{name:'Buckie'}),
+ (l_craigellachie:Location{name:'Craigellachie'}),
+ (l_elign:Location{name:'Elign'}),
+ (l_nairn:Location{name:'Nairn'}),
+ (l_grantownnspey:Location{name:'Grantown N Spey'}),
+
+ (r_campbeltown:Region{name:'Campbeltown'}),
+ (r_highlands:Region{name:'Highlands'}),
+ (r_islands:Region{name:'Islands'}),
+ (r_islay:Region{name:'Islay'}),
+ (r_lowlands:Region{name:'Lowlands'}),
+ (r_speyside:Region{name:'Speyside'}),
+
+ (A:Flavour{name:'A', description:'Full-Bodied, Medium-Sweet, Pronounced Sherry with Fruity, Spicy, Malty Notes and Nutty, Smoky Hints.'}),
+ (B:Flavour{name:'B', description:'Medium-Bodied, Medium-Sweet, with Nutty, Malty, Floral, Honey and Fruity Notes.'}),
+ (C:Flavour{name:'C', description:'Medium-Bodied, Medium-Sweet, with Fruity, Floral, Honey, Malty Notes and Spicy Hints.'}),
+ (D:Flavour{name:'D', description:'Light, Medium-Sweet, Low or No Peat, with Fruity, Floral, Malty Notes and Nutty Hints.'}),
+ (E:Flavour{name:'E', description:'Light, Medium-Sweet, Low Peat, with Floral, Malty Notes and Fruity, Spicy, Honey Hints.'}),
+ (F:Flavour{name:'F', description:'Medium-Bodied, Medium-Sweet, Low Peat, Malty Notes and Sherry, Honey, Spicy Hints.'}),
+ (G:Flavour{name:'G', description:'Medium-Bodied, Sweet, Low Peat and Floral Notes.'}),
+ (H:Flavour{name:'H', description:'Medium-Bodied, Medium-Sweet, with Smoky, Fruity, Spicy Notes and Floral, Nutty Hints.'}),
+ (I:Flavour{name:'I', description:'Medium-Light, Dry, with Smoky, Spicy, Honey Notes and Nutty, Floral Hints.'}),
+ (J:Flavour{name:'J', description:'Full-Bodied, Dry, Pungent, Peaty and Medicinal, with Spicy, Feinty Notes.'}),
+
+ (w_aberlour)-[:PRODUCED_IN]->(l_aberlour)-[:LOCATED_IN]->(r_speyside), (w_aberlour)-[:HAS_FLAVOURS]->(B),
+ (w_ardbeg)-[:PRODUCED_IN]->(l_portellen)-[:LOCATED_IN]->(r_islay), (w_ardbeg)-[:HAS_FLAVOURS]->(J),
+ (w_arran)-[:PRODUCED_IN]->(l_lochranza)-[:LOCATED_IN]->(r_islands), (w_arran)-[:HAS_FLAVOURS]->(G),
+ (w_auchentoshan)-[:PRODUCED_IN]->(l_dalmuir)-[:LOCATED_IN]->(r_lowlands), (w_auchentoshan)-[:HAS_FLAVOURS]->(D),
+ (w_auchroisk)-[:PRODUCED_IN]->(l_mulben)-[:LOCATED_IN]->(r_speyside), (w_auchroisk)-[:HAS_FLAVOURS]->(F),
+ (w_aultmore)-[:PRODUCED_IN]->(l_keith)-[:LOCATED_IN]->(r_speyside), (w_aultmore)-[:HAS_FLAVOURS]->(D),
+ (w_bennevis)-[:PRODUCED_IN]->(l_fortwilliam)-[:LOCATED_IN]->(r_highlands), (w_bennevis)-[:HAS_FLAVOURS]->(B),
+ (w_benriach)-[:PRODUCED_IN]->(l_moray)-[:LOCATED_IN]->(r_speyside), (w_benriach)-[:HAS_FLAVOURS]->(C),
+ (w_benrinnes)-[:PRODUCED_IN]->(l_aberlour)-[:LOCATED_IN]->(r_speyside), (w_benrinnes)-[:HAS_FLAVOURS]->(B),
+ (w_benromach)-[:PRODUCED_IN]->(l_forres)-[:LOCATED_IN]->(r_speyside), (w_benromach)-[:HAS_FLAVOURS]->(B),
+ (w_blairathol)-[:PRODUCED_IN]->(l_pitlochry)-[:LOCATED_IN]->(r_highlands), (w_blairathol)-[:HAS_FLAVOURS]->(B),
+ (w_bowmore)-[:PRODUCED_IN]->(l_isleofislay)-[:LOCATED_IN]->(r_islay), (w_bowmore)-[:HAS_FLAVOURS]->(I),
+ (w_bruichladdich)-[:PRODUCED_IN]->(l_isleofislay)-[:LOCATED_IN]->(r_islay), (w_bruichladdich)-[:HAS_FLAVOURS]->(I),
+ (w_bunnahabhain)-[:PRODUCED_IN]->(l_portaskaig)-[:LOCATED_IN]->(r_islay), (w_bunnahabhain)-[:HAS_FLAVOURS]->(E),
+ (w_caolila)-[:PRODUCED_IN]->(l_portaskaig)-[:LOCATED_IN]->(r_islay), (w_caolila)-[:HAS_FLAVOURS]->(J),
+ (w_cardhu)-[:PRODUCED_IN]->(l_knockando)-[:LOCATED_IN]->(r_speyside), (w_cardhu)-[:HAS_FLAVOURS]->(D),
+ (w_clynelish)-[:PRODUCED_IN]->(l_brora)-[:LOCATED_IN]->(r_highlands), (w_clynelish)-[:HAS_FLAVOURS]->(J),
+ (w_cragganmore)-[:PRODUCED_IN]->(l_ballindalloch)-[:LOCATED_IN]->(r_speyside), (w_cragganmore)-[:HAS_FLAVOURS]->(B),
+ (w_craigellachie)-[:PRODUCED_IN]->(l_moray)-[:LOCATED_IN]->(r_speyside), (w_craigellachie)-[:HAS_FLAVOURS]->(H),
+ (w_dailuaine)-[:PRODUCED_IN]->(l_aberlour)-[:LOCATED_IN]->(r_speyside), (w_dailuaine)-[:HAS_FLAVOURS]->(A),
+ (w_dalmore)-[:PRODUCED_IN]->(l_alness)-[:LOCATED_IN]->(r_highlands), (w_dalmore)-[:HAS_FLAVOURS]->(A),
+ (w_dalwhinnie)-[:PRODUCED_IN]->(l_dalwhinnie)-[:LOCATED_IN]->(r_highlands), (w_dalwhinnie)-[:HAS_FLAVOURS]->(C),
+ (w_deanston)-[:PRODUCED_IN]->(l_doune)-[:LOCATED_IN]->(r_highlands), (w_deanston)-[:HAS_FLAVOURS]->(F),
+ (w_dufftown)-[:PRODUCED_IN]->(l_dufftown)-[:LOCATED_IN]->(r_speyside), (w_dufftown)-[:HAS_FLAVOURS]->(G),
+ (w_edradour)-[:PRODUCED_IN]->(l_pitlochry)-[:LOCATED_IN]->(r_highlands), (w_edradour)-[:HAS_FLAVOURS]->(B),
+ (w_glendeveron)-[:PRODUCED_IN]->(l_banff)-[:LOCATED_IN]->(r_highlands), (w_glendeveron)-[:HAS_FLAVOURS]->(F),
+ (w_glengarioch)-[:PRODUCED_IN]->(l_oldmeldrum)-[:LOCATED_IN]->(r_highlands), (w_glengarioch)-[:HAS_FLAVOURS]->(H),
+ (w_glengrant)-[:PRODUCED_IN]->(l_rothes)-[:LOCATED_IN]->(r_speyside), (w_glengrant)-[:HAS_FLAVOURS]->(D),
+ (w_glenkeith)-[:PRODUCED_IN]->(l_keith)-[:LOCATED_IN]->(r_speyside), (w_glenkeith)-[:HAS_FLAVOURS]->(F),
+ (w_glenmoray)-[:PRODUCED_IN]->(l_elgin)-[:LOCATED_IN]->(r_speyside), (w_glenmoray)-[:HAS_FLAVOURS]->(E),
+ (w_glenord)-[:PRODUCED_IN]->(l_muiroford)-[:LOCATED_IN]->(r_highlands), (w_glenord)-[:HAS_FLAVOURS]->(C),
+ (w_glenscotia)-[:PRODUCED_IN]->(l_mullofkintyre)-[:LOCATED_IN]->(r_campbeltown), (w_glenscotia)-[:HAS_FLAVOURS]->(I),
+ (w_glendronach)-[:PRODUCED_IN]->(l_forgue)-[:LOCATED_IN]->(r_speyside), (w_glendronach)-[:HAS_FLAVOURS]->(A),
+ (w_glendullan)-[:PRODUCED_IN]->(l_dufftown)-[:LOCATED_IN]->(r_speyside), (w_glendullan)-[:HAS_FLAVOURS]->(C),
+ (w_glenfarclas)-[:PRODUCED_IN]->(l_ballindollach)-[:LOCATED_IN]->(r_speyside), (w_glenfarclas)-[:HAS_FLAVOURS]->(B),
+ (w_glenfiddich)-[:PRODUCED_IN]->(l_dufftown)-[:LOCATED_IN]->(r_speyside), (w_glenfiddich)-[:HAS_FLAVOURS]->(G),
+ (w_glengoyne)-[:PRODUCED_IN]->(l_dumgoyne)-[:LOCATED_IN]->(r_highlands), (w_glengoyne)-[:HAS_FLAVOURS]->(D),
+ (w_glenkinchie)-[:PRODUCED_IN]->(l_pencaitland)-[:LOCATED_IN]->(r_lowlands), (w_glenkinchie)-[:HAS_FLAVOURS]->(E),
+ (w_glenlivet)-[:PRODUCED_IN]->(l_moray)-[:LOCATED_IN]->(r_speyside), (w_glenlivet)-[:HAS_FLAVOURS]->(C),
+ (w_glenlossie)-[:PRODUCED_IN]->(l_elgin)-[:LOCATED_IN]->(r_speyside), (w_glenlossie)-[:HAS_FLAVOURS]->(E),
+ (w_glenmorangie)-[:PRODUCED_IN]->(l_tain)-[:LOCATED_IN]->(r_highlands), (w_glenmorangie)-[:HAS_FLAVOURS]->(H),
+ (w_glenrothes)-[:PRODUCED_IN]->(l_rothes)-[:LOCATED_IN]->(r_speyside), (w_glenrothes)-[:HAS_FLAVOURS]->(F),
+ (w_glenturret)-[:PRODUCED_IN]->(l_crieff)-[:LOCATED_IN]->(r_highlands), (w_glenturret)-[:HAS_FLAVOURS]->(B),
+ (w_highlandpark)-[:PRODUCED_IN]->(l_kirkwall)-[:LOCATED_IN]->(r_islands), (w_highlandpark)-[:HAS_FLAVOURS]->(I),
+ (w_inchgower)-[:PRODUCED_IN]->(l_buckie)-[:LOCATED_IN]->(r_speyside), (w_inchgower)-[:HAS_FLAVOURS]->(E),
+ (w_inchmurrin)-[:PRODUCED_IN]->(l_alexandria)-[:LOCATED_IN]->(r_highlands), (w_inchmurrin)-[:HAS_FLAVOURS]->(E),
+ (w_isleofjura)-[:PRODUCED_IN]->(l_jura)-[:LOCATED_IN]->(r_islands), (w_isleofjura)-[:HAS_FLAVOURS]->(I),
+ (w_knockando)-[:PRODUCED_IN]->(l_knockando)-[:LOCATED_IN]->(r_speyside), (w_knockando)-[:HAS_FLAVOURS]->(B),
+ (w_lagavulin)-[:PRODUCED_IN]->(l_portellen)-[:LOCATED_IN]->(r_islay), (w_lagavulin)-[:HAS_FLAVOURS]->(J),
+ (w_laphroaig)-[:PRODUCED_IN]->(l_portellen)-[:LOCATED_IN]->(r_islay), (w_laphroaig)-[:HAS_FLAVOURS]->(J),
+ (w_linkwood)-[:PRODUCED_IN]->(l_elgin)-[:LOCATED_IN]->(r_speyside), (w_linkwood)-[:HAS_FLAVOURS]->(C),
+ (w_longmorn)-[:PRODUCED_IN]->(l_elgin)-[:LOCATED_IN]->(r_speyside), (w_longmorn)-[:HAS_FLAVOURS]->(B),
+ (w_macallan)-[:PRODUCED_IN]->(l_craigellachie)-[:LOCATED_IN]->(r_speyside), (w_macallan)-[:HAS_FLAVOURS]->(A),
+ (w_miltonduff)-[:PRODUCED_IN]->(l_elign)-[:LOCATED_IN]->(r_speyside), (w_miltonduff)-[:HAS_FLAVOURS]->(G),
+ (w_mortlach)-[:PRODUCED_IN]->(l_keith)-[:LOCATED_IN]->(r_speyside), (w_mortlach)-[:HAS_FLAVOURS]->(A),
+ (w_oban)-[:PRODUCED_IN]->(l_oban)-[:LOCATED_IN]->(r_highlands), (w_oban)-[:HAS_FLAVOURS]->(H),
+ (w_oldfettercairn)-[:PRODUCED_IN]->(l_laurencekirk)-[:LOCATED_IN]->(r_highlands), (w_oldfettercairn)-[:HAS_FLAVOURS]->(F),
+ (w_oldpulteney)-[:PRODUCED_IN]->(l_wick)-[:LOCATED_IN]->(r_highlands), (w_oldpulteney)-[:HAS_FLAVOURS]->(H),
+ (w_royalbrackla)-[:PRODUCED_IN]->(l_nairn)-[:LOCATED_IN]->(r_speyside), (w_royalbrackla)-[:HAS_FLAVOURS]->(C),
+ (w_royallochnagar)-[:PRODUCED_IN]->(l_ballater)-[:LOCATED_IN]->(r_highlands), (w_royallochnagar)-[:HAS_FLAVOURS]->(A),
+ (w_scapa)-[:PRODUCED_IN]->(l_kirkwall)-[:LOCATED_IN]->(r_islands), (w_scapa)-[:HAS_FLAVOURS]->(B),
+ (w_speyburn)-[:PRODUCED_IN]->(l_rothes)-[:LOCATED_IN]->(r_speyside), (w_speyburn)-[:HAS_FLAVOURS]->(G),
+ (w_springbank)-[:PRODUCED_IN]->(l_mullofkintyre)-[:LOCATED_IN]->(r_campbeltown), (w_springbank)-[:HAS_FLAVOURS]->(I),
+ (w_strathisla)-[:PRODUCED_IN]->(l_keith)-[:LOCATED_IN]->(r_speyside), (w_strathisla)-[:HAS_FLAVOURS]->(B),
+ (w_talisker)-[:PRODUCED_IN]->(l_isleofskye)-[:LOCATED_IN]->(r_islands), (w_talisker)-[:HAS_FLAVOURS]->(J),
+ (w_tamdhu)-[:PRODUCED_IN]->(l_knockando)-[:LOCATED_IN]->(r_speyside), (w_tamdhu)-[:HAS_FLAVOURS]->(D),
+ (w_teaninch)-[:PRODUCED_IN]->(l_alness)-[:LOCATED_IN]->(r_highlands), (w_teaninch)-[:HAS_FLAVOURS]->(H),
+ (w_tobermory)-[:PRODUCED_IN]->(l_isleofmull)-[:LOCATED_IN]->(r_islands), (w_tobermory)-[:HAS_FLAVOURS]->(D),
+ (w_tomatin)-[:PRODUCED_IN]->(l_tomatin)-[:LOCATED_IN]->(r_highlands), (w_tomatin)-[:HAS_FLAVOURS]->(F),
+ (w_tomintoul)-[:PRODUCED_IN]->(l_ballindalloch)-[:LOCATED_IN]->(r_speyside), (w_tomintoul)-[:HAS_FLAVOURS]->(E),
+ (w_tormore)-[:PRODUCED_IN]->(l_grantownnspey)-[:LOCATED_IN]->(r_speyside), (w_tormore)-[:HAS_FLAVOURS]->(F),
+ (w_tullibardine)-[:PRODUCED_IN]->(l_blackford)-[:LOCATED_IN]->(r_highlands), (w_tullibardine)-[:HAS_FLAVOURS]->(F)
+;
+----
+
+== Domain
+
+The graph shows 72 brands of well known Scottish whisky distillers. Every whisky node is connected to the place where the spirit was produced, the region, and also it's most typical flavours.
+
+The following drawing shows the domain model and how the attributes are connected:
+
+image::http://yuml.me/diagram/scruffy;dir:LR;/class/%5BWhisky%7Bbg%3Apurple%7D%5DPRODUCED_IN-%3E%5BLocation%7Bbg%3Agreen%7D%5D%2C%20%5BLocation%7Bbg%3Agreen%7D%5DLOCATED_IN-%3E%5BRegion%7Bbg%3Ayellow%7D%5D%2C%20%5BWhisky%7Bbg%3Apurple%7D%5DHAS_FLAVOURS-%3E%5BFlavour%20Group%7Bbg%3Ared%7D%5D[]
+
+== Graph
+
+//graph
+
+== Queries
+
+To demonstrate how to ask the graph for suggestions, I defined some questions and wrote some cypher queries. Feel free to contribute you queries in the comment field.
+
+=== Whiskies like Ardbeg
+As a fan of smokey whiskies, I would like to know all brands similar to Ardbeg which are also in flavour group J (Full-Bodied, Dry, Pungent, Peaty and Medicinal, with Spicy, Feinty Notes).
+
+[source,cypher]
+----
+MATCH (ardbeg:Whisky { name:'Ardbeg' })-[:HAS_FLAVOURS]->(flavour:Flavour)<-[:HAS_FLAVOURS]-(whisky:Whisky)
+RETURN whisky.name, flavour.name
+----
+//table
+
+=== Whiskies from Port Ellen or Port Askaig
+My favorite brands are based in Port Ellen or Port Askaig. Show me a list with all of them.
+
+[source,cypher]
+----
+MATCH (whisky:Whisky)-[:PRODUCED_IN]->(:Location{name:'Port Ellen'}) RETURN distinct(whisky.name) UNION ALL MATCH (whisky:Whisky)-[:PRODUCED_IN]->(:Location{name:'Port Askaig'}) RETURN distinct(whisky.name)
+----
+//table
+
+=== Similar Whiskies to Oban
+The Oban distillery is one of the smallest in Scotland. It produces a "West Highland" flavour that falls between the dry, smoky style of the Scottish islands and the lighter, sweeter malts of the Highlands. Let's search for similar brands.
+
+[source,cypher]
+----
+MATCH (:Whisky{name:"Oban"})-[:HAS_FLAVOURS]->()<-[:HAS_FLAVOURS]-(whisky) RETURN whisky.name
+----
+//table
+
+=== Speyside Whiskies
+Sitting together with friends, a wee dram for every occasion could be from the Speyside region, I guess this will be a though decision.
+
+[source,cypher]
+----
+MATCH (:Region{name:'Speyside'})<-[:LOCATED_IN]-()<-[:PRODUCED_IN]-(whisky:Whisky) RETURN distinct(whisky.name)
+----
+//table

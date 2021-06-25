@@ -1,0 +1,246 @@
+The "Self-Descriptive" Neo4j Graph Database
+===========================================
+
+=== #SmartData Metamodel Subgraph Design in the FactMiners' Social-Game Ecosystem - Part 1 of 2
+
+==== Author: Jim Salmons, Co-founder & Research/Tech Lead - FactMiners.org and The Softalk Apple Project
+
+:Author:    Jim Salmons
+:Email:     devs_at_factminers.org
+:Date:      25 January 2014
+:Revision:  0.2
+
+Date: {Date}
+Revision: {Revision}
+
+Rendered GraphGist URL: http://portal.graphgist.org/graph_gists/the-self-descriptive-neo4j-graph-database-part-1
+
+Source GraphGist URL: https://gist.github.com/Jim-Salmons/8640853
+
+This two-part GraphGist explores the "metamodel subgraph" design pattern for use in Neo4j graph database applications:
+
+[horizontal]
+*Part 1* This introductory #GraphGist about the **metamodel subgraph** design and how it works.
+
+*Part 2* Building on our introductory ideas, we begin building the metamodel for the FactMiners Fact Cloud (a "Self-Descriptive" Neo4j database) that will capture the wealth of Technology History locked in the https://goo.gl/XFuBHS[48 monthly issues of Softalk Magazine (1980-84)]. The use case scenario is that of a FactMiners player who is an agent of link:http://www.SoftalkApple.com[The Softalk Apple Project]. This player (with Fact Cloud owner/creator permissions - see Part 4) uses the FactMiners Fact Cloud Wizard to set up the Softalk Magazine Fact Cloud &ndash; that is, uses the Wizard to create and maintain the Fact Cloud's metamodel subgraph &ndash; so that FactMiners social-game players can help build the Fact Cloud that will unlock the data in the project's on-line digital archive. 
+
+*Part 3* We walk through a 2-player FactMiners gameplay scenario wherein the "playing field" is a Softalk page with a Top 30 bestsellers list on it. One of the players "claims the territory" of the list within a round of fact mining. Cypher query snippets show how the metamodel subgraph helps the FactMiners player find, enter, validate, and explore facts in the Softalk magazine FactMiners' Fact Cloud. _[NOTE: This GraphGist content has been incorporated into my *#MCN2014* presentation, link:http://portal.graphgist.org/graph_gists/where-facts-live-in-softalk-magazine-exploring-the-metamodel-subgraph-of-a-factminers-fact-cloud["Where Facts Live: GraphGist Edition"]. Please view the 2nd half of the embedded video of my MCN presentation for the page-segmentation game-play example.]_
+
+*Part 4* This GraphGist series wraps up with an introduction to the "META:Process" partition wherein the "What can I do?" and "How do I do it?" features of the metamodel are introduced and demonstrated. _[NOTE: Full specific treatment of this content has not been written yet, although there are threads of information throughout my #cidocCRM-related blog posts: http://goo.gl/dpbhPs. More as it unfolds.]_
+
+=== Part 1: What is a "Self-Descriptive" Neo4j Graph Database?
+
+[horizontal]
+*Pattern Description* *A self-descriptive Neo4j database is one with a metamodel subgraph of data about the data in that database*. That is, there is a graph database inside the graph database (i.e., a disconnected subset of nodes and relationships), and that data constitutes a model that tells us a LOT about the 'actual' data that is found or allowed in the database containing the metamodel.
+*Typical Use* Interactive applications where a graph database is needed to be both flexible yet disciplined when capturing and representing a sparse, loosely-coupled yet semantically-rich information space (e.g., the editorial and advertisement 'facts' within a complex magazine structure such as the 48 issues of Softalk).
+*MetaDATA or MetaMODEL?* The pattern description mentions "data about data." That sounds like *metadata*. What makes this pattern about a *metamodel* and not *metadata*? As this GraphGist series will demonstrate, the proposed **metamodel subgraph** is very much a richly-descriptive model, i.e., a metamodel, about both the _structure_ of data in the database as well as _process_ information about access and workflow such that metamodel-aware thin-client tools (and, in our case, games) can flexibly adapt to provide editing, visualization, and other access services on behalf of the "self-descriptive" database.
+
+++++
+<div style="float: right; width: 380px;">
+++++
+image::http://www.softalkapple.com/sites/default/files/images/fig_1_basic_sdGraph.png[]
+++++
+</div>
+++++
+Take a look at the simplest case possible &ndash; two nodes linked by a relationship and the metamodel construct that describes it.
+
+There is an old saying in journalism that http://en.wikipedia.org/wiki/Man_bites_dog_(journalism)["'Dog bites man' is no big deal, but 'Man bites dog' is news."]. We will use this aphorism as the basis for our introductory example.
+
+We start by adding some "news" to an empty and, so far, non-self-descriptive Neo4j database:
+
+++++
+<div style="clear: both;"></div>
+++++
+[source,cypher]
+----
+CREATE (:MAN {name: "Joe"}) - [:BITES] -> (:DOG {name: "Fido"})
+----
+// graph
+A man named Joe (our reporter pounded the pavement for this scoop) bit a dog named Fido... news at eleven!
+
+To make this database self-descriptive, we add a couple of nodes and a relationships to this special-purpose, non-connected subgraph within the database. To create the metamodel subgraph, we simply include the 'META' label on any nodes we want in our metamodel. This Cypher query creates the metamodel elements that describe the (necessary/allowable) structure of 'biting news' according to our old journalistic saying:
+
+[source,cypher]
+----
+CREATE 
+	(man:META:Nodes {type: "MAN", name: "MAN"}),
+	(dog:META:Nodes {type: "DOG", name: "DOG"}),
+	news = (man - [:FROM_NODE] ->
+		(:META:Relationships {type: "BITES", name: "BITES"}) 
+		- [:TO_NODE] -> dog)
+----
+// graph
+
+NOTE: The current level of built-in GraphGist graph visualization uses node color to reflect label-based set membership. With time and sufficient "itch" that needs scratching, I am sure we will have more GraphGist output composition and styling options. GraphGisting is just too awesome an exploratory design and communication medium for it not to get better with use. It will be awesome when GraphGist author/developers can dynamically generate helpful visualizations like the one that follows showing label-based set membership as area containment.
+++++
+<div style="float: right; width: 380px;">
+++++
+image::http://www.softalkapple.com/sites/default/files/images/fig_2_manbitesdog.png[]
+++++
+</div>
+++++
+Notice how the 'BITES' relationship in the database is modeled by a 'BITES' node in the metamodel. This transformational mapping allows us to be explicit about the 'FROM_NODE' and 'TO_NODE' features of a relationship found or allowed in the data of what is now a 'self-descriptive' Neo4j database. This 'node about a relationship' is, in effect, the 'root' of its own mini-model within the metamodel about the 'BITES' relationship as will be found expressed in the non-meta data of the database.  
+
+There are a couple additional metamodel-structuring 'hints' reflected in the Cypher query above that work together to further describe the model of the data in our 'biting news' database:
+
+ * There are two labeled subsets within the metamodel: 'Nodes' and 'Relationships'. Structured subset labels are essential to the semantics of this exploration of **metamodel subgraphs**. 
+ * Nodes in the META:Nodes subset have a 'type' property. This means you will find nodes in the non-meta data with a label equal to the value of that type property. For example, (:META:Nodes {type: "MAN"}) in the metamodel tells us there will be (:MAN) labeled nodes in the non-meta data.
+ * Similar mapping applies to nodes in META:Relationships where the 'type' property in the metamodel node corresponds to the ':RELTYPE' label of a relationship in the non-meta data. 
+
+This introductory example is intentionally ultra simple. It cannot reveal the full potential &ndash; nor does it reflect the practical complexities &ndash; of applying the **metamodel subgraph** design pattern. In the second part of this GraphGist series we will begin to build the metamodel for the FactMiners Fact Cloud companion to the Softalk Magazine on-line digital archive. In addition to elaborating the structure of the metamodel, we will touch on practical complexities like handling node and relationship properties, etc. 
+
+But first, so what? What can I do with a metamodel now that I have one? 
+
+==== Self-Descriptive: So Who Is Listening? What for?
+
+The term 'self-descriptive' Neo4j database suggests that someone or something is 'listening' to and understands that description. That listener will most often be a thin-client app dynamically configurable through a plug-in architecture to provide editing, reporting, visualization, or other access services. These thin-clients use their metamodel-awareness to configure editors such that no 'bad data' is entered into the database. Or given existing unstructured data, such tools can provide 'intelligent assistant' services to curate and value-add to the data through interactive sessions to create and extend the **metamodel subgraph** about the data. Here is a very basic look at how this will work...
+
+Our reporter on the (Man)--(Dog) Beat set up a Bite News Tip-line to take anonymous reports about suspicious bite activity around town. Folks fill in a web form with as much information as they know about an incident. We will process three tips that came in through the Tip-line followed by a Cypher query that the Tip-line metamodel-aware thin-client app might use to find and validate newsworthy bite incidents:
+
+[source,cypher]
+----
+// Create a tips to be tested...
+//
+	// Tip 1: "Joe bites Fido." (Case: Known incident already in data)
+MATCH (joe:MAN {name: "Joe"}) - [known_bite:BITES] -> (fido:DOG {name: "Fido"})
+SET known_bite.status = "unconfirmed"
+	// Tip 2: "Fido bites Joe." (Case: Known actors, role mismatch)
+MERGE fido - [:BITES {status: "unconfirmed"}] -> joe
+	// Tip 3: "Johnny bites Rover." (Case: Unknown actors, fact check assist)
+CREATE (:UNK {name: "Johnny"}) - [:BITES {status: "unconfirmed"}] -> (:UNK {name: "Rover"})
+WITH known_bite
+
+// Let's see how our metamodel can help us figure out about the newsworthiness 
+// of these biting incident tips.
+//
+// First, let's find out what we know about biting incidents...
+MATCH (biter) --> (bites:META:Relationships {type: "BITES"}) --> (bitee)
+WITH biter, bites, bitee
+
+// Now, round up our unconfirmed tips of bite incidents and investigate their newsworthiness...
+MATCH (accused_biter) - [incident:BITES {status: "unconfirmed"}] -> (alleged_victim)
+WITH biter, bites, bitee, accused_biter, incident, alleged_victim, 
+	accused_biter.name + " " + lower(type(incident)) + " " + alleged_victim.name + "." as unconfirmed_tip,
+	// First, fact-check the accused Biter...
+	CASE
+	    WHEN "UNK" IN labels(accused_biter)
+		THEN "Biter: FACT CHECK - Need to confirm " + accused_biter.name + " is a " + biter.type + ". Otherwise, no news." 
+		// We have a potentially newsworthy biter...
+	    WHEN biter.type IN labels(accused_biter)
+		THEN "Biter: CONFIRMED - " + accused_biter.name + " is a " + biter.type + "." 
+		// The known Biter is of the wrong type, no news...
+		WHEN NOT (biter.type IN labels(accused_biter))
+		THEN "Biter: NO NEWS - " + accused_biter.name + " is NOT a " + biter.type + "." 
+		// Unhandled case - The metamodel might need refining...
+		ELSE "Biter: ALERT - I am confused about " + accused_biter.name + "'s role in this biting incident. A report is being logged to the Metamodel Police. Nothing to see here. Step away from the program. This just became a crime scene..." 
+		END as biter_assessment,
+	// Next, check the alleged victim...
+	CASE
+	    WHEN "UNK" IN labels(alleged_victim)
+		THEN "Victim: FACT CHECK - Need to confirm " + alleged_victim.name + " is a " + bitee.type + ". Otherwise, no news." 
+		// We have a potentially newsworthy alleged_victim...
+	    WHEN biter.type IN labels(accused_biter) AND bitee.type IN labels(alleged_victim)
+		THEN "Victim: CONFIRMED - " + alleged_victim.name + " is a " + bitee.type + ".<br>CONGRATULATIONS! We have NEWS! :-)" 
+		// If both actors are appropriate, we have a newsworthy tip! :-)
+	    WHEN bitee.type IN labels(alleged_victim)
+		THEN "Victim: CONFIRMED - " + alleged_victim.name + " is a " + bitee.type + "." 
+		// The known alleged_victim is of the wrong type, no news...
+		WHEN NOT (bitee.type IN labels(alleged_victim))
+		THEN "Victim: NO NEWS - " + alleged_victim.name + " is NOT a " + bitee.type + "." 
+		// Unhandled case - The metamodel might need refining...
+		ELSE "Victim: ALERT - I am confused about " + alleged_victim.name + "'s role in this biting incident. A report is being logged to the Metamodel Police. Nothing to see here. Step away from the program. This just became a crime scene..." 
+		END as bitee_assessment
+
+RETURN unconfirmed_tip as `Tip`, biter_assessment + " <br> " + bitee_assessment as `Tip Assessment Results`
+----
+// table
+// graph
+
+After doing a bit of digging, our reporter confirms the species of the incomplete "Johnny bites Rover" tip. As the reporter enters these updated facts, the metamodel-aware thin-client re-applies its "biting news" fact-check process and confirms that we have a breaking biting news story:
+
+// hide
+[source,cypher]
+----
+// Create the tip to be retested...
+//
+	// Tip 3 (again): "Johnny bites Rover." (Case: Unknown actors, fact check assist)
+MATCH (johnny:UNK {name: "Johnny"}) - [known_bite:BITES] -> (rover:UNK {name: "Rover"})
+SET johnny:MAN
+SET rover:DOG
+REMOVE johnny:UNK
+REMOVE rover:UNK
+WITH known_bite
+
+// Let's see how our metamodel can help us figure out about the newsworthiness 
+// of these biting incident tips.
+//
+// First, let's find out what we know about biting incidents...
+MATCH (biter) --> (bites:META:Relationships {type: "BITES"}) --> (bitee)
+WITH biter, bites, bitee
+
+// Now, round up our unconfirmed tips of bite incidents and investigate their newsworthiness...
+MATCH (accused_biter) - [incident:BITES {status: "unconfirmed"}] -> (alleged_victim)
+WITH biter, bites, bitee, accused_biter, incident, alleged_victim, 
+	accused_biter.name + " " + lower(type(incident)) + " " + alleged_victim.name + "." as unconfirmed_tip,
+	// First, fact-check the accused Biter...
+	CASE
+	    WHEN "UNK" IN labels(accused_biter)
+		THEN "Biter: FACT CHECK - Need to confirm " + accused_biter.name + " is a " + biter.type + ". Otherwise, no news." 
+		// We have a potentially newsworthy biter...
+	    WHEN biter.type IN labels(accused_biter)
+		THEN "Biter: CONFIRMED - " + accused_biter.name + " is a " + biter.type + "." 
+		// The known Biter is of the wrong type, no news...
+		WHEN NOT (biter.type IN labels(accused_biter))
+		THEN "Biter: NO NEWS - " + accused_biter.name + " is NOT a " + biter.type + "." 
+		// Unhandled case - The metamodel might need refining...
+		ELSE "Biter: ALERT - I am confused about " + accused_biter.name + "'s role in this biting incident. A report is being logged to the Metamodel Police. Nothing to see here. Step away from the program. This just became a crime scene..." 
+		END as biter_assessment,
+	// Next, check the alleged victim...
+	CASE
+	    WHEN "UNK" IN labels(alleged_victim)
+		THEN "Victim: FACT CHECK - Need to confirm " + alleged_victim.name + " is a " + bitee.type + ". Otherwise, no news." 
+		// We have a potentially newsworthy alleged_victim...
+	    WHEN biter.type IN labels(accused_biter) AND bitee.type IN labels(alleged_victim)
+		THEN "Victim: CONFIRMED - " + alleged_victim.name + " is a " + bitee.type + ".<br>CONGRATULATIONS! We have NEWS! :-)" 
+		// If both actors are appropriate, we have a newsworthy tip! :-)
+	    WHEN bitee.type IN labels(alleged_victim)
+		THEN "Victim: CONFIRMED - " + alleged_victim.name + " is a " + bitee.type + "." 
+		// The known alleged_victim is of the wrong type, no news...
+		WHEN NOT (bitee.type IN labels(alleged_victim))
+		THEN "Victim: NO NEWS - " + alleged_victim.name + " is NOT a " + bitee.type + "." 
+		// Unhandled case - The metamodel might need refining...
+		ELSE "Victim: ALERT - I am confused about " + alleged_victim.name + "'s role in this biting incident. A report is being logged to the Metamodel Police. Nothing to see here. Step away from the program. This just became a crime scene..." 
+		END as bitee_assessment
+
+RETURN unconfirmed_tip as `Tip`, biter_assessment + " <br> " + bitee_assessment as `Tip Assessment Results`
+----
+// table
+// graph
+
+There you have it. Not bad when you think about it. We added three nodes and two relationships to our database to make it (minimally) self-descriptive. And because we think about these data-bits in the database differently than the rest of the data in the database, we were able to perform a fact-checking (data curating) task needed by our Biting News Tip-line.
+
+But so what? That little metamodel may have helped us do our fact-checking task, but I still see a LOT of domain-specific knowledge in the Cypher code that does the actual fact-check computation. True, but this is due to "coder context." For the purposes of this introductory example, I wrote these queries in a "storytelling"-like cognitive process that helped me write the code just as much as that 'Biting News Tip-line' context helps you read and understand my code.
+
+Here is the thing. That 'readability context' is superficial. At its core, this tip fact-checking procedure could just as easily be done by code written in the generalized context of the metamodel-aware client. In other words, this:
+
+[source,cypher]
+----
+MATCH (accused_biter) - [incident:BITES] -> (alleged_victim)
+RETURN *
+----
+
+could just as easily be written in a generalized context such as an RDF triple:
+
+[source,cypher]
+----
+// RDF-like 'fact' context
+MATCH (subject) - [verb:PREDICATE] -> (object)
+RETURN *
+----
+Or you could rewrite in any number of alternative vocabulary/contexts. The cool thing is, though, once we have a good core of generalized metamodel-processing algorithms in the plug-in libraries of metamodel-aware thin-clients, we dramatically reduce the need to write domain-specific code in the first place. Using metamodel-building tools like the FactMiners Fact Cloud Wizard, virtually all of the domain-specific knowledge will move into the metamodel rather than be locked in instance-specific source code.
+
+This brings us into the realm of unintended good consequences that may result from having some serious fun building the FactMiners ecosystem. I believe the Big Ideas to be explored doing FactMiners will find broad applications beyond gaming.
+
+==== On to Part 2...
+
+The ideas briefly explored here are the basis for taking the first steps in building the Softalk Magazine Fact Cloud metamodel in http://portal.graphgist.org/graph_gists/the-self-descriptive-neo4j-graph-database-part-2[Part 2 of this GraphGist].

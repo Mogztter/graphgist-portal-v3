@@ -1,0 +1,51 @@
+= What do great white sharks (_Carcharodon carcharias_) eat? =
+
+:neo4j-version: 1.9.7
+:author: Jorrit Poelen
+:twitter: @jhpoelen
+:tags: domain:bioinformatics
+
+Global Biotic Interactions (GloBI, http://globalbioticinteractions.org) uses neo4j to capture recorded interactions between living organisms on our planet. This page give an introduction into how the interactions are currently captured and how to make queries to retrieve specific information.
+
+This page not only serves as a getting started guide, but also as a way to solicit feedback on the way the data is modeled. So . . . please don't hesitate to share comments or ask questions.
+
+=== A simplified species interaction model
+For sake of simplicity, only a part of the species interaction model is shown below. For a more complete version of the model, please see Figure 1 in http://dx.doi.org/10.1016/j.ecoinf.2014.08.005[Poelen et al. 2014]. The complete version includes relationships to habitat, environment, time, location and more.
+
+//setup
+[source,cypher]
+----
+CREATE (specimenA:Specimen {externalId: "Specimen A"})
+CREATE (specimenA)-[r:ATE]->(specimenB:Specimen {externalId: "Specimen B"})
+CREATE (specimenA)-[r2:ATE]->(specimenC:Specimen {externalId: "Specimen C"})
+CREATE (specimenA)-[:CLASSIFIED_AS]->(greatWhite:Taxon {name: "Carcharodon carcharias", externalId:"http://eol.org/pages/213726"})
+CREATE (specimenB)-[:CLASSIFIED_AS]->(seaOtter:Taxon {name: "Enhudra lutris", externalId:"http://eol.org/pages/328583"})
+CREATE (specimenC)-[:CLASSIFIED_AS]->(seaLion:Taxon {name: "Zalophus californianus", externalId:"http://eol.org/pages/328615"})
+CREATE (study:Study {title: "an existing interaction study"})-[:COLLECTED]->specimenA
+RETURN specimenA, r, specimenB
+----
+
+And render as a graph.
+
+//graph
+
+=== Now create a query to retrieve all prey of the great white shark (_Carcharodon carcharias_).
+
+[source,cypher]
+----
+MATCH (greatWhite)<-[:CLASSIFIED_AS]-(predator)-[rel:ATE]->(prey)-[:CLASSIFIED_AS]->(preyTaxon)
+RETURN greatWhite.name, greatWhite.externalId, type(rel), preyTaxon.name, preyTaxon.externalId
+----
+
+and render the results as a table.
+
+//table
+
+=== Finally query to retrieve all prey of the great white shark using the full GloBI dataset.
+
+Now try to execute the same query with the full GloBI dataset using http://tinyurl.com/q5og9vb . 
+
+=== Want to learn more? ===
+
+Come visit us at http://globalbioticinteractions.org, or read our http://blog.globalbioticinteractions.org[blog].
+

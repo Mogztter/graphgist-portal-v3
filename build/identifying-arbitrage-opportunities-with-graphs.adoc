@@ -1,0 +1,179 @@
+= Identifying Arbitrage Opportunities with Graphs
+:neo4j-version: 2.0.0-M06
+:author: Nicole White
+:twitter: @_nicolemargaret
+:tags: domain:finance:forex
+
+'''
+
+== Introduction
+
+In a spot currency transaction, there is an agreement to exchange one currency for another. For example, if the U.S. Dollar to Euro exchange rate is 0.5, this is interpreted as "$1.00 can buy €0.50." When the USD -> EUR exchange rate is 0.5, we would expect the inverse EUR -> USD exchange rate to be 2. However, this is not always the case. Let's say EUR -> USD is actually 2.1. That means we can take $1.00 and exchange it for €0.50, then convert that €0.50 back to dollars and receive 0.5 \(\times\) 2.1 = $1.05, which creates value of $1.05 - $1.00 = $0.05.
+
+This is arbitrage. When there exists a sequence of transactions that creates value like in the example above, there is an arbitrage opportunity.
+
+'''
+
+== Example
+
+Let's think of the example above in graph form. The two currencies USD and EUR are nodes and the relationships between them are their exchange rates. In this graph, the directions of relationships are very important.
+
+[source, cypher]
+----
+CREATE (Dollar:Currency {name:'Dollar'}), (Euro:Currency {name:'Euro'})
+CREATE (Dollar)-[:EXCHANGE {rate:0.5}]->(Euro), (Euro)-[:EXCHANGE {rate:2.1}]->(Dollar)
+----
+//graph
+
+We can then easily write a query that returns the gain or loss when exchanging USD for EUR and then EUR for USD:
+
+[source,cypher]
+----
+WITH 1 AS startVal
+MATCH (c:Currency)-[r:EXCHANGE*2]->(c)
+WHERE c.name = "Dollar"
+WITH REDUCE(s = startVal, e IN r | s * e.rate) AS endVal, startVal
+WHERE endVal > startVal
+RETURN endVal - startVal AS Profit
+----
+//table
+
+And we see that we made 5 cents.
+
+//hide
+[source, cypher]
+----
+MATCH (n)-[r]-(m) 
+WITH n, r 
+DELETE n, r
+----
+
+'''
+
+== Identifying Arbitrage Opportunities
+
+Consider a spot market consisting of the following currencies and exchange rates:
+
+image::http://i.imgur.com/Oo2z4tc.png[align="center"]
+
+The row currency is the base currency and the column currency is the price currency. I.e., the (Pound, Franc) entry of this matrix, 8.4304, means 1 pound can buy 8.4304 francs.
+
+=== Load Matrix into a Graph
+
+//setup
+[source,cypher]
+----
+CREATE  (Dollar:Currency {name:'Dollar'}),
+  (Pound:Currency {name:'Pound'}),
+  (Franc:Currency {name:'Franc'}),
+  (Mark:Currency {name:'Mark'}),
+  (Yen:Currency {name:'Yen'})
+    
+CREATE  (Dollar)-[:EXCHANGE {rate:0.639}]->(Pound),
+  (Dollar)-[:EXCHANGE {rate:5.3712}]->(Franc),
+  (Dollar)-[:EXCHANGE {rate:1.5712}]->(Mark),
+  (Dollar)-[:EXCHANGE {rate:98.8901}]->(Yen),
+    
+  (Pound)-[:EXCHANGE {rate:1.5648}]->(Dollar),
+  (Pound)-[:EXCHANGE {rate:8.4304}]->(Franc),
+  (Pound)-[:EXCHANGE {rate:2.459}]->(Mark),
+  (Pound)-[:EXCHANGE {rate:154.7733}]->(Yen),
+    
+  (Franc)-[:EXCHANGE {rate:0.1856}]->(Dollar),
+  (Franc)-[:EXCHANGE {rate:0.1186}]->(Pound),
+  (Franc)-[:EXCHANGE {rate:0.2921}]->(Mark),
+  (Franc)-[:EXCHANGE {rate:18.4122}]->(Yen),
+    
+  (Mark)-[:EXCHANGE {rate:0.6361}]->(Dollar),
+  (Mark)-[:EXCHANGE {rate:0.4063}]->(Pound),
+  (Mark)-[:EXCHANGE {rate:3.4233}]->(Franc),
+  (Mark)-[:EXCHANGE {rate:62.94}]->(Yen),
+    
+  (Yen)-[:EXCHANGE {rate:0.01011}]->(Dollar),
+  (Yen)-[:EXCHANGE {rate:0.00645}]->(Pound),
+  (Yen)-[:EXCHANGE {rate:0.05431}]->(Franc),
+  (Yen)-[:EXCHANGE {rate:0.01588}]->(Mark)
+----
+//graph
+
+With more currencies involved, it is nontrivial to identify arbitrage opportunities by eye, especially since many arbitrage 
+opportunities will involve several currencies. For example, you might need to do something like USD -> EUR -> JPY -> USD to realize any gains. Luckily for us, we can write a simple query to traverse the several sequences of exchanges one can make and identify which sequences of exchanges return more money than with which we started.
+
+=== Find Opportunities for Arbitrage
+
+If we are citizens of the United States, we are interested in a sequence of exchanges that start and end at the Dollar node. We can use the link:http://neo4j.com/docs/stable/query-functions-collection.html#functions-reduce[REDUCE] function to start with $1.00 and multiply this starting value by the exchange rates we encounter along the traversal. Then, we'll filter the results to only keep the pathways where the ending value is greater than the starting value.
+ 
+Let's also consider the constraint that we're only willing to conduct a maximum of four exchanges.
+
+[source,cypher]
+----
+WITH 1 AS startVal
+MATCH x = (c:Currency)-[r:EXCHANGE*..4]->(c)
+WHERE c.name = "Dollar"
+WITH x, REDUCE(s = startVal, e IN r | s * e.rate) AS endVal, startVal
+WHERE endVal > startVal
+RETURN EXTRACT(n IN NODES(x) | n.name) AS Exchanges, endVal - startVal AS Profit
+ORDER BY Profit DESC 
+LIMIT 5
+----
+//table
+
+With this, we see that the most profitable sequence of exchanges is Dollar -> Pound -> Franc -> Yen -> Dollar.
+
+Let's break down how the value is created step-by-step:
+
+* 1 Dollar is exchanged for 1 \(\times\) 0.639 = 0.639 Pounds.
+* 0.639 Pounds are exchanged for 0.639 \(\times\) 8.4304 = 5.3870256 Francs.
+* 5.3870256 Francs are exchanged for 5.3870256 \(\times\) 18.4122 = 99.18699275232 Yen.
+* 99.18699275232 Yen are exchanged for 99.18699275232 \(\times\) 0.01011 = 1.002780496725955 Dollars.
+
+We started with $1.00 and ended with {tilde}$1.0028 for a gain of {tilde}$0.0028. Clearly, if you increase the initial $1.00 by a factor \(x\) you will increase your gain by a factor \(x\).
+
+E.g., if we had $1 million...
+
+[source,cypher]
+----
+WITH 1000000 AS startVal
+MATCH x = (c:Currency)-[r:EXCHANGE*..4]->(c)
+WHERE c.name = "Dollar"
+WITH x, REDUCE(s = startVal, e IN r | s * e.rate) AS endVal, startVal
+WHERE endVal > startVal
+RETURN EXTRACT(n IN NODES(x) | n.name) AS Exchanges, endVal - startVal AS Profit
+ORDER BY Profit DESC 
+LIMIT 5
+----
+//table
+
+...we could create $2,780.50 of value by exchanging our money in the order presented in the top result.
+
+=== Optimize Exchanges From One Currency to Another
+
+A second case to consider is the scenario where you want to optimize the exchange of one currency for another. For example, if an American firm owes 150 million Yen to a Japanese firm, the American firm would be interested in the sequence of exchanges by which they can start with the lowest Dollar amount possible and reach 150 million Yen.
+
+This can be achieved with the following, where we start at the Dollar node and end at the Yen node. We can find the optimal sequence of exchanges and the initial Dollar amount needed to achieve the 150 million Yen. We sort by the Dollar amount needed in ascending order so that the pathways which allow us to start with the lowest Dollar amount possible are presented first.
+
+For this example, let's say we're only willing to conduct a maximum of five exchanges.
+
+[source,cypher]
+----
+WITH 150000000 AS target
+MATCH x = (a:Currency)-[r:EXCHANGE*..5]->(b:Currency)
+WHERE a.name = "Dollar" AND b.name = "Yen"
+WITH x, REDUCE(s = 1, e IN r | s * e.rate) AS endVal, target
+RETURN EXTRACT(n IN NODES(x) | n.name) AS Exchanges, target / endVal AS `Dollars Needed`, target AS `Yen Achieved`
+ORDER BY `Dollars Needed`
+LIMIT 5
+----
+//table
+
+Thus, the optimal sequence of exchanges to convert Dollars to 150 million Yen is USD -> GBP -> FRF -> JPY, where we will need $1,512,295.07 to do so. Compare this to the Dollar amount we would need if we simply made the exchange directly to Yen, or USD -> JPY. The USD -> JPY exchange rate is 98.8901, so we would need 150,000,000 / 98.8901 = $1,516,835.36, which is $4,540.29 greater than the amount of Dollars we would need in the optimal exchange.
+
+//console
+
+'''
+
+== About Me
+
+* link:https://github.com/nicolewhite[GitHub]
+* link:https://twitter.com/_nicolemargaret[Twitter]
+

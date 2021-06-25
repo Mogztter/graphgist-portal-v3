@@ -1,0 +1,351 @@
+== Wasting time as a boothbabe ==
+= The Øredev Schedule in a Graph =
+
+What do you do when you have to spend a day on a booth at a (lovely) conference like http://www.oredev.org[Oredev] - you try to make the most of it! So somehow I got it into my head to try and get the conference schedule into http://www.neo4j.com[Neo4j] - and see what would happen! So here goes!
+
+== The Model == 
+
+Here's what the model looks like:
+
+image::https://lh6.googleusercontent.com/-vyI9t_oPW9A/VFupry9XkVI/AAAAAAABRlc/TTW8rU9Nl-k/s2048/model.png[]
+
+Very simple - but it's so much nicer when you can make it interactive and load it into Neo4j. Let's do that.
+
+:et's load that data into this graphgist.
+
+//setup
+//hide
+[source,cypher]
+----
+//create the Oredev Schedule for Friday 7th of November 2014
+create (_0:`Room` {`name`:"Marvin"})
+create (_1:`Room` {`name`:"Hall 5000"})
+create (_2:`Room` {`name`:"Kitt"})
+create (_3:`Room` {`name`:"T-800"})
+create (_4:`Room` {`name`:"R2D2"})
+create (_5:`Room` {`name`:"Roomba"})
+create (_6:`Room` {`name`:"Wall-E"})
+create (_7:`Room` {`name`:"Johnny 5"})
+create (_8:`Room` {`name`:"Keynote"})
+create (_9:`Talk` {`name`:"Integrating skilled testing with agile development"})
+create (_10:`Talk` {`name`:"Database Practices for CD"})
+create (_11:`Talk` {`name`:"Bitcoin"})
+create (_12:`Talk` {`name`:"Microservices Lessons"})
+create (_13:`Talk` {`name`:"Building a monitoring infrastructure with Puppet"})
+create (_14:`Talk` {`name`:"The Architecture of Stack Overflow"})
+create (_15:`Talk` {`name`:"Advanced Animation in Android"})
+create (_16:`Talk` {`name`:"Testing in continuous deployment"})
+create (_17:`Talk` {`name`:"Coding Culture"})
+create (_18:`Talk` {`name`:"Clojure web applications"})
+create (_19:`Talk` {`name`:"A review of sex-related interfaces in sci-fi (and what it means for designers)"})
+create (_20:`Talk` {`name`:"Bring out your dead"})
+create (_21:`Talk` {`name`:"You really should organise that codebase! No Really!"})
+create (_22:`Talk` {`name`:"FRP in JavaScript"})
+create (_23:`Talk` {`name`:"Project Reactor"})
+create (_24:`Talk` {`name`:"Improving app store rating"})
+create (_25:`Talk` {`name`:"NuGet 3.0 - Transitioning from OData to Json-LDF"})
+create (_26:`Talk` {`name`:"Web Usability on a budget"})
+create (_27:`Talk` {`name`:"Introduction to Docker"})
+create (_28:`Talk` {`name`:"IoT: where are we, and how did we get here?"})
+create (_29:`Talk` {`name`:"Fixing the Internet of Things"})
+create (_30:`Talk` {`name`:"Spring 4, Java EE 7 or Both?"})
+create (_31:`Talk` {`name`:"Rapid IoT UI with JavaFX and SceneBuilder"})
+create (_32:`Talk` {`name`:"Virtual Reality overview with Oculus Rift"})
+create (_33:`Talk` {`name`:"Make applications responsive and easier to scale"})
+create (_34:`Talk` {`name`:"The Lost Art of Assembly Programming"})
+create (_35:`Talk` {`name`:"What do you mean Agile Tester?"})
+create (_36:`Talk` {`name`:"It does not work that way in the Enterprise"})
+create (_37:`Talk` {`name`:"LIQUi|>"})
+create (_38:`Talk` {`name`:"Quantum Computing"})
+create (_39:`Talk` {`name`:"Behind the smiling face of a sales droid"})
+create (_40:`Talk` {`name`:"Design + Language"})
+create (_41:`Talk` {`name`:"JVM Profiling with system and java tools"})
+create (_42:`Talk` {`name`:"DIY Usability Design for Developers"})
+create (_43:`Talk` {`name`:"Offline Network Queueing"})
+create (_44:`Talk` {`name`:"RavenDB: Wow! features"})
+create (_45:`Talk` {`name`:"How to create a test automation framework architecture with Selenium"})
+create (_46:`Talk` {`name`:"Creating great systems"})
+create (_47:`Talk` {`name`:"API - The Hidden UI"})
+create (_48:`Talk` {`name`:"Reactive Streaming Restful Applications with Akka HTTP"})
+create (_49:`Talk` {`name`:"What I have learnt making invisible software for the aged and homes for the homeless"})
+create (_50:`Talk` {`name`:"Introduction to programming safe and efficient systems in Rust"})
+create (_51:`Talk` {`name`:"How we wanted to fuel the world and ended up saving the oceans"})
+create (_52:`Talk` {`name`:"Homebrewing beer"})
+create (_53:`Talk` {`name`:"Do YOU want to be a superhero?"})
+create (_54:`Talk` {`name`:"The most human human"})
+create (_55:`Talk` {`name`:"Turning the design clock back"})
+create (_56:`Speaker` {`name`:"James Bach"})
+create (_57:`Speaker` {`name`:"Pramod Sadalage"})
+create (_58:`Speaker` {`name`:"Jeff Garzik"})
+create (_59:`Speaker` {`name`:"Fred George"})
+create (_60:`Speaker` {`name`:"Paul Stack"})
+create (_61:`Speaker` {`name`:"Marco Cecconi"})
+create (_62:`Speaker` {`name`:"Kevin Grant"})
+create (_63:`Speaker` {`name`:"Kristian Karl"})
+create (_64:`Speaker` {`name`:"Sven Peters"})
+create (_65:`Speaker` {`name`:"Ryan Neufeld"})
+create (_66:`Speaker` {`name`:"Chris Noessel"})
+create (_67:`Speaker` {`name`:"Oliver Pehnke"})
+create (_68:`Speaker` {`name`:"Chris Chedgey"})
+create (_69:`Speaker` {`name`:"Juha Paanamen"})
+create (_70:`Speaker` {`name`:"Jon Brisbin"})
+create (_71:`Speaker` {`name`:"Pradeep Soundarajan"})
+create (_72:`Speaker` {`name`:"Jason Handley"})
+create (_73:`Speaker` {`name`:"Tim G. Thomas"})
+create (_74:`Speaker` {`name`:"James Turnbull"})
+create (_75:`Speaker` {`name`:"Patrik Fredriksson"})
+create (_76:`Speaker` {`name`:"Alasdair Allan"})
+create (_77:`Speaker` {`name`:"Ivar Grimstad"})
+create (_78:`Speaker` {`name`:"Jasper Potts"})
+create (_79:`Speaker` {`name`:"Richard Bair"})
+create (_80:`Speaker` {`name`:"Mattias Ask"})
+create (_81:`Speaker` {`name`:"Petar Mataic"})
+create (_82:`Speaker` {`name`:"Paul Smith"})
+create (_83:`Speaker` {`name`:"Jack Nutting"})
+create (_84:`Speaker` {`name`:"Ben Kelly"})
+create (_85:`Speaker` {`name`:"Peter Smith"})
+create (_86:`Speaker` {`name`:"Krysta Svore"})
+create (_87:`Speaker` {`name`:"Charlie Marcus"})
+create (_88:`Speaker` {`name`:"Thomas Raneland"})
+create (_89:`Speaker` {`name`:"Sean Wolcott"})
+create (_90:`Speaker` {`name`:"Hardy Ferentschik"})
+create (_91:`Speaker` {`name`:"Michael Heinrichs"})
+create (_92:`Speaker` {`name`:"Tim Johnsen"})
+create (_93:`Speaker` {`name`:"Oren Eini"})
+create (_94:`Speaker` {`name`:"Ayende Rahien"})
+create (_95:`Speaker` {`name`:"John Sonnez"})
+create (_96:`Speaker` {`name`:"Rune Funch Søltoft"})
+create (_97:`Speaker` {`name`:"Fredrik Mörk"})
+create (_98:`Speaker` {`name`:"Björn Antonsson"})
+create (_99:`Speaker` {`name`:"Thomas Q Brady"})
+create (_100:`Speaker` {`name`:"Jakub Wieczorek"})
+create (_101:`Speaker` {`name`:"Fredrika Gullfot"})
+create (_102:`Speaker` {`name`:"Hannes Gruber"})
+create (_103:`Speaker` {`name`:"Ola Karlsson"})
+create (_104:`Speaker` {`name`:"Brian Christian"})
+create (_105:`Speaker` {`name`:"Gary Bernhardt"})
+create (_106:`Timeslot` {`name`:1020})
+create (_107:`Timeslot` {`name`:1120})
+create (_108:`Timeslot` {`name`:1220})
+create (_109:`Timeslot` {`name`:1320})
+create (_110:`Timeslot` {`name`:1420})
+create (_111:`Timeslot` {`name`:1540})
+create (_112:`Timeslot` {`name`:900})
+create (_113:`Timeslot` {`name`:1640})
+create (_114:`Date` {`name`:20141107})
+create (_9)-[:`STARTS_AT`]->(_106)
+create (_9)-[:`LOCATED_IN`]->(_0)
+create (_10)-[:`STARTS_AT`]->(_107)
+create (_10)-[:`LOCATED_IN`]->(_0)
+create (_11)-[:`STARTS_AT`]->(_108)
+create (_11)-[:`LOCATED_IN`]->(_0)
+create (_12)-[:`STARTS_AT`]->(_109)
+create (_12)-[:`LOCATED_IN`]->(_0)
+create (_13)-[:`STARTS_AT`]->(_110)
+create (_13)-[:`LOCATED_IN`]->(_0)
+create (_14)-[:`STARTS_AT`]->(_111)
+create (_14)-[:`LOCATED_IN`]->(_0)
+create (_15)-[:`STARTS_AT`]->(_106)
+create (_15)-[:`LOCATED_IN`]->(_1)
+create (_16)-[:`STARTS_AT`]->(_107)
+create (_16)-[:`LOCATED_IN`]->(_1)
+create (_17)-[:`STARTS_AT`]->(_108)
+create (_17)-[:`LOCATED_IN`]->(_1)
+create (_18)-[:`STARTS_AT`]->(_109)
+create (_18)-[:`LOCATED_IN`]->(_1)
+create (_19)-[:`STARTS_AT`]->(_110)
+create (_19)-[:`LOCATED_IN`]->(_1)
+create (_20)-[:`STARTS_AT`]->(_111)
+create (_20)-[:`LOCATED_IN`]->(_1)
+create (_21)-[:`STARTS_AT`]->(_106)
+create (_21)-[:`LOCATED_IN`]->(_2)
+create (_22)-[:`STARTS_AT`]->(_107)
+create (_22)-[:`LOCATED_IN`]->(_2)
+create (_23)-[:`STARTS_AT`]->(_108)
+create (_23)-[:`LOCATED_IN`]->(_2)
+create (_24)-[:`STARTS_AT`]->(_109)
+create (_24)-[:`LOCATED_IN`]->(_2)
+create (_25)-[:`STARTS_AT`]->(_110)
+create (_25)-[:`LOCATED_IN`]->(_2)
+create (_26)-[:`STARTS_AT`]->(_111)
+create (_26)-[:`LOCATED_IN`]->(_2)
+create (_27)-[:`STARTS_AT`]->(_106)
+create (_27)-[:`LOCATED_IN`]->(_3)
+create (_28)-[:`STARTS_AT`]->(_107)
+create (_28)-[:`LOCATED_IN`]->(_3)
+create (_29)-[:`STARTS_AT`]->(_108)
+create (_29)-[:`LOCATED_IN`]->(_3)
+create (_30)-[:`STARTS_AT`]->(_109)
+create (_30)-[:`LOCATED_IN`]->(_3)
+create (_31)-[:`STARTS_AT`]->(_110)
+create (_31)-[:`LOCATED_IN`]->(_3)
+create (_32)-[:`STARTS_AT`]->(_111)
+create (_32)-[:`LOCATED_IN`]->(_3)
+create (_33)-[:`STARTS_AT`]->(_106)
+create (_33)-[:`LOCATED_IN`]->(_4)
+create (_34)-[:`STARTS_AT`]->(_107)
+create (_34)-[:`LOCATED_IN`]->(_4)
+create (_35)-[:`STARTS_AT`]->(_108)
+create (_35)-[:`LOCATED_IN`]->(_4)
+create (_36)-[:`STARTS_AT`]->(_109)
+create (_36)-[:`LOCATED_IN`]->(_4)
+create (_37)-[:`STARTS_AT`]->(_110)
+create (_37)-[:`LOCATED_IN`]->(_4)
+create (_38)-[:`STARTS_AT`]->(_111)
+create (_38)-[:`LOCATED_IN`]->(_4)
+create (_39)-[:`STARTS_AT`]->(_106)
+create (_39)-[:`LOCATED_IN`]->(_5)
+create (_40)-[:`STARTS_AT`]->(_107)
+create (_40)-[:`LOCATED_IN`]->(_5)
+create (_41)-[:`STARTS_AT`]->(_108)
+create (_41)-[:`LOCATED_IN`]->(_5)
+create (_42)-[:`STARTS_AT`]->(_109)
+create (_42)-[:`LOCATED_IN`]->(_5)
+create (_43)-[:`STARTS_AT`]->(_110)
+create (_43)-[:`LOCATED_IN`]->(_5)
+create (_44)-[:`STARTS_AT`]->(_111)
+create (_44)-[:`LOCATED_IN`]->(_5)
+create (_45)-[:`STARTS_AT`]->(_106)
+create (_45)-[:`LOCATED_IN`]->(_6)
+create (_46)-[:`STARTS_AT`]->(_107)
+create (_46)-[:`LOCATED_IN`]->(_6)
+create (_47)-[:`STARTS_AT`]->(_108)
+create (_47)-[:`LOCATED_IN`]->(_6)
+create (_48)-[:`STARTS_AT`]->(_109)
+create (_48)-[:`LOCATED_IN`]->(_6)
+create (_49)-[:`STARTS_AT`]->(_110)
+create (_49)-[:`LOCATED_IN`]->(_6)
+create (_50)-[:`STARTS_AT`]->(_111)
+create (_50)-[:`LOCATED_IN`]->(_6)
+create (_51)-[:`STARTS_AT`]->(_106)
+create (_51)-[:`LOCATED_IN`]->(_7)
+create (_52)-[:`STARTS_AT`]->(_107)
+create (_52)-[:`LOCATED_IN`]->(_7)
+create (_53)-[:`STARTS_AT`]->(_110)
+create (_53)-[:`LOCATED_IN`]->(_7)
+create (_54)-[:`STARTS_AT`]->(_112)
+create (_54)-[:`LOCATED_IN`]->(_8)
+create (_55)-[:`STARTS_AT`]->(_113)
+create (_55)-[:`LOCATED_IN`]->(_8)
+create (_56)-[:`PRESENTS`]->(_9)
+create (_57)-[:`PRESENTS`]->(_10)
+create (_58)-[:`PRESENTS`]->(_11)
+create (_59)-[:`PRESENTS`]->(_12)
+create (_60)-[:`PRESENTS`]->(_13)
+create (_61)-[:`PRESENTS`]->(_14)
+create (_62)-[:`PRESENTS`]->(_15)
+create (_63)-[:`PRESENTS`]->(_16)
+create (_64)-[:`PRESENTS`]->(_17)
+create (_65)-[:`PRESENTS`]->(_18)
+create (_66)-[:`PRESENTS`]->(_19)
+create (_67)-[:`PRESENTS`]->(_20)
+create (_68)-[:`PRESENTS`]->(_21)
+create (_69)-[:`PRESENTS`]->(_22)
+create (_70)-[:`PRESENTS`]->(_23)
+create (_71)-[:`PRESENTS`]->(_24)
+create (_72)-[:`PRESENTS`]->(_25)
+create (_73)-[:`PRESENTS`]->(_26)
+create (_74)-[:`PRESENTS`]->(_27)
+create (_75)-[:`PRESENTS`]->(_28)
+create (_76)-[:`PRESENTS`]->(_29)
+create (_77)-[:`PRESENTS`]->(_30)
+create (_78)-[:`PRESENTS`]->(_31)
+create (_79)-[:`PRESENTS`]->(_31)
+create (_80)-[:`PRESENTS`]->(_32)
+create (_81)-[:`PRESENTS`]->(_32)
+create (_82)-[:`PRESENTS`]->(_33)
+create (_83)-[:`PRESENTS`]->(_34)
+create (_84)-[:`PRESENTS`]->(_35)
+create (_85)-[:`PRESENTS`]->(_36)
+create (_86)-[:`PRESENTS`]->(_37)
+create (_87)-[:`PRESENTS`]->(_38)
+create (_88)-[:`PRESENTS`]->(_39)
+create (_89)-[:`PRESENTS`]->(_40)
+create (_90)-[:`PRESENTS`]->(_41)
+create (_91)-[:`PRESENTS`]->(_42)
+create (_92)-[:`PRESENTS`]->(_43)
+create (_93)-[:`PRESENTS`]->(_44)
+create (_94)-[:`PRESENTS`]->(_44)
+create (_95)-[:`PRESENTS`]->(_45)
+create (_96)-[:`PRESENTS`]->(_46)
+create (_97)-[:`PRESENTS`]->(_47)
+create (_98)-[:`PRESENTS`]->(_48)
+create (_99)-[:`PRESENTS`]->(_49)
+create (_100)-[:`PRESENTS`]->(_50)
+create (_101)-[:`PRESENTS`]->(_51)
+create (_102)-[:`PRESENTS`]->(_52)
+create (_103)-[:`PRESENTS`]->(_53)
+create (_104)-[:`PRESENTS`]->(_54)
+create (_105)-[:`PRESENTS`]->(_55)
+create (_106)-[:`PRECEDES`]->(_107)
+create (_106)-[:`PART_OF`]->(_114)
+create (_107)-[:`PRECEDES`]->(_108)
+create (_107)-[:`PART_OF`]->(_114)
+create (_108)-[:`PRECEDES`]->(_109)
+create (_108)-[:`PART_OF`]->(_114)
+create (_109)-[:`PRECEDES`]->(_110)
+create (_109)-[:`PART_OF`]->(_114)
+create (_110)-[:`PRECEDES`]->(_111)
+create (_110)-[:`PART_OF`]->(_114)
+create (_111)-[:`PRECEDES`]->(_113)
+create (_111)-[:`PART_OF`]->(_114)
+create (_112)-[:`PRECEDES`]->(_106)
+create (_112)-[:`PART_OF`]->(_114)
+create (_113)-[:`PART_OF`]->(_114)
+----
+
+Let's see what we have added. Here is the schedule:
+
+//graph
+
+Let's look at talks with 2 speakers
+[source,cypher]
+----
+//talks with 2 speakers
+match (s1:Speaker)--(t:Talk)--(s2:Speaker) where id(s1)<> id(s2) return t.name, s1.name, s2.name
+----
+
+//table
+
+Or let's look at it as a network:
+[source,cypher]
+----
+//talks with 2 speakers
+match (s1:Speaker)--(t:Talk)--(s2:Speaker) where id(s1)<> id(s2) return t,s1,s2
+----
+
+//graph_result
+
+Look at the path between two speakers - interesting!
+[source,cypher]
+----
+//link between speakers
+match (s1:Speaker {name:"Mattias Ask"}), (s2:Speaker {name:"Oren Eini"}), 
+p=AllShortestPaths((s1)-[*]-(s2))
+return p
+----
+
+//graph_result
+
+Or let's see if we can recreate the "square" schedule table structure that I started from:
+[source,cypher]
+----
+//collected talks per timeslot
+match (t:Timeslot)--(ta:Talk) return t.name, collect (ta.name) order by t.name asc
+----
+
+//table
+
+= Just a start... =
+There are so many other things that we could look at. Use the console below to explore if you are interested in more.
+
+//console
+
+I hope this gist was interesting for you. 
+ 
+This gist was created by link:mailto:rik@neotechnology.com[Rik Van Bruggen]
+ 
+* link:http://blog.bruggen.com[My Blog]
+* link:http://learningneo4j.net[My Book]
+* link:http://twitter.com/rvanbruggen[On Twitter]
+//* link:https://www.linkedin.com/in/rikvanbruggen/[On LinkedIn]

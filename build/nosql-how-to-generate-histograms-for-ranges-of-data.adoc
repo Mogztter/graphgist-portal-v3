@@ -1,0 +1,72 @@
+= NoSQL - How to generate histograms for ranges of data
+
+http://stackoverflow.com/questions/21997985/nosql-how-to-generate-histograms-for-ranges-of-data[Source on StackOverflow]
+
+== Question
+
+Our company has a need to store and compute analytics related to content creation, review/approval and publishing workflow for documents. We are looking at something like Amazon SimpleDB.
+
+We will store "events" which correspond to actions that users take in the system. For instance:
+
+[NOTE]
+----
+[User B] requested [document B] be reviewed at [Time] by [User A]
+[User A] approved [document B] at [Time]
+[User B] edited [document B] at [Time]
+[User B] published [document B] at [Time]
+----
+
+Then we want to be able to create graphs (histogram/line plot) of this activity for given time periods. For instance:
+
+* Edits vs Time
+* Approvals vs Time
+* Publishes vs Time
+* Approvals vs Publishes vs Time
+
+In SQL I assume this would be done by grouping results into "buckets". However, I am having a hard time figuring out how to do this with a NoSQL db like AWS Simpledb without batching this processing using Hadoop/Map Reduce. This has to be realtime so doing any batch processing is out of the question.
+
+We are also looking at Neo4J so if someone has a solution for Neo I would be interested as well.
+
+Thanks
+
+//setup
+//hide
+[source,cypher]
+----
+create (cA:Content {document:'A'})
+create (cB:Content {document:'B'})
+create (e1:Edit {remark:"First Edit"})-[:OF_CONTENT]->(cA),
+       (e2:Edit {remark:"Cleanup"})-[:OF_CONTENT]->(cB),
+       (e3:Edit  {remark:"Finishing up"})-[:OF_CONTENT]->(cA),
+       (p1:Publish {remark:"published"})-[:OF_CONTENT]->(cA)
+create (m:Month {month:"2013-01"})
+create (a:Day {day:"2013-01-01"})-[:IN_MONTH]->(m)
+create (b:Day {day:"2013-01-02"})-[:IN_MONTH]->(m)
+create (a)-[:NEXT_DAY]->(b)
+create (e1)-[:ON_DAY]->(a)
+create (e2)-[:ON_DAY]->(a)
+create (e3)-[:ON_DAY]->(b)
+create (p1)-[:ON_DAY]->(b)
+----
+
+// graph
+
+== Edits per day
+
+[source,cypher]
+----
+MATCH (e:Edit)-[:ON_DAY]->(d)
+RETURN d.day, count(e), collect(e)
+----
+
+// table
+
+== Edits per document and day
+
+[source,cypher]
+----
+MATCH (c:Content)<-[:OF_CONTENT]-(e:Edit)-[:ON_DAY]->(d)
+RETURN d.day, count(e), collect({edit:id(e), content:c.document}) 
+----
+
+// table

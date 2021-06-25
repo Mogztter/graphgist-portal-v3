@@ -1,0 +1,1405 @@
+= Graph of a musical groups' albums, songs and lyrics
+Greg Ricker <rickeg0@gmail.com>
+v1.0, 11-2-2015
+:neo4j-version: 2.3.0
+:author: Greg Ricker
+:twitter: greg_ricker
+
+
+image::http://i.imgur.com/xALasOQ.png[height=300,width=600]
+
+== The Idea
+Being the dad of a teenage daughter means I listen to a lot of the current music. Lady Gaga, Taylor Swift. Recently is all about One Direction. As “” recently said “One Direction owns the internet in 2015. Sometimes I hear “this is a sad song” or “this is a happy one”. What could I learn about their music using Neo4j? Could one derive any sort of sentiment from the lyrics? Could I get my daughter interested in this? Only one way to find out...
+
+== How to start
+The first step was to learn more about the group. There are currently four members but for most of their albums there were five. Harry Stiles, Niall, Liam, Zayn and Louis.They have released five albums, Four, Take me home, Up all night, Midnight memories and Made in the A.M. With the help of my daughter we found a site that had the lryics to all of the songs. What I found was that while some of the song files contained information about who was singing what section, many did not. I was hoping that maybe the sentiment could be aided by knowing the singer. Maybe Harry always sings sad/ break up songs(he did date Taylor Swift). Since this information isn’t consistent I couldn’t count on it.
+
+== Song sentiment ?
+I felt it was important to have the ability to track lyrics by location in the song, row and column. This way one could query “what words appear the most often at the start(0,0) of a song? How often do certain word combinations( “I” and “you”) appear on the same line? This last question could be useful in better understanding sentiment?
+
+== Tools
+Tools: Python, py2neo, R and RNeo4j. 
+
+== The Model
+
+The first step was to organize the songs into files by album. Once this was done it was simple to get Python to read in a list of albums, songs titles, and lyrics(words). The graph...
+
+I decided that a Group  node would refer to a band or singer. A group would be made up of members and members were artists. For bands this is fine. I made the choice to treat single acts  the same as way. So Lady Gaga or Taylor Swift would be a considered a group,member and artist. 
+
+
+
+*Nodes*
+
+* Group 
+* Member 
+* Artist
+* Album 
+* Song 
+* Lyrics
+
+
+
+*Relations*
+
+* Album  [red]#*BY*# Group
+* Lyric *IN* Song
+* Song *ON* Album
+* Member *ISA_ARTIST* Artist
+* Group *HAS_MEMBER* Member
+
+
+
+
+// Provide an introduction to your data modeling domain and what you are trying to accomplish
+
+// Provide a domain model image (using something like http://www.apcjones.com/arrows/# or https://www.gliffy.com/)
+
+// You can run this query to get an overview of entities and how they are related:
+// MATCH (a)-[r]->(b) WHERE labels(a) <> [] AND labels(b) <> []
+// RETURN DISTINCT head(labels(a)) AS This, type(r) as To, head(labels(b)) AS That LIMIT 10
+
+//image::http://i.imgur.com/5giAsjq.png[]
+
+
+== Graph
+For the gist I restricted the data to one song per album and reduced the lyrics by two thirds. Even with this there are still 581 lyric nodes. There are 232 unique words. The difference is due to words being repeated but in different locations. The word “you” is found 28 times in the five songs
+
+
+//setup
+//hide
+//output
+[source,cypher]
+----
+create (_0:`Artist` {`firstName`:"Harry", `name`:"Harry"})
+create (_1:`Member` {`name`:"Harry"})
+create (_2:`Artist` {`firstName`:"Niall", `name`:"Niall"})
+create (_3:`Member` {`name`:"Niall"})
+create (_4:`Artist` {`firstName`:"Louis", `name`:"Louis"})
+create (_5:`Member` {`name`:"Louis"})
+create (_6:`Artist` {`firstName`:"Zayn", `name`:"Zayn"})
+create (_7:`Member` {`name`:"Zayn"})
+create (_8:`Artist` {`firstName`:"Liam", `name`:"Liam"})
+create (_9:`Member` {`name`:"Liam"})
+create (_10:`Group` {`name`:"One Direction"})
+create (_11:`Album` {`name`:"four"})
+create (_12:`Song` {`lineCount`:5, `name`:"Act My Age"})
+create (_13:`Lyric` {`column`:0, `name`:"One", `row`:0})
+create (_14:`Lyric` {`column`:1, `name`:"two", `row`:0})
+create (_15:`Lyric` {`column`:2, `name`:"three", `row`:0})
+create (_16:`Lyric` {`column`:3, `name`:"four", `row`:0})
+create (_17:`Lyric` {`column`:0, `name`:"When", `row`:1})
+create (_18:`Lyric` {`column`:1, `name`:"I’m", `row`:1})
+create (_19:`Lyric` {`column`:2, `name`:"fat", `row`:1})
+create (_20:`Lyric` {`column`:3, `name`:"and", `row`:1})
+create (_21:`Lyric` {`column`:4, `name`:"old", `row`:1})
+create (_22:`Lyric` {`column`:5, `name`:"and", `row`:1})
+create (_23:`Lyric` {`column`:6, `name`:"my", `row`:1})
+create (_24:`Lyric` {`column`:7, `name`:"kids", `row`:1})
+create (_25:`Lyric` {`column`:8, `name`:"think", `row`:1})
+create (_26:`Lyric` {`column`:9, `name`:"I’m", `row`:1})
+create (_27:`Lyric` {`column`:10, `name`:"a", `row`:1})
+create (_28:`Lyric` {`column`:11, `name`:"joke", `row`:1})
+create (_29:`Lyric` {`column`:0, `name`:"Cause", `row`:2})
+create (_30:`Lyric` {`column`:1, `name`:"I", `row`:2})
+create (_31:`Lyric` {`column`:2, `name`:"move", `row`:2})
+create (_32:`Lyric` {`column`:3, `name`:"a", `row`:2})
+create (_33:`Lyric` {`column`:4, `name`:"little", `row`:2})
+create (_34:`Lyric` {`column`:5, `name`:"slow", `row`:2})
+create (_35:`Lyric` {`column`:6, `name`:"when", `row`:2})
+create (_36:`Lyric` {`column`:7, `name`:"I", `row`:2})
+create (_37:`Lyric` {`column`:8, `name`:"dance", `row`:2})
+create (_38:`Lyric` {`column`:0, `name`:"I", `row`:3})
+create (_39:`Lyric` {`column`:1, `name`:"can", `row`:3})
+create (_40:`Lyric` {`column`:2, `name`:"count", `row`:3})
+create (_41:`Lyric` {`column`:3, `name`:"on", `row`:3})
+create (_42:`Lyric` {`column`:4, `name`:"you", `row`:3})
+create (_43:`Lyric` {`column`:5, `name`:"after", `row`:3})
+create (_44:`Lyric` {`column`:6, `name`:"all", `row`:3})
+create (_45:`Lyric` {`column`:7, `name`:"that", `row`:3})
+create (_46:`Lyric` {`column`:8, `name`:"we’ve", `row`:3})
+create (_47:`Lyric` {`column`:9, `name`:"been", `row`:3})
+create (_48:`Lyric` {`column`:10, `name`:"through", `row`:3})
+create (_49:`Lyric` {`column`:0, `name`:"Cause", `row`:4})
+create (_50:`Lyric` {`column`:1, `name`:"I", `row`:4})
+create (_51:`Lyric` {`column`:2, `name`:"know", `row`:4})
+create (_52:`Lyric` {`column`:3, `name`:"that", `row`:4})
+create (_53:`Lyric` {`column`:4, `name`:"you’ll", `row`:4})
+create (_54:`Lyric` {`column`:5, `name`:"always", `row`:4})
+create (_55:`Lyric` {`column`:6, `name`:"understand", `row`:4})
+create (_56:`Album` {`name`:"made in the A.M"})
+create (_57:`Song` {`lineCount`:14, `name`:"If I Could Fly"})
+create (_58:`Lyric` {`column`:0, `name`:"If", `row`:0})
+create (_59:`Lyric` {`column`:1, `name`:"I", `row`:0})
+create (_60:`Lyric` {`column`:2, `name`:"could", `row`:0})
+create (_61:`Lyric` {`column`:3, `name`:"fly", `row`:0})
+create (_62:`Lyric` {`column`:0, `name`:"Id", `row`:1})
+create (_63:`Lyric` {`column`:1, `name`:"be", `row`:1})
+create (_64:`Lyric` {`column`:2, `name`:"coming", `row`:1})
+create (_65:`Lyric` {`column`:3, `name`:"right", `row`:1})
+create (_66:`Lyric` {`column`:4, `name`:"back", `row`:1})
+create (_67:`Lyric` {`column`:5, `name`:"home", `row`:1})
+create (_68:`Lyric` {`column`:6, `name`:"to", `row`:1})
+create (_69:`Lyric` {`column`:7, `name`:"you", `row`:1})
+create (_70:`Lyric` {`column`:0, `name`:"I", `row`:2})
+create (_71:`Lyric` {`column`:1, `name`:"think", `row`:2})
+create (_72:`Lyric` {`column`:2, `name`:"I", `row`:2})
+create (_73:`Lyric` {`column`:3, `name`:"might", `row`:2})
+create (_74:`Lyric` {`column`:4, `name`:"give", `row`:2})
+create (_75:`Lyric` {`column`:5, `name`:"up", `row`:2})
+create (_76:`Lyric` {`column`:6, `name`:"everything", `row`:2})
+create (_77:`Lyric` {`column`:0, `name`:"Just", `row`:3})
+create (_78:`Lyric` {`column`:1, `name`:"ask", `row`:3})
+create (_79:`Lyric` {`column`:2, `name`:"me", `row`:3})
+create (_80:`Lyric` {`column`:3, `name`:"to", `row`:3})
+create (_81:`Lyric` {`column`:0, `name`:"Pay", `row`:4})
+create (_82:`Lyric` {`column`:1, `name`:"attention", `row`:4})
+create (_83:`Lyric` {`column`:0, `name`:"I", `row`:5})
+create (_84:`Lyric` {`column`:1, `name`:"hope", `row`:5})
+create (_85:`Lyric` {`column`:2, `name`:"that", `row`:5})
+create (_86:`Lyric` {`column`:3, `name`:"you", `row`:5})
+create (_87:`Lyric` {`column`:4, `name`:"listen", `row`:5})
+create (_88:`Lyric` {`column`:5, `name`:"cause", `row`:5})
+create (_89:`Lyric` {`column`:6, `name`:"I", `row`:5})
+create (_90:`Lyric` {`column`:7, `name`:"let", `row`:5})
+create (_91:`Lyric` {`column`:8, `name`:"my", `row`:5})
+create (_92:`Lyric` {`column`:9, `name`:"guard", `row`:5})
+create (_93:`Lyric` {`column`:10, `name`:"down", `row`:5})
+create (_94:`Lyric` {`column`:0, `name`:"Right", `row`:6})
+create (_95:`Lyric` {`column`:1, `name`:"now", `row`:6})
+create (_96:`Lyric` {`column`:2, `name`:"Im", `row`:6})
+create (_97:`Lyric` {`column`:3, `name`:"completely", `row`:6})
+create (_98:`Lyric` {`column`:4, `name`:"defenseless", `row`:6})
+create (_99:`Lyric` {`column`:0, `name`:"For", `row`:7})
+create (_100:`Lyric` {`column`:1, `name`:"your", `row`:7})
+create (_101:`Lyric` {`column`:2, `name`:"eyes", `row`:7})
+create (_102:`Lyric` {`column`:3, `name`:"only", `row`:7})
+create (_103:`Lyric` {`column`:0, `name`:"Ill", `row`:8})
+create (_104:`Lyric` {`column`:1, `name`:"show", `row`:8})
+create (_105:`Lyric` {`column`:2, `name`:"you", `row`:8})
+create (_106:`Lyric` {`column`:3, `name`:"my", `row`:8})
+create (_107:`Lyric` {`column`:4, `name`:"heart", `row`:8})
+create (_108:`Lyric` {`column`:0, `name`:"For", `row`:9})
+create (_109:`Lyric` {`column`:1, `name`:"when", `row`:9})
+create (_110:`Lyric` {`column`:2, `name`:"youre", `row`:9})
+create (_111:`Lyric` {`column`:3, `name`:"lonely", `row`:9})
+create (_112:`Lyric` {`column`:4, `name`:"and", `row`:9})
+create (_113:`Lyric` {`column`:5, `name`:"forget", `row`:9})
+create (_114:`Lyric` {`column`:6, `name`:"who", `row`:9})
+create (_115:`Lyric` {`column`:7, `name`:"you", `row`:9})
+create (_116:`Lyric` {`column`:8, `name`:"are", `row`:9})
+create (_117:`Lyric` {`column`:0, `name`:"Im", `row`:10})
+create (_118:`Lyric` {`column`:1, `name`:"missing", `row`:10})
+create (_119:`Lyric` {`column`:2, `name`:"half", `row`:10})
+create (_120:`Lyric` {`column`:3, `name`:"of", `row`:10})
+create (_121:`Lyric` {`column`:4, `name`:"me", `row`:10})
+create (_122:`Lyric` {`column`:5, `name`:"when", `row`:10})
+create (_123:`Lyric` {`column`:6, `name`:"were", `row`:10})
+create (_124:`Lyric` {`column`:7, `name`:"apart", `row`:10})
+create (_125:`Lyric` {`column`:0, `name`:"Now", `row`:11})
+create (_126:`Lyric` {`column`:1, `name`:"you", `row`:11})
+create (_127:`Lyric` {`column`:2, `name`:"know", `row`:11})
+create (_128:`Lyric` {`column`:3, `name`:"me", `row`:11})
+create (_129:`Lyric` {`column`:0, `name`:"For", `row`:12})
+create (_130:`Lyric` {`column`:1, `name`:"your", `row`:12})
+create (_131:`Lyric` {`column`:2, `name`:"eyes", `row`:12})
+create (_132:`Lyric` {`column`:3, `name`:"only", `row`:12})
+create (_133:`Lyric` {`column`:0, `name`:"For", `row`:13})
+create (_134:`Lyric` {`column`:1, `name`:"your", `row`:13})
+create (_135:`Lyric` {`column`:2, `name`:"eyes", `row`:13})
+create (_136:`Lyric` {`column`:3, `name`:"only", `row`:13})
+create (_137:`Album` {`name`:"midnight memories"})
+create (_138:`Song` {`lineCount`:13, `name`:"best song ever"})
+create (_139:`Lyric` {`column`:0, `name`:"Maybe", `row`:0})
+create (_140:`Lyric` {`column`:1, `name`:"its", `row`:0})
+create (_141:`Lyric` {`column`:2, `name`:"the", `row`:0})
+create (_142:`Lyric` {`column`:3, `name`:"way", `row`:0})
+create (_143:`Lyric` {`column`:4, `name`:"she", `row`:0})
+create (_144:`Lyric` {`column`:5, `name`:"walked", `row`:0})
+create (_145:`Lyric` {`column`:6, `name`:"straight", `row`:0})
+create (_146:`Lyric` {`column`:7, `name`:"into", `row`:0})
+create (_147:`Lyric` {`column`:8, `name`:"my", `row`:0})
+create (_148:`Lyric` {`column`:9, `name`:"heart", `row`:0})
+create (_149:`Lyric` {`column`:10, `name`:"and", `row`:0})
+create (_150:`Lyric` {`column`:11, `name`:"stole", `row`:0})
+create (_151:`Lyric` {`column`:12, `name`:"it", `row`:0})
+create (_152:`Lyric` {`column`:0, `name`:"Through", `row`:1})
+create (_153:`Lyric` {`column`:1, `name`:"the", `row`:1})
+create (_154:`Lyric` {`column`:2, `name`:"doors", `row`:1})
+create (_155:`Lyric` {`column`:4, `name`:"past", `row`:1})
+create (_156:`Lyric` {`column`:5, `name`:"the", `row`:1})
+create (_157:`Lyric` {`column`:6, `name`:"guards", `row`:1})
+create (_158:`Lyric` {`column`:7, `name`:"just", `row`:1})
+create (_159:`Lyric` {`column`:8, `name`:"like", `row`:1})
+create (_160:`Lyric` {`column`:9, `name`:"she", `row`:1})
+create (_161:`Lyric` {`column`:10, `name`:"already", `row`:1})
+create (_162:`Lyric` {`column`:11, `name`:"own", `row`:1})
+create (_163:`Lyric` {`column`:12, `name`:"it", `row`:1})
+create (_164:`Lyric` {`column`:1, `name`:"said", `row`:2})
+create (_165:`Lyric` {`column`:2, `name`:"can", `row`:2})
+create (_166:`Lyric` {`column`:3, `name`:"you", `row`:2})
+create (_167:`Lyric` {`column`:5, `name`:"it", `row`:2})
+create (_168:`Lyric` {`column`:6, `name`:"back", `row`:2})
+create (_169:`Lyric` {`column`:7, `name`:"to", `row`:2})
+create (_170:`Lyric` {`column`:8, `name`:"me", `row`:2})
+create (_171:`Lyric` {`column`:9, `name`:"she", `row`:2})
+create (_172:`Lyric` {`column`:10, `name`:"said", `row`:2})
+create (_173:`Lyric` {`column`:11, `name`:"never", `row`:2})
+create (_174:`Lyric` {`column`:12, `name`:"in", `row`:2})
+create (_175:`Lyric` {`column`:13, `name`:"your", `row`:2})
+create (_176:`Lyric` {`column`:14, `name`:"wildest", `row`:2})
+create (_177:`Lyric` {`column`:15, `name`:"dreams", `row`:2})
+create (_178:`Lyric` {`column`:0, `name`:"And", `row`:3})
+create (_179:`Lyric` {`column`:1, `name`:"we", `row`:3})
+create (_180:`Lyric` {`column`:2, `name`:"danced", `row`:3})
+create (_181:`Lyric` {`column`:3, `name`:"all", `row`:3})
+create (_182:`Lyric` {`column`:4, `name`:"night", `row`:3})
+create (_183:`Lyric` {`column`:5, `name`:"to", `row`:3})
+create (_184:`Lyric` {`column`:6, `name`:"the", `row`:3})
+create (_185:`Lyric` {`column`:7, `name`:"best", `row`:3})
+create (_186:`Lyric` {`column`:8, `name`:"song", `row`:3})
+create (_187:`Lyric` {`column`:9, `name`:"ever", `row`:3})
+create (_188:`Lyric` {`column`:0, `name`:"We", `row`:4})
+create (_189:`Lyric` {`column`:1, `name`:"knew", `row`:4})
+create (_190:`Lyric` {`column`:2, `name`:"every", `row`:4})
+create (_191:`Lyric` {`column`:3, `name`:"line", `row`:4})
+create (_192:`Lyric` {`column`:4, `name`:"now", `row`:4})
+create (_193:`Lyric` {`column`:5, `name`:"I", `row`:4})
+create (_194:`Lyric` {`column`:6, `name`:"cant", `row`:4})
+create (_195:`Lyric` {`column`:7, `name`:"remember", `row`:4})
+create (_196:`Lyric` {`column`:0, `name`:"How", `row`:5})
+create (_197:`Lyric` {`column`:1, `name`:"it", `row`:5})
+create (_198:`Lyric` {`column`:2, `name`:"goes", `row`:5})
+create (_199:`Lyric` {`column`:3, `name`:"but", `row`:5})
+create (_200:`Lyric` {`column`:4, `name`:"I", `row`:5})
+create (_201:`Lyric` {`column`:5, `name`:"know", `row`:5})
+create (_202:`Lyric` {`column`:6, `name`:"that", `row`:5})
+create (_203:`Lyric` {`column`:7, `name`:"I", `row`:5})
+create (_204:`Lyric` {`column`:8, `name`:"wont", `row`:5})
+create (_205:`Lyric` {`column`:9, `name`:"forget", `row`:5})
+create (_206:`Lyric` {`column`:10, `name`:"her", `row`:5})
+create (_207:`Lyric` {`column`:0, `name`:"Cause", `row`:6})
+create (_208:`Lyric` {`column`:1, `name`:"we", `row`:6})
+create (_209:`Lyric` {`column`:2, `name`:"danced", `row`:6})
+create (_210:`Lyric` {`column`:3, `name`:"all", `row`:6})
+create (_211:`Lyric` {`column`:4, `name`:"night", `row`:6})
+create (_212:`Lyric` {`column`:5, `name`:"to", `row`:6})
+create (_213:`Lyric` {`column`:6, `name`:"the", `row`:6})
+create (_214:`Lyric` {`column`:7, `name`:"best", `row`:6})
+create (_215:`Lyric` {`column`:8, `name`:"song", `row`:6})
+create (_216:`Lyric` {`column`:9, `name`:"ever", `row`:6})
+create (_217:`Lyric` {`column`:0, `name`:"I", `row`:7})
+create (_218:`Lyric` {`column`:1, `name`:"think", `row`:7})
+create (_219:`Lyric` {`column`:2, `name`:"it", `row`:7})
+create (_220:`Lyric` {`column`:3, `name`:"went", `row`:7})
+create (_221:`Lyric` {`column`:4, `name`:"oh", `row`:7})
+create (_222:`Lyric` {`column`:5, `name`:"oh", `row`:7})
+create (_223:`Lyric` {`column`:6, `name`:"oh", `row`:7})
+create (_224:`Lyric` {`column`:0, `name`:"I", `row`:8})
+create (_225:`Lyric` {`column`:1, `name`:"think", `row`:8})
+create (_226:`Lyric` {`column`:2, `name`:"it", `row`:8})
+create (_227:`Lyric` {`column`:3, `name`:"went", `row`:8})
+create (_228:`Lyric` {`column`:4, `name`:"yeah", `row`:8})
+create (_229:`Lyric` {`column`:5, `name`:"yeah", `row`:8})
+create (_230:`Lyric` {`column`:6, `name`:"yeah", `row`:8})
+create (_231:`Lyric` {`column`:0, `name`:"I", `row`:9})
+create (_232:`Lyric` {`column`:1, `name`:"think", `row`:9})
+create (_233:`Lyric` {`column`:2, `name`:"it", `row`:9})
+create (_234:`Lyric` {`column`:3, `name`:"goes", `row`:9})
+create (_235:`Lyric` {`column`:0, `name`:"Said", `row`:10})
+create (_236:`Lyric` {`column`:1, `name`:"her", `row`:10})
+create (_237:`Lyric` {`column`:2, `name`:"name", `row`:10})
+create (_238:`Lyric` {`column`:3, `name`:"was", `row`:10})
+create (_239:`Lyric` {`column`:4, `name`:"georgia", `row`:10})
+create (_240:`Lyric` {`column`:5, `name`:"rose", `row`:10})
+create (_241:`Lyric` {`column`:6, `name`:"and", `row`:10})
+create (_242:`Lyric` {`column`:7, `name`:"her", `row`:10})
+create (_243:`Lyric` {`column`:8, `name`:"daddy", `row`:10})
+create (_244:`Lyric` {`column`:9, `name`:"was", `row`:10})
+create (_245:`Lyric` {`column`:10, `name`:"a", `row`:10})
+create (_246:`Lyric` {`column`:11, `name`:"dentist", `row`:10})
+create (_247:`Lyric` {`column`:0, `name`:"Said", `row`:11})
+create (_248:`Lyric` {`column`:1, `name`:"I", `row`:11})
+create (_249:`Lyric` {`column`:2, `name`:"had", `row`:11})
+create (_250:`Lyric` {`column`:3, `name`:"a", `row`:11})
+create (_251:`Lyric` {`column`:4, `name`:"dirty", `row`:11})
+create (_252:`Lyric` {`column`:5, `name`:"mouth", `row`:11})
+create (_253:`Lyric` {`column`:6, `name`:"i", `row`:11})
+create (_254:`Lyric` {`column`:7, `name`:"got", `row`:11})
+create (_255:`Lyric` {`column`:8, `name`:"a", `row`:11})
+create (_256:`Lyric` {`column`:9, `name`:"dirty", `row`:11})
+create (_257:`Lyric` {`column`:10, `name`:"mouth", `row`:11})
+create (_258:`Lyric` {`column`:11, `name`:"but", `row`:11})
+create (_259:`Lyric` {`column`:12, `name`:"she", `row`:11})
+create (_260:`Lyric` {`column`:13, `name`:"kissed", `row`:11})
+create (_261:`Lyric` {`column`:14, `name`:"me", `row`:11})
+create (_262:`Lyric` {`column`:15, `name`:"like", `row`:11})
+create (_263:`Lyric` {`column`:16, `name`:"she", `row`:11})
+create (_264:`Lyric` {`column`:17, `name`:"meant", `row`:11})
+create (_265:`Lyric` {`column`:18, `name`:"it", `row`:11})
+create (_266:`Lyric` {`column`:0, `name`:"I", `row`:12})
+create (_267:`Lyric` {`column`:1, `name`:"said", `row`:12})
+create (_268:`Lyric` {`column`:2, `name`:"can", `row`:12})
+create (_269:`Lyric` {`column`:3, `name`:"I", `row`:12})
+create (_270:`Lyric` {`column`:4, `name`:"take", `row`:12})
+create (_271:`Lyric` {`column`:5, `name`:"you", `row`:12})
+create (_272:`Lyric` {`column`:6, `name`:"home", `row`:12})
+create (_273:`Lyric` {`column`:7, `name`:"with", `row`:12})
+create (_274:`Lyric` {`column`:8, `name`:"me", `row`:12})
+create (_275:`Lyric` {`column`:9, `name`:"she", `row`:12})
+create (_276:`Lyric` {`column`:10, `name`:"said", `row`:12})
+create (_277:`Lyric` {`column`:11, `name`:"never", `row`:12})
+create (_278:`Lyric` {`column`:12, `name`:"in", `row`:12})
+create (_279:`Lyric` {`column`:13, `name`:"your", `row`:12})
+create (_280:`Lyric` {`column`:14, `name`:"wildest", `row`:12})
+create (_281:`Lyric` {`column`:15, `name`:"dreams", `row`:12})
+create (_282:`Album` {`name`:"take me home"})
+create (_283:`Song` {`lineCount`:21, `name`:"Kiss You"})
+create (_284:`Lyric` {`column`:0, `name`:"Oh", `row`:0})
+create (_285:`Lyric` {`column`:2, `name`:"just", `row`:0})
+create (_286:`Lyric` {`column`:3, `name`:"wanna", `row`:0})
+create (_287:`Lyric` {`column`:4, `name`:"take", `row`:0})
+create (_288:`Lyric` {`column`:5, `name`:"you", `row`:0})
+create (_289:`Lyric` {`column`:6, `name`:"anywhere", `row`:0})
+create (_290:`Lyric` {`column`:7, `name`:"that", `row`:0})
+create (_291:`Lyric` {`column`:8, `name`:"you", `row`:0})
+create (_292:`Lyric` {`column`:9, `name`:"like", `row`:0})
+create (_293:`Lyric` {`column`:0, `name`:"We", `row`:1})
+create (_294:`Lyric` {`column`:1, `name`:"could", `row`:1})
+create (_295:`Lyric` {`column`:2, `name`:"go", `row`:1})
+create (_296:`Lyric` {`column`:3, `name`:"out", `row`:1})
+create (_297:`Lyric` {`column`:4, `name`:"any", `row`:1})
+create (_298:`Lyric` {`column`:5, `name`:"day", `row`:1})
+create (_299:`Lyric` {`column`:6, `name`:"any", `row`:1})
+create (_300:`Lyric` {`column`:7, `name`:"night", `row`:1})
+create (_301:`Lyric` {`column`:0, `name`:"Baby", `row`:2})
+create (_302:`Lyric` {`column`:1, `name`:"Ill", `row`:2})
+create (_303:`Lyric` {`column`:2, `name`:"take", `row`:2})
+create (_304:`Lyric` {`column`:4, `name`:"there", `row`:2})
+create (_305:`Lyric` {`column`:5, `name`:"take", `row`:2})
+create (_306:`Lyric` {`column`:6, `name`:"you", `row`:2})
+create (_307:`Lyric` {`column`:7, `name`:"there", `row`:2})
+create (_308:`Lyric` {`column`:0, `name`:"Baby", `row`:3})
+create (_309:`Lyric` {`column`:1, `name`:"Ill", `row`:3})
+create (_310:`Lyric` {`column`:2, `name`:"take", `row`:3})
+create (_311:`Lyric` {`column`:3, `name`:"you", `row`:3})
+create (_312:`Lyric` {`column`:4, `name`:"there", `row`:3})
+create (_313:`Lyric` {`column`:5, `name`:"yeah", `row`:3})
+create (_314:`Lyric` {`column`:0, `name`:"Oh", `row`:4})
+create (_315:`Lyric` {`column`:1, `name`:"tell", `row`:4})
+create (_316:`Lyric` {`column`:2, `name`:"me", `row`:4})
+create (_317:`Lyric` {`column`:3, `name`:"tell", `row`:4})
+create (_318:`Lyric` {`column`:4, `name`:"me", `row`:4})
+create (_319:`Lyric` {`column`:5, `name`:"tell", `row`:4})
+create (_320:`Lyric` {`column`:6, `name`:"me", `row`:4})
+create (_321:`Lyric` {`column`:7, `name`:"how", `row`:4})
+create (_322:`Lyric` {`column`:8, `name`:"to", `row`:4})
+create (_323:`Lyric` {`column`:9, `name`:"turn", `row`:4})
+create (_324:`Lyric` {`column`:10, `name`:"your", `row`:4})
+create (_325:`Lyric` {`column`:11, `name`:"love", `row`:4})
+create (_326:`Lyric` {`column`:12, `name`:"on", `row`:4})
+create (_327:`Lyric` {`column`:0, `name`:"You", `row`:5})
+create (_328:`Lyric` {`column`:1, `name`:"can", `row`:5})
+create (_329:`Lyric` {`column`:2, `name`:"get", `row`:5})
+create (_330:`Lyric` {`column`:3, `name`:"get", `row`:5})
+create (_331:`Lyric` {`column`:4, `name`:"anything", `row`:5})
+create (_332:`Lyric` {`column`:5, `name`:"that", `row`:5})
+create (_333:`Lyric` {`column`:6, `name`:"you", `row`:5})
+create (_334:`Lyric` {`column`:7, `name`:"want", `row`:5})
+create (_335:`Lyric` {`column`:0, `name`:"Baby", `row`:6})
+create (_336:`Lyric` {`column`:1, `name`:"just", `row`:6})
+create (_337:`Lyric` {`column`:2, `name`:"shout", `row`:6})
+create (_338:`Lyric` {`column`:3, `name`:"it", `row`:6})
+create (_339:`Lyric` {`column`:4, `name`:"out", `row`:6})
+create (_340:`Lyric` {`column`:5, `name`:"shout", `row`:6})
+create (_341:`Lyric` {`column`:6, `name`:"it", `row`:6})
+create (_342:`Lyric` {`column`:7, `name`:"out", `row`:6})
+create (_343:`Lyric` {`column`:0, `name`:"Baby", `row`:7})
+create (_344:`Lyric` {`column`:1, `name`:"just", `row`:7})
+create (_345:`Lyric` {`column`:2, `name`:"shout", `row`:7})
+create (_346:`Lyric` {`column`:3, `name`:"it", `row`:7})
+create (_347:`Lyric` {`column`:4, `name`:"out", `row`:7})
+create (_348:`Lyric` {`column`:5, `name`:"yeah", `row`:7})
+create (_349:`Lyric` {`column`:0, `name`:"And", `row`:8})
+create (_350:`Lyric` {`column`:1, `name`:"if", `row`:8})
+create (_351:`Lyric` {`column`:3, `name`:"you", `row`:8})
+create (_352:`Lyric` {`column`:4, `name`:"want", `row`:8})
+create (_353:`Lyric` {`column`:5, `name`:"me", `row`:8})
+create (_354:`Lyric` {`column`:6, `name`:"to", `row`:8})
+create (_355:`Lyric` {`column`:0, `name`:"Lets", `row`:9})
+create (_356:`Lyric` {`column`:1, `name`:"make", `row`:9})
+create (_357:`Lyric` {`column`:2, `name`:"a", `row`:9})
+create (_358:`Lyric` {`column`:3, `name`:"move", `row`:9})
+create (_359:`Lyric` {`column`:0, `name`:"Yeah", `row`:10})
+create (_360:`Lyric` {`column`:1, `name`:"so", `row`:10})
+create (_361:`Lyric` {`column`:2, `name`:"tell", `row`:10})
+create (_362:`Lyric` {`column`:3, `name`:"me", `row`:10})
+create (_363:`Lyric` {`column`:4, `name`:"girl", `row`:10})
+create (_364:`Lyric` {`column`:5, `name`:"if", `row`:10})
+create (_365:`Lyric` {`column`:6, `name`:"every", `row`:10})
+create (_366:`Lyric` {`column`:7, `name`:"time", `row`:10})
+create (_367:`Lyric` {`column`:8, `name`:"we", `row`:10})
+create (_368:`Lyric` {`column`:0, `name`:"To-o-uch", `row`:11})
+create (_369:`Lyric` {`column`:0, `name`:"You", `row`:12})
+create (_370:`Lyric` {`column`:1, `name`:"get", `row`:12})
+create (_371:`Lyric` {`column`:2, `name`:"this", `row`:12})
+create (_372:`Lyric` {`column`:3, `name`:"kind", `row`:12})
+create (_373:`Lyric` {`column`:4, `name`:"of", `row`:12})
+create (_374:`Lyric` {`column`:5, `name`:"ru-u-ush", `row`:12})
+create (_375:`Lyric` {`column`:0, `name`:"Baby", `row`:13})
+create (_376:`Lyric` {`column`:1, `name`:"say", `row`:13})
+create (_377:`Lyric` {`column`:2, `name`:"yeah", `row`:13})
+create (_378:`Lyric` {`column`:3, `name`:"yeah", `row`:13})
+create (_379:`Lyric` {`column`:0, `name`:"If", `row`:14})
+create (_380:`Lyric` {`column`:1, `name`:"you", `row`:14})
+create (_381:`Lyric` {`column`:2, `name`:"dont", `row`:14})
+create (_382:`Lyric` {`column`:3, `name`:"wanna", `row`:14})
+create (_383:`Lyric` {`column`:4, `name`:"take", `row`:14})
+create (_384:`Lyric` {`column`:5, `name`:"it", `row`:14})
+create (_385:`Lyric` {`column`:6, `name`:"slow", `row`:14})
+create (_386:`Lyric` {`column`:0, `name`:"And", `row`:15})
+create (_387:`Lyric` {`column`:1, `name`:"you", `row`:15})
+create (_388:`Lyric` {`column`:2, `name`:"just", `row`:15})
+create (_389:`Lyric` {`column`:3, `name`:"wanna", `row`:15})
+create (_390:`Lyric` {`column`:4, `name`:"take", `row`:15})
+create (_391:`Lyric` {`column`:5, `name`:"me", `row`:15})
+create (_392:`Lyric` {`column`:6, `name`:"home", `row`:15})
+create (_393:`Lyric` {`column`:0, `name`:"Baby", `row`:16})
+create (_394:`Lyric` {`column`:1, `name`:"say", `row`:16})
+create (_395:`Lyric` {`column`:2, `name`:"yeah", `row`:16})
+create (_396:`Lyric` {`column`:3, `name`:"yeah", `row`:16})
+create (_397:`Lyric` {`column`:0, `name`:"And", `row`:17})
+create (_398:`Lyric` {`column`:1, `name`:"let", `row`:17})
+create (_399:`Lyric` {`column`:2, `name`:"me", `row`:17})
+create (_400:`Lyric` {`column`:3, `name`:"kiss", `row`:17})
+create (_401:`Lyric` {`column`:4, `name`:"you", `row`:17})
+create (_402:`Lyric` {`column`:0, `name`:"Na", `row`:18})
+create (_403:`Lyric` {`column`:1, `name`:"na", `row`:18})
+create (_404:`Lyric` {`column`:2, `name`:"na", `row`:18})
+create (_405:`Lyric` {`column`:3, `name`:"na", `row`:18})
+create (_406:`Lyric` {`column`:4, `name`:"na", `row`:18})
+create (_407:`Lyric` {`column`:5, `name`:"na", `row`:18})
+create (_408:`Lyric` {`column`:6, `name`:"na", `row`:18})
+create (_409:`Lyric` {`column`:7, `name`:"na", `row`:18})
+create (_410:`Lyric` {`column`:0, `name`:"Na", `row`:19})
+create (_411:`Lyric` {`column`:1, `name`:"na", `row`:19})
+create (_412:`Lyric` {`column`:2, `name`:"na", `row`:19})
+create (_413:`Lyric` {`column`:3, `name`:"na", `row`:19})
+create (_414:`Lyric` {`column`:4, `name`:"na", `row`:19})
+create (_415:`Lyric` {`column`:5, `name`:"na", `row`:19})
+create (_416:`Lyric` {`column`:6, `name`:"na", `row`:19})
+create (_417:`Lyric` {`column`:7, `name`:"na", `row`:19})
+create (_418:`Lyric` {`column`:0, `name`:"Na", `row`:20})
+create (_419:`Lyric` {`column`:1, `name`:"na", `row`:20})
+create (_420:`Lyric` {`column`:2, `name`:"na", `row`:20})
+create (_421:`Lyric` {`column`:3, `name`:"na", `row`:20})
+create (_422:`Lyric` {`column`:4, `name`:"na", `row`:20})
+create (_423:`Lyric` {`column`:5, `name`:"na", `row`:20})
+create (_424:`Lyric` {`column`:6, `name`:"na", `row`:20})
+create (_425:`Lyric` {`column`:7, `name`:"na", `row`:20})
+create (_426:`Album` {`name`:"up all night"})
+create (_427:`Song` {`lineCount`:29, `name`:"What makes you beautiful"})
+create (_428:`Lyric` {`column`:0, `name`:"Youre", `row`:0})
+create (_429:`Lyric` {`column`:1, `name`:"insecure", `row`:0})
+create (_430:`Lyric` {`column`:0, `name`:"Dont", `row`:1})
+create (_431:`Lyric` {`column`:1, `name`:"know", `row`:1})
+create (_432:`Lyric` {`column`:2, `name`:"what", `row`:1})
+create (_433:`Lyric` {`column`:3, `name`:"for", `row`:1})
+create (_434:`Lyric` {`column`:0, `name`:"Youre", `row`:2})
+create (_435:`Lyric` {`column`:1, `name`:"turning", `row`:2})
+create (_436:`Lyric` {`column`:2, `name`:"heads", `row`:2})
+create (_437:`Lyric` {`column`:3, `name`:"when", `row`:2})
+create (_438:`Lyric` {`column`:4, `name`:"you", `row`:2})
+create (_439:`Lyric` {`column`:5, `name`:"walk", `row`:2})
+create (_440:`Lyric` {`column`:6, `name`:"through", `row`:2})
+create (_441:`Lyric` {`column`:7, `name`:"the", `row`:2})
+create (_442:`Lyric` {`column`:8, `name`:"door", `row`:2})
+create (_443:`Lyric` {`column`:0, `name`:"Dont", `row`:3})
+create (_444:`Lyric` {`column`:1, `name`:"need", `row`:3})
+create (_445:`Lyric` {`column`:2, `name`:"make", `row`:3})
+create (_446:`Lyric` {`column`:3, `name`:"up", `row`:3})
+create (_447:`Lyric` {`column`:0, `name`:"To", `row`:4})
+create (_448:`Lyric` {`column`:1, `name`:"cover", `row`:4})
+create (_449:`Lyric` {`column`:2, `name`:"up", `row`:4})
+create (_450:`Lyric` {`column`:0, `name`:"Being", `row`:5})
+create (_451:`Lyric` {`column`:1, `name`:"the", `row`:5})
+create (_452:`Lyric` {`column`:2, `name`:"way", `row`:5})
+create (_453:`Lyric` {`column`:3, `name`:"that", `row`:5})
+create (_454:`Lyric` {`column`:4, `name`:"you", `row`:5})
+create (_455:`Lyric` {`column`:5, `name`:"are", `row`:5})
+create (_456:`Lyric` {`column`:6, `name`:"is", `row`:5})
+create (_457:`Lyric` {`column`:7, `name`:"enough", `row`:5})
+create (_458:`Lyric` {`column`:0, `name`:"Everyone", `row`:6})
+create (_459:`Lyric` {`column`:1, `name`:"else", `row`:6})
+create (_460:`Lyric` {`column`:2, `name`:"in", `row`:6})
+create (_461:`Lyric` {`column`:3, `name`:"the", `row`:6})
+create (_462:`Lyric` {`column`:4, `name`:"room", `row`:6})
+create (_463:`Lyric` {`column`:5, `name`:"can", `row`:6})
+create (_464:`Lyric` {`column`:6, `name`:"see", `row`:6})
+create (_465:`Lyric` {`column`:7, `name`:"it", `row`:6})
+create (_466:`Lyric` {`column`:0, `name`:"Everyone", `row`:7})
+create (_467:`Lyric` {`column`:1, `name`:"else", `row`:7})
+create (_468:`Lyric` {`column`:2, `name`:"but", `row`:7})
+create (_469:`Lyric` {`column`:3, `name`:"you", `row`:7})
+create (_470:`Lyric` {`column`:4, `name`:"ou", `row`:7})
+create (_471:`Lyric` {`column`:5, `name`:"ou", `row`:7})
+create (_472:`Lyric` {`column`:0, `name`:"So", `row`:8})
+create (_473:`Lyric` {`column`:1, `name`:"c-come", `row`:8})
+create (_474:`Lyric` {`column`:2, `name`:"on", `row`:8})
+create (_475:`Lyric` {`column`:0, `name`:"You", `row`:9})
+create (_476:`Lyric` {`column`:1, `name`:"got", `row`:9})
+create (_477:`Lyric` {`column`:3, `name`:"wrong", `row`:9})
+create (_478:`Lyric` {`column`:0, `name`:"To", `row`:10})
+create (_479:`Lyric` {`column`:1, `name`:"prove", `row`:10})
+create (_480:`Lyric` {`column`:2, `name`:"Im", `row`:10})
+create (_481:`Lyric` {`column`:3, `name`:"right", `row`:10})
+create (_482:`Lyric` {`column`:4, `name`:"I", `row`:10})
+create (_483:`Lyric` {`column`:5, `name`:"put", `row`:10})
+create (_484:`Lyric` {`column`:6, `name`:"it", `row`:10})
+create (_485:`Lyric` {`column`:7, `name`:"in", `row`:10})
+create (_486:`Lyric` {`column`:8, `name`:"a", `row`:10})
+create (_487:`Lyric` {`column`:9, `name`:"so-o-ong", `row`:10})
+create (_488:`Lyric` {`column`:0, `name`:"I", `row`:11})
+create (_489:`Lyric` {`column`:1, `name`:"dont", `row`:11})
+create (_490:`Lyric` {`column`:2, `name`:"why", `row`:11})
+create (_491:`Lyric` {`column`:0, `name`:"Youre", `row`:12})
+create (_492:`Lyric` {`column`:1, `name`:"being", `row`:12})
+create (_493:`Lyric` {`column`:2, `name`:"shy", `row`:12})
+create (_494:`Lyric` {`column`:0, `name`:"And", `row`:13})
+create (_495:`Lyric` {`column`:1, `name`:"turn", `row`:13})
+create (_496:`Lyric` {`column`:2, `name`:"away", `row`:13})
+create (_497:`Lyric` {`column`:3, `name`:"when", `row`:13})
+create (_498:`Lyric` {`column`:4, `name`:"I", `row`:13})
+create (_499:`Lyric` {`column`:5, `name`:"look", `row`:13})
+create (_500:`Lyric` {`column`:6, `name`:"into", `row`:13})
+create (_501:`Lyric` {`column`:7, `name`:"your", `row`:13})
+create (_502:`Lyric` {`column`:8, `name`:"eye", `row`:13})
+create (_503:`Lyric` {`column`:9, `name`:"eye", `row`:13})
+create (_504:`Lyric` {`column`:10, `name`:"eyes", `row`:13})
+create (_505:`Lyric` {`column`:0, `name`:"Everyone", `row`:14})
+create (_506:`Lyric` {`column`:1, `name`:"else", `row`:14})
+create (_507:`Lyric` {`column`:2, `name`:"in", `row`:14})
+create (_508:`Lyric` {`column`:3, `name`:"the", `row`:14})
+create (_509:`Lyric` {`column`:4, `name`:"room", `row`:14})
+create (_510:`Lyric` {`column`:5, `name`:"can", `row`:14})
+create (_511:`Lyric` {`column`:6, `name`:"see", `row`:14})
+create (_512:`Lyric` {`column`:7, `name`:"it", `row`:14})
+create (_513:`Lyric` {`column`:0, `name`:"Everyone", `row`:15})
+create (_514:`Lyric` {`column`:1, `name`:"else", `row`:15})
+create (_515:`Lyric` {`column`:2, `name`:"but", `row`:15})
+create (_516:`Lyric` {`column`:3, `name`:"you", `row`:15})
+create (_517:`Lyric` {`column`:1, `name`:"you", `row`:16})
+create (_518:`Lyric` {`column`:2, `name`:"light", `row`:16})
+create (_519:`Lyric` {`column`:3, `name`:"up", `row`:16})
+create (_520:`Lyric` {`column`:4, `name`:"my", `row`:16})
+create (_521:`Lyric` {`column`:5, `name`:"world", `row`:16})
+create (_522:`Lyric` {`column`:6, `name`:"like", `row`:16})
+create (_523:`Lyric` {`column`:7, `name`:"nobody", `row`:16})
+create (_524:`Lyric` {`column`:8, `name`:"else", `row`:16})
+create (_525:`Lyric` {`column`:0, `name`:"The", `row`:17})
+create (_526:`Lyric` {`column`:1, `name`:"way", `row`:17})
+create (_527:`Lyric` {`column`:2, `name`:"that", `row`:17})
+create (_528:`Lyric` {`column`:3, `name`:"you", `row`:17})
+create (_529:`Lyric` {`column`:4, `name`:"flip", `row`:17})
+create (_530:`Lyric` {`column`:5, `name`:"your", `row`:17})
+create (_531:`Lyric` {`column`:6, `name`:"hair", `row`:17})
+create (_532:`Lyric` {`column`:7, `name`:"gets", `row`:17})
+create (_533:`Lyric` {`column`:8, `name`:"me", `row`:17})
+create (_534:`Lyric` {`column`:9, `name`:"overwhelmed", `row`:17})
+create (_535:`Lyric` {`column`:0, `name`:"But", `row`:18})
+create (_536:`Lyric` {`column`:1, `name`:"when", `row`:18})
+create (_537:`Lyric` {`column`:2, `name`:"you", `row`:18})
+create (_538:`Lyric` {`column`:3, `name`:"smile", `row`:18})
+create (_539:`Lyric` {`column`:4, `name`:"at", `row`:18})
+create (_540:`Lyric` {`column`:5, `name`:"the", `row`:18})
+create (_541:`Lyric` {`column`:6, `name`:"ground", `row`:18})
+create (_542:`Lyric` {`column`:7, `name`:"it", `row`:18})
+create (_543:`Lyric` {`column`:8, `name`:"aint", `row`:18})
+create (_544:`Lyric` {`column`:9, `name`:"hard", `row`:18})
+create (_545:`Lyric` {`column`:10, `name`:"to", `row`:18})
+create (_546:`Lyric` {`column`:11, `name`:"tell", `row`:18})
+create (_547:`Lyric` {`column`:0, `name`:"You", `row`:19})
+create (_548:`Lyric` {`column`:1, `name`:"dont", `row`:19})
+create (_549:`Lyric` {`column`:2, `name`:"know", `row`:19})
+create (_550:`Lyric` {`column`:3, `name`:"oh", `row`:19})
+create (_551:`Lyric` {`column`:4, `name`:"oh", `row`:19})
+create (_552:`Lyric` {`column`:0, `name`:"You", `row`:20})
+create (_553:`Lyric` {`column`:1, `name`:"dont", `row`:20})
+create (_554:`Lyric` {`column`:2, `name`:"know", `row`:20})
+create (_555:`Lyric` {`column`:3, `name`:"youre", `row`:20})
+create (_556:`Lyric` {`column`:4, `name`:"beautiful!", `row`:20})
+create (_557:`Lyric` {`column`:0, `name`:"If", `row`:21})
+create (_558:`Lyric` {`column`:1, `name`:"only", `row`:21})
+create (_559:`Lyric` {`column`:2, `name`:"you", `row`:21})
+create (_560:`Lyric` {`column`:3, `name`:"saw", `row`:21})
+create (_561:`Lyric` {`column`:4, `name`:"what", `row`:21})
+create (_562:`Lyric` {`column`:5, `name`:"I", `row`:21})
+create (_563:`Lyric` {`column`:6, `name`:"can", `row`:21})
+create (_564:`Lyric` {`column`:7, `name`:"see", `row`:21})
+create (_565:`Lyric` {`column`:0, `name`:"Youll", `row`:22})
+create (_566:`Lyric` {`column`:1, `name`:"understand", `row`:22})
+create (_567:`Lyric` {`column`:2, `name`:"why", `row`:22})
+create (_568:`Lyric` {`column`:3, `name`:"I", `row`:22})
+create (_569:`Lyric` {`column`:4, `name`:"want", `row`:22})
+create (_570:`Lyric` {`column`:5, `name`:"you", `row`:22})
+create (_571:`Lyric` {`column`:6, `name`:"so", `row`:22})
+create (_572:`Lyric` {`column`:7, `name`:"desperately", `row`:22})
+create (_573:`Lyric` {`column`:0, `name`:"Right", `row`:23})
+create (_574:`Lyric` {`column`:1, `name`:"now", `row`:23})
+create (_575:`Lyric` {`column`:2, `name`:"Im", `row`:23})
+create (_576:`Lyric` {`column`:3, `name`:"looking", `row`:23})
+create (_577:`Lyric` {`column`:4, `name`:"at", `row`:23})
+create (_578:`Lyric` {`column`:5, `name`:"you", `row`:23})
+create (_579:`Lyric` {`column`:6, `name`:"and", `row`:23})
+create (_580:`Lyric` {`column`:7, `name`:"I", `row`:23})
+create (_581:`Lyric` {`column`:8, `name`:"cant", `row`:23})
+create (_582:`Lyric` {`column`:9, `name`:"believe", `row`:23})
+create (_583:`Lyric` {`column`:0, `name`:"You", `row`:24})
+create (_584:`Lyric` {`column`:1, `name`:"dont", `row`:24})
+create (_585:`Lyric` {`column`:2, `name`:"know", `row`:24})
+create (_586:`Lyric` {`column`:3, `name`:"oh", `row`:24})
+create (_587:`Lyric` {`column`:4, `name`:"oh", `row`:24})
+create (_588:`Lyric` {`column`:0, `name`:"You", `row`:25})
+create (_589:`Lyric` {`column`:1, `name`:"dont", `row`:25})
+create (_590:`Lyric` {`column`:2, `name`:"know", `row`:25})
+create (_591:`Lyric` {`column`:3, `name`:"youre", `row`:25})
+create (_592:`Lyric` {`column`:4, `name`:"beautiful!", `row`:25})
+create (_593:`Lyric` {`column`:0, `name`:"Oh", `row`:26})
+create (_594:`Lyric` {`column`:1, `name`:"oh", `row`:26})
+create (_595:`Lyric` {`column`:0, `name`:"Thats", `row`:27})
+create (_596:`Lyric` {`column`:1, `name`:"what", `row`:27})
+create (_597:`Lyric` {`column`:2, `name`:"makes", `row`:27})
+create (_598:`Lyric` {`column`:3, `name`:"you", `row`:27})
+create (_599:`Lyric` {`column`:4, `name`:"beautiful", `row`:27})
+create (_600:`Lyric` {`column`:0, `name`:"Na", `row`:28})
+create (_601:`Lyric` {`column`:1, `name`:"na", `row`:28})
+create _1-[:`ISA_ARTIST`]->_0
+create _3-[:`ISA_ARTIST`]->_2
+create _5-[:`ISA_ARTIST`]->_4
+create _7-[:`ISA_ARTIST`]->_6
+create _9-[:`ISA_ARTIST`]->_8
+create _10-[:`HAS_MEMBER`]->_9
+create _10-[:`HAS_MEMBER`]->_7
+create _10-[:`HAS_MEMBER`]->_5
+create _10-[:`HAS_MEMBER`]->_3
+create _10-[:`HAS_MEMBER`]->_1
+create _11-[:`BY`]->_10
+create _12-[:`ON`]->_11
+create _13-[:`IN`]->_12
+create _14-[:`IN`]->_12
+create _15-[:`IN`]->_12
+create _16-[:`IN`]->_12
+create _17-[:`IN`]->_12
+create _18-[:`IN`]->_12
+create _19-[:`IN`]->_12
+create _20-[:`IN`]->_138
+create _20-[:`IN`]->_12
+create _21-[:`IN`]->_12
+create _22-[:`IN`]->_12
+create _23-[:`IN`]->_12
+create _24-[:`IN`]->_12
+create _25-[:`IN`]->_12
+create _26-[:`IN`]->_12
+create _27-[:`IN`]->_12
+create _28-[:`IN`]->_12
+create _29-[:`IN`]->_12
+create _30-[:`IN`]->_12
+create _31-[:`IN`]->_12
+create _32-[:`IN`]->_12
+create _33-[:`IN`]->_12
+create _34-[:`IN`]->_12
+create _35-[:`IN`]->_12
+create _36-[:`IN`]->_12
+create _37-[:`IN`]->_12
+create _38-[:`IN`]->_12
+create _39-[:`IN`]->_12
+create _40-[:`IN`]->_12
+create _41-[:`IN`]->_12
+create _42-[:`IN`]->_12
+create _43-[:`IN`]->_12
+create _44-[:`IN`]->_12
+create _45-[:`IN`]->_12
+create _46-[:`IN`]->_12
+create _47-[:`IN`]->_12
+create _48-[:`IN`]->_12
+create _49-[:`IN`]->_12
+create _50-[:`IN`]->_12
+create _51-[:`IN`]->_12
+create _52-[:`IN`]->_12
+create _53-[:`IN`]->_12
+create _54-[:`IN`]->_12
+create _55-[:`IN`]->_12
+create _56-[:`BY`]->_10
+create _57-[:`ON`]->_56
+create _58-[:`IN`]->_57
+create _59-[:`IN`]->_283
+create _59-[:`IN`]->_57
+create _60-[:`IN`]->_57
+create _61-[:`IN`]->_57
+create _62-[:`IN`]->_57
+create _63-[:`IN`]->_57
+create _64-[:`IN`]->_57
+create _65-[:`IN`]->_57
+create _66-[:`IN`]->_57
+create _67-[:`IN`]->_57
+create _68-[:`IN`]->_57
+create _69-[:`IN`]->_57
+create _70-[:`IN`]->_138
+create _70-[:`IN`]->_57
+create _71-[:`IN`]->_57
+create _72-[:`IN`]->_57
+create _73-[:`IN`]->_57
+create _74-[:`IN`]->_138
+create _74-[:`IN`]->_57
+create _75-[:`IN`]->_57
+create _76-[:`IN`]->_57
+create _77-[:`IN`]->_57
+create _78-[:`IN`]->_57
+create _79-[:`IN`]->_57
+create _80-[:`IN`]->_57
+create _81-[:`IN`]->_57
+create _82-[:`IN`]->_57
+create _83-[:`IN`]->_57
+create _84-[:`IN`]->_57
+create _85-[:`IN`]->_57
+create _86-[:`IN`]->_57
+create _87-[:`IN`]->_57
+create _88-[:`IN`]->_57
+create _89-[:`IN`]->_57
+create _90-[:`IN`]->_57
+create _91-[:`IN`]->_57
+create _92-[:`IN`]->_57
+create _93-[:`IN`]->_57
+create _94-[:`IN`]->_57
+create _95-[:`IN`]->_57
+create _96-[:`IN`]->_57
+create _97-[:`IN`]->_57
+create _98-[:`IN`]->_57
+create _99-[:`IN`]->_57
+create _100-[:`IN`]->_57
+create _101-[:`IN`]->_57
+create _102-[:`IN`]->_57
+create _103-[:`IN`]->_57
+create _104-[:`IN`]->_57
+create _105-[:`IN`]->_283
+create _105-[:`IN`]->_57
+create _106-[:`IN`]->_57
+create _107-[:`IN`]->_57
+create _108-[:`IN`]->_57
+create _109-[:`IN`]->_57
+create _110-[:`IN`]->_57
+create _111-[:`IN`]->_57
+create _112-[:`IN`]->_57
+create _113-[:`IN`]->_57
+create _114-[:`IN`]->_57
+create _115-[:`IN`]->_57
+create _116-[:`IN`]->_57
+create _117-[:`IN`]->_57
+create _118-[:`IN`]->_57
+create _119-[:`IN`]->_57
+create _120-[:`IN`]->_57
+create _121-[:`IN`]->_57
+create _122-[:`IN`]->_57
+create _123-[:`IN`]->_57
+create _124-[:`IN`]->_57
+create _125-[:`IN`]->_57
+create _126-[:`IN`]->_57
+create _127-[:`IN`]->_57
+create _128-[:`IN`]->_57
+create _129-[:`IN`]->_57
+create _130-[:`IN`]->_57
+create _131-[:`IN`]->_57
+create _132-[:`IN`]->_57
+create _133-[:`IN`]->_57
+create _134-[:`IN`]->_57
+create _135-[:`IN`]->_57
+create _136-[:`IN`]->_57
+create _137-[:`BY`]->_10
+create _138-[:`ON`]->_137
+create _139-[:`IN`]->_138
+create _140-[:`IN`]->_138
+create _141-[:`IN`]->_138
+create _142-[:`IN`]->_138
+create _143-[:`IN`]->_138
+create _144-[:`IN`]->_138
+create _145-[:`IN`]->_138
+create _146-[:`IN`]->_138
+create _147-[:`IN`]->_138
+create _148-[:`IN`]->_138
+create _149-[:`IN`]->_138
+create _150-[:`IN`]->_138
+create _151-[:`IN`]->_138
+create _152-[:`IN`]->_138
+create _153-[:`IN`]->_138
+create _154-[:`IN`]->_138
+create _155-[:`IN`]->_138
+create _156-[:`IN`]->_138
+create _157-[:`IN`]->_138
+create _158-[:`IN`]->_138
+create _159-[:`IN`]->_138
+create _160-[:`IN`]->_138
+create _161-[:`IN`]->_138
+create _162-[:`IN`]->_138
+create _163-[:`IN`]->_138
+create _164-[:`IN`]->_138
+create _165-[:`IN`]->_138
+create _166-[:`IN`]->_283
+create _166-[:`IN`]->_138
+create _167-[:`IN`]->_138
+create _168-[:`IN`]->_138
+create _169-[:`IN`]->_138
+create _170-[:`IN`]->_138
+create _171-[:`IN`]->_138
+create _172-[:`IN`]->_138
+create _173-[:`IN`]->_138
+create _174-[:`IN`]->_138
+create _175-[:`IN`]->_138
+create _176-[:`IN`]->_138
+create _177-[:`IN`]->_138
+create _178-[:`IN`]->_138
+create _179-[:`IN`]->_138
+create _180-[:`IN`]->_138
+create _181-[:`IN`]->_138
+create _182-[:`IN`]->_138
+create _183-[:`IN`]->_138
+create _184-[:`IN`]->_138
+create _185-[:`IN`]->_138
+create _186-[:`IN`]->_138
+create _187-[:`IN`]->_138
+create _188-[:`IN`]->_138
+create _189-[:`IN`]->_138
+create _190-[:`IN`]->_138
+create _191-[:`IN`]->_138
+create _192-[:`IN`]->_138
+create _193-[:`IN`]->_138
+create _194-[:`IN`]->_138
+create _195-[:`IN`]->_138
+create _196-[:`IN`]->_138
+create _197-[:`IN`]->_138
+create _198-[:`IN`]->_138
+create _199-[:`IN`]->_138
+create _200-[:`IN`]->_138
+create _201-[:`IN`]->_138
+create _202-[:`IN`]->_138
+create _203-[:`IN`]->_138
+create _204-[:`IN`]->_138
+create _205-[:`IN`]->_138
+create _206-[:`IN`]->_138
+create _207-[:`IN`]->_138
+create _208-[:`IN`]->_138
+create _209-[:`IN`]->_138
+create _210-[:`IN`]->_138
+create _211-[:`IN`]->_138
+create _212-[:`IN`]->_138
+create _213-[:`IN`]->_138
+create _214-[:`IN`]->_138
+create _215-[:`IN`]->_138
+create _216-[:`IN`]->_138
+create _217-[:`IN`]->_138
+create _218-[:`IN`]->_138
+create _219-[:`IN`]->_138
+create _220-[:`IN`]->_138
+create _221-[:`IN`]->_138
+create _222-[:`IN`]->_138
+create _223-[:`IN`]->_138
+create _224-[:`IN`]->_138
+create _225-[:`IN`]->_138
+create _226-[:`IN`]->_138
+create _227-[:`IN`]->_138
+create _228-[:`IN`]->_138
+create _229-[:`IN`]->_138
+create _230-[:`IN`]->_138
+create _231-[:`IN`]->_138
+create _232-[:`IN`]->_138
+create _233-[:`IN`]->_427
+create _233-[:`IN`]->_138
+create _234-[:`IN`]->_138
+create _235-[:`IN`]->_138
+create _236-[:`IN`]->_138
+create _237-[:`IN`]->_138
+create _238-[:`IN`]->_138
+create _239-[:`IN`]->_138
+create _240-[:`IN`]->_138
+create _241-[:`IN`]->_138
+create _242-[:`IN`]->_138
+create _243-[:`IN`]->_138
+create _244-[:`IN`]->_138
+create _245-[:`IN`]->_138
+create _246-[:`IN`]->_138
+create _247-[:`IN`]->_138
+create _248-[:`IN`]->_138
+create _249-[:`IN`]->_138
+create _250-[:`IN`]->_138
+create _251-[:`IN`]->_138
+create _252-[:`IN`]->_138
+create _253-[:`IN`]->_138
+create _254-[:`IN`]->_138
+create _255-[:`IN`]->_138
+create _256-[:`IN`]->_138
+create _257-[:`IN`]->_138
+create _258-[:`IN`]->_138
+create _259-[:`IN`]->_138
+create _260-[:`IN`]->_138
+create _261-[:`IN`]->_138
+create _262-[:`IN`]->_138
+create _263-[:`IN`]->_138
+create _264-[:`IN`]->_138
+create _265-[:`IN`]->_138
+create _266-[:`IN`]->_138
+create _267-[:`IN`]->_138
+create _268-[:`IN`]->_138
+create _269-[:`IN`]->_138
+create _270-[:`IN`]->_138
+create _271-[:`IN`]->_138
+create _272-[:`IN`]->_138
+create _273-[:`IN`]->_138
+create _274-[:`IN`]->_138
+create _275-[:`IN`]->_138
+create _276-[:`IN`]->_138
+create _277-[:`IN`]->_138
+create _278-[:`IN`]->_138
+create _279-[:`IN`]->_138
+create _280-[:`IN`]->_138
+create _281-[:`IN`]->_138
+create _282-[:`BY`]->_10
+create _283-[:`ON`]->_282
+create _284-[:`IN`]->_283
+create _285-[:`IN`]->_283
+create _286-[:`IN`]->_283
+create _287-[:`IN`]->_283
+create _288-[:`IN`]->_283
+create _289-[:`IN`]->_283
+create _290-[:`IN`]->_283
+create _291-[:`IN`]->_283
+create _292-[:`IN`]->_283
+create _293-[:`IN`]->_283
+create _294-[:`IN`]->_283
+create _295-[:`IN`]->_283
+create _296-[:`IN`]->_283
+create _297-[:`IN`]->_283
+create _298-[:`IN`]->_283
+create _299-[:`IN`]->_283
+create _300-[:`IN`]->_283
+create _301-[:`IN`]->_283
+create _302-[:`IN`]->_283
+create _303-[:`IN`]->_283
+create _304-[:`IN`]->_283
+create _305-[:`IN`]->_283
+create _306-[:`IN`]->_283
+create _307-[:`IN`]->_283
+create _308-[:`IN`]->_283
+create _309-[:`IN`]->_283
+create _310-[:`IN`]->_283
+create _311-[:`IN`]->_283
+create _312-[:`IN`]->_283
+create _313-[:`IN`]->_283
+create _314-[:`IN`]->_283
+create _315-[:`IN`]->_283
+create _316-[:`IN`]->_283
+create _317-[:`IN`]->_283
+create _318-[:`IN`]->_283
+create _319-[:`IN`]->_283
+create _320-[:`IN`]->_283
+create _321-[:`IN`]->_283
+create _322-[:`IN`]->_283
+create _323-[:`IN`]->_283
+create _324-[:`IN`]->_283
+create _325-[:`IN`]->_283
+create _326-[:`IN`]->_283
+create _327-[:`IN`]->_283
+create _328-[:`IN`]->_283
+create _329-[:`IN`]->_283
+create _330-[:`IN`]->_283
+create _331-[:`IN`]->_283
+create _332-[:`IN`]->_283
+create _333-[:`IN`]->_283
+create _334-[:`IN`]->_283
+create _335-[:`IN`]->_283
+create _336-[:`IN`]->_283
+create _337-[:`IN`]->_283
+create _338-[:`IN`]->_283
+create _339-[:`IN`]->_283
+create _340-[:`IN`]->_283
+create _341-[:`IN`]->_283
+create _342-[:`IN`]->_283
+create _343-[:`IN`]->_283
+create _344-[:`IN`]->_283
+create _345-[:`IN`]->_283
+create _346-[:`IN`]->_283
+create _347-[:`IN`]->_283
+create _348-[:`IN`]->_283
+create _349-[:`IN`]->_283
+create _350-[:`IN`]->_283
+create _351-[:`IN`]->_283
+create _352-[:`IN`]->_283
+create _353-[:`IN`]->_283
+create _354-[:`IN`]->_283
+create _355-[:`IN`]->_283
+create _356-[:`IN`]->_283
+create _357-[:`IN`]->_283
+create _358-[:`IN`]->_283
+create _359-[:`IN`]->_283
+create _360-[:`IN`]->_283
+create _361-[:`IN`]->_283
+create _362-[:`IN`]->_283
+create _363-[:`IN`]->_283
+create _364-[:`IN`]->_283
+create _365-[:`IN`]->_283
+create _366-[:`IN`]->_283
+create _367-[:`IN`]->_283
+create _368-[:`IN`]->_283
+create _369-[:`IN`]->_283
+create _370-[:`IN`]->_283
+create _371-[:`IN`]->_283
+create _372-[:`IN`]->_283
+create _373-[:`IN`]->_283
+create _374-[:`IN`]->_283
+create _375-[:`IN`]->_283
+create _376-[:`IN`]->_283
+create _377-[:`IN`]->_283
+create _378-[:`IN`]->_283
+create _379-[:`IN`]->_283
+create _380-[:`IN`]->_283
+create _381-[:`IN`]->_283
+create _382-[:`IN`]->_283
+create _383-[:`IN`]->_283
+create _384-[:`IN`]->_283
+create _385-[:`IN`]->_283
+create _386-[:`IN`]->_283
+create _387-[:`IN`]->_283
+create _388-[:`IN`]->_283
+create _389-[:`IN`]->_283
+create _390-[:`IN`]->_283
+create _391-[:`IN`]->_283
+create _392-[:`IN`]->_283
+create _393-[:`IN`]->_427
+create _393-[:`IN`]->_283
+create _394-[:`IN`]->_283
+create _395-[:`IN`]->_283
+create _396-[:`IN`]->_283
+create _397-[:`IN`]->_283
+create _398-[:`IN`]->_283
+create _399-[:`IN`]->_283
+create _400-[:`IN`]->_283
+create _401-[:`IN`]->_283
+create _402-[:`IN`]->_283
+create _403-[:`IN`]->_283
+create _404-[:`IN`]->_283
+create _405-[:`IN`]->_283
+create _406-[:`IN`]->_283
+create _407-[:`IN`]->_283
+create _408-[:`IN`]->_283
+create _409-[:`IN`]->_283
+create _410-[:`IN`]->_283
+create _411-[:`IN`]->_283
+create _412-[:`IN`]->_283
+create _413-[:`IN`]->_283
+create _414-[:`IN`]->_283
+create _415-[:`IN`]->_283
+create _416-[:`IN`]->_283
+create _417-[:`IN`]->_283
+create _418-[:`IN`]->_283
+create _419-[:`IN`]->_283
+create _420-[:`IN`]->_283
+create _421-[:`IN`]->_283
+create _422-[:`IN`]->_283
+create _423-[:`IN`]->_283
+create _424-[:`IN`]->_283
+create _425-[:`IN`]->_283
+create _426-[:`BY`]->_10
+create _427-[:`ON`]->_426
+create _428-[:`IN`]->_427
+create _429-[:`IN`]->_427
+create _430-[:`IN`]->_427
+create _431-[:`IN`]->_427
+create _432-[:`IN`]->_427
+create _433-[:`IN`]->_427
+create _434-[:`IN`]->_427
+create _435-[:`IN`]->_427
+create _436-[:`IN`]->_427
+create _437-[:`IN`]->_427
+create _438-[:`IN`]->_427
+create _439-[:`IN`]->_427
+create _440-[:`IN`]->_427
+create _441-[:`IN`]->_427
+create _442-[:`IN`]->_427
+create _443-[:`IN`]->_427
+create _444-[:`IN`]->_427
+create _445-[:`IN`]->_427
+create _446-[:`IN`]->_427
+create _447-[:`IN`]->_427
+create _448-[:`IN`]->_427
+create _449-[:`IN`]->_427
+create _450-[:`IN`]->_427
+create _451-[:`IN`]->_427
+create _452-[:`IN`]->_427
+create _453-[:`IN`]->_427
+create _454-[:`IN`]->_427
+create _455-[:`IN`]->_427
+create _456-[:`IN`]->_427
+create _457-[:`IN`]->_427
+create _458-[:`IN`]->_427
+create _459-[:`IN`]->_427
+create _460-[:`IN`]->_427
+create _461-[:`IN`]->_427
+create _462-[:`IN`]->_427
+create _463-[:`IN`]->_427
+create _464-[:`IN`]->_427
+create _465-[:`IN`]->_427
+create _466-[:`IN`]->_427
+create _467-[:`IN`]->_427
+create _468-[:`IN`]->_427
+create _469-[:`IN`]->_427
+create _470-[:`IN`]->_427
+create _471-[:`IN`]->_427
+create _472-[:`IN`]->_427
+create _473-[:`IN`]->_427
+create _474-[:`IN`]->_427
+create _475-[:`IN`]->_427
+create _476-[:`IN`]->_427
+create _477-[:`IN`]->_427
+create _478-[:`IN`]->_427
+create _479-[:`IN`]->_427
+create _480-[:`IN`]->_427
+create _481-[:`IN`]->_427
+create _482-[:`IN`]->_427
+create _483-[:`IN`]->_427
+create _484-[:`IN`]->_427
+create _485-[:`IN`]->_427
+create _486-[:`IN`]->_427
+create _487-[:`IN`]->_427
+create _488-[:`IN`]->_427
+create _489-[:`IN`]->_427
+create _490-[:`IN`]->_427
+create _491-[:`IN`]->_427
+create _492-[:`IN`]->_427
+create _493-[:`IN`]->_427
+create _494-[:`IN`]->_427
+create _495-[:`IN`]->_427
+create _496-[:`IN`]->_427
+create _497-[:`IN`]->_427
+create _498-[:`IN`]->_427
+create _499-[:`IN`]->_427
+create _500-[:`IN`]->_427
+create _501-[:`IN`]->_427
+create _502-[:`IN`]->_427
+create _503-[:`IN`]->_427
+create _504-[:`IN`]->_427
+create _505-[:`IN`]->_427
+create _506-[:`IN`]->_427
+create _507-[:`IN`]->_427
+create _508-[:`IN`]->_427
+create _509-[:`IN`]->_427
+create _510-[:`IN`]->_427
+create _511-[:`IN`]->_427
+create _512-[:`IN`]->_427
+create _513-[:`IN`]->_427
+create _514-[:`IN`]->_427
+create _515-[:`IN`]->_427
+create _516-[:`IN`]->_427
+create _517-[:`IN`]->_427
+create _518-[:`IN`]->_427
+create _519-[:`IN`]->_427
+create _520-[:`IN`]->_427
+create _521-[:`IN`]->_427
+create _522-[:`IN`]->_427
+create _523-[:`IN`]->_427
+create _524-[:`IN`]->_427
+create _525-[:`IN`]->_427
+create _526-[:`IN`]->_427
+create _527-[:`IN`]->_427
+create _528-[:`IN`]->_427
+create _529-[:`IN`]->_427
+create _530-[:`IN`]->_427
+create _531-[:`IN`]->_427
+create _532-[:`IN`]->_427
+create _533-[:`IN`]->_427
+create _534-[:`IN`]->_427
+create _535-[:`IN`]->_427
+create _536-[:`IN`]->_427
+create _537-[:`IN`]->_427
+create _538-[:`IN`]->_427
+create _539-[:`IN`]->_427
+create _540-[:`IN`]->_427
+create _541-[:`IN`]->_427
+create _542-[:`IN`]->_427
+create _543-[:`IN`]->_427
+create _544-[:`IN`]->_427
+create _545-[:`IN`]->_427
+create _546-[:`IN`]->_427
+create _547-[:`IN`]->_427
+create _548-[:`IN`]->_427
+create _549-[:`IN`]->_427
+create _550-[:`IN`]->_427
+create _551-[:`IN`]->_427
+create _552-[:`IN`]->_427
+create _553-[:`IN`]->_427
+create _554-[:`IN`]->_427
+create _555-[:`IN`]->_427
+create _556-[:`IN`]->_427
+create _557-[:`IN`]->_427
+create _558-[:`IN`]->_427
+create _559-[:`IN`]->_427
+create _560-[:`IN`]->_427
+create _561-[:`IN`]->_427
+create _562-[:`IN`]->_427
+create _563-[:`IN`]->_427
+create _564-[:`IN`]->_427
+create _565-[:`IN`]->_427
+create _566-[:`IN`]->_427
+create _567-[:`IN`]->_427
+create _568-[:`IN`]->_427
+create _569-[:`IN`]->_427
+create _570-[:`IN`]->_427
+create _571-[:`IN`]->_427
+create _572-[:`IN`]->_427
+create _573-[:`IN`]->_427
+create _574-[:`IN`]->_427
+create _575-[:`IN`]->_427
+create _576-[:`IN`]->_427
+create _577-[:`IN`]->_427
+create _578-[:`IN`]->_427
+create _579-[:`IN`]->_427
+create _580-[:`IN`]->_427
+create _581-[:`IN`]->_427
+create _582-[:`IN`]->_427
+create _583-[:`IN`]->_427
+create _584-[:`IN`]->_427
+create _585-[:`IN`]->_427
+create _586-[:`IN`]->_427
+create _587-[:`IN`]->_427
+create _588-[:`IN`]->_427
+create _589-[:`IN`]->_427
+create _590-[:`IN`]->_427
+create _591-[:`IN`]->_427
+create _592-[:`IN`]->_427
+create _593-[:`IN`]->_427
+create _594-[:`IN`]->_427
+create _595-[:`IN`]->_427
+create _596-[:`IN`]->_427
+create _597-[:`IN`]->_427
+create _598-[:`IN`]->_427
+create _599-[:`IN`]->_427
+create _600-[:`IN`]->_427
+create _601-[:`IN`]->_427
+;
+
+----
+
+// REMOVEME: Display the whole graph:
+
+//graph
+
+
+Find all songs where the word "my" appears
+[source,cypher]
+----
+MATCH (l:Lyric{name:"my"})-[r0:IN]-(s:Song) RETURN s.name,l.row,l.column
+----
+//table
+
+
+Show distinct lyrics in the song "If I Could Fly" 
+[source,cypher]
+----
+MATCH (n:Lyric)-[r0:IN]-(s:Song{name:"If I Could Fly"}) RETURN distinct (n.name)
+----
+//table
+[source,cypher]
+----
+MATCH (l:Lyric)-[r0:IN]- (n:Song) where l.name =~ "(?i)said"  RETURN n,l
+----
+//graph
+Show all  lyrics in Act My Age.
+
+image:http://i.imgur.com/8S3nRcb.png[height=384,width=400]
+
+Show all artists and members for the group 
+
+image:http://i.imgur.com/fmWnbfS.png[height=270,width=400]
+
+Show all songs on all of the albums. For the gist there is only one song per album.
+
+image:http://i.imgur.com/f25Z6aL.png[height=366,width=400]
+
+Show all albums and members for the group 
+
+image:http://i.imgur.com/m6HQKQY.png[height=330,width=400]
+
+Show all of the lryics for the song "Kiss you". There are some connections of lryics to other songs. This is
+becuase those lryics are used in the same location. The lryic "Baby" is used in "Kiss Me" and "What makes you beautiful" in the same row and column.
+
+image:http://i.imgur.com/wSQO6cZ.png[height=196,width=400]
+
+A query to find songs where the words ‘I’ and “you” are on the same line. The query works well in Python since I can filter out return values of 0. This type of search will be help when looking for phrases, words on the same line.
+
+[source,cypher]
+----
+match (l1:Lyric{name: 'I'}) --(s:Song)
+match (l2:Lyric{name :'you'}) --(s:Song)
+return case  when l1.row = l2.row then [l1,l2,s] else 0 end
+----
+
+//table
+*Results*
+
+|=====================
+3+|  
+*Song	Act My Age*
+|lyric	 |column	 |row	 
+|	I|	0|	3
+| you|3|3
+3+| Actual line, row 3 :"I can count on you after all that we’ve been through"
+|=====================
+
+|=====================
+3+|  *If I Could Fly*
+|lyric	 |column	 |row	 
+|	I|	0|	5
+| you|3|5
+3+| Actual line, row 5 :"I hope that you listen 'cause I let my guard down"
+|=====================
+
+
+== Sentiment and R
+
+While not an R expert, I found examples to help make a start. 
+
+Below is a bar chart of the top ten most common lyrics. “I” and “you” are popular. 
+
+image::http://i.imgur.com/NlItPkD.png[height=300,width=400]
+
+Sentiment
+ The last thing to consider is sentiment. Using the simple process of positive and negative words I'd like to see if one make a determination of sentiment. There isn’t a song word list that I could find so I elected to use the AFINN list. Following examples from Jeffrey Breen  and Andy Bromberg I was able to get some results. I didn’t divide the songs up into training and test sets, instead I picked two songs and processed them. My daughter suggested that “Best Song Ever” would be happy and “If I could Fly” would be sad.
+
+The process start with a query:
+
+graph = startGraph("http://localhost:7474/db/data/")
+query = "MATCH (l:Lyric) -[r0:IN]-(n:Song{name:'best song ever'}) RETURN l.name"
+
+ta = cypher(graph, query)
+
+This returned a list of lryics. Next I counted the number of lyrics that matched a positive or negative word in the AFINN list. I classified the words into “reg”, scale 1-3 and “very” scale 4-5 for both positive and neg.
+
+Using R functions naiveBayes() and predict(). The method is very simple but the results do follow that Best Song Ever “happier” then If I Could Fly. It would be good to get One Directions opinion on this.
+
+“Best Song Ever”
+                  reg      very
+  positive       10        3
+  negative        3        0 
+
+“If I Could Fly”
+               Reg        very
+  positive        1        0
+  negative        4        0
+
+
+One thing I noticed is that simple word matching isn't sufficient.For movie reviews or emails this may work. 
+Song are more complex.
+
+Example.
+A happy song might have the line “I love you” while a sad song might have a line “I used to love you”. Both have the positive word “love” in them but the second line could be viewed as sad, love lost. This is where querying lyrics on the same line could help. Its more complex than matching positive and negative words. 
+
+Conclusion
+This was fun and I got a little Father daughter time in as well. I'd like to pursue this to see what can be done by considering phrases and connected words.
+
+

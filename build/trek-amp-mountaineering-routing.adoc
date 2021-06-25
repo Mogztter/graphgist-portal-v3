@@ -1,0 +1,159 @@
+= Trek & mountaineering routing
+
+
+
+== Domain
+ 
+The Mt Everest and K2 might be the most heard about expeditions from the Himalayas, but the lower ranges of the Himalayan mountain ranges over a larger trekking destinations for hardcore trekkers, bikers and even some mountain cycling enthusiasts (like myself). The trek routes are generally not documented and you need to rely on local guides or make sure you have someone who's covered the route before. These trek routes pass by tiny isolated villages that act as a point to recharge supplies as well as a marker for the route. The same destination can sometimes be reached via different routes depending on the abilities (rock climbing), mode of transport (by foot,cycle,SUV) and also the season.
+
+A graph would be an ideal way to represent this data and help find routes to various destinations based on your preferences.
+
+image::http://www.oocities.org/tour_map/tour_map/sandakphu_map.jpg[]
+
+PS: Also storing gps coordinates and overlaying this information on a map would be a great addition.
+  
+ 
+ 
+== Setup
+ 
+Sample data is a subset of the above image (i've modified a lot of data to allow demo of various queries)
+ 
+//setup
+//output
+[source,cypher]
+----
+CREATE (Rimbik:town{name:'Rimbik'})
+CREATE (Darjeeling:town{name:'Darjeeling'})
+CREATE Darjeeling-[:PublicTransport{distance:15,name:'Darjeeling-Rimbik',summer:'true',winter:'true'}]->Rimbik
+CREATE Darjeeling-[:road{distance:15,name:'Darjeeling-Rimbik',summer:'true',winter:'true'}]->Rimbik
+CREATE Darjeeling-[:trek{distance:15,name:'Darjeeling-Rimbik',summer:'true',winter:'true'}]->Rimbik
+CREATE (BhikeBhanja:village{name:'BhikeBhanja'})
+CREATE Rimbik-[:trek{distance:18,name:'Rimbik-BhikeBhanja',summer:'true',winter:'true'}]->BhikeBhanja
+CREATE (Sandakphu:peak{name:'Sandakphu',altitude:'12400 ft'})	
+CREATE BhikeBhanja-[:trek{distance:4,name:'BhikeBhanja-Sandakphu',summer:'true',winter:'true'}]->Sandakphu
+CREATE (Sirikhola:village{name:'Sirikhola'})
+CREATE Rimbik-[:trek{distance:4,name:'Rimbik-Sirikhola',summer:'true',winter:'true'}]->Sirikhola
+CREATE Rimbik-[:twowheeler{distance:4,name:'Rimbik-Sirikhola',summer:'true',winter:'true'}]->Sirikhola
+CREATE (Gurdum:village{name:'Gurdum'})
+CREATE Sirikhola-[:trek{distance:6,name:'Sirikhola-Gurdum',summer:'true',winter:'true'}]->Gurdum
+CREATE Sirikhola-[:twowheeler{distance:6,name:'Sirikhola-Gurdum',summer:'true',winter:'true'}]->Gurdum
+CREATE Gurdum-[:trek{distance:12,name:'Gurdum-Sandakphu',summer:'true',winter:'true'}]->Sandakphu
+CREATE Gurdum-[:twowheeler{distance:12,name:'Gurdum-Sandakphu',summer:'true',winter:'true'}]->Sandakphu
+CREATE (Tumbling:village{name:'Tumbling'})	
+CREATE Darjeeling-[:trek{distance:10,name:'Darjeeling-Tumbling',summer:'false',winter:'true'}]->Tumbling
+CREATE Darjeeling-[:road{distance:10,name:'Darjeeling-Tumbling',summer:'false',winter:'true'}]->Tumbling
+CREATE (Gairibus:village{name:'Gairibus'})	
+CREATE Tumbling-[:trek{distance:8,name:'Tumbling-Gairibus',summer:'true',winter:'true'}]->Gairibus
+CREATE Tumbling-[:road{distance:8,name:'Tumbling-Gairibus',summer:'true',winter:'true'}]->Gairibus
+CREATE Tumbling-[:twowheeler{distance:8,name:'Tumbling-Gairibus',summer:'true',winter:'true'}]->Gairibus
+CREATE Rimbik-[:trek{distance:7,name:'Rimbik-Tumbling',summer:'false',winter:'true'}]->Tumbling
+CREATE Gairibus-[:trek{distance:10,name:'Gairibus-BhikeBhanja',summer:'true',winter:'true'}]->BhikeBhanja
+CREATE Gairibus-[:road{distance:10,name:'Gairibus-BhikeBhanja',summer:'true',winter:'true'}]->BhikeBhanja
+CREATE Gairibus-[:twowheeler{distance:10,name:'Gairibus-BhikeBhanja',summer:'true',winter:'true'}]->BhikeBhanja
+CREATE (Rammam:village{name:'Rammam'})
+CREATE Sirikhola-[:trek{distance:7,name:'Sirikhola-Rammam',summer:'true',winter:'true'}]->Rammam
+CREATE Sirikhola-[:twowheeler{distance:7,name:'Sirikhola-Rammam',summer:'true',winter:'true'}]->Rammam
+CREATE Rammam-[:trek{distance:10,name:'Rammam-Gurdum',summer:'false',winter:'true'}]->Gurdum
+CREATE Rammam-[:road{distance:10,name:'Rammam-Gurdum',summer:'false',winter:'true'}]->Gurdum
+CREATE Rammam-[:twowheeler{distance:10,name:'Rammam-Gurdum',summer:'false',winter:'true'}]->Gurdum
+CREATE (Sabargram:peak{name:'Sabargram',altitude:'10000 ft'})
+CREATE Rammam-[:trek{distance:14,name:'Rammam-Sabargram',summer:'true',winter:'true'}]->Sabargram
+CREATE Sabargram-[:trek{distance:15,name:'Rammam-Sabargram',summer:'true',winter:'true'}]->Sandakphu
+----
+
+== Graph Explanation
+
+//image::http://s29.postimg.org/7ynl89m1z/graph_whole.png[]
+
+Towns are places which can be reached by public transport, the expedition starts from a town and ends on a peak.
+Villages are intermediary points.
+
+
+
+The different types of routes between nodes are represented by a relationship. There are 4 types of relationships (trek,twowheeler,road,public transport). See first image in this gist to get an idea.
+
+Sample of relationships between nodes.
+[source,cypher]
+----
+MATCH (a:village { name: 'Sirikhola' }),(b:village{ name: 'Gurdum' }) MATCH (a)-[r]->(b) RETURN r
+----
+
+//image::http://s15.postimg.org/gtp6h02ff/rel_detail.png[]
+
+
+
+== Use Cases
+ 
+=== List all peaks 
+[source,cypher]
+----
+MATCH (p:peak) return p.name,p.altitude
+----
+ 
+//table
+
+
+=== Find all peaks where i can go on a cycle expedition
+[source,cypher]
+----
+MATCH (p:peak)-[:twowheeler*]-(t:town)
+return DISTINCT(p.name)
+----
+ 
+//table
+
+=== List base towns for all cycle routes to Sandakphu
+[source,cypher]
+----
+MATCH (p:peak{name:'Sandakphu'})-[:twowheeler*]-(t:town) return DISTINCT(t.name)
+----
+ 
+//table
+
+
+=== Give me the full routes from Rimbik
+[source,cypher]
+----
+MATCH (p:peak{name:'Sandakphu'})-[r:twowheeler*]-(t:town{name:'Rimbik'}) return distinct(r)
+----
+ 
+//table
+
+
+=== But are these routes open in summer ?
+[source,cypher]
+----
+MATCH (p:peak{name:'Sandakphu'})-[r:twowheeler*{summer:'true'}]-(t:town{name:'Rimbik'}) return distinct(r)
+----
+ 
+//table
+
+Awesome now I'm off !!
+
+=== Find me car routes for winter to Sandakphu
+[source,cypher]
+----
+MATCH (p:peak{name:'Sandakphu'})-[r:road*{winter:'true'}]-(t:town) return distinct(t.name)
+----
+ 
+//table
+
+=== None ? Ok, I don't mind trekking the last part to the peak after parking my car.
+[source,cypher]
+----
+MATCH (p:peak{name:'Sandakphu'})-[r:trek*{winter:'true'}]-(v:village)-[r2:road*]-(t:town) return distinct(t.name)
+----
+ 
+//table
+
+=== Give me the above routes from Darjeeling to Sandakphu
+[source,cypher]
+----
+MATCH (p:peak{name:'Sandakphu'})<-[r:trek*{winter:'true'}]-(v:village)<-[r2:road*]-(t:town{name:'Darjeeling'})
+return r,r2
+----
+//table
+I've got 3 options so i'll pick the one with the least treking (in results r is trek section,r2 is road section)
+I'll go Darjeeling-Tumbling-Gairibus-BhikeBhanja by car and the last BhikeBhanja-Sandakphu on foot!!
+
+==

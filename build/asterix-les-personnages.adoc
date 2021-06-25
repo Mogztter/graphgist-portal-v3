@@ -1,0 +1,160 @@
+//== Astérix - Les personnages
+
+:neo4j-version: 3.5
+
+=== Asterix the Gaul - Characters
+
+by [@sfrechette] (https://twitter.com/sfrechette)
+
+This is a sample subset for you to explore. +
+For the complete model (Cypher Query) and Graph Database with all characters, nodes and relationships: +
+https://github.com/neo4j-contrib/graphgist/wiki/Asterix-Dataset
+
+Source data: http://www.asterix.com/asterix-de-a-a-z/les-personnages/ +
+
+==== Relationship types:
+
+* `COMPAGNON_AVENTURE` -> Remarkable fellow +
+* `APPARAIT_DANS` -> Album they appear in +
+* `NATIONALITE` -> Nationality +
+* `PERSONNAGE_TYPE` -> Character type
+
+//image::http://stephanefrechette.com/blog/wp-content/uploads/2013/10/graphdb_cleopatre.png[]
+
+=== Sample Dataset (Cypher query)
+//console
+//setup
+//hide
+
+[source,cypher]
+----
+CREATE (cleopatre {personnageid: 56, name: 'Cleopatre', nationalite: 'Egyptienne', personnagetype: 'Les autres'}),
+(cesarionPtolemeeXVI {personnageid: 44, name: 'Cesarion (Ptolemee XVI)', nationalite: 'Romain/Egyptien', personnagetype: 'Les autres'}),
+(julesCesar {personnageid: 91, name: 'Jules Cesar', nationalite: 'Romain', personnagetype: 'Les Romains'}),
+(numerobis {personnageid: 116, name: 'Numerobis', nationalite: 'Egyptien', personnagetype: 'Les autres'}),
+(caiusObtus {personnageid: 34, name: 'Caius Obtus', nationalite: 'Romain', personnagetype: 'Les Romains'}),
+(caligulaAlavacomgetepus {personnageid: 38, name: 'Caligula Alavacomgetepus', nationalite: 'Romain', personnagetype: 'Les Romains'}),
+(brutus {personnageid: 28, name: 'Brutus', nationalite: 'Romain', personnagetype: 'Les Romains'}),
+(assurancetourix {personnageid: 12, name: 'Assurancetourix', nationalite: 'Gaulois', personnagetype: 'Les Gaulois'}),
+(briseradius {personnageid: 27, name: 'Briseradius', nationalite: 'Romain', personnagetype: 'Les Romains'}),
+(epidemais {personnageid: 65, name: 'Epidemais', nationalite: 'Phenicien', personnagetype: 'Les autres'}),
+(lupus {personnageid: 104, name: 'Lupus', nationalite: 'Romain', personnagetype: 'Les Romains'}),
+(album1 {albumid: 1, name:'Asterix le Gaulois', premiereedition: '1961'}),
+(album4 {albumid: 4, name:'Asterix Gladiateur', premiereedition: '1964'}), 
+(album6 {albumid: 6, name:'Asterix et Cleopatre', premiereedition: '1965'}), 
+(album8 {albumid: 8, name:'Asterix chez les Bretons', premiereedition: '1966'}), 
+(album10 {albumid: 10, name:'Asterix legionnaire', premiereedition: '1967'}),
+(album11 {albumid: 11, name:'Le Bouclier arverne', premiereedition: '1968'}),
+(album14 {albumid: 14, name:'Asterix en Hispanie', premiereedition: '1969'}), 
+(album15 {albumid: 15, name:'La Zizanie', premiereedition: '1970'}),
+(album17 {albumid: 17, name:'Le Domaine des dieux', premiereedition: '1971'}), 
+(album18 {albumid: 18, name:'Les Lauriers de Cesar', premiereedition: '1972'}),
+(album19 {albumid: 19, name:'Le Devin', premiereedition: '1972'}), 
+(album21 {albumid: 21, name:'Le Cadeau de Cesar', premiereedition: '1974'}),
+(album23 {albumid: 23, name:'Obelix et Compagnie', premiereedition: '1976'}), 
+(album24 {albumid: 24, name:'Asterix chez les Belges', premiereedition: '1979'}),
+(album26 {albumid: 26, name:'L\'Odyssee d\'Asterix', premiereedition: '1981'}), 
+(album27 {albumid: 27, name:'Le Fils d\'Asterix', premiereedition: '1983'}), 
+(album28 {albumid: 28, name:'Asterix chez Rahazade', premiereedition: '1987'}), 
+(album29 {albumid: 29, name:'La Rose et le glaive', premiereedition: '1991'}),
+(album30 {albumid: 30, name:'La Galere d\'Obelix', premiereedition: '1996'}),
+(album31 {albumid: 31, name:'Asterix et Latraviata', premiereedition: '2001'}),
+(album32 {albumid: 32, name:'Asterix et la rentree gauloise', premiereedition: '2003'}), 
+(album34 {albumid: 34, name:'L\'Anniversaire d\'Asterix et Obelix - Le Livre d\'or', premiereedition: '2009'}),
+(lesGaulois {personnagetypeid: 1, name: 'Les Gaulois'}),
+(lesRomains {personnagetypeid: 2, name: 'Les Romains'}),
+(lesAutres {personnagetypeid: 3, name: 'Les autres'}),
+(egyptien {nationaliteid: 9, name: 'Egyptien'}),
+(egyptienne {nationaliteid: 10, name: 'Egyptienne'}),
+(gaulois {nationaliteid: 13, name: 'Gaulois'}),
+(phenicien {nationaliteid: 21, name: 'Phenicien'}),
+(romain {nationaliteid: 23, name: 'Romain'}),
+(romainEgyptien {nationaliteid: 24, name: 'Romain/Egyptien'}),
+(cleopatre)-[:COMPAGNON_AVENTURE]->(cesarionPtolemeeXVI),
+(cleopatre)-[:COMPAGNON_AVENTURE]->(julesCesar),
+(cleopatre)-[:COMPAGNON_AVENTURE]->(numerobis),
+(julesCesar)-[:COMPAGNON_AVENTURE]->(cesarionPtolemeeXVI),
+(julesCesar)-[:COMPAGNON_AVENTURE]->(cleopatre),
+(julesCesar)-[:COMPAGNON_AVENTURE]->(caiusObtus),
+(julesCesar)-[:COMPAGNON_AVENTURE]->(caligulaAlavacomgetepus),
+(julesCesar)-[:COMPAGNON_AVENTURE]->(brutus),
+(caiusObtus)-[:COMPAGNON_AVENTURE]->(assurancetourix),
+(caiusObtus)-[:COMPAGNON_AVENTURE]->(briseradius),
+(caiusObtus)-[:COMPAGNON_AVENTURE]->(epidemais),
+(caiusObtus)-[:COMPAGNON_AVENTURE]->(julesCesar),
+(caiusObtus)-[:COMPAGNON_AVENTURE]->(lupus),
+(caligulaAlavacomgetepus)-[:COMPAGNON_AVENTURE]->(assurancetourix),
+(caligulaAlavacomgetepus)-[:COMPAGNON_AVENTURE]->(julesCesar),
+(cleopatre)-[:APPARAIT_DANS]->(album6),
+(cleopatre)-[:APPARAIT_DANS]->(album27),
+(cleopatre)-[:APPARAIT_DANS]->(album30),
+(cleopatre)-[:APPARAIT_DANS]->(album34),
+(julesCesar)-[:APPARAIT_DANS]->(album1),
+(julesCesar)-[:APPARAIT_DANS]->(album4),
+(julesCesar)-[:APPARAIT_DANS]->(album6),
+(julesCesar)-[:APPARAIT_DANS]->(album8),
+(julesCesar)-[:APPARAIT_DANS]->(album10),
+(julesCesar)-[:APPARAIT_DANS]->(album11),
+(julesCesar)-[:APPARAIT_DANS]->(album14),
+(julesCesar)-[:APPARAIT_DANS]->(album15),
+(julesCesar)-[:APPARAIT_DANS]->(album17),
+(julesCesar)-[:APPARAIT_DANS]->(album18),
+(julesCesar)-[:APPARAIT_DANS]->(album19),
+(julesCesar)-[:APPARAIT_DANS]->(album21),
+(julesCesar)-[:APPARAIT_DANS]->(album23),
+(julesCesar)-[:APPARAIT_DANS]->(album24),
+(julesCesar)-[:APPARAIT_DANS]->(album26),
+(julesCesar)-[:APPARAIT_DANS]->(album28),
+(julesCesar)-[:APPARAIT_DANS]->(album29),
+(julesCesar)-[:APPARAIT_DANS]->(album30),
+(julesCesar)-[:APPARAIT_DANS]->(album31),
+(julesCesar)-[:APPARAIT_DANS]->(album32),
+(julesCesar)-[:APPARAIT_DANS]->(album34),
+(numerobis)-[:APPARAIT_DANS]->(album6),
+(numerobis)-[:APPARAIT_DANS]->(album34),
+(cesarionPtolemeeXVI)-[:APPARAIT_DANS]->(album27),
+(caiusObtus)-[:APPARAIT_DANS]->(album4),
+(caligulaAlavacomgetepus)-[:APPARAIT_DANS]->(album4),
+(assurancetourix)-[:PERSONNAGE_TYPE]->(lesGaulois),
+(briseradius)-[:PERSONNAGE_TYPE]->(lesRomains),
+(brutus)-[:PERSONNAGE_TYPE]->(lesRomains),
+(caiusObtus)-[:PERSONNAGE_TYPE]->(lesRomains),
+(caligulaAlavacomgetepus)-[:PERSONNAGE_TYPE]->(lesRomains),
+(cesarionPtolemeeXVI)-[:PERSONNAGE_TYPE]->(lesAutres),
+(cleopatre)-[:PERSONNAGE_TYPE]->(lesAutres),
+(epidemais)-[:PERSONNAGE_TYPE]->(lesAutres),
+(julesCesar)-[:PERSONNAGE_TYPE]->(lesRomains),
+(lupus)-[:PERSONNAGE_TYPE]->(lesRomains),
+(numerobis)-[:PERSONNAGE_TYPE]->(lesAutres),
+(assurancetourix)-[:NATIONALITE]->(gaulois),
+(briseradius)-[:NATIONALITE]->(romain),
+(brutus)-[:NATIONALITE]->(romain),
+(caiusObtus)-[:NATIONALITE]->(romain),
+(caligulaAlavacomgetepus)-[:NATIONALITE]->(romain),
+(cesarionPtolemeeXVI)-[:NATIONALITE]->(romainEgyptien),
+(cleopatre)-[:NATIONALITE]->(egyptienne),
+(epidemais)-[:NATIONALITE]->(phenicien),
+(julesCesar)-[:NATIONALITE]->(romain),
+(lupus)-[:NATIONALITE]->(romain),
+(numerobis)-[:NATIONALITE]->(egyptien)
+----
+//graph
+
+==== Query 2 returns which albums Cleopatra appeared in 
+[source,cypher]
+----
+MATCH (a)<-[:APPARAIT_DANS]-(c) 
+WHERE c.name= 'Cleopatre'
+RETURN a.name as album
+----
+//table
+
+==== Query 3 returns who are Julius Caesar remarkable fellows 
+[source,cypher]
+----
+MATCH (b)<-[:COMPAGNON_AVENTURE]-(d) 
+WHERE d.name= 'Jules Cesar'
+RETURN b.name as fellow
+----
+//table
+

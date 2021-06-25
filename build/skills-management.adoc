@@ -1,0 +1,141 @@
+= Skills-Management =
+:neo4j-version: 2.0.0-RC1
+:author: Michael Hunger
+:twitter: @mesirii
+:tags: educational domain:skills-management
+
+Using the _Design for Queryability_ modeling approach by http://twitter.com/iansrobinson[Ian Robinson]
+
+=== 1. Application/End-User Goals ===
+
+____
+*As an* employee
+
+*I want* to know who in the company has similar skills to me
+
+*So that* we can exchange knowledge
+____
+
+=== 2. Questions To Ask of the Domain ===
+
+____
+Which people, who work for the same company as me, have similar skills to me?
+____
+
+=== 3. Identify Entities ===
+
+____
+Which *people*, who work for the same *company* as me, have similar *skills* to me?
+____
+
+* Person
+* Company
+* Skill
+
+=== 4. Identify Relationships Between Entities ===
+
+____
+Which people, who *work* for the same company as me, *have* similar skills to me?
+____
+
+* Person +WORKS_FOR+ Company
+* Person +HAS_SKILL+ Skill
+
+
+=== 5. Convert to Cypher Paths ===
+
+* Person WORKS_FOR Company ->
+
+----
+(:Person) - [:WORKS_FOR] -> (:Company)
+----
+
+* Person HAS_SKILL Skill ->
+
+----
+(:Person) - [:HAS_SKILL] -> (:Skill)
+----
+=== Consolidate Paths ===
+
+----
+(:Person) - [:WORKS_FOR] -> (:Company)
+(:Person) - [:HAS_SKILL] -> (:Skill)
+----
+
+->
+
+----
+(:Company) < - [:WORKS_FOR] - (:Person) - [:HAS_SKILL] - > (:Skill)
+----
+
+=== Candidate Data Model ===
+
+image::https://dl.dropboxusercontent.com/u/14493611/skills_use_case.jpg[]
+
+//hide
+//setup
+[source,cypher]
+----
+CREATE 
+       (acme:Company {name:'ACME'}),
+       (ian:Person {name:'Ian'})-[:WORKS_FOR]->(acme),
+       (ian) -[:HAS_SKILL]->(java:Skill {name:'Java'}),
+       (ian) -[:HAS_SKILL]->(csharp:Skill {name:'C#'}),
+       (ian) -[:HAS_SKILL]->(neo:Skill {name:'Neo4j'}),
+       (lucy:Person {name:'Lucy'})-[:WORKS_FOR]->(acme),
+       (lucy)-[:HAS_SKILL]->(java),
+       (lucy)-[:HAS_SKILL]->(neo),
+       (bill:Person {name:'Bill'})-[:WORKS_FOR]->(acme),
+       (bill)-[:HAS_SKILL]->(neo),
+       (bill)-[:HAS_SKILL]->(ruby:Skill {name:'Ruby'})
+----
+// graph
+
+==== Company Employees ====
+
+[source,cypher]
+----
+MATCH (company {name:'ACME'})<-[:WORKS_FOR]-(p:Person)
+RETURN p.name as name
+ORDER by name
+----
+
+// table
+
+==== People Skills ====
+
+[source,cypher]
+----
+MATCH (p:Person)-[:HAS_SKILL]->(s:Skill)
+RETURN p.name, collect(s.name) as skills
+ORDER by length(skills) DESC
+----
+
+// table
+
+=== 6. Express Question as Graph Pattern ===
+
+____
+Which people, who work for the same company as me, have similar skills to me?
+____
+
+image::https://dl.dropboxusercontent.com/u/14493611/skills_model.jpg[]
+
+[source,cypher]
+----
+MATCH (company)<-[:WORKS_FOR]-(me:Person)-[:HAS_SKILL]->(skill),
+      (company)<-[:WORKS_FOR]-(colleague)-[:HAS_SKILL]->(skill)
+WHERE  me.name = 'Ian'
+WITH colleague.name AS name,
+       count(skill) AS score,
+       collect(skill.name) AS skills
+WHERE score > 1
+RETURN name,score,skills
+ORDER BY score DESC
+----
+
+// graph
+
+// table
+
+// console

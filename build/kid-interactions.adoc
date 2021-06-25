@@ -1,0 +1,53 @@
+= Kids’ interactions
+:neo4j-version: 2.3.0
+:style: red:Person(name)
+
+// Please use the style & syntax-help outlined here: https://github.com/neo4j-contrib/graphgist/blob/master/gists/syntax.adoc
+// This is also a good example for a GraphGist: https://gist.github.com/jexp/2014efa6448b307c65e9
+
+////
+A Cypher query to setup the database
+////
+
+//setup
+//hide
+[source,cypher]
+----
+CREATE
+  (r:Person {name: 'Raphael'}),
+  (m:Person {name: 'Myron'}),
+  (g:Person {name: 'Gabriel'}),
+  (h:Person {name: 'Herman'}),
+  (a:Person {name: 'Alexander'}),
+  (z:Person {name: 'Zenaida'}),
+  (r)-[:HAS_FRICTION_FROM]->(m),
+  (r)-[:HAS_FRICTION_FROM]->(h),
+  (r)-[:HAS_FRICTION_FROM]->(z),
+  (m)-[:HAS_FRICTION_FROM]->(r),
+  (m)-[:HAS_FRICTION_FROM]->(h),
+  (m)-[:HAS_FRICTION_FROM]->(a),
+  (g)-[:HAS_FRICTION_FROM]->(h),
+  (g)-[:HAS_FRICTION_FROM]->(a),
+  (g)-[:HAS_FRICTION_FROM]->(z),
+  (h)-[:HAS_FRICTION_FROM]->(r),
+  (h)-[:HAS_FRICTION_FROM]->(g),
+  (a)-[:HAS_FRICTION_FROM]->(r),
+  (a)-[:HAS_FRICTION_FROM]->(m),
+  (z)-[:HAS_FRICTION_FROM]->(g),
+  (z)-[:HAS_FRICTION_FROM]->(h)
+
+----
+//graph
+
+
+= Annoyers
+
+[source,cypher]
+----
+MATCH (annoyee:Person)-[:HAS_FRICTION_FROM]->(annoyer:Person)
+RETURN annoyer.name, count(*) as occurence
+ORDER BY occurence DESC
+----
+//table
+
+//graph

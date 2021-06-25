@@ -1,0 +1,180 @@
+[[TOP]]
+= Budapest metróhálózata =
+:author: Gabor Szarnyasg
+:twitter: @szarnyasg
+:tags: domain:community, model:transport:navigation:satnav
+
+[[L3-1]]
+=== Graph Population <<TOP, ^Top^>>
+A gráfot az alábbi szkripttel inicializáljuk (a `+` jelre megjelenik).
+//setup
+//hide
+[source,cypher]
+----
+CREATE
+// M1
+(M101 {name:'Mexikói út'}),
+(M102 {name:'Széchenyi fürdő'}),
+(M103 {name:'Hősök tere'}),
+(M104 {name:'Bajza utca'}),
+(M105 {name:'Kodály körönd'}),
+(M106 {name:'Vörösmarty utca'}),
+(M107 {name:'Oktogon'}),
+(M108 {name:'Opera'}),
+(M109 {name:'Bajcsy-Zsilinszky út'}),
+(DEAK {name:'Deák Ferenc tér'}),
+(M111 {name:'Vörösmarty tér'}),
+(M101)-[:M1]->(M102),
+(M102)-[:M1]->(M103),
+(M103)-[:M1]->(M104),
+(M104)-[:M1]->(M105),
+(M105)-[:M1]->(M106),
+(M106)-[:M1]->(M107),
+(M107)-[:M1]->(M108),
+(M108)-[:M1]->(M109),
+(M109)-[:M1]->(DEAK),
+(DEAK)-[:M1]->(M111),
+(M101)<-[:M1]-(M102),
+(M102)<-[:M1]-(M103),
+(M103)<-[:M1]-(M104),
+(M104)<-[:M1]-(M105),
+(M105)<-[:M1]-(M106),
+(M106)<-[:M1]-(M107),
+(M107)<-[:M1]-(M108),
+(M108)<-[:M1]-(M109),
+(M109)<-[:M1]-(DEAK),
+(DEAK)<-[:M1]-(M111),
+// M2
+(M201 {name: 'Örs vezér tere'}),
+(M202 {name: 'Pillangó utca'}),
+(M203 {name: 'Puskás Ferenc Stadion'}),
+(KELETI {name: 'Keleti pályaudvar'}),
+(M205 {name: 'Blaha Lujza tér'}),
+(M206 {name: 'Astoria'}),
+(M208 {name: 'Kossuth Lajos tér'}),
+(M209 {name: 'Batthyány tér'}),
+(M210 {name: 'Széll Kálmán tér'}),
+(M211 {name: 'Déli pályaudvar'}),
+(M201)-[:M2]->(M202),
+(M202)-[:M2]->(M203),
+(M203)-[:M2]->(KELETI),
+(KELETI)-[:M2]->(M205),
+(M205)-[:M2]->(M206),
+(M206)-[:M2]->(DEAK),
+(DEAK)-[:M2]->(M208),
+(M208)-[:M2]->(M209),
+(M209)-[:M2]->(M210),
+(M210)-[:M2]->(M211),
+(M201)<-[:M2]-(M202),
+(M202)<-[:M2]-(M203),
+(M203)<-[:M2]-(KELETI),
+(KELETI)<-[:M2]-(M205),
+(M205)<-[:M2]-(M206),
+(M206)<-[:M2]-(DEAK),
+(DEAK)<-[:M2]-(M208),
+(M208)<-[:M2]-(M209),
+(M209)<-[:M2]-(M210),
+(M210)<-[:M2]-(M211),
+// M3
+(M301 {name: 'Kőbánya-Kispest'}),
+(M302 {name: 'Határ út'}),
+(M303 {name: 'Pöttyös utca'}),
+(M304 {name: 'Ecseri út'}),
+(M305 {name: 'Népliget'}),
+(M306 {name: 'Nagyvárad tér'}),
+(M307 {name: 'Klinikák'}),
+(M308 {name: 'Corvin-negyed'}),
+(KALVIN {name: 'Kálvin tér'}),
+(M310 {name: 'Ferenciek tere'}),
+(M312 {name: 'Arany János utca'}),
+(M313 {name: 'Nyugati pályaudvar'}),
+(M314 {name: 'Lehel tér'}),
+(M315 {name: 'Dózsa György út'}),
+(M316 {name: 'Árpád híd'}),
+(M317 {name: 'Forgách utca'}),
+(M318 {name: 'Gyöngyösi utca'}),
+(M319 {name: 'Újpest-Városkapu'}),
+(M320 {name: 'Újpest-Központ'}),
+(M301)-[:M3]->(M302),
+(M302)-[:M3]->(M303),
+(M303)-[:M3]->(M304),
+(M304)-[:M3]->(M305),
+(M305)-[:M3]->(M306),
+(M306)-[:M3]->(M307),
+(M307)-[:M3]->(M308),
+(M308)-[:M3]->(KALVIN),
+(KALVIN)-[:M3]->(M310),
+(M310)-[:M3]->(DEAK),
+(DEAK)-[:M3]->(M312),
+(M312)-[:M3]->(M313),
+(M313)-[:M3]->(M314),
+(M314)-[:M3]->(M315),
+(M315)-[:M3]->(M316),
+(M316)-[:M3]->(M317),
+(M317)-[:M3]->(M318),
+(M318)-[:M3]->(M319),
+(M319)-[:M3]->(M320),
+(M301)<-[:M3]-(M302),
+(M302)<-[:M3]-(M303),
+(M303)<-[:M3]-(M304),
+(M304)<-[:M3]-(M305),
+(M305)<-[:M3]-(M306),
+(M306)<-[:M3]-(M307),
+(M307)<-[:M3]-(M308),
+(M308)<-[:M3]-(KALVIN),
+(KALVIN)<-[:M3]-(M310),
+(M310)<-[:M3]-(DEAK),
+(DEAK)<-[:M3]-(M312),
+(M312)<-[:M3]-(M313),
+(M313)<-[:M3]-(M314),
+(M314)<-[:M3]-(M315),
+(M315)<-[:M3]-(M316),
+(M316)<-[:M3]-(M317),
+(M317)<-[:M3]-(M318),
+(M318)<-[:M3]-(M319),
+(M319)<-[:M3]-(M320),
+// M4
+(M402 {name: 'II. János Pál pápa tér'}),
+(M403 {name: 'Rákóczi tér'}),
+(M405 {name: 'Fővám tér'}),
+(M406 {name: 'Szent Gellért tér'}),
+(M407 {name: 'Móricz Zsigmond körtér'}),
+(M408 {name: 'Újbuda-központ'}),
+(M409 {name: 'Bikás park'}),
+(M410 {name: 'Kelenföld vasútállomás'}),
+(KELETI)-[:M4]->(M402),
+(M402)-[:M4]->(M403),
+(M403)-[:M4]->(KALVIN),
+(KALVIN)-[:M4]->(M405),
+(M405)-[:M4]->(M406),
+(M406)-[:M4]->(M407),
+(M407)-[:M4]->(M408),
+(M408)-[:M4]->(M409),
+(M409)-[:M4]->(M410),
+(KELETI)<-[:M4]-(M402),
+(M402)<-[:M4]-(M403),
+(M403)<-[:M4]-(KALVIN),
+(KALVIN)<-[:M4]-(M405),
+(M405)<-[:M4]-(M406),
+(M406)<-[:M4]-(M407),
+(M407)<-[:M4]-(M408),
+(M408)<-[:M4]-(M409),
+(M409)<-[:M4]-(M410)
+----
+
+[[L3-2]]
+=== A gráf vizualizálva <<TOP, ^Top^>>
+//graph
+
+=== Hogyan jutunk el a legrövidebb úton az Újbuda-központ állomástól az Astoriáig?
+
+[source,cypher]
+----
+MATCH (u), (a)
+MATCH p=shortestPath((u)-[r*]->(a))
+WHERE u.name = 'Újbuda-központ' AND a.name = 'Astoria'
+RETURN u, a, p
+----
+//table
+
+<<TOP, Back to top>>

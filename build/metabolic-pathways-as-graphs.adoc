@@ -1,0 +1,186 @@
+= Metabolic pathways as graphs =
+:author: Ben Butler-cole
+:tags: domain:biology
+
+Metabolic pathways are naturally modeled as graphs. We can use Neo4j
+to do some analysis of them. This gist uses the citric acid cycle as
+an example.
+
+The model is very simple:
+
+image::data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGNsYXNzPSJncmFwaGRpYWdyYW0iIHZpZXdCb3g9Ii0xMTMxLjk3NDI0MzE2NDA2MjUgLTExMDYuOTQyOTk5MTIxNDAyNiAyNTYwIDEyOTgiPjxnIGNsYXNzPSJsYXllciByZWxhdGlvbnNoaXBzIj48ZyBjbGFzcz0icmVsYXRlZC1wYWlyIj48ZyBjbGFzcz0icmVsYXRpb25zaGlwIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtNDM5LjkyLC0xNzAuNTYpIHJvdGF0ZSgwKSI+PHBhdGggY2xhc3M9InJlbGF0aW9uc2hpcCIgZD0iTSAxMjkuMzM2MjQ3MDQxNzIwNyA0IEwgNDM2LjE2NTUxOTY2NDg5MzQ1IDQgTCA0MzYuMTY1NTE5NjY0ODkzNDUgMTYgTCA0NjguMTY1NTE5NjY0ODkzNDUgMCBMIDQzNi4xNjU1MTk2NjQ4OTM0NSAtMTYgTCA0MzYuMTY1NTE5NjY0ODkzNDUgLTQgTCAxMjkuMzM2MjQ3MDQxNzIwNyAtNCBaIiBmaWxsPSJyZ2IoMCwgMCwgMCkiIHN0cm9rZT0icmdiKDUxLCA1MSwgNTEpIiBzdHJva2Utd2lkdGg9IjBweCI+PC9wYXRoPjx0ZXh0IGNsYXNzPSJ0eXBlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBiYXNlbGluZS1zaGlmdD0iMzAlIiBhbGlnbm1lbnQtYmFzZWxpbmU9ImFscGhhYmV0aWMiIHg9IjI4Mi43NTA4ODMzNTMzMDcxIiB5PSIwIiBmb250LXNpemU9IjUwcHgiIGZvbnQtZmFtaWx5PSInR2lsbCBTYW5zJywgJ0dpbGwgU2FucyBNVCcsIENhbGlicmksIHNhbnMtc2VyaWYiPlNVQlNUUkFURTwvdGV4dD48L2c+PC9nPjxnIGNsYXNzPSJyZWxhdGVkLXBhaXIiPjxnIGNsYXNzPSJyZWxhdGlvbnNoaXAiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDE1NC42OTAwOTc2NTYyNSwtMTcwLjU2KSByb3RhdGUoMCkiPjxwYXRoIGNsYXNzPSJyZWxhdGlvbnNoaXAiIGQ9Ik0gMTI2LjQ0NDU3Nzk5MTM1NjUyIDQgTCA0MTkuOTQ1MTY4OTczOTA0MzQgNCBMIDQxOS45NDUxNjg5NzM5MDQzNCAxNiBMIDQ1MS45NDUxNjg5NzM5MDQzNCAwIEwgNDE5Ljk0NTE2ODk3MzkwNDM0IC0xNiBMIDQxOS45NDUxNjg5NzM5MDQzNCAtNCBMIDEyNi40NDQ1Nzc5OTEzNTY1MiAtNCBaIiBmaWxsPSJyZ2IoMCwgMCwgMCkiIHN0cm9rZT0icmdiKDUxLCA1MSwgNTEpIiBzdHJva2Utd2lkdGg9IjBweCI+PC9wYXRoPjx0ZXh0IGNsYXNzPSJ0eXBlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBiYXNlbGluZS1zaGlmdD0iMzAlIiBhbGlnbm1lbnQtYmFzZWxpbmU9ImFscGhhYmV0aWMiIHg9IjI3My4xOTQ4NzM0ODI2MzA0NCIgeT0iMCIgZm9udC1zaXplPSI1MHB4IiBmb250LWZhbWlseT0iJ0dpbGwgU2FucycsICdHaWxsIFNhbnMgTVQnLCBDYWxpYnJpLCBzYW5zLXNlcmlmIj5QUk9EVUNFUzwvdGV4dD48L2c+PC9nPjxnIGNsYXNzPSJyZWxhdGVkLXBhaXIiPjxnIGNsYXNzPSJyZWxhdGlvbnNoaXAiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDE1NC42OTAwOTc2NTYyNSwtNzU4Ljc1Mzc1OTc2NTYyNSkgcm90YXRlKDkwKSI+PHBhdGggY2xhc3M9InJlbGF0aW9uc2hpcCIgZD0iTSAxMTUuOTA4NDg1NTE4OTAwOSA0IEwgNDI5Ljc0OTE4MTc3NDI2ODUgNCBMIDQyOS43NDkxODE3NzQyNjg1IDE2IEwgNDYxLjc0OTE4MTc3NDI2ODUgMCBMIDQyOS43NDkxODE3NzQyNjg1IC0xNiBMIDQyOS43NDkxODE3NzQyNjg1IC00IEwgMTE1LjkwODQ4NTUxODkwMDkgLTQgWiIgZmlsbD0icmdiKDAsIDAsIDApIiBzdHJva2U9InJnYig1MSwgNTEsIDUxKSIgc3Ryb2tlLXdpZHRoPSIwcHgiPjwvcGF0aD48dGV4dCBjbGFzcz0idHlwZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgYmFzZWxpbmUtc2hpZnQ9IjMwJSIgYWxpZ25tZW50LWJhc2VsaW5lPSJhbHBoYWJldGljIiB4PSIyNzIuODI4ODMzNjQ2NTg0NyIgeT0iMCIgZm9udC1zaXplPSI1MHB4IiBmb250LWZhbWlseT0iJ0dpbGwgU2FucycsICdHaWxsIFNhbnMgTVQnLCBDYWxpYnJpLCBzYW5zLXNlcmlmIj5DQVRBTFlTRVM8L3RleHQ+PC9nPjwvZz48L2c+PGcgY2xhc3M9ImxheWVyIG5vZGVzIj48Y2lyY2xlIGNsYXNzPSJub2RlIG5vZGUtaWQtMCIgcj0iMTE0LjMzNjI0NzA0MTcyMDcxIiBmaWxsPSJyZ2IoMjU1LCAyNTUsIDI1NSkiIHN0cm9rZT0icmdiKDAsIDAsIDApIiBzdHJva2Utd2lkdGg9IjhweCIgY3g9Ii00MzkuOTIiIGN5PSItMTcwLjU2Ij48L2NpcmNsZT48Y2lyY2xlIGNsYXNzPSJub2RlIG5vZGUtaWQtMSIgcj0iMTExLjQ0NDU3Nzk5MTM1NjUyIiBmaWxsPSJyZ2IoMjU1LCAyNTUsIDI1NSkiIHN0cm9rZT0icmdiKDAsIDAsIDApIiBzdHJva2Utd2lkdGg9IjhweCIgY3g9IjE1NC42OTAwOTc2NTYyNSIgY3k9Ii0xNzAuNTYiPjwvY2lyY2xlPjxjaXJjbGUgY2xhc3M9Im5vZGUgbm9kZS1pZC0yIiByPSIxMTQuMzM2MjQ3MDQxNzIwNzEiIGZpbGw9InJnYigyNTUsIDI1NSwgMjU1KSIgc3Ryb2tlPSJyZ2IoMCwgMCwgMCkiIHN0cm9rZS13aWR0aD0iOHB4IiBjeD0iNzM1Ljk3MTUxMzY3MTg3NTEiIGN5PSItMTcwLjU2Ij48L2NpcmNsZT48Y2lyY2xlIGNsYXNzPSJub2RlIG5vZGUtaWQtMyIgcj0iMTAwLjkwODQ4NTUxODkwMDkiIGZpbGw9InJnYigyNTUsIDI1NSwgMjU1KSIgc3Ryb2tlPSJyZ2IoMCwgMCwgMCkiIHN0cm9rZS13aWR0aD0iOHB4IiBjeD0iMTU0LjY5MDA5NzY1NjI1IiBjeT0iLTc1OC43NTM3NTk3NjU2MjUiPjwvY2lyY2xlPjxnIGNsYXNzPSJjYXB0aW9uIj48dGV4dCBjbGFzcz0iY2FwdGlvbiBub2RlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBhbGlnbm1lbnQtYmFzZWxpbmU9ImNlbnRyYWwiIHg9Ii00MzkuOTIiIHk9Ii0xNzAuNTYiIGZvbnQtc2l6ZT0iNTBweCIgZm9udC1mYW1pbHk9IidHaWxsIFNhbnMnLCAnR2lsbCBTYW5zIE1UJywgQ2FsaWJyaSwgc2Fucy1zZXJpZiI+TW9sZWN1bGU8L3RleHQ+PC9nPjxnIGNsYXNzPSJjYXB0aW9uIj48dGV4dCBjbGFzcz0iY2FwdGlvbiBub2RlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBhbGlnbm1lbnQtYmFzZWxpbmU9ImNlbnRyYWwiIHg9IjE1NC42OTAwOTc2NTYyNSIgeT0iLTE3MC41NiIgZm9udC1zaXplPSI1MHB4IiBmb250LWZhbWlseT0iJ0dpbGwgU2FucycsICdHaWxsIFNhbnMgTVQnLCBDYWxpYnJpLCBzYW5zLXNlcmlmIj5SZWFjdGlvbjwvdGV4dD48L2c+PGcgY2xhc3M9ImNhcHRpb24iPjx0ZXh0IGNsYXNzPSJjYXB0aW9uIG5vZGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGFsaWdubWVudC1iYXNlbGluZT0iY2VudHJhbCIgeD0iNzM1Ljk3MTUxMzY3MTg3NTEiIHk9Ii0xNzAuNTYiIGZvbnQtc2l6ZT0iNTBweCIgZm9udC1mYW1pbHk9IidHaWxsIFNhbnMnLCAnR2lsbCBTYW5zIE1UJywgQ2FsaWJyaSwgc2Fucy1zZXJpZiI+TW9sZWN1bGU8L3RleHQ+PC9nPjxnIGNsYXNzPSJjYXB0aW9uIj48dGV4dCBjbGFzcz0iY2FwdGlvbiBub2RlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBhbGlnbm1lbnQtYmFzZWxpbmU9ImNlbnRyYWwiIHg9IjE1NC42OTAwOTc2NTYyNSIgeT0iLTc1OC43NTM3NTk3NjU2MjUiIGZvbnQtc2l6ZT0iNTBweCIgZm9udC1mYW1pbHk9IidHaWxsIFNhbnMnLCAnR2lsbCBTYW5zIE1UJywgQ2FsaWJyaSwgc2Fucy1zZXJpZiI+RW56eW1lPC90ZXh0PjwvZz48L2c+PGcgY2xhc3M9ImxheWVyIHByb3BlcnRpZXMiPjwvZz48ZyBjbGFzcz0ibGF5ZXIgb3ZlcmxheSI+PGNpcmNsZSBjbGFzcz0ibm9kZSBvdmVybGF5IiByPSIxMTguMzM2MjQ3MDQxNzIwNzEiIHN0cm9rZT0ibm9uZSIgZmlsbD0icmdiYSgyNTUsIDI1NSwgMjU1LCAwKSIgY3g9Ii00MzkuOTIiIGN5PSItMTcwLjU2Ij48L2NpcmNsZT48Y2lyY2xlIGNsYXNzPSJub2RlIG92ZXJsYXkiIHI9IjExNS40NDQ1Nzc5OTEzNTY1MiIgc3Ryb2tlPSJub25lIiBmaWxsPSJyZ2JhKDI1NSwgMjU1LCAyNTUsIDApIiBjeD0iMTU0LjY5MDA5NzY1NjI1IiBjeT0iLTE3MC41NiI+PC9jaXJjbGU+PGNpcmNsZSBjbGFzcz0ibm9kZSBvdmVybGF5IiByPSIxMTguMzM2MjQ3MDQxNzIwNzEiIHN0cm9rZT0ibm9uZSIgZmlsbD0icmdiYSgyNTUsIDI1NSwgMjU1LCAwKSIgY3g9IjczNS45NzE1MTM2NzE4NzUxIiBjeT0iLTE3MC41NiI+PC9jaXJjbGU+PGNpcmNsZSBjbGFzcz0ibm9kZSBvdmVybGF5IiByPSIxMDQuOTA4NDg1NTE4OTAwOSIgc3Ryb2tlPSJub25lIiBmaWxsPSJyZ2JhKDI1NSwgMjU1LCAyNTUsIDApIiBjeD0iMTU0LjY5MDA5NzY1NjI1IiBjeT0iLTc1OC43NTM3NTk3NjU2MjUiPjwvY2lyY2xlPjxjaXJjbGUgY2xhc3M9Im5vZGUgcmluZyIgcj0iMTIzLjMzNjI0NzA0MTcyMDcxIiBmaWxsPSJub25lIiBzdHJva2U9InJnYmEoMjU1LCAyNTUsIDI1NSwgMCkiIHN0cm9rZS13aWR0aD0iMTBweCIgY3g9Ii00MzkuOTIiIGN5PSItMTcwLjU2Ij48L2NpcmNsZT48Y2lyY2xlIGNsYXNzPSJub2RlIHJpbmciIHI9IjEyMC40NDQ1Nzc5OTEzNTY1MiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwgMjU1LCAyNTUsIDApIiBzdHJva2Utd2lkdGg9IjEwcHgiIGN4PSIxNTQuNjkwMDk3NjU2MjUiIGN5PSItMTcwLjU2Ij48L2NpcmNsZT48Y2lyY2xlIGNsYXNzPSJub2RlIHJpbmciIHI9IjEyMy4zMzYyNDcwNDE3MjA3MSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwgMjU1LCAyNTUsIDApIiBzdHJva2Utd2lkdGg9IjEwcHgiIGN4PSI3MzUuOTcxNTEzNjcxODc1MSIgY3k9Ii0xNzAuNTYiPjwvY2lyY2xlPjxjaXJjbGUgY2xhc3M9Im5vZGUgcmluZyIgcj0iMTA5LjkwODQ4NTUxODkwMDkiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgyNTUsIDI1NSwgMjU1LCAwKSIgc3Ryb2tlLXdpZHRoPSIxMHB4IiBjeD0iMTU0LjY5MDA5NzY1NjI1IiBjeT0iLTc1OC43NTM3NTk3NjU2MjUiPjwvY2lyY2xlPjxwYXRoIGNsYXNzPSJyZWxhdGlvbnNoaXAgb3ZlcmxheSIgZmlsbD0icmdiYSgyNTUsIDI1NSwgMjU1LCAwKSIgc3Ryb2tlPSJyZ2JhKDI1NSwgMjU1LCAyNTUsIDApIiBzdHJva2Utd2lkdGg9IjEwcHgiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC00MzkuOTIsLTE3MC41Nikgcm90YXRlKDApIiBkPSJNIDEyOS4zMzYyNDcwNDE3MjA3IDQgTCA0MzYuMTY1NTE5NjY0ODkzNDUgNCBMIDQzNi4xNjU1MTk2NjQ4OTM0NSAxNiBMIDQ2OC4xNjU1MTk2NjQ4OTM0NSAwIEwgNDM2LjE2NTUxOTY2NDg5MzQ1IC0xNiBMIDQzNi4xNjU1MTk2NjQ4OTM0NSAtNCBMIDEyOS4zMzYyNDcwNDE3MjA3IC00IFoiPjwvcGF0aD48cGF0aCBjbGFzcz0icmVsYXRpb25zaGlwIG92ZXJsYXkiIGZpbGw9InJnYmEoMjU1LCAyNTUsIDI1NSwgMCkiIHN0cm9rZT0icmdiYSgyNTUsIDI1NSwgMjU1LCAwKSIgc3Ryb2tlLXdpZHRoPSIxMHB4IiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxNTQuNjkwMDk3NjU2MjUsLTE3MC41Nikgcm90YXRlKDApIiBkPSJNIDEyNi40NDQ1Nzc5OTEzNTY1MiA0IEwgNDE5Ljk0NTE2ODk3MzkwNDM0IDQgTCA0MTkuOTQ1MTY4OTczOTA0MzQgMTYgTCA0NTEuOTQ1MTY4OTczOTA0MzQgMCBMIDQxOS45NDUxNjg5NzM5MDQzNCAtMTYgTCA0MTkuOTQ1MTY4OTczOTA0MzQgLTQgTCAxMjYuNDQ0NTc3OTkxMzU2NTIgLTQgWiI+PC9wYXRoPjxwYXRoIGNsYXNzPSJyZWxhdGlvbnNoaXAgb3ZlcmxheSIgZmlsbD0icmdiYSgyNTUsIDI1NSwgMjU1LCAwKSIgc3Ryb2tlPSJyZ2JhKDI1NSwgMjU1LCAyNTUsIDApIiBzdHJva2Utd2lkdGg9IjEwcHgiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDE1NC42OTAwOTc2NTYyNSwtNzU4Ljc1Mzc1OTc2NTYyNSkgcm90YXRlKDkwKSIgZD0iTSAxMTUuOTA4NDg1NTE4OTAwOSA0IEwgNDI5Ljc0OTE4MTc3NDI2ODUgNCBMIDQyOS43NDkxODE3NzQyNjg1IDE2IEwgNDYxLjc0OTE4MTc3NDI2ODUgMCBMIDQyOS43NDkxODE3NzQyNjg1IC0xNiBMIDQyOS43NDkxODE3NzQyNjg1IC00IEwgMTE1LjkwODQ4NTUxODkwMDkgLTQgWiI+PC9wYXRoPjwvZz48L3N2Zz4=[]
+
+//hide
+//setup
+[source,cypher]
+----
+CREATE (water:Molecule {name:"H\u2082O"}),
+(coa_sh:Molecule {name:"CoA-SH"}),
+(nad:Molecule {name:"NAD\u207a"}),
+(nadh:Molecule {name:"NADH"}),
+(h:Molecule {name:"H\u207a"}),
+(co2:Molecule {name:"CO\u2082"}),
+(gdp:Molecule {name:"GDP"}),
+(gtp:Molecule {name:"GTP"}),
+(phosphate:Molecule {name:"P\u1d62"}),
+(ubiquinone:Molecule {name:"ubiquinone"}),
+(ubiquinol:Molecule {name:"ubiquinol"}),
+ 
+(acetyl_coa:Molecule {name:"Acetyl CoA"}),
+(oxaloacetate:Molecule {name:"Oxaloacetate"}),
+ 
+(r1:Reaction {name:1}),
+(citrate:Molecule {name:"Citrate"}),
+(citrate_synthase:Enzyme {name:"Citrate synthase"}),
+ 
+(oxaloacetate)-[:SUBSTRATE]->(r1),
+(acetyl_coa)-[:SUBSTRATE]->(r1),
+(water)-[:SUBSTRATE]->(r1),
+(r1)-[:PRODUCES]->(citrate),
+(r1)-[:PRODUCES]->(coa_sh),
+(citrate_synthase)-[:CATALYSES]->(r1),
+ 
+(r2:Reaction {name:2}),
+(cis_aconitate:Molecule {name:"cis-Aconitate"}),
+(aconitase:Enzyme {name:"Aconitase"}),
+ 
+(citrate)-[:SUBSTRATE]->(r2),
+(r2)-[:PRODUCES]->(cis_aconitate),
+(r2)-[:PRODUCES]->(water),
+(aconitase)-[:CATALYSES]->(r2),
+ 
+(r3:Reaction {name:3}),
+(isocitrate:Molecule {name:"Isocitrate"}),
+ 
+(cis_aconitate)-[:SUBSTRATE]->(r3),
+(water)-[:SUBSRATE]->(r3),
+(r3)-[:PRODUCES]->(isocitrate),
+(aconitase)-[:CATALYSES]->(r3),
+ 
+(r4:Reaction {name:4}),
+(oxalosuccinate:Molecule {name:"Oxalosuccinate"}),
+(isocitrate_dehydrogenase:Enzyme {name:"Isocitrate dehydrogenase"}),
+ 
+(isocitrate)-[:SUBSTRATE]->(r4),
+(nad)-[:SUBSTRATE]->(r4),
+(r4)-[:PRODUCES]->(oxalosuccinate),
+(r4)-[:PRODUCES]->(nadh),
+(r4)-[:PRODUCES]->(h),
+(isocitrate_dehydrogenase)-[:CATALYSES]->(r4),
+ 
+(r5:Reaction {name:5}),
+(alpha_ketoglutarate:Molecule {name:"\u03b1-Ketoglutarate"}),
+ 
+(oxalosuccinate)-[:SUBSTRATE]->(r5),
+(r5)-[:PRODUCES]->(alpha_ketoglutarate),
+(r5)-[:PRODUCES]->(co2),
+(isocitrate_dehydrogenase)-[:CATALYSES]->(r5),
+ 
+(r6:Reaction {name:6}),
+(succinyl_coa:Molecule {name:"Succinyl-CoA"}),
+(alpha_ketoglutarate_dehydrogenase:Enzyme {name:"\u03b1-Ketoglutarate dehydrogenase"}),
+ 
+(alpha_ketoglutarate)-[:SUBSTRATE]->(r6),
+(nad)-[:SUBSTRATE]->(r6),
+(coa_sh)-[:SUBSTRATE]->(r6),
+(r6)-[:PRODUCES]->(succinyl_coa),
+(r6)-[:PRODUCES]->(nadh),
+(r6)-[:PRODUCES]->(h),
+(r6)-[:PRODUCES]->(co2),
+(alpha_ketoglutarate_dehydrogenase)-[:CATALYSES]->(r6),
+ 
+(r7:Reaction {name:7}),
+(succinate:Molecule {name:"Succinate"}),
+(succinyl_coa_synthetase:Enzyme {name:"Succinyl-CoA synthetase"}),
+ 
+(succinyl_coa)-[:SUBSTRATE]->(r7),
+(gdp)-[:SUBSTRATE]->(r7),
+(phosphate)-[:SUBSTRATE]->(r7),
+(r7)-[:PRODUCES]->(succinate),
+(r7)-[:PRODUCES]->(coa_sh),
+(r7)-[:PRODUCES]->(gtp),
+(succinyl_coa_synthetase)-[:CATALYSES]->(r7),
+ 
+(r8:Reaction {name:8}),
+(fumarate:Molecule {name:"Fumarate"}),
+(succinate_dehydrogenase:Enzyme {name:"Succinate dehydrogenase"}),
+ 
+(succinate)-[:SUBSTRATE]->(r8),
+(ubiquinone)-[:SUBSTRATE]->(r8),
+(r8)-[:PRODUCES]->(fumarate),
+(r8)-[:PRODUCES]->(ubiquinol),
+(succinate_dehydrogenase)-[:CATALYSES]->(r8),
+ 
+(r9:Reaction {name:9}),
+(l_malate:Molecule {name:"\u029f-Malate"}),
+(fumarase:Enzyme {name:"Fumarase"}),
+ 
+(fumarate)-[:SUBSTRATE]->(r9),
+(water)-[:SUBSTRATE]->(r9),
+(r9)-[:PRODUCES]->(l_malate),
+(fumarase)-[:CATALYSES]->(r9),
+ 
+(r10:Reaction {name:10}),
+(malate_dehydrogenase:Enzyme {name:"Malate dehydrogenase"}),
+ 
+(l_malate)-[:SUBSTRATE]->(r10),
+(nad)-[:SUBSTRATE]->(r10),
+(r10)-[:PRODUCES]->(oxaloacetate),
+(r10)-[:PRODUCES]->(nadh),
+(r10)-[:PRODUCES]->(h),
+(malate_dehydrogenase)-[:CATALYSES]->(r10)
+----
+
+The complete graph for the citric acid cycle is too complex to see
+clearly here: 
+
+//graph
+
+But here is a visualization from the new Neo4j browser which I laid
+out by hand:
+
+image::https://dl.dropboxusercontent.com/s/ne1js99zlomiqtq/citric-acid-cycle.png?token_hash=AAFGzAIKNAoHS5UEd83nNngnUB8OrhX6ormlsYGY-F1pZA&dl=1[]
+ 
+=== Calculations on the graph
+
+Most of the reactions in the cycle cancel each other out, but some
+molecules are produced and consumed. We can use Cypher to calculate
+the overall effect of one turn of the cycle.
+
+This query shows the species that are consumed by the citric acid cycle:
+
+[source,cypher]
+----
+MATCH (m:Molecule)
+OPTIONAL MATCH p=(m)<-[:PRODUCES]-()
+OPTIONAL MATCH s=(m)-[:SUBSTRATE]->()
+WITH m, count(p) AS produced, count(s) AS consumed
+WHERE produced < consumed
+RETURN DISTINCT m.name AS species, produced - consumed AS net ORDER BY net ASC
+----
+
+//table
+
+This query shows the species that are produced by the citric acid cycle:
+
+[source,cypher]
+----
+MATCH (m:Molecule)
+OPTIONAL MATCH p=(m)<-[:PRODUCES]-()
+OPTIONAL MATCH s=(m)-[:SUBSTRATE]->()
+WITH m, count(p) AS produced, count(s) AS consumed
+WHERE produced > consumed
+RETURN DISTINCT m.name AS species, produced - consumed AS net ORDER BY net DESC
+----
+
+//table
+
+One of the important products of the citric acid cycle is NADH. These
+are all the enzymes which catalyse its production.
+
+[source,cypher]
+----
+MATCH (e)-[:CATALYSES]->()-[:PRODUCES]->(m) WHERE m.name='NADH' RETURN e.name
+----
+
+//table

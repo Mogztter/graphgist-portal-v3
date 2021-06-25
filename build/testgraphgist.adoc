@@ -1,0 +1,46 @@
+= GraphGist
+:neo4j-version:
+:author:
+:twitter:
+:style: #54A835/#1078B5/white:Colorized(name)
+
+GraphGist created to test the various features available to GraphGist rendering
+
+
+//setup
+//hide
+[source,cypher]
+----
+CREATE
+  (a:Person {name: 'Alice'}),
+  (b:Person {name: 'Bob'}),
+  (c:Person {name: 'Carrie'}),
+  (d:Person {name: 'David'}),
+  (e:Person {name: 'Emily'}),
+  (a)-[:FRIENDS_WITH]->(b),
+  (a)-[:FRIENDS_WITH]->(e),
+  (b)-[:FRIENDS_WITH]->(c),
+  (b)-[:FRIENDS_WITH]->(d),
+  (:Colorized {name: 'Colorized'})
+----
+
+Break
+
+[source,cypher]
+----
+MATCH (b:Person {name: 'Bob'})-[:FRIENDS_WITH]->(d:Person {name: 'David'}) RETURN b, d
+----
+
+== Header
+
+Graph result:
+
+//graph_result
+
+Full graph:
+
+//graph
+
+== Error reporting
+
+This should always be the last result because errors stop execution of queries

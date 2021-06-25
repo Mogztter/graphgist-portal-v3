@@ -1,0 +1,1001 @@
+= Neo4Art: Van Gogh's journey in a Neo4j graph DB
+
+:neo4j-version: 2.0.1
+:author: Lorenzo Speranzoni
+:twitter: @inserpio
+:tags: domain:art, use-case:van gogh's journey
+
+//hide
+//setup
+[source,cypher]
+----
+CREATE (van_gogh:ARTIST {firstname: 'Vincent', secondname: 'Willem', lastname: 'Van Gogh', born: 18530330, died: 18900729})
+
+CREATE (zundert:CITY {name: 'Zundert', province: 'North Brabant', country: 'Netherland', latitude: 51.466667, longitude: 4.666667})
+CREATE (auvers_sur_oise:CITY {name: 'Auvers-sur-Oise', region: 'Île-de-France', country: 'France', latitude: 49.0725, longitude: 2.175})
+CREATE (neuen:CITY {name: 'Neuen', province: 'North Brabant', country: 'Netherland', latitude: 51.473333, longitude: 5.546667})
+CREATE (antwerp:CITY {name: 'Antwerp', province: 'Antwerp', country: 'Belgium', longitude: 51.216667, latitude: 4.4})
+CREATE (paris:CITY {name: 'Paris', country: 'France', longitude: 48.8567, latitude: 2.3508})
+CREATE (arles:CITY {name: 'Arles', region: 'Provence-Alpes-Côte d\'Azur', country: 'France', latitude: 43.6767, longitude: 4.6278})
+CREATE (saint_remy_de_provence:CITY {name: 'Saint-Rémy-de-Provence', region: 'Provence-Alpes-Côte d\'Azur', country: 'France', latitude: 43.79, longitude: 4.8325})
+CREATE (siegen:CITY {name: 'Siegen', region: 'Arnsberg', state:'North Rhine-Westphalia', country: 'Germany', latitude: 50.883333, longitude: 8.016667})
+CREATE (albi:CITY {name: 'Albi', country: 'France', latitude: 50.883333, longitude: 8.016667})
+CREATE (chateau_malrome:CITY {name: 'Château Malromé', country: 'France', latitude: 50.883333, longitude: 8.016667})
+CREATE (amsterdam:CITY {name: 'Amsterdam', province: 'North Holland', country: 'Netherlands', longitude: 52.373056, latitude: 4.892222})
+CREATE (otterlo:CITY {name: 'Otterlo', province: 'Gelderland', country: 'Netherlands', longitude: 52.1, latitude: 5.783333})
+CREATE (new_york:CITY {name: 'New York', county: ['Bronx', 'Kings', 'New York', 'Queens', 'Richmond'], state: 'New York', country: 'United States of America', longitude: 40.67, latitude: -73.94})
+
+CREATE (painting:VISUAL_ART {name: 'painting', wikipedia: 'http://en.wikipedia.org/wiki/Visual_arts#Painting'})
+
+CREATE (post_impressionism:ART_MOVEMENT {name: 'Post-Impressionism', wikipedia: 'http://en.wikipedia.org/wiki/Post-Impressionism'})
+CREATE (baroque:ART_MOVEMENT {name: 'Baroque', wikipedia: 'http://en.wikipedia.org/wiki/Baroque'})
+CREATE (art_nouveau:ART_MOVEMENT {name: 'Art Nouveau', wikipedia: 'http://en.wikipedia.org/wiki/Art_Nouveau'})
+CREATE (impressionism:ART_MOVEMENT {name: 'Impressionism', wikipedia: 'http://en.wikipedia.org/wiki/Impressionism'})
+CREATE (neo_impressionism:ART_MOVEMENT {name: 'Neo-impressionism', wikipedia: 'http://en.wikipedia.org/wiki/Neo-impressionism'})
+CREATE (pointillism:ART_MOVEMENT {name: 'Pointillism', wikipedia: 'http://en.wikipedia.org/wiki/Pointillism'})
+
+CREATE (van_gogh)-[:BORN_IN]->(zundert)
+CREATE (van_gogh)-[:DIED_IN]->(auvers_sur_oise)
+CREATE (van_gogh)-[:BELONGS_TO]->(post_impressionism)
+
+//
+// Stages
+// 
+
+CREATE (van_gogh)-[:MOVED_TO]->(neuen_stage:STAGE {from: 188312, to: 188511})
+CREATE (neuen_stage)-[:IN]->(neuen)
+
+CREATE (neuen_stage)-[:MOVED_TO]->(antwerp_stage:STAGE {from: 188512, to: 188602})
+CREATE (antwerp_stage)-[:IN]->(antwerp)
+
+CREATE (antwerp_stage)-[:MOVED_TO]->(paris_stage:STAGE {from: 188603, to: 188802 })
+CREATE (paris_stage)-[:IN]->(paris)
+
+CREATE (paris_stage)-[:MOVED_TO]->(arles_stage:STAGE {from: 188802, to: 188905 })
+CREATE (arles_stage)-[:IN]->(arles)
+
+CREATE (arles_stage)-[:MOVED_TO]->(saint_remy_de_provence_stage:STAGE {from: 188905, to: 189005 })
+CREATE (saint_remy_de_provence_stage)-[:IN]->(saint_remy_de_provence)
+
+CREATE (saint_remy_de_provence_stage)-[:MOVED_TO]->(auvers_sur_oise_stage:STAGE {from: 189005, to: 189007 })
+CREATE (auvers_sur_oise_stage)-[:IN]->(auvers_sur_oise)
+
+//
+// Influencers
+//
+
+CREATE (rubens:ARTIST {firstname: 'Peter', secondname: 'Paul', lastname: 'Rubens', born: 15770628, died: 16400530})
+CREATE (rubens)-[:BORN_IN]->(siegen)
+CREATE (rubens)-[:DIED_IN]->(siegen)
+CREATE (rubens)-[:BELONGS_TO]->(baroque)
+CREATE (antwerp_stage)-[:WHERE_WAS_INFLUENCED_BY]->(rubens)
+
+CREATE (toulouse_lautrec:ARTIST {firstname: 'Henri', secondname: 'Marie', third_name: 'Raymond', lastname: 'Toulouse-Lautrec', born: 18641124, died: 19010909})
+CREATE (toulouse_lautrec)-[:BORN_IN]->(albi)
+CREATE (toulouse_lautrec)-[:DIED_IN]->(chateau_malrome)
+CREATE (paris_stage)-[:WHERE_WAS_INFLUENCED_BY]->(toulouse_lautrec)
+CREATE (toulouse_lautrec)-[:BELONGS_TO]->(post_impressionism)
+CREATE (toulouse_lautrec)-[:BELONGS_TO]->(art_nouveau)
+
+CREATE (gaugin:ARTIST {firstname: 'Eugène', secondname: 'Henri', third_name: 'Paul', lastname: 'Gauguin', born: 18480711, died: 19030508})
+CREATE (paris_stage)-[:WHERE_WAS_INFLUENCED_BY]->(gaugin)
+CREATE (gaugin)-[:BELONGS_TO]->(post_impressionism)
+
+CREATE (bernard:ARTIST {firstname: 'Émile', secondname: 'Henri', lastname: 'Bernard', born: 18680428, died: 19410416})
+CREATE (paris_stage)-[:WHERE_WAS_INFLUENCED_BY]->(bernard)
+CREATE (bernard)-[:BELONGS_TO]->(post_impressionism)
+
+CREATE (pissarro:ARTIST {firstname: 'Camille', lastname: 'Pissarro', born: 18300710, died: 19031113})
+CREATE (paris_stage)-[:WHERE_WAS_INFLUENCED_BY]->(pissarro)
+CREATE (pissarro)-[:BELONGS_TO]->(post_impressionism)
+CREATE (pissarro)-[:BELONGS_TO]->(impressionism)
+
+CREATE (seurat:ARTIST {firstname: 'Georges-Pierre', lastname: 'Seurat', born: 18591202, died: 18910329})
+CREATE (paris_stage)-[:WHERE_WAS_INFLUENCED_BY]->(seurat)
+CREATE (seurat)-[:BELONGS_TO]->(neo_impressionism)
+CREATE (seurat)-[:BELONGS_TO]->(pointillism)
+CREATE (seurat)-[:BELONGS_TO]->(post_impressionism)
+
+CREATE (monet:ARTIST {firstname: 'Oscar-Claude', lastname: 'Monet', born: 18401114, died: 19260526})
+CREATE (paris_stage)-[:WHERE_WAS_INFLUENCED_BY]->(monet)
+CREATE (monet)-[:BELONGS_TO]->(impressionism)
+
+CREATE (boch:ARTIST {firstname: 'Eugène', lastname: 'Boch', born: 18550901, died: 19410103})
+CREATE (arles_stage)-[:WHERE_WAS_INFLUENCED_BY]->(boch)
+
+//
+// Artworks
+//
+
+CREATE (the_potato_eaters_i:ARTWORK {title: 'The Potato Eaters I', type: 'oil on canvas', year: 1885, month: 'April', thumbnail: 'http://www.vggallery.com/painting/f_0082.jpg', f_order: '82', jh_order: '764'})
+CREATE (the_potato_eaters_i)-[:AUTHOR]->(van_gogh)
+CREATE (the_potato_eaters_i)-[:IS_A]->(painting)
+CREATE (neuen_stage)-[:WHERE_REALIZED]->(the_potato_eaters_i)
+
+CREATE (backyards_of_old_houses_in_antwerp_in_the_snow:ARTWORK {title: 'Backyards of Old Houses in Antwerp in the Snow', type: 'oil on canvas', year: 1885, month: 'December', thumbnail: 'http://www.vggallery.com/painting/f_0260.jpg', f_order: '260', jh_order: '970'})
+CREATE (backyards_of_old_houses_in_antwerp_in_the_snow)-[:AUTHOR]->(van_gogh)
+CREATE (backyards_of_old_houses_in_antwerp_in_the_snow)-[:IS_A]->(painting)
+CREATE (antwerp_stage)-[:WHERE_REALIZED]->(backyards_of_old_houses_in_antwerp_in_the_snow)
+
+CREATE (portrait_of_pere_tanguy_iii:ARTWORK {title: 'Portrait of Père Tanguy III', type: 'oil on canvas', year: 1887, period: 'Autumn', thumbnail: 'http://www.vggallery.com/painting/f_0363.jpg', f_order: '363', jh_order: '1351'})
+CREATE (portrait_of_pere_tanguy_iii)-[:AUTHOR]->(van_gogh)
+CREATE (portrait_of_pere_tanguy_iii)-[:IS_A]->(painting)
+CREATE (paris_stage)-[:WHERE_REALIZED]->(portrait_of_pere_tanguy_iii)
+
+CREATE (the_cafe_terrace_on_the_place_du_forum_arles_at_night:ARTWORK {title: 'The Cafe Terrace on the Place du Forum, Arles, at Night', type: 'oil on canvas', year: 1888, month: 'September', thumbnail: 'http://www.vggallery.com/painting/f_0467.jpg', f_order: '467', jh_order: '1580'})
+CREATE (the_cafe_terrace_on_the_place_du_forum_arles_at_night)-[:AUTHOR]->(van_gogh)
+CREATE (the_cafe_terrace_on_the_place_du_forum_arles_at_night)-[:IS_A]->(painting)
+CREATE (arles_stage)-[:WHERE_REALIZED]->(the_cafe_terrace_on_the_place_du_forum_arles_at_night)
+
+CREATE (starry_night:ARTWORK {title: 'Starry Night', type: 'oil on canvas', year: 1889, month: 'June', thumbnail: 'http://www.vggallery.com/painting/f_0612.jpg', f_order: '612', jh_order: '1731'})
+CREATE (starry_night)-[:AUTHOR]->(van_gogh)
+CREATE (starry_night)-[:IS_A]->(painting)
+CREATE (saint_remy_de_provence_stage)-[:WHERE_REALIZED]->(starry_night)
+
+CREATE (wheat_field_with_crows:ARTWORK {title: 'Wheat Field with Crows', type: 'oil on canvas', year: 1890, month: 'July', thumbnail: 'http://www.vggallery.com/painting/f_0779.jpg', f_order: '779', jh_order: '2117'})
+CREATE (wheat_field_with_crows)-[:AUTHOR]->(van_gogh)
+CREATE (wheat_field_with_crows)-[:IS_A]->(painting)
+CREATE (auvers_sur_oise_stage)-[:WHERE_REALIZED]->(wheat_field_with_crows)
+
+//
+// Museums
+//
+
+CREATE (musee_orsay:MUSEUM {name: 'Musée d\'Orsay', director: 'Serge Lemoine', address: 'Rue de Lille 75343 Paris, France', website: 'http://www.musee-orsay.fr/en/', wikipedia: 'http://en.wikipedia.org/wiki/Mus%C3%A9e_d%27Orsay', latitude: 48.86, longitude: 2.327})
+CREATE (musee_orsay)-[:LOCATED_IN]->(paris)
+
+CREATE (van_gogh_museum:MUSEUM {name: 'Van Gogh Museum', director: 'Axel Rüger', address: 'Museumplein Amsterdam, Netherlands', website: 'http://www.vangoghmuseum.nl/', wikipedia: 'http://en.wikipedia.org/wiki/Van_Gogh_Museum'})
+CREATE (van_gogh_museum)-[:LOCATED_IN]->(amsterdam)
+
+CREATE (musee_rodin:MUSEUM {name: 'Musée Rodin', address: 'Hôtel Biron, 79, rue de Varenne, 75007 Paris, France', website: 'http://www.musee-rodin.fr/', wikipedia: 'http://en.wikipedia.org/wiki/Mus%C3%A9e_Rodin', latitude: 48.855278, longitude: 2.315833})
+CREATE (musee_rodin)-[:LOCATED_IN]->(paris)
+
+CREATE (kroller_muller_museum:MUSEUM {name: 'Kröller-Müller Museum', director: 'Lisette Pelsers', website: 'http://kmm.nl', wikipedia: 'http://en.wikipedia.org/wiki/Kr%C3%B6ller-M%C3%BCller_Museum', latitude: 52.095556, longitude: 5.816944})
+CREATE (kroller_muller_museum)-[:LOCATED_IN]->(otterlo)
+
+CREATE (the_museum_of_modern_art:MUSEUM {name: 'The Museum of Modern Art', director: 'Glenn D. Lowry', address: '11 West 53rd Street New York, NY 10019', website: 'http://www.moma.org/', wikipedia: 'http://en.wikipedia.org/wiki/The_Museum_of_Modern_Art', latitude: 40.761484, longitude: -73.977664})
+CREATE (the_museum_of_modern_art)-[:LOCATED_IN]->(new_york)
+
+CREATE (the_potato_eaters_i)-[:OFFICIAL_LOCATION]->(van_gogh_museum)
+CREATE (backyards_of_old_houses_in_antwerp_in_the_snow)-[:OFFICIAL_LOCATION]->(van_gogh_museum)
+CREATE (wheat_field_with_crows)-[:OFFICIAL_LOCATION]->(van_gogh_museum)
+CREATE (portrait_of_pere_tanguy_iii)-[:OFFICIAL_LOCATION]->(musee_rodin)
+CREATE (the_cafe_terrace_on_the_place_du_forum_arles_at_night)-[:OFFICIAL_LOCATION]->(kroller_muller_museum)
+CREATE (starry_night)-[:OFFICIAL_LOCATION]->(the_museum_of_modern_art)
+
+//
+// Post and Like
+//
+
+CREATE (lorenzo:PERSON {firstname: 'Lorenzo', lastname: 'Speranzoni', born: 19741120})
+
+CREATE (mestre:CITY {name: 'Mestre', province: 'Venice', region: 'Veneto', country: 'Italy'})
+
+CREATE (lorenzo)-[:LIVES_IN]->(mestre)
+
+CREATE (lorenzo)-[:LIKES]->(van_gogh)
+CREATE (lorenzo)-[:LIKES]->(the_potato_eaters_i)
+CREATE (lorenzo)-[:LIKES]->(musee_orsay)
+CREATE (lorenzo)-[:VISITED {date: 20130828}]->(musee_orsay)
+
+CREATE (lorenzo)-[:POSTED {media_type: 'image', url: 'http://www.flickr.com/photos/inserpio/12340140213/' }]->(musee_orsay)
+CREATE (lorenzo)-[:POSTED {media_type: 'image', url: 'http://www.flickr.com/photos/inserpio/12340129353/' }]->(musee_orsay)
+
+CREATE (lorenzo)-[:POSTED {media_type: 'image', url: 'http://www.flickr.com/photos/inserpio/12340356925/' }]->(auvers_sur_oise)
+CREATE (lorenzo)-[:POSTED {media_type: 'image', url: 'http://www.flickr.com/photos/inserpio/12340339575/' }]->(auvers_sur_oise)
+CREATE (lorenzo)-[:POSTED {media_type: 'image', url: 'http://www.flickr.com/photos/inserpio/12340350135/' }]->(auvers_sur_oise)
+CREATE (lorenzo)-[:POSTED {media_type: 'image', url: 'http://www.flickr.com/photos/inserpio/12340481073/' }]->(auvers_sur_oise)
+----
+
+== I. Preface 
+
+This graphgist "_animates_" my original blog post http://inserpio.wordpress.com/information-technology/neo4art-van-goghs-journey/[*Neo4Art – Van Gogh’s Journey in a Neo4j Graph Database*]
+and the idea of modelling the Van Gogh's journey in a neo4j graph database came to me reading the book http://inserpio.files.wordpress.com/2014/02/sulle-tracce-di-van-gogh.png[*"_Sulle Tracce di Van Gogh_" (_in the footsteps of Van Gogh_)*].
+
+image::https://inserpio.files.wordpress.com/2014/09/neo4j-loves-art-cover2.png[width="600",align="center"]
+
+== II. Introduction
+
+Vincent Van Gogh is widely considered one of the most important neo-impressionist painters.
+
+One fundamental aspect of his artwork was his continuous research for colours: "_during his early adulthood, while living between The Netherlands and Belgium, his palette consisted mainly of somber earth tones and showed no sign of the vivid coloration that distinguished his later work. In March 1886, he moved to Paris and discovered the French Impressionists. Later, he moved to the south of France and was influenced by the strong sunlight he found there. His work grew brighter in color, and he developed the unique and highly recognizable style that became fully realized during his stay in Arles in 1888_"
+
+So how would I go about putting Van Gogh's journey into Neo4j?
+
+First, I started with the data source: The http://www.vggallery.com/[*Vincent Van Gogh Gallery*] has a complete list of his paintings.
+
+The root node is of course Vincent Van Gogh himself:
+
+----
+CREATE (a:ARTIST {firstname: 'Vincent', secondname: 'Willem', lastname: 'Van Gogh', born: 18530330, died: 18900729})
+----
+
+image::https://inserpio.files.wordpress.com/2014/09/van-gogh-self-border.png[width="400",align="center",link="https://inserpio.files.wordpress.com/2014/09/van-gogh-self-border.png"]
+
+Since I'll access _ARTIST_ nodes through its lastname property, I decided to introduce an unique index constraint:
+
+----
+CREATE CONSTRAINT ON (a:ARTIST) ASSERT a.lastname IS UNIQUE
+----
+
+Now, I'll focus on _CITIES_ and _STAGES_. First of all, where he was born and where he died:
+
+----
+MATCH (a:ARTIST {lastname: 'Van Gogh'})
+CREATE (a)-[:BORN_IN]->(c:CITY {name: 'Zundert', province: 'North Brabant', country: 'Netherland', latitude: 51.466667, longitude: 4.666667})
+----
+
+----
+MATCH (a:ARTIST {lastname: 'Van Gogh'})
+CREATE (a)-[:DIED_IN]->(c:CITY {name: 'Auvers-sur-Oise', region: 'Île-de-France', country: 'France', latitude: 49.0725, longitude: 2.175})
+----
+
+Please note, we have a _CITY_ with a province property and the other with a region property: Neo4j is *schema-less* (or, more correctly, *"less schema"*, as Jim Webber pointed out on his http://jimwebber.org/2014/01/starting-graph-databases-with-neo4j-2-0/[*blog*]).
+
+Please also note that I'm saving latitude and longitude informations for http://inserpio.wordpress.com/2014/09/21/neo4art-moves-to-cloud-foundry-at-springone-2gx-2014/[*future*] geo-spatial queries: at present, I'm just supposing this is the correct way to store such kind of data.
+
+Vincent Van Gogh adhered to the *"Post-Impressionism"* art movement (more correctly, one of its founder):
+
+----
+MATCH (a:ARTIST {lastname: 'Van Gogh'})
+CREATE (a)-[:BELONGS_TO]->(m:ART_MOVEMENT {name: 'Post-Impressionism', wikipedia: 'http://en.wikipedia.org/wiki/Post-Impressionism'})
+----
+
+image::https://inserpio.files.wordpress.com/2014/09/olive-trees.png[width="550",align="center",link="https://inserpio.files.wordpress.com/2014/09/olive-trees.png"]
+
+Now I could write the first, very simple http://docs.neo4j.org/chunked/milestone/cypher-query-lang.html[*Cypher*] statement to look at nodes and relations I've just created.
+
+Where was Van Gogh born and where did he died?
+
+[source,cypher]
+----
+MATCH (artist:ARTIST {lastname: 'Van Gogh'})-[r]->(city:CITY)
+RETURN artist, city
+----
+//graph_result
+
+Which artistic movements does Van Gogh belong to?
+
+[source,cypher]
+----
+MATCH (art_movement:ART_MOVEMENT)<-[:BELONGS_TO]-(artist:ARTIST {lastname: 'Van Gogh'})
+RETURN artist, art_movement
+----
+//graph_result
+
+Those two cypher queries can also be combined into:
+
+[source,cypher]
+----
+MATCH (art_movement:ART_MOVEMENT)<-[:BELONGS_TO]-(artist:ARTIST {lastname: 'Van Gogh'})-[r]->(city:CITY)
+RETURN artist, art_movement, city
+----
+//graph_result
+
+*We can see a graph already emerging! :)*
+
+Which can also be represented in tabular form as follow:
+
+[source,cypher]
+----
+MATCH (art_movement:ART_MOVEMENT)<-[:BELONGS_TO]-(artist:ARTIST {lastname: 'Van Gogh'})-[r]->(city:CITY)
+RETURN artist.firstname + " " + artist.lastname as artist, art_movement.name as movement, type(r) as artist_city, city.name as city
+----
+//table
+
+
+
+
+
+== III. JOURNEY'S STAGES
+
+image::https://inserpio.files.wordpress.com/2014/09/pont-de-langlois.png[width="550",align="center",link="https://inserpio.files.wordpress.com/2014/09/pont-de-langlois.png"]
+
+http://en.wikipedia.org/wiki/Nuenen[*Neuen*]:
+
+On December 1883, Van Gogh began his journey by moving to *Neuen*, North Brabant, Netherlands. He lived there until November 1885.
+
+----
+MATCH (a:ARTIST {lastname: 'Van Gogh'}) CREATE (a)-[:MOVED_TO]->(s:STAGE {from: 188312, to: 188511})
+----
+
+----
+MATCH (a:ARTIST {lastname: 'Van Gogh'})-[:MOVED_TO*]->(stage:STAGE)
+WITH last(collect(stage)) as last_stage
+CREATE (last_stage)-[:IN]->(c:CITY {name: 'Neuen', province: 'North Brabant', country: 'Netherland', latitude: 51.473333, longitude: 5.546667})
+----
+
+As you can see, I've used the aggregation function *collect* and the collection function *last*, to retrieve current last stage.
+
+http://en.wikipedia.org/wiki/Antwerp[*Antwerp*]:
+
+In december 1885, Van Gogh moved to *Antwerp*, Belgium, where he lived until February 1886:
+
+----
+MATCH (a:ARTIST {lastname: 'Van Gogh'})-[:MOVED_TO*]->(stage:STAGE)
+WITH last(collect(stage)) as last_stage
+CREATE (last_stage)-[:MOVED_TO]->(:STAGE {from: 188512, to: 188602})
+----
+
+----
+MATCH (a:ARTIST {lastname: 'Van Gogh'})-[:MOVED_TO*]->(stage:STAGE)
+WITH last(collect(stage)) as last_stage
+CREATE (last_stage)-[:IN]->(c:CITY {name: 'Antwerp', region: 'Flemish Region', country: 'Belgium', latitude: 51.216667, longitude: 4.4})
+----
+
+http://en.wikipedia.org/wiki/Paris[*Paris*]:
+
+Van Gogh lived in *Paris*, France from March 1886 to February 1888:
+
+----
+MATCH (a:ARTIST {lastname: 'Van Gogh'})-[:MOVED_TO*]->(stage:STAGE)
+WITH last(collect(stage)) as last_stage
+CREATE (last_stage)-[:MOVED_TO]->(:STAGE {from: 188603, to: 188802 })
+----
+
+----
+MATCH (a:ARTIST {lastname: 'Van Gogh'})-[:MOVED_TO*]->(stage:STAGE)
+WITH last(collect(stage)) as last_stage
+CREATE (last_stage)-[:IN]->(c:CITY {name: 'Paris', region: 'Île-de-France', country: 'France', latitude: 48.8567, longitude: 2.3508})
+----
+
+http://en.wikipedia.org/wiki/Arles[*Arles*]:
+
+Van Gogh moved to *Arles*, France in February 1888 and stayed there until May 1889:
+
+----
+MATCH (a:ARTIST {lastname: 'Van Gogh'})-[:MOVED_TO*]->(stage:STAGE)
+WITH last(collect(stage)) as last_stage
+CREATE (last_stage)-[:MOVED_TO]->(:STAGE {from: 188802, to: 188905 })
+----
+
+----
+MATCH (a:ARTIST {lastname: 'Van Gogh'})-[:MOVED_TO*]->(stage:STAGE)
+WITH last(collect(stage)) as last_stage
+CREATE (last_stage)-[:IN]->(c:CITY {name: 'Arles', region: 'Provence-Alpes-Côte d\'Azur', country: 'France', latitude: 43.6767, longitude: 4.6278})
+----
+
+_(Please, pay attention to the back slash in d\'Azur)._
+
+http://en.wikipedia.org/wiki/Saint-R%C3%A9my-de-Provence[*Saint-Rémy de Provence*]:
+
+Then he moved to *Saint-Rémy de Provence*, France in May 1889 and stayed there until May 1890:
+
+----
+MATCH (a:ARTIST {lastname: 'Van Gogh'})-[:MOVED_TO*]->(stage:STAGE)
+WITH last(collect(stage)) as last_stage
+CREATE (last_stage)-[:MOVED_TO]->(:STAGE {from: 188905, to: 189005 })
+----
+
+----
+MATCH (a:ARTIST {lastname: 'Van Gogh'})-[:MOVED_TO*]->(stage:STAGE)
+WITH last(collect(stage)) as last_stage
+CREATE (last_stage)-[:IN]->(c:CITY {name: 'Saint-Rémy de Provence', region: 'Provence-Alpes-Côte d\'Azur', country: 'France', latitude: 43.79, longitude: 4.8325})
+----
+
+http://en.wikipedia.org/wiki/Auvers-sur-Oise[*Auvers-sur-Oise*]:
+
+Van Gogh ended his trip, and also his life by committing suicide, in *Auvers-sur-Oise*, France where he had lived from May to July 1890:
+
+----
+MATCH (a:ARTIST {lastname: 'Van Gogh'})-[:MOVED_TO*]->(stage:STAGE)
+WITH last(collect(stage)) as last_stage
+CREATE (last_stage)-[:MOVED_TO]->(:STAGE {from: 189005, to: 189007 })
+----
+
+Auvers-sur-Oise was already created, so I'm going to change a little the usual statement:
+
+----
+MATCH (a:ARTIST {lastname: 'Van Gogh'})-[:MOVED_TO*]->(stage:STAGE)
+WITH last(collect(stage)) as last_stage
+MATCH (c:CITY {name: 'Auvers-sur-Oise'})
+CREATE (last_stage)-[:IN]->(c)
+----
+
+Now I'm able to inquiry the system to visualize Van Gogh's journey:
+
+
+[source,cypher]
+----
+MATCH (artist:ARTIST { lastname: 'Van Gogh' })-[:MOVED_TO*]->(stage:STAGE)-[:IN]->(city:CITY) 
+RETURN artist, stage, city
+----
+//graph_result
+
+Similarly, in tabular form:
+
+[source,cypher]
+----
+MATCH (artist:ARTIST { lastname: 'Van Gogh' })-[:MOVED_TO*]->(stage:STAGE)-[:IN]->(city:CITY) 
+RETURN artist.firstname + ' ' + artist.lastname as artist, stage.from, stage.to, city.name, city.country 
+ORDER BY stage.from
+----
+//table
+
+
+
+
+
+== IV. INFLUENCERS
+
+In describing his journey, there's another fundamental aspect about Van Gogh's artwork: his influencers.
+
+"_During his 2nd stage in Antwerp he applied himself to the study of colour theory and spent time in museums, particularly studying the work of Peter Paul Rubens, gaining encouragement to broaden his palette to carmine, cobalt and emerald green_"
+
+image::https://inserpio.files.wordpress.com/2014/09/blossoming-almond-tree.png[width="550",align="center",link="https://inserpio.files.wordpress.com/2014/09/blossoming-almond-tree.png"]
+
+http://en.wikipedia.org/wiki/Peter_Paul_Rubens[*Peter Paul Rubens*]:
+
+----
+CREATE (a:ARTIST {firstname: 'Peter', secondname: 'Paul', lastname: 'Rubens', born: 15770628, died: 16400530})
+----
+
+----
+MATCH (a:ARTIST {lastname: 'Rubens'})
+CREATE (a)-[:BELONGS_TO]->(m:ART_MOVEMENT {name: 'Baroque', wikipedia: 'http://en.wikipedia.org/wiki/Baroque'})
+----
+
+----
+MATCH (a:ARTIST {lastname: 'Van Gogh'})-[:MOVED_TO*]->(s:STAGE)-[:IN]->(c:CITY {name: 'Antwerp'}), (influencer:ARTIST {lastname: 'Rubens'})
+CREATE (s)-[:WHERE_WAS_INFLUENCED_BY]->(influencer)
+----
+
+"_The two years Van Gogh spent in Paris were arguably the most pivotal of his career as an artist. Van Gogh went to Paris as a mean of saving money (by living with his brother, Theo) and also to explore the radically new approach to art which had been ushered in by the Impressionists_"
+
+"_Vincent encountered many of the giants of Impressionism during his time in Paris: Henri de Toulouse-Lautrec, Emile Bernard, Camille Pissarro, Georges Seurat and, of course, Paul Gauguin. While Vincent didn't fully accept many of the theories put forth by the Impressionists (on many occasions he would passionately argue with his contemporaries late into the night in the cafes of Montmartre), he nevertheless adapted some of their techniques in a manner that would further define his own unique style. In Paris, Van Gogh's palette came alive_"
+
+http://en.wikipedia.org/wiki/Henri_de_Toulouse-Lautrec[*Henri de Toulouse-Lautrec*]:
+
+----
+CREATE (a:ARTIST {firstname: 'Henri', secondname: 'Marie', third_name: 'Raymond', lastname: 'Toulouse-Lautrec', born: 18641124, died: 19010909})
+----
+
+----
+MATCH (a:ARTIST {lastname: 'Van Gogh'})-[:MOVED_TO*]->(s:STAGE)-[:IN]->(c:CITY {name: 'Paris'}), (influencer:ARTIST {lastname: 'Toulouse-Lautrec'})
+CREATE (s)-[:WHERE_WAS_INFLUENCED_BY]->(influencer)
+----
+
+----
+MATCH (a:ARTIST {lastname: 'Toulouse-Lautrec'}), (m:ART_MOVEMENT {name: 'Post-Impressionism'})
+CREATE (a)-[:BELONGS_TO]->(m)
+----
+
+----
+MATCH (a:ARTIST {lastname: 'Toulouse-Lautrec'})
+CREATE (a)-[:BELONGS_TO]->(m:ART_MOVEMENT {name: 'Art Nouveau', wikipedia: 'http://en.wikipedia.org/wiki/Art_Nouveau'})
+----
+
+http://en.wikipedia.org/wiki/Paul_Gauguin[*Paul Gauguin*]:
+
+----
+CREATE (a:ARTIST {firstname: 'Eugène', secondname: 'Henri', third_name: 'Paul', lastname: 'Gauguin', born: 18480711, died: 19030508})
+----
+
+----
+MATCH (a:ARTIST {lastname: 'Van Gogh'})-[:MOVED_TO*]->(s:STAGE)-[:IN]->(c:CITY {name: 'Paris'}), (influencer:ARTIST {lastname: 'Gauguin'})
+CREATE (s)-[:WHERE_WAS_INFLUENCED_BY]->(influencer)
+----
+
+----
+MATCH (a:ARTIST {lastname: 'Gauguin'}), (m:ART_MOVEMENT {name: 'Post-Impressionism'})
+CREATE (a)-[:BELONGS_TO]->(m)
+----
+
+http://en.wikipedia.org/wiki/%C3%89mile_Bernard[*Émile Bernard*]:
+
+----
+CREATE (a:ARTIST {firstname: 'Émile', secondname: 'Henri', lastname: 'Bernard', born: 18680428, died: 19410416})
+----
+
+----
+MATCH (a:ARTIST {lastname: 'Van Gogh'})-[:MOVED_TO*]->(s:STAGE)-[:IN]->(c:CITY {name: 'Paris'}), (influencer:ARTIST {lastname: 'Bernard'})
+CREATE (s)-[:WHERE_WAS_INFLUENCED_BY]->(influencer)
+----
+
+----
+MATCH (a:ARTIST {lastname: 'Bernard'}), (m:ART_MOVEMENT {name: 'Post-Impressionism'})
+CREATE (a)-[:BELONGS_TO]->(m)
+----
+
+http://en.wikipedia.org/wiki/Camille_Pissarro[*Camille Pissarro*]:
+
+----
+CREATE (a:ARTIST {firstname: 'Camille', lastname: 'Pissarro', born: 18300710, died: 19031113})
+----
+
+----
+MATCH (a:ARTIST {lastname: 'Van Gogh'})-[:MOVED_TO*]->(s:STAGE)-[:IN]->(c:CITY {name: 'Paris'}), (influencer:ARTIST {lastname: 'Pissarro'})
+CREATE (s)-[:WHERE_WAS_INFLUENCED_BY]->(influencer)
+----
+
+----
+MATCH (a:ARTIST {lastname: 'Pissarro'}), (m:ART_MOVEMENT {name: 'Post-Impressionism'})
+CREATE (a)-[:BELONGS_TO]->(m)
+----
+
+----
+MATCH (a:ARTIST {lastname: 'Pissarro'})
+CREATE (a)-[:BELONGS_TO]->(m:ART_MOVEMENT {name: 'Impressionism', wikipedia: 'http://en.wikipedia.org/wiki/Impressionism'})
+----
+
+http://en.wikipedia.org/wiki/Georges_Seurat[*Georges Seurat*]:
+
+----
+CREATE (a:ARTIST {firstname: 'Georges-Pierre', lastname: 'Seurat', born: 18591202, died: 18910329})
+----
+
+----
+MATCH (a:ARTIST {lastname: 'Van Gogh'})-[:MOVED_TO*]->(s:STAGE)-[:IN]->(c:CITY {name: 'Paris'}), (influencer:ARTIST {lastname: 'Seurat'})
+CREATE (s)-[:WHERE_WAS_INFLUENCED_BY]->(influencer)
+----
+
+----
+MATCH (a:ARTIST {lastname: 'Seurat'})
+CREATE (a)-[:BELONGS_TO]->(m:ART_MOVEMENT {name: 'Neo-impressionism', wikipedia: 'http://en.wikipedia.org/wiki/Neo-impressionism'})
+----
+
+----
+MATCH (a:ARTIST {lastname: 'Seurat'})
+CREATE (a)-[:BELONGS_TO]->(m:ART_MOVEMENT {name: 'Pointillism', wikipedia: 'http://en.wikipedia.org/wiki/Pointillism'})
+----
+
+----
+MATCH (a:ARTIST {lastname: 'Seurat'}), (m:ART_MOVEMENT {name: 'Post-Impressionism'})
+CREATE (a)-[:BELONGS_TO]->(m)
+----
+
+http://en.wikipedia.org/wiki/Claude_Monet[*Claude Monet*]:
+
+----
+CREATE (a:ARTIST {firstname: 'Oscar-Claude', lastname: 'Monet', born: 18401114, died: 19260526})
+----
+
+----
+MATCH (a:ARTIST {lastname: 'Van Gogh'})-[:MOVED_TO*]->(s:STAGE)-[:IN]->(c:CITY {name: 'Paris'}), (influencer:ARTIST {lastname: 'Monet'})
+CREATE (s)-[:WHERE_WAS_INFLUENCED_BY]->(influencer)
+----
+
+----
+MATCH (a:ARTIST {lastname: 'Monet'}), (m:ART_MOVEMENT {name: 'Impressionism'})
+CREATE (a)-[:BELONGS_TO]->(m)
+----
+
+In Arles, Van Gogh was introduced to Eugène Boch, a Belgian painter who stayed at times in Fontvieille, and the two exchanged visits for some times.
+
+http://en.wikipedia.org/wiki/Eug%C3%A8ne_Boch[*Eugène Boch*]:
+
+----
+CREATE (a:ARTIST {firstname: 'Eugène', lastname: 'Boch', born: 18550901, died: 19410103})
+----
+
+----
+MATCH (a:ARTIST {lastname: 'Van Gogh'})-[:MOVED_TO*]->(s:STAGE)-[:IN]->(c:CITY {name: 'Arles'}), (influencer:ARTIST {lastname: 'Boch'})
+CREATE (s)-[:WHERE_WAS_INFLUENCED_BY]->(influencer)
+----
+
+Now I'm able to inquiry the system to know who influenced Van Gogh's artwork:
+
+[source,cypher]
+----
+MATCH (artist:ARTIST {lastname: 'Van Gogh'})-[:MOVED_TO*]->(stage:STAGE)-[:IN]->(city:CITY)
+OPTIONAL MATCH (stage)-[:WHERE_WAS_INFLUENCED_BY*]->(influencer:ARTIST)-[:BELONGS_TO*]->(art_movement:ART_MOVEMENT)
+RETURN artist, stage, city, influencer, art_movement
+----
+
+//graph_result
+
+And in tabular form:
+
+[source,cypher]
+----
+MATCH (artist:ARTIST {lastname: 'Van Gogh'})-[:MOVED_TO*]->(stage:STAGE)-[:IN]->(city:CITY)
+OPTIONAL MATCH (stage)-[:WHERE_WAS_INFLUENCED_BY*]->(influencer:ARTIST)-[:BELONGS_TO*]->(art_movement:ART_MOVEMENT)
+RETURN artist.firstname + ' ' + artist.lastname as artist, stage.from, stage.to, city.name, city.country, influencer.firstname + ' ' + influencer.lastname, collect(art_movement.name) as art_movements
+ORDER BY stage.from
+----
+
+//table
+
+
+
+
+== V. ARTWORKS
+
+Van Gogh's artwork is about painting:
+
+----
+CREATE (v:VISUAL_ART {name: 'painting', wikipedia: 'http://en.wikipedia.org/wiki/Visual_arts#Painting'})
+----
+
+image::https://inserpio.files.wordpress.com/2014/09/starry-night.png[width="550",align="center",link="https://inserpio.files.wordpress.com/2014/09/starry-night.png"]
+
+In Neuen, Van Gogh "_completed what is generally considered his first major work,_ http://en.wikipedia.org/wiki/The_Potato_Eaters[*The Potato Eaters*]_, the culmination of several years work painting peasant character studies_":
+
+----
+CREATE (a:ARTWORK {title: 'The Potato Eaters I', type: 'oil on canvas', year: 1885, month: 'April', thumbnail: 'http://www.vggallery.com/painting/f_0082.jpg', f_order: '82', jh_order: '764'})
+----
+
+----
+MATCH (a:ARTIST {lastname: 'Van Gogh'}), (w:ARTWORK {title: 'The Potato Eaters I'})
+CREATE (w)-[:AUTHOR]->(a)
+----
+
+----
+MATCH (a:ARTWORK {title: 'The Potato Eaters I'}), (v:VISUAL_ART {name: 'painting'})
+CREATE (a)-[:IS_A]->(v)
+----
+
+----
+MATCH (:ARTIST {lastname: 'Van Gogh'})-[:MOVED_TO*]->(s:STAGE)-[:IN]->(c:CITY {name: 'Neuen'}), (a:ARTWORK {title: 'The Potato Eaters I'})
+CREATE (s)-[:WHERE_REALIZED]->(a)
+----
+
+During his stage in *Antwerp*, among others, he depicted http://en.wikipedia.org/wiki/File:Van_Gogh_-_Hinterh%C3%B6fe_in_Antwerpen_im_Schnee.jpeg[*Backyards of Old Houses in Antwerp in the Snow*]:
+
+----
+CREATE (a:ARTWORK {title: 'Backyards of Old Houses in Antwerp in the Snow', type: 'oil on canvas', year: 1885, month: 'December', thumbnail: 'http://www.vggallery.com/painting/f_0260.jpg', f_order: '260', jh_order: '970'})
+----
+
+----
+MATCH (a:ARTIST {lastname: 'Van Gogh'}), (w:ARTWORK {title: 'Backyards of Old Houses in Antwerp in the Snow'})
+CREATE (w)-[:AUTHOR]->(a)
+----
+
+----
+MATCH (a:ARTWORK {title: 'Backyards of Old Houses in Antwerp in the Snow'}), (v:VISUAL_ART {name: 'painting'})
+CREATE (a)-[:IS_A]->(v)
+----
+
+----
+MATCH (:ARTIST {lastname: 'Van Gogh'})-[:MOVED_TO*]->(s:STAGE)-[:IN]->(c:CITY {name: 'Antwerp'}), (a:ARTWORK {title: 'Backyards of Old Houses in Antwerp in the Snow'})
+CREATE (s)-[:WHERE_REALIZED]->(a)
+----
+
+"_During his stay in *Paris*, he collected more Japanese ukiyo-e woodblock prints; he became interested in such works, when in 1885 in Antwerp he used them to decorate the walls of his studio. He collected hundreds of prints, which are visible in the backgrounds of several of his paintings. In his 1887_ *Portrait of Père Tanguy* _several can be seen hanging on the wall behind the main figure_":
+
+----
+CREATE (a:ARTWORK {title: 'Portrait of Père Tanguy III', type: 'oil on canvas', year: 1887, period: 'Autumn', thumbnail: 'http://www.vggallery.com/painting/f_0363.jpg', f_order: '363', jh_order: '1351'})
+----
+
+----
+MATCH (a:ARTIST {lastname: 'Van Gogh'}), (w:ARTWORK {title: 'Portrait of Père Tanguy III'})
+CREATE (w)-[:AUTHOR]->(a)
+----
+
+----
+MATCH (a:ARTWORK {title: 'Portrait of Père Tanguy III'}), (v:VISUAL_ART {name: 'painting'})
+CREATE (a)-[:IS_A]->(v)
+----
+
+----
+MATCH (:ARTIST {lastname: 'Van Gogh'})-[:MOVED_TO*]->(s:STAGE)-[:IN]->(c:CITY {name: 'Paris'}), (a:ARTWORK {title: 'Portrait of Père Tanguy III'})
+CREATE (s)-[:WHERE_REALIZED]->(a)
+----
+
+In Arles, "_his project at this time was a series of paintings including_ http://en.wikipedia.org/wiki/File:Vincent_Willem_van_Gogh_138.jpg[*Van Gogh's Chair*] (1888), http://en.wikipedia.org/wiki/File:VanGogh_Bedroom_Arles1.jpg[*Bedroom in Arles*] (1888), http://en.wikipedia.org/wiki/The_Night_Caf%C3%A9[*The Night Café*] (1888), http://en.wikipedia.org/wiki/File:Vincent_Willem_van_Gogh_015.jpg[*Cafe Terrace at Night*] (September 1888), http://en.wikipedia.org/wiki/File:Starry_Night_Over_the_Rhone.jpg[*Starry Night Over the Rhone*] (1888), http://en.wikipedia.org/wiki/File:Van_Gogh_Twelve_Sunflowers.jpg[*Still Life: Vase with Twelve Sunflowers*] (1888)_, all intended to form the décoration for the Yellow House_":
+
+----
+CREATE (a:ARTWORK {title: 'The Cafe Terrace on the Place du Forum, Arles, at Night', type: 'oil on canvas', year: 1888, month: 'September', thumbnail: 'http://www.vggallery.com/painting/f_0467.jpg', f_order: '467', jh_order: '1580'})
+----
+
+----
+MATCH (a:ARTIST {lastname: 'Van Gogh'}), (w:ARTWORK {title: 'The Cafe Terrace on the Place du Forum, Arles, at Night'})
+CREATE (w)-[:AUTHOR]->(a)
+----
+
+----
+MATCH (a:ARTWORK {title: 'The Cafe Terrace on the Place du Forum, Arles, at Night'}), (v:VISUAL_ART {name: 'painting'})
+CREATE (a)-[:IS_A]->(v)
+----
+
+----
+MATCH (:ARTIST {lastname: 'Van Gogh'})-[:MOVED_TO*]->(s:STAGE)-[:IN]->(c:CITY {name: 'Arles'}), (a:ARTWORK {title: 'The Cafe Terrace on the Place du Forum, Arles, at Night'})
+CREATE (s)-[:WHERE_REALIZED]->(a)
+----
+
+In *Saint-Rémy de Provence*, Van Gogh painted *Starry Night*:
+
+----
+CREATE (a:ARTWORK {title: 'Starry Night', type: 'oil on canvas', year: 1889, month: 'June', thumbnail: 'http://www.vggallery.com/painting/f_0612.jpg', f_order: '612', jh_order: '1731'})
+----
+
+----
+MATCH (a:ARTIST {lastname: 'Van Gogh'}), (w:ARTWORK {title: 'Starry Night'})
+CREATE (w)-[:AUTHOR]->(a)
+----
+
+----
+MATCH (a:ARTWORK {title: 'Starry Night'}), (v:VISUAL_ART {name: 'painting'})
+CREATE (a)-[:IS_A]->(v)
+----
+
+----
+MATCH (:ARTIST {lastname: 'Van Gogh'})-[:MOVED_TO*]->(s:STAGE)-[:IN]->(c:CITY {name: 'Saint-Rémy de Provence'}), (a:ARTWORK {title: 'Starry Night'})
+CREATE (s)-[:WHERE_REALIZED]->(a)
+----
+
+In *Auvers-sur-Oise*, Van Gogh painted *Wheat Field with Crows*:
+
+----
+CREATE (a:ARTWORK {title: 'Wheat Field with Crows', type: 'oil on canvas', year: 1890, month: 'July', thumbnail: 'http://www.vggallery.com/painting/f_0779.jpg', f_order: '779', jh_order: '2117'})
+----
+
+----
+MATCH (a:ARTIST {lastname: 'Van Gogh'}), (w:ARTWORK {title: 'Wheat Field with Crows'})
+CREATE (w)-[:AUTHOR]->(w)
+----
+
+----
+MATCH (a:ARTWORK {title: 'Wheat Field with Crows'}), (v:VISUAL_ART {name: 'painting'})
+CREATE (a)-[:IS_A]->(v)
+----
+
+----
+MATCH (:ARTIST {lastname: 'Van Gogh'})-[:MOVED_TO*]->(s:STAGE)-[:IN]->(c:CITY {name: 'Auvers-sur-Oise'}), (a:ARTWORK {title: 'Wheat Field with Crows'})
+CREATE (s)-[:WHERE_REALIZED]->(a)
+----
+ 
+Now I'm able to inquiry the system to know when and where Van Gogh painted his artworks:
+
+[source,cypher]
+----
+MATCH (artist:ARTIST {lastname: 'Van Gogh'})-[:MOVED_TO*]->(stage:STAGE)-[:WHERE_REALIZED*]->(artwork:ARTWORK)-[:IS_A]-(visual_art:VISUAL_ART)
+WITH artist, stage, artwork, visual_art
+MATCH (stage)-[:IN]->(city:CITY)
+RETURN artist, stage, city, artwork, visual_art
+----
+//graph_result
+
+[source,cypher]
+----
+MATCH (artist:ARTIST {lastname: 'Van Gogh'})-[:MOVED_TO*]->(stage:STAGE)-[:WHERE_REALIZED*]->(artwork:ARTWORK)-[:IS_A]-(visual_art:VISUAL_ART)
+WITH artist, stage, artwork, visual_art
+MATCH (stage)-[:IN]->(city:CITY)
+RETURN artist.firstname + ' ' + artist.lastname as artist, stage.from, stage.to, city.name, city.country, artwork.title, visual_art.name
+ORDER BY stage.from, artwork.jh_order
+----
+//table
+
+
+
+
+
+== VI. WHERE ARE HIS ARTWORKS?
+
+Ok, I believe it's time to get up from my chair to start admiring his paintings around the world.
+
+Let's see which musuems host Van Gogh's paintings.
+
+image::https://inserpio.files.wordpress.com/2014/09/still-life-with-20-sunflowers.png[width="400",align="center",link="https://inserpio.files.wordpress.com/2014/09/still-life-with-20-sunflowers.png"]
+
+http://en.wikipedia.org/wiki/Van_Gogh_Museum[*Van Gogh Museum, Amsterdam*]:
+
+----
+CREATE (m:MUSEUM {name: 'Van Gogh Museum', director: 'Axel Rüger', address: 'Museumplein Amsterdam, Netherlands', website: 'http://www.vangoghmuseum.nl/', wikipedia: 'http://en.wikipedia.org/wiki/Van_Gogh_Museum'})
+----
+
+----
+CREATE (c:CITY {name: 'Amsterdam', province: 'North Holland', country: 'Netherlands', longitude: 52.373056, latitude: 4.892222})
+----
+
+----
+MATCH (m:MUSEUM {name: 'Van Gogh Museum'}), (c:CITY {name: 'Amsterdam'})
+CREATE (m)-[:LOCATED_IN]->(c)
+----
+
+----
+MATCH (m:MUSEUM {name: 'Van Gogh Museum'}), (a:ARTWORK {title: 'The Potato Eaters I'})
+CREATE (a)-[:OFFICIAL_LOCATION]->(m)
+----
+
+----
+MATCH (m:MUSEUM {name: 'Van Gogh Museum'}), (a:ARTWORK {title: 'Backyards of Old Houses in Antwerp in the Snow'})
+CREATE (a)-[:OFFICIAL_LOCATION]->(m)
+----
+
+----
+MATCH (m:MUSEUM {name: 'Van Gogh Museum'}), (a:ARTWORK {title: 'Wheat Field with Crows'})
+CREATE (a)-[:OFFICIAL_LOCATION]->(m)
+----
+
+http://en.wikipedia.org/wiki/Mus%C3%A9e_Rodin[*Musée Rodin, Paris*]:
+
+----
+CREATE (m:MUSEUM {name: 'Musée Rodin', address: 'Hôtel Biron, 79, rue de Varenne, 75007 Paris, France', website: 'http://www.musee-rodin.fr/', wikipedia: 'http://en.wikipedia.org/wiki/Mus%C3%A9e_Rodin', latitude: 48.855278, longitude: 2.315833})
+----
+
+----
+MATCH (m:MUSEUM {name: 'Musée Rodin'}), (c:CITY {name: 'Paris'})
+CREATE (m)-[:LOCATED_IN]->(c)
+----
+
+----
+MATCH (m:MUSEUM {name: 'Musée Rodin'}), (a:ARTWORK {title: 'Portrait of Père Tanguy III'})
+CREATE (a)-[:OFFICIAL_LOCATION]->(m)
+----
+
+http://en.wikipedia.org/wiki/Kr%C3%B6ller-M%C3%BCller_Museum[*Kröller-Müller Museum, Otterlo*]:
+
+----
+CREATE (m:MUSEUM {name: 'Kröller-Müller Museum', director: 'Lisette Pelsers', website: 'http://kmm.nl', wikipedia: 'http://en.wikipedia.org/wiki/Kr%C3%B6ller-M%C3%BCller_Museum', latitude: 52.095556, longitude: 5.816944})
+----
+
+----
+CREATE (c:CITY {name: 'Otterlo', province: 'Gelderland', country: 'Netherlands', longitude: 52.1, latitude: 5.783333})
+----
+
+----
+MATCH (m:MUSEUM {name: 'Kröller-Müller Museum'}), (c:CITY {name: 'Otterlo'})
+CREATE (m)-[:LOCATED_IN]->(c)
+----
+
+----
+MATCH (m:MUSEUM {name: 'Kröller-Müller Museum'}), (a:ARTWORK {title: 'The Cafe Terrace on the Place du Forum, Arles, at Night'})CREATE (a)-[:OFFICIAL_LOCATION]->(m)
+----
+
+http://en.wikipedia.org/wiki/Museum_of_Modern_Art[*The Museum of Modern Art, New York*]:
+
+----
+CREATE (m:MUSEUM {name: 'The Museum of Modern Art', director: 'Glenn D. Lowry', address: '11 West 53rd Street New York, NY 10019', website: 'http://www.moma.org/', wikipedia: 'http://en.wikipedia.org/wiki/The_Museum_of_Modern_Art', latitude: 40.761484, longitude: -73.977664})
+----
+
+----
+CREATE (c:CITY {name: 'New York', county: ['Bronx', 'Kings', 'New York', 'Queens', 'Richmond'], state: 'New York', country: 'United States of America', longitude: 40.67, latitude: -73.94})
+----
+
+----
+MATCH (m:MUSEUM {name: 'The Museum of Modern Art'}), (c:CITY {name: 'New York'})
+CREATE (m)-[:LOCATED_IN]->(c)
+----
+
+----
+MATCH (m:MUSEUM {name: 'The Museum of Modern Art'}), (a:ARTWORK {title: 'Starry Night'})
+CREATE (a)-[:OFFICIAL_LOCATION]->(m)
+----
+
+_It would be interesting if the system could be able to track artworks' movement from official location: I really suffer when my family and me plan to visit a museum to admire an artwork and then we discover it's on loan :-(_
+
+Now I'm able to ask the system which Van Gogh's artworks are in dutch museums:
+
+[source,cypher]
+----
+MATCH (artwork:ARTWORK)-[:OFFICIAL_LOCATION]->(museum:MUSEUM)-[:LOCATED_IN]->(city:CITY {country: 'Netherlands'})
+RETURN museum, city, artwork
+----
+//graph_result
+
+[source,cypher]
+----
+MATCH (artwork:ARTWORK)-[:OFFICIAL_LOCATION]->(museum:MUSEUM)-[:LOCATED_IN]->(city:CITY {country: 'Netherlands'})
+RETURN museum.name, city.name, city.country, artwork.title
+ORDER BY city.country, city.name, museum.name, artwork.title
+----
+//table
+
+
+
+
+
+== VII. ADD SOME SOCIAL
+
+image::https://inserpio.files.wordpress.com/2014/09/terrasse-des-cafc3a9s.png[width="400",align="center",link="https://inserpio.files.wordpress.com/2014/09/terrasse-des-cafc3a9s.png"]
+
+Of course in an age of social networking, we couldn't finish this spike without some forms of *I LIKE*:
+
+----
+CREATE (p:PERSON {firstname: 'Lorenzo', lastname: 'Speranzoni', born: 19741120})
+----
+
+----
+CREATE (c:CITY {name: 'Mestre', province: 'Venice', region: 'Veneto', country: 'Italy'})
+----
+
+----
+MATCH (lorenzo:PERSON {lastname: 'Speranzoni'}), (mestre:CITY {name: 'Mestre'})
+CREATE (lorenzo)-[:LIVES_IN]->(mestre)
+----
+
+----
+MATCH (lorenzo:PERSON {lastname: 'Speranzoni'}), (van_gogh:ARTIST {lastname: 'Van Gogh'})
+CREATE (lorenzo)-[:LIKES]->(van_gogh)
+----
+
+----
+MATCH (lorenzo:PERSON {lastname: 'Speranzoni'}), (the_potato_eaters:ARTWORK {title: 'The Potato Eaters I'})
+CREATE (lorenzo)-[:LIKES]->(the_potato_eaters)
+----
+
+Finally, I can *POST* some photos:
+
+----
+CREATE (m:MUSEUM {name: 'Musée d\'Orsay', director: 'Serge Lemoine', address: 'Rue de Lille 75343 Paris, France', website: 'http://www.musee-orsay.fr/en/', wikipedia: 'http://en.wikipedia.org/wiki/Mus%C3%A9e_d%27Orsay', latitude: 48.86, longitude: 2.327});
+----
+
+----
+MATCH (m:MUSEUM {name: 'Musée d\'Orsay'}), (c:CITY {name: 'Paris'})
+CREATE (m)-[:LOCATED_IN]->(c);
+----
+
+----
+MATCH (lorenzo:PERSON {lastname: 'Speranzoni'}), (musee_orsay:MUSEUM {name: 'Musée d\'Orsay'})
+CREATE (lorenzo)-[:LIKES]->(musee_orsay)
+----
+
+----
+MATCH (lorenzo:PERSON {lastname: 'Speranzoni'}), (musee_orsay:MUSEUM {name: 'Musée d\'Orsay'})
+CREATE (lorenzo)-[:VISITED {date: 20130828}]->(musee_orsay)
+----
+
+----
+CREATE (lorenzo)-[:POSTED {media_type: 'image', url: 'http://www.flickr.com/photos/inserpio/12340140213/' }]->(musee_orsay);
+----
+
+----
+MATCH (lorenzo:PERSON {lastname: 'Speranzoni'}), (musee_orsay:MUSEUM {name: 'Musée d\'Orsay'})
+CREATE (lorenzo)-[:POSTED {media_type: 'image', url: 'http://www.flickr.com/photos/inserpio/12340129353/' }]->(musee_orsay);
+----
+
+----
+MATCH (lorenzo:PERSON {lastname: 'Speranzoni'}), (auvers_sur_oise:CITY {name: 'Auvers-sur-Oise'})
+CREATE (lorenzo)-[:POSTED {media_type: 'image', url: 'http://www.flickr.com/photos/inserpio/12340356925/' }]->(auvers_sur_oise);
+----
+
+----
+MATCH (lorenzo:PERSON {lastname: 'Speranzoni'}), (auvers_sur_oise:CITY {name: 'Auvers-sur-Oise'})
+CREATE (lorenzo)-[:POSTED {media_type: 'image', url: 'http://www.flickr.com/photos/inserpio/12340339575/' }]->(auvers_sur_oise);
+----
+
+----
+MATCH (lorenzo:PERSON {lastname: 'Speranzoni'}), (auvers_sur_oise:CITY {name: 'Auvers-sur-Oise'})
+CREATE (lorenzo)-[:POSTED {media_type: 'image', url: 'http://www.flickr.com/photos/inserpio/12340350135/' }]->(auvers_sur_oise);
+----
+
+----
+MATCH (lorenzo:PERSON {lastname: 'Speranzoni'}), (auvers_sur_oise:CITY {name: 'Auvers-sur-Oise'})
+CREATE (lorenzo)-[:POSTED {media_type: 'image', url: 'http://www.flickr.com/photos/inserpio/12340481073/' }]->(auvers_sur_oise);
+----
+
+... and inquiry for *LIKES* and *POSTS* from Italian people:
+
+[source,cypher]
+----
+MATCH (person:PERSON)-[:LIVES_IN]->(city:CITY {country: 'Italy'})
+OPTIONAL MATCH (person)-[r:LIKES|POSTED|VISITED]->(something_he_or_she_likes)
+RETURN person, city, something_he_or_she_likes
+
+----
+//graph_result
+
+[source,cypher]
+----
+MATCH (p:PERSON)-[:LIVES_IN]->(city:CITY {country: 'Italy'})
+OPTIONAL MATCH (p)-[r:LIKES|POSTED|VISITED]->(something_he_or_she_likes)
+RETURN p.firstname + ' ' + p.lastname as person, city.name, city.country, type(r) as likes_or_posted, r.url as post_url, coalesce(something_he_or_she_likes.name, something_he_or_she_likes.lastname, something_he_or_she_likes.title) as subject
+ORDER BY city.name, p.lastname
+----
+//table
+
+== VIII. GRAPHGIST CONSOLE
+
+image::https://inserpio.files.wordpress.com/2014/09/the-church-in-auvers-sur-oise.png[width="400",align="center",link="https://inserpio.files.wordpress.com/2014/09/the-church-in-auvers-sur-oise.png"]
+
+//console
+
+== IX. FULL NEO4ART GRAPH
+
+//graph
+
+== X. NOTES ABOUT THE AUTHOR
+
+My name is http://it.linkedin.com/in/lorenzosperanzoni[*Lorenzo Speranzoni*], I'm a pragmatic and passionate IT expert with 16+ years experience both as Developer and IT Architect and as Project Leader.
+My specialties are agile software development and designing software architectures. I love helping teams to adopt the latest open-source technologies to build their applications. 
+
+I'm a Neo4j “evangelist” and I actively contributes to the development of some open-source project part of the http://spring.io/[*Spring*] platform.
+I tweet often https://twitter.com/inserpio[*@inserpio*] and my blog is *http://inserpio.wordpress.com/[]*
+
+In May 2004, I founded LARUS Business Automation, a software company based in Mestre-Venice. We're expert in designing and building custom software powered by the latest technologies.
+In 2014 we have also become http://www.larus-ba.it/en/partnerships/neo4j.html[*neo4j solution partner*]. See more on our company site: *http://www.larus-ba.it[]*.
+
+If you have any questions about this "*_neo4art_*" graphgist and http://www.neo4j.org[*neo4j*] feel free to contact me mailto::lorenzo.speranzoni@larus-ba.it[*here*].
+
+image::https://inserpio.files.wordpress.com/2014/09/wheat-field-with-crows.png[width="800",align="center",link="https://inserpio.files.wordpress.com/2014/09/wheat-field-with-crows.png"]

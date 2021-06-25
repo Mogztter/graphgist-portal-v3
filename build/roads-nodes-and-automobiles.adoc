@@ -1,0 +1,531 @@
+[[TOP]]
+= Roads, Nodes and Automobiles =
+:author: Jacqui Read
+:twitter: @tekiegirl
+:tags: domain:community, model:transport:navigation:satnav
+
+== or 'How a sat-nav could use a graph database'
+
+=== My talk on this gist is available to watch online at SkillsMatter http://bit.ly/neo4jrna
+
+ifdef::env-graphgist[]
+toc::[]
+endif::env-graphgist[]
+
+[[L1]]
+== Inspiration <<TOP, ^Top^>>
+Navigation has nothing to do with my day job, but I regularly use satellite navigation. This gist has been inspired by Waze, a satellite navigation system, which allows users to edit the maps. It is easy to see a graph in the structure of the map, but how could it work?
+
+I decided to create a gist that could model a map and possible ways in which the data stored could be queried to allow someone to navigate that map. The area to be mapped will be restricted for the purposes of simplicity and the capabilities of the gist processing.
+
+To this end, this gist will create a representation of part of the M3 and M25 motorways (in the UK) and some of the connected towns.
+
+[[L2]]
+== Data <<TOP, ^Top^>>
+There are many sources of data on the internet for a range of gist applications. It is worth looking at various sources to see which fits your requirements the best, or combine different sources. It is possible to import data from sources such as csv files with various available tools. Rik Van Bruggen's blog (http://blog.bruggen.com/) is a good source for tutorials on how to do this.
+
+[[L2-1]]
+=== Sources <<TOP, ^Top^>>
+I originally started out using Wikipedia and Google Maps as my data sources, but then discovered that the editable Waze map had the distance information I needed, which I had previously been guestimating from Wikipedia and Google Maps combined.
+
+With regard to speed data it seems that Waze do not store this, or do not make it available to users. I have used a combination of informed guesses (M roads are typically 3 lanes and 70mph) and Google Maps Streetview, to look at speed signs, and enter the data into my road relationships..
+
+Waze may also calculate the speed by using users' covered distance and time, or they may not use it and just estimate time from past data collected from users.
+
+* Google Maps https://goo.gl/maps/5Kmhx
+* Waze https://www.waze.com/editor/
+* About The M3: https://www.cbrd.co.uk/motorway/m3/
+
+[[L3]]
+== Model <<TOP, ^Top^>>
+//++++
+//<div class="paragraph">
+//<p><span class="image"><img src="https://dl.dropboxusercontent.com/u/2900504/model%201.png" alt="Navigation Graph Model"></span></p>
+//</div>
+//++++
+
+To begin with the model was fairly simple, with Locations and Junctions represented as nodes and the roads as relationships, but this evolved over time into Junctions being represented as a series of Exits and Entrances connected by roads.
+
+//++++
+//<div class="paragraph">
+//<p><span class="image"><img src="https://dl.dropboxusercontent.com/u/2900504/model%202.png" alt="Navigation Graph Model"></span></p>
+//</div>
+//++++
+
+It then evolved again to include locations also, with various properties including post code and house number. This is modelled in the diagram below, using only two entrances and exits (effectively only two roads).
+
+//++++
+//<div class="paragraph">
+//<p><span class="image"><img src="https://dl.dropboxusercontent.com/u/2900504/navigation.png" alt="Navigation Graph Model">//</span></p>
+//</div>
+//++++
+
+But this was not good enough. It did not allow for slip roads or carriageways on motorways (where the driver effectively does not leave the motorway). Every entrance needed to be connected to every exit to allow for this. So the junction model again evolved into the following (properties and locations removed for clarity):
+
+//++++
+//<div class="paragraph">
+//<p><span class="image"><img src="https://dl.dropboxusercontent.com/u/2900504/model%203.png" alt="Navigation Graph Model"></span></p>
+//</div>
+//++++
+
+[[L3-1]]
+=== Graph Population <<TOP, ^Top^>>
+Click the + to see the full set-up Cypher script.
+//setup
+//hide
+[source,cypher]
+----
+CREATE 
+//m3 j1
+(j1m3:Junction{name:'M3 J1',number:1,road:'M3',instruct:false}),
+(j1x1:Exit{number:1}),
+(j1e2:Entrance{number:2}),
+(j1x3:Exit{number:3}),
+(j1e4:Entrance{number:4}),
+(j1x5:Exit{number:5}),
+(j1e6:Entrance{number:6}),
+(j1x7:Exit{number:7}),
+(j1e8:Entrance{number:8}),
+(j1x9:Exit{number:9}),
+(j1e10:Entrance{number:10}),
+(j1x11:Exit{number:11}),
+(j1e12:Entrance{number:12}),
+(j1x13:Exit{number:13}),
+(j1e14:Entrance{number:14}),
+
+//m3 j2
+(j2m3:Junction{name:'M3 J2',number:2,road:'M3',instruct:false}),
+(j2x1:Exit{number:1}),
+(j2e2:Entrance{number:2}),
+(j2x3:Exit{number:3}),
+(j2e4:Entrance{number:4}),
+(j2x5:Exit{number:5}),
+(j2e6:Entrance{number:6}),
+(j2x7:Exit{number:7}),
+(j2e8:Entrance{number:8}),
+
+//m25 j11
+(j11m25:Junction{name:'M25 J11',number:11,road:'M25',instruct:false}),
+(j11x1:Exit{number:1}),
+(j11e2:Entrance{number:2}),
+(j11x3:Exit{number:3}),
+(j11e4:Entrance{number:4}),
+(j11x5:Exit{number:5}),
+(j11e6:Entrance{number:6}),
+(j11x7:Exit{number:7}),
+(j11e8:Entrance{number:8}),
+
+//m25 j12 - has same exits/entrances as m3 j2
+(j12m25:Junction{name:'M25 J12',number:12,road:'M25',instruct:false}),
+
+// junctions off m25 j11
+
+// Hatch Farm
+(j_hfr:Junction{name:'Hatch Farm Roundabout',instruct:true}),
+(j_hfrx1:Exit{number:1}),
+(j_hfre2:Entrance{number:2}),
+(j_hfrx3:Exit{number:3}),
+(j_hfre4:Entrance{number:4}),
+(j_hfrx5:Exit{number:5}),
+(j_hfre6:Entrance{number:6}),
+(j_hfrx7:Exit{number:7}),
+(j_hfre8:Entrance{number:8}),
+(j_hfrx9:Exit{number:9}),
+(j_hfre10:Entrance{number:10}),
+
+// Addlestone Moor
+(lh50:Location{number:50,street:'Addlestone Moor',local:'Chertsey',postcode:'KT15 2QH'}),
+(lh49:Location{number:49,name:'The Woburn Arms',street:'Addlestone Moor',local:'Chertsey',postcode:'KT15 2QH'}),
+(lh48:Location{number:48,street:'Addlestone Moor',local:'Chertsey',postcode:'KT15 2QH'}),
+
+// Staines Road
+(lh123:Location{number:123,name:'Vet Surgery',street:'Staines Road',local:'Sunbury-on-Thames',postcode:'TW16 5AD'}),
+(lh62:Location{number:62,street:'Staines Road',local:'Sunbury-on-Thames',postcode:'TW16 5AD'}),
+(lh125:Location{number:125,street:'Staines Road',local:'Sunbury-on-Thames',postcode:'TW16 5AD'})
+
+WITH j1m3,j1x1,j1e2,j1x3,j1e4,j1x5,j1e6,j1x7,j1e8,j1x9,j1e10,j1x11,j1e12,j1x13,j1e14, j2m3,j2x1,j2e2,j2x3,j2e4,j2x5,j2e6,j2x7,j2e8, j11m25,j11x1,j11e2,j11x3,j11e4,j11x5,j11e6,j11x7,j11e8, j12m25,  j_hfr,j_hfrx1,j_hfre2,j_hfrx3,j_hfre4,j_hfrx5,j_hfre6,j_hfrx7,j_hfre8,j_hfrx9,j_hfre10,lh50,lh49,lh48,lh123,lh62,lh125 
+
+CREATE UNIQUE 
+//m3 j1
+(j1x1)-[:PART_OF]->(j1m3),
+(j1e2)-[:PART_OF]->(j1m3),
+(j1x3)-[:PART_OF]->(j1m3),
+(j1e4)-[:PART_OF]->(j1m3),
+(j1x5)-[:PART_OF]->(j1m3),
+(j1e6)-[:PART_OF]->(j1m3),
+(j1x7)-[:PART_OF]->(j1m3),
+(j1e8)-[:PART_OF]->(j1m3),
+(j1x9)-[:PART_OF]->(j1m3),
+(j1e10)-[:PART_OF]->(j1m3),
+(j1x11)-[:PART_OF]->(j1m3),
+(j1e12)-[:PART_OF]->(j1m3),
+(j1x13)-[:PART_OF]->(j1m3),
+(j1e14)-[:PART_OF]->(j1m3),
+
+// connect j1nodes
+(j1e2)-[:ROAD{km:0.461,type:'S',speed:50,peak:30}]->(j1x3),
+(j1e2)-[:ROAD{km:0.499,type:'S',speed:50,peak:30}]->(j1x5),
+(j1e2)-[:ROAD{km:0.538,type:'S',speed:50,peak:30}]->(j1x7),
+(j1e2)-[:ROAD{km:0.1005,type:'S',speed:50,peak:30}]->(j1x9),
+(j1e2)-[:ROAD{km:0.643,type:'S',speed:50,peak:30}]->(j1x11),
+(j1e2)-[:ROAD{km:0.736,type:'S',speed:50,peak:30}]->(j1x13),
+
+(j1e4)-[:ROAD{km:0.038,type:'S',speed:50,peak:30}]->(j1x5),
+(j1e4)-[:ROAD{km:0.077,type:'S',speed:50,peak:30}]->(j1x7),
+(j1e4)-[:ROAD{km:0.576,type:'S',speed:50,peak:30}]->(j1x9),
+(j1e4)-[:ROAD{km:0.182,type:'S',speed:50,peak:30}]->(j1x11),
+(j1e4)-[:ROAD{km:0.275,type:'S',speed:50,peak:30}]->(j1x13),
+(j1e4)-[:ROAD{km:0.763,type:'S',speed:50,peak:30}]->(j1x1),
+
+(j1e6)-[:ROAD{km:0.039,type:'S',speed:50,peak:30}]->(j1x7),
+(j1e6)-[:ROAD{km:0.538,type:'S',speed:50,peak:30}]->(j1x9),
+(j1e6)-[:ROAD{km:0.144,type:'S',speed:50,peak:30}]->(j1x11),
+(j1e6)-[:ROAD{km:0.237,type:'S',speed:50,peak:30}]->(j1x13),
+(j1e6)-[:ROAD{km:0.725,type:'S',speed:50,peak:30}]->(j1x1),
+(j1e6)-[:ROAD{km:0.355,type:'S',speed:50,peak:30}]->(j1x3),
+
+(j1e8)-[:ROAD{km:0.499,type:'S',speed:50,peak:30}]->(j1x9),
+(j1e8)-[:ROAD{km:0.105,type:'S',speed:50,peak:30}]->(j1x11),
+(j1e8)-[:ROAD{km:0.198,type:'S',speed:50,peak:30}]->(j1x13),
+(j1e8)-[:ROAD{km:0.686,type:'S',speed:50,peak:30}]->(j1x1),
+(j1e8)-[:ROAD{km:0.316,type:'S',speed:50,peak:30}]->(j1x3),
+(j1e8)-[:ROAD{km:0.354,type:'S',speed:50,peak:30}]->(j1x5),
+
+(j1e10)-[:ROAD{km:0.440,type:'S',speed:50,peak:30}]->(j1x11),
+(j1e10)-[:ROAD{km:0.533,type:'S',speed:50,peak:30}]->(j1x13),
+(j1e10)-[:ROAD{km:0.982,type:'S',speed:50,peak:30}]->(j1x1),
+(j1e10)-[:ROAD{km:0.651,type:'S',speed:50,peak:30}]->(j1x3),
+(j1e10)-[:ROAD{km:0.689,type:'S',speed:50,peak:30}]->(j1x5),
+(j1e10)-[:ROAD{km:0.728,type:'S',speed:50,peak:30}]->(j1x7),
+
+(j1e12)-[:ROAD{km:0.72,type:'S',speed:50,peak:30}]->(j1x13),
+(j1e12)-[:ROAD{km:0.560,type:'S',speed:50,peak:30}]->(j1x1),
+(j1e12)-[:ROAD{km:0.190,type:'S',speed:50,peak:30}]->(j1x3),
+(j1e12)-[:ROAD{km:0.228,type:'S',speed:50,peak:30}]->(j1x5),
+(j1e12)-[:ROAD{km:0.267,type:'S',speed:50,peak:30}]->(j1x7),
+(j1e12)-[:ROAD{km:0.766,type:'S',speed:50,peak:30}]->(j1x9),
+
+(j1e14)-[:ROAD{km:0.488,type:'S',speed:50,peak:30}]->(j1x1),
+(j1e14)-[:ROAD{km:0.118,type:'S',speed:50,peak:30}]->(j1x3),
+(j1e14)-[:ROAD{km:0.156,type:'S',speed:50,peak:30}]->(j1x5),
+(j1e14)-[:ROAD{km:0.195,type:'S',speed:50,peak:30}]->(j1x7),
+(j1e14)-[:ROAD{km:0.694,type:'S',speed:50,peak:30}]->(j1x9),
+(j1e14)-[:ROAD{km:0.300,type:'S',speed:50,peak:30}]->(j1x11),
+
+//connect j1m3 to j2m3
+(j1x9)-[:ROAD{km:8.459,direction:'south',type:'M',name:'M3',speed:70,peak:55,delay:10}]->(j2e2),
+(j2x1)-[:ROAD{km:8.167,direction:'north',type:'M',name:'M3',speed:70,peak:55,delay:10}]->(j1e10),
+
+//m3 j2
+(j2x1)-[:PART_OF]->(j2m3),
+(j2e2)-[:PART_OF]->(j2m3),
+(j2x3)-[:PART_OF]->(j2m3),
+(j2e4)-[:PART_OF]->(j2m3),
+(j2x5)-[:PART_OF]->(j2m3),
+(j2e6)-[:PART_OF]->(j2m3),
+(j2x7)-[:PART_OF]->(j2m3),
+(j2e8)-[:PART_OF]->(j2m3),
+
+// connect j2/12 nodes
+(j2e2)-[:ROAD{km:0.933,type:'S',speed:70,peak:40}]->(j2x3),
+(j2e2)-[:ROAD{km:1.309,type:'S',speed:70,peak:40}]->(j2x5),
+(j2e2)-[:ROAD{km:1.522,type:'S',speed:70,peak:40}]->(j2x7),
+(j2e4)-[:ROAD{km:1.728,type:'S',speed:70,peak:40}]->(j2x5),
+(j2e4)-[:ROAD{km:1.832,type:'S',speed:70,peak:40}]->(j2x7),
+(j2e4)-[:ROAD{km:2.415,type:'S',speed:70,peak:40}]->(j2x1),
+(j2e6)-[:ROAD{km:1.235,type:'S',speed:70,peak:40}]->(j2x7),
+(j2e6)-[:ROAD{km:1.683,type:'S',speed:70,peak:40}]->(j2x1),
+(j2e6)-[:ROAD{km:1.807,type:'S',speed:70,peak:40}]->(j2x3),
+(j2e8)-[:ROAD{km:1.772,type:'S',speed:70,peak:40}]->(j2x1),
+(j2e8)-[:ROAD{km:1.769,type:'S',speed:70,peak:40}]->(j2x3),
+(j2e8)-[:ROAD{km:2.266,type:'S',speed:70,peak:40}]->(j2x5),
+
+//m25 j11
+(j11x1)-[:PART_OF]->(j11m25),
+(j11e2)-[:PART_OF]->(j11m25),
+(j11x3)-[:PART_OF]->(j11m25),
+(j11e4)-[:PART_OF]->(j11m25),
+(j11x5)-[:PART_OF]->(j11m25),
+(j11e6)-[:PART_OF]->(j11m25),
+(j11x7)-[:PART_OF]->(j11m25),
+(j11e8)-[:PART_OF]->(j11m25),
+
+// connect j11 nodes
+(j11e2)-[:ROAD{km:0.990,type:'S',speed:60,peak:40}]->(j11x3),
+(j11e2)-[:ROAD{km:1.336,type:'S',speed:70,peak:50}]->(j11x5),
+(j11e2)-[:ROAD{km:1.205,type:'S',speed:50,peak:40}]->(j11x7),
+(j11e4)-[:ROAD{km:0.377,type:'S',speed:60,peak:40}]->(j11x5),
+(j11e4)-[:ROAD{km:0.235,type:'S',speed:50,peak:40}]->(j11x7),
+(j11e4)-[:ROAD{km:0.760,type:'S',speed:50,peak:40}]->(j11x1),
+(j11e6)-[:ROAD{km:0.926,type:'S',speed:60,peak:40}]->(j11x7),
+(j11e6)-[:ROAD{km:1.457,type:'S',speed:70,peak:50}]->(j11x1),
+(j11e6)-[:ROAD{km:1.174,type:'S',speed:50,peak:40}]->(j11x3),
+(j11e8)-[:ROAD{km:0.567,type:'S',speed:60,peak:40}]->(j11x1),
+(j11e8)-[:ROAD{km:0.274,type:'S',speed:50,peak:40}]->(j11x3),
+(j11e8)-[:ROAD{km:0.619,type:'S',speed:50,peak:40}]->(j11x5),
+
+//connect j11m25 to j12m25/j2m3
+(j2x3)-[:ROAD{km:1.930,direction:'anti-clockwise',type:'M',name:'M25',speed:70,peak:55}]->(j11e2),
+(j11x1)-[:ROAD{km:1.811,direction:'clockwise',type:'M',name:'M25',speed:70,peak:55}]->(j2e4),
+
+//m25 j12 - attach j2 exits and entrances to j12
+(j2x1)-[:PART_OF]->(j12m25),
+(j2e2)-[:PART_OF]->(j12m25),
+(j2x3)-[:PART_OF]->(j12m25),
+(j2e4)-[:PART_OF]->(j12m25),
+(j2x5)-[:PART_OF]->(j12m25),
+(j2e6)-[:PART_OF]->(j12m25),
+(j2x7)-[:PART_OF]->(j12m25),
+(j2e8)-[:PART_OF]->(j12m25),
+
+//hatch farm
+(j_hfrx1)-[:PART_OF]->(j_hfr),
+(j_hfre2)-[:PART_OF]->(j_hfr),
+(j_hfrx3)-[:PART_OF]->(j_hfr),
+(j_hfre4)-[:PART_OF]->(j_hfr),
+(j_hfrx5)-[:PART_OF]->(j_hfr),
+(j_hfre6)-[:PART_OF]->(j_hfr),
+(j_hfrx7)-[:PART_OF]->(j_hfr),
+(j_hfre8)-[:PART_OF]->(j_hfr),
+(j_hfrx9)-[:PART_OF]->(j_hfr),
+(j_hfre10)-[:PART_OF]->(j_hfr),
+
+// connect hatch farm
+(j_hfre2)-[:ROAD{km:0.032,type:'S',speed:50,peak:40}]->(j_hfrx3),
+(j_hfre2)-[:ROAD{km:0.063,type:'S',speed:50,peak:40}]->(j_hfrx5),
+(j_hfre2)-[:ROAD{km:0.133,type:'S',speed:50,peak:40}]->(j_hfrx7),
+(j_hfre2)-[:ROAD{km:0.167,type:'S',speed:50,peak:40}]->(j_hfrx9),
+
+(j_hfre4)-[:ROAD{km:0.031,type:'S',speed:50,peak:40}]->(j_hfrx5),
+(j_hfre4)-[:ROAD{km:0.101,type:'S',speed:50,peak:40}]->(j_hfrx7),
+(j_hfre4)-[:ROAD{km:0.135,type:'S',speed:50,peak:40}]->(j_hfrx9),
+(j_hfre4)-[:ROAD{km:0.183,type:'S',speed:50,peak:40}]->(j_hfrx1),
+
+(j_hfre6)-[:ROAD{km:0.070,type:'S',speed:50,peak:40}]->(j_hfrx7),
+(j_hfre6)-[:ROAD{km:0.104,type:'S',speed:50,peak:40}]->(j_hfrx9),
+(j_hfre6)-[:ROAD{km:0.152,type:'S',speed:50,peak:40}]->(j_hfrx1),
+(j_hfre6)-[:ROAD{km:0.199,type:'S',speed:50,peak:40}]->(j_hfrx3),
+
+(j_hfre8)-[:ROAD{km:0.034,type:'S',speed:50,peak:40}]->(j_hfrx1),
+(j_hfre8)-[:ROAD{km:0.082,type:'S',speed:50,peak:40}]->(j_hfrx3),
+(j_hfre8)-[:ROAD{km:0.129,type:'S',speed:50,peak:40}]->(j_hfrx5),
+(j_hfre8)-[:ROAD{km:0.160,type:'S',speed:50,peak:40}]->(j_hfrx9),
+
+(j_hfre10)-[:ROAD{km:0.078,type:'S',speed:50,peak:40}]->(j_hfrx1),
+(j_hfre10)-[:ROAD{km:0.082,type:'S',speed:50,peak:40}]->(j_hfrx3),
+(j_hfre10)-[:ROAD{km:0.113,type:'S',speed:50,peak:40}]->(j_hfrx5),
+(j_hfre10)-[:ROAD{km:0.183,type:'S',speed:50,peak:40}]->(j_hfrx7),
+
+//connect hatch farm to m2 j11
+(j_hfrx9)-[:ROAD{km:1.224,type:'A',name:'A317',speed:70,peak:60,delay:15}]->(j11e4),
+(j11x3)-[:ROAD{km:1.101,type:'A',name:'A317',speed:70,peak:60,delay:15}]->(j_hfre10),
+
+//connect hatch farm to Addlestone Moor
+(j_hfrx1)-[:ROAD{km:0.117,type:'C',name:'Addlestone Moor',speed:30,peak:30}]->(lh50),
+(lh50)-[:ROAD{km:0.008,type:'C',name:'Addlestone Moor',speed:30,peak:30}]->(lh49),
+(lh49)-[:ROAD{km:0.008,type:'C',name:'Addlestone Moor',speed:30,peak:30}]->(lh48),
+(j_hfre2)<-[:ROAD{km:0.117,type:'C',name:'Addlestone Moor',speed:30,peak:30}]-(lh50),
+(lh50)<-[:ROAD{km:0.008,type:'C',name:'Addlestone Moor',speed:30,peak:30}]-(lh49),
+(lh49)<-[:ROAD{km:0.008,type:'C',name:'Addlestone Moor',speed:30,peak:30}]-(lh48),
+
+//connect m3 j1 to Staines Road
+(j1x3)-[:ROAD{km:0.503,type:'A',name:'Staines Road',speed:30,peak:20}]->(lh123),
+(lh123)-[:ROAD{km:0.008,type:'A',name:'Staines Road',speed:30,peak:20}]->(lh62),
+(lh62)-[:ROAD{km:0.008,type:'A',name:'Staines Road',speed:30,peak:20}]->(lh125),
+(j1e4)<-[:ROAD{km:0.117,type:'A',name:'Staines Road',speed:30,peak:20}]-(lh123),
+(lh123)<-[:ROAD{km:0.008,type:'A',name:'Staines Road',speed:30,peak:20}]-(lh62),
+(lh62)<-[:ROAD{km:0.008,type:'A',name:'Staines Road',speed:30,peak:20}]-(lh125)
+
+----
+
+[[L3-2]]
+=== Graph Visualisation <<TOP, ^Top^>>
+This shows the results of the above set-up script.
+For more info on graph visualisation see (link to skillz matter)
+//graph
+
+[[L4]]
+== Applications
+This graph model allows queries to extract data, and also to calculate navigation.
+
+[[L4-1]]
+=== Simple Navigation <<TOP, ^Top^>>
+
+[[L4-1-x]]
+==== I want to travel to TW16 5AD, what are the address options? <<TOP, ^Top^>>
+A user may enter 'tw16 5ad' or 'TW16 5AD' or 'tw165ad' or 'TW165AD' or anything like 'Tw16 5aD'. The app would need to take this into account. The easiest way would be to strip the input of spaces before submitting it in the query, and having the postcode stored without spaces in the database. Case could also be taken into account in the app (e.g. converting to lower if that is how it is stored in the database), but I have taken care of it in a regex here.
+
+In an application the user could first be given a list of road names and then be prompted to choose the number.
+[source,cypher]
+----
+MATCH (l:Location)
+WHERE l.postcode =~ '(?i)tW16 5aD'
+RETURN l.number AS number, l.street AS street, l.local AS local, l.postcode AS postcode
+ORDER BY l.number
+----
+
+//table
+
+[[L4-1-x]]
+==== From which junctions can I get to Chertsey? <<TOP, ^Top^>>
+Note: If junction names below 10 were stored with a leading 0 (e.g. J09) I could order by j.name instead of number.
+[source,cypher]
+----
+MATCH (j:Junction)-[r*2]-(l:Location)
+WHERE l.local = 'Chertsey'
+WITH j
+order by j.number
+RETURN collect(distinct j.name) as junctions
+----
+
+//table
+
+[[L4-2]]
+=== Complex Navigation <<TOP, ^Top^>>
+
+[[L4-2-x]]
+==== What is the shortest route from KT15 2QH to TW16 5AD? <<TOP, ^Top^>>
+This query calculates the shortest route between the two specified nodes. This is the shortest route based upon the number of traversals in the graph, and not upon the distance property on the relationships being traversed. This is the shortest route in the graph, not in reality. The next question deals with actual distance.
+
+Because there is more than one possible start and end node I have used LENGTH(), ORDER BY and LIMIT to return just the shortest route (calculated by the number of traversals). I did this before the RETURN statement, so that I did not have to return the count, which I would have to have done if ordering by count after the RETURN statement.
+[source,cypher]
+----
+MATCH p=shortestPath((a:Location)-[r*]->(b:Location))
+WHERE a.postcode = 'KT15 2QH'
+AND b.postcode = 'TW16 5AD'
+WITH p,relationships(p) AS r, length(relationships(p)) AS count
+ORDER BY count
+LIMIT 1
+RETURN p AS route
+----
+//table
+
+[[L4-2-x]]
+==== How far is it from No.49 KT15 2QH to No.125 TW16 5AD? <<TOP, ^Top^>>
+This query calculates the distance from the two specified nodes by adding the values in the distance properties on all the relationships in the shortest path. The shortest path is calculated by the number of traversals to get from one node to the other. This may not actually be the shortest path if it were calculated by adding the values of the distance properties on all the possible paths between these two nodes. This is possible to do, but not in the Neo4j Gist system. The following code would work in a normal Neo4j database.
+
+----
+MATCH (a:Location)-[roads*]->(b:Location)
+WHERE a.postcode = 'KT15 2QH' AND a.number = 49
+AND b.postcode = 'TW16 5AD' AND b.number = 125
+WITH reduce(d=0, r in roads | d + r.km) as km
+RETURN km, round(km) as rounded
+ORDER BY km DESC
+LIMIT 1
+----
+
+[source,cypher]
+----
+MATCH p=shortestPath((a:Location)-[r*]->(b:Location))
+WHERE a.postcode = 'KT15 2QH' AND a.number = 49
+AND b.postcode = 'TW16 5AD' AND b.number = 125
+WITH p, length(relationships(p)) AS count
+ORDER BY count
+LIMIT 1
+WITH relationships(p) AS roads
+WITH reduce(d=0, r in roads | d + r.km) as km
+RETURN km, round(km) as rounded
+----
+
+//table
+*Note on decimals:* Adding the floating point distance values gives us quite a few decimal places. This can be rounded in the application that implements this query. Cypher does provide round(), floor() and ceiling(), but these all round to an integer (no decimal places) and the number of decimal places cannot be specified.
+
+[[L4-2-x]]
+==== What is the average speed limit between Chertsey and Sunbury-on-Thames? <<TOP, ^Top^>>
+This will calculate the average speed, in kph, based on the number of roads and their speeds. It does not take into account the length of those roads. Please see the following query for a weighted average speed.
+
+[source,cypher]
+----
+MATCH p=shortestPath((a:Location)-[r*]-(b:Location))
+WHERE a.local = 'Chertsey' AND b.local = 'Sunbury-on-Thames'
+WITH relationships(p) AS roads
+ORDER BY length(roads)
+LIMIT 1
+WITH roads, length(roads) AS l, reduce(d=0, r in roads | d + r.speed) as total
+RETURN total / l AS average_kph
+----
+
+//table
+
+[[L4-2-x]]
+==== What is the weighted average speed? <<TOP, ^Top^>>
+All roads (relationships) are not the same length, we must therefore take that into account when calculating the average speed for this route. A weighted average speed takes into account the speed, distance and time.
+
+[source,cypher]
+----
+MATCH p=shortestPath((a:Location)-[r*]-(b:Location))
+WHERE a.local = 'Chertsey' AND b.local = 'Sunbury-on-Thames'
+WITH relationships(p) AS roads
+ORDER BY length(roads)
+LIMIT 1
+WITH reduce(d=0, r in roads | d + (r.speed*r.km)) as weighted, roads
+WITH reduce(d=0, r in roads | d + (r.km)) as totalkm, weighted
+WITH weighted / totalkm AS average_kph
+RETURN average_kph, round(average_kph) AS rounded_average_kph, average_kph * 0.621371 as mph, round(average_kph) * 0.621371 as rounded_mph
+----
+
+//table
+
+[[L4-2-x]]
+==== How long would it take to drive from 48 Addlestone Moor London Road to 123 Staines Road? <<TOP, ^Top^>>
+This assumes that you drive at the maximum speed the whole time, but in an application this would need to be adjusted. This could possibly be done by assuming 60mph in a 70mph limit, or 25mph in a 30mph limit. Some sat-nav systems let the user define these numbers.
+[source,cypher]
+----
+MATCH p=shortestPath((a:Location)-[r*]-(b:Location))
+WHERE a.number = 48 AND a.street = 'Addlestone Moor' 
+AND b.number = 123 AND b.street = 'Staines Road'
+WITH relationships(p) AS roads
+WITH reduce(d=0.0, r in roads | d + ((r.km*0.62)/r.speed)) as t
+WITH floor(t) AS hours, t
+WITH (t-hours)*60 AS minutes, hours
+RETURN round(hours) + ':' + (CASE WHEN minutes < 10 THEN '0' ELSE '' END) + round(minutes) as time
+----
+
+//table
+
+[[L4-2-x]]
+==== What about at peak time? <<TOP, ^Top^>>
+This takes into account the fact that most roads will be slower at peak times due to the number of cars on the road. The application would have peak times defined and so would know which query to run.
+[source,cypher]
+----
+MATCH p=shortestPath((a:Location)-[r*]-(b:Location))
+WHERE a.number = 48 AND a.street = 'Addlestone Moor' 
+AND b.number = 123 AND b.street = 'Staines Road'
+WITH relationships(p) AS roads
+WITH reduce(d=0.0, r in roads | d + ((r.km*0.62)/r.peak)) as t
+WITH floor(t) AS hours, t
+WITH (t-hours)*60 AS minutes, hours
+RETURN round(hours) + ':' + (CASE WHEN minutes < 10 THEN '0' ELSE '' END) + round(minutes) as time
+----
+
+//table
+
+[[L4-2-x]]
+==== What if there is an accident or other delay? <<TOP, ^Top^>>
+This is off-peak, to change to peak time simply change r.speed to r.peak. The application would have peak times defined and so would know which query to run. Takes into account one-digit minutes.
+Explain what delay has been added and how this is taken into account. Link to junction delays in Future section if put there.
+[source,cypher]
+----
+MATCH p=shortestPath((a:Location)-[r*]-(b:Location))
+WHERE a.number = 48 AND a.street = 'Addlestone Moor' 
+AND b.number = 123 AND b.street = 'Staines Road'
+WITH relationships(p) AS roads, nodes(p) AS junc
+WITH junc, reduce(d=0.0, r in roads | d + (CASE WHEN has(r.delay) 
+											  THEN ((r.km*0.62)/r.delay) 
+											  ELSE ((r.km*0.62)/r.speed) END)) as t
+WITH floor(t) AS hours, t
+WITH (t-hours)*60 AS minutes, hours
+RETURN round(hours) + ':' + (CASE WHEN minutes < 10 
+								  THEN '0' 
+								  ELSE '' END) + round(minutes) as revised_time
+----
+
+//table
+
+<<TOP, Back to top>>
+
+[[L6]]
+== Console
+Click the green play button on query one to set up the database for the console, and have a go with your own queries.
+//console
+<<TOP, Back to top>>

@@ -1,0 +1,79 @@
+:author: Douglas M. Auclair
+:twitter: @geophf
+
+// Provide an introduction to your data modeling domain and what you are trying to accomplish
+
+== The FINRA Graph
+
+At the end of every trading day, FINRA publishes the leading securities in the market in the categories of Volume, Market Capitalization, and Price. They also publish the losers in Market Cap. and Price. This information can be obtained from any daily financial services feed. One such is https://google.com/finance 
+
+The resulting data forms a graph:
+
+// Provide a domain model image (using something like http://www.apcjones.com/arrows/# or https://www.gliffy.com/)
+
+// You can run this query to get an overview of entities and how they are related:
+// MATCH (a)-[r]->(b) WHERE labels(a) <> [] AND labels(b) <> []
+// RETURN DISTINCT head(labels(a)) AS This, type(r) as To, head(labels(b)) AS That LIMIT 10
+
+image::http://i.imgur.com/riy240k.png[]
+
+As you can see, this graph becomes interesting, not only for the current day's mentions, but then, what mentions occur over a span of days? If a stock is mentioned today and yesterday, is that significant? Is that interesting?
+
+Yes, it is. There are all sorts of analysis that can be done against this graph. One such analysis is an histogram of occurrences of all stocks mentioned:
+
+image::http://i.imgur.com/tY0qUL7.png[]
+
+Hm. Very lopsided: AAPL on the far right, and practicably every other top5 in the 0-10, exclusive, range. Let's, then, take a look at those stocks mentioned less than ten times. Is that of interest?
+
+image::http://i.imgur.com/TpAGSpA.png[]
+
+Yes, that is interesting! Most stocks show up only once (in the last 9 months that these data have been archived). How about the stocks that show up more than once on the top 5s-list? Is there some pattern there? Hm. We must look into this further, but these interesting patterns are made manifest because the graph database allow us to single out interesting stocks and then expose them to analysis.
+
+== Setting up the graph
+
+This database is a neo4j-graph hosted on http://grapheneDB.com It is updated daily with a program called 'scrape' which culls the top 5s from the google finance site, converts the scraped-HTML into an internal relational structure, which is translated into JSON-Cypher queries that are sent to Neo4j.
+
+//http://lpaste.net/4979419078201442304
+//http://lpaste.net/4270680441352093696
+
+This module is called `Analytics.Trading.Web.Upload.Cypher`. The Cypher query, sent via POST, looks similar to this to establish the day into which the top5s-securities will be added:
+
+//setup
+//hide
+[source,cypher]
+----
+MERGE (d:Day {  date: '2015-07-26', year: 2015, month: 7, day: 26 }) 
+MERGE (d)<-[:FOR]-(:MKT_CAP { name: 'Mkt_Cap',  date: '2015-07-26' }) 
+MERGE (d)<-[:FOR]-(:PRICE { name: 'Price',  date: '2015-07-26' }) 
+MERGE (d)<-[:FOR]-(:VOLUME { name: 'Volume',  date: '2015-07-26' })
+----
+
+Then, when that is established, the stocks are added, Cypher-statement by Cypher-statement in one big POST-push:
+
+//hide
+[source,cypher]
+----
+MATCH (sym0:VOLUME { name: 'Volume',  date: '2015-07-26' }) 
+MERGE (sym1:SECURITY { symbol: 'FB' }) 
+MERGE (sym0)-[:LEADERS]->(sym1) 
+MERGE (sym2:SECURITY { symbol: 'BAC' }) 
+MERGE (sym0)-[:LEADERS]->(sym2)
+----
+//graph
+
+== Extract the day's top5s for observation and analysis
+
+[source,cypher]
+----
+match (d:Day { month: 7 }) where d.day > 10 
+return d
+----
+//graph
+
+The above histogram was simply an output of counting symbols by occurence. I currently do this with my own set of analytics tools both within the graph database using Cypher and externally with my LoC: Haskell. At the end of the day, I choose an interesting stock that I select from the top5s, then publish a report including the SMA ('simple moving averages'), EMA ('exponential moving averages'), and Stochastic Oscillators technical indicators. The end product is a daily tweet:
+
+https://twitter.com/logicalgraphs/status/690028662083612672
+
+== Conclusion
+
+The stock market is big. Too big. But by focusing on the top 5 traded stocks we can narrow in on market leaders and look for interesting and perhaps profitable patterns there. By connecting this information into a graph database these patterns become clear and allow us to analyze them as well as allow us to explore and discover new patterns that a simple stock-screen approach would gloss over. The stock market, far from being a row-by-row, trade-by-trade drudgery, has in these transactions relations and patterns that benefits greatly from the visualization a graph database gives.

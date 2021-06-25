@@ -1,0 +1,134 @@
+= Penn State 2014 Football Schedule
+
+=== In honor of the new Penn State football coach James Franklin, this GraphGist combines  NCAA football and Cypher queries.  2014 will be an important year.  Not only will it be James Franklin's first season as head coach, but there will be new Big 10 division assignments.  These preserve rivalries and create divisions based on their location of East/West geography.
+
+== Initialize Graph
+
+//hide
+[source,cypher]
+----
+	CREATE
+	(psu:school {name:"Penn State University", established:1855}),
+	(ucf:school {name:"University of Central Florida", established:1963}),
+	(akron:school {name:"Akron University", established:1870}),
+	(rutguers:school {name:"Rutgers University", established:1766}),
+	(umass:school {name:"University of Massachusetts", established:1863}),
+	(northwestern:school {name:"Northwestern University", established:1851}),
+	(mich:school {name:"University of Michigan", established:1817}),
+	(ohio:school {name:"Ohio State University", established:1870}),
+	(maryland:school {name:"University of Maryland", established:1856}),
+	(indiana:school {name:"Indiana University", established:1820}),
+	(temple:school {name:"Temple University", established:1884}),
+	(illinois:school {name:"University of Illinois", established:1867}),
+	(msu:school {name:"Michigan State University", established:1855}),
+
+	(b10:conference {name:"Big Ten"}),
+	(mac:conference {name:"Mid-American Conference"}),
+	(acc:conference {name:"American Athletic Conference"}),
+
+	(e:division {name:"Eastern", teams:["Indiana University", "University of Maryland", "University of Michigan", "Michigan State University", "Ohio State University", "Penn State University", "Rutgers University"]}),
+	(w:division {name:"Western", teams:["University of Illinois", "University of Iowa", "University of Minnesota", "University of Nebraska", "Northwestern University", "Purdue University", "University Wisconsin"]}),
+
+	(b10)-[:contains]->(e),
+	(b10)-[:contains]->(w),
+
+	(psu)-[:member_of]->(b10),
+	(akron)-[:member_of]->(mac),
+	(rutguers)-[:member_of]->(b10),
+	(umass)-[:member_of]->(mac),
+	(northwestern)-[:member_of]->(b10),
+	(mich)-[:member_of]->(b10),
+	(ohio)-[:member_of]->(b10),
+	(maryland)-[:member_of]->(b10),
+	(indiana)-[:member_of]->(b10),
+	(temple)-[:member_of]->(acc),
+	(illinois)-[:member_of]->(b10),
+	(msu)-[:member_of]->(b10),
+	(ucf)-[:member_of]->(acc),
+
+	(psu)-[:plays]->(akron),
+	(psu)-[:plays]->(rutguers),
+	(psu)-[:plays]->(umass),
+	(psu)-[:plays]->(northwestern),
+	(psu)-[:plays]->(mich),
+	(psu)-[:plays]->(ohio),
+	(psu)-[:plays]->(maryland),
+	(psu)-[:plays]->(indiana),
+	(psu)-[:plays]->(temple),
+	(psu)-[:plays]->(illinois),
+	(psu)-[:plays]->(msu),
+	(psu)-[:plays]->(ucf)
+----
+
+//graph
+
+== Basic information about the graph
+[source,cypher]
+----
+	MATCH n-[r]-() 
+	WITH count(DISTINCT n) AS numNodes, count(DISTINCT r) AS numRelationships 
+	RETURN numNodes, numRelationships
+----
+
+//table
+
+== Show nodes Penn State will play in the 2014 season.
+[source,cypher]
+----
+	MATCH (n { name: "Penn State University" })-[r:plays]->(c) 
+	RETURN r
+----
+
+//table
+
+
+== Show number of teams Penn State will play in the 2014 season and their names.
+[source,cypher]
+----
+	MATCH (team:school) 
+	WHERE team.name<> "Penn State University"
+	RETURN  count(*) AS count, collect(team.name) AS teams
+----
+
+//table
+
+== Show number of teams Penn State will play in the 2014 per conference.
+[source,cypher]
+----
+	MATCH (team:school)--(conf:conference) 
+	WHERE team.name <> "Penn State University" 
+	RETURN count(*) AS count, conf.name AS Conference
+----
+
+//table
+
+== Show all teams Penn State will play in the 2014 season that belong to the ACC (American Athletic Conference).
+[source,cypher]
+----
+	MATCH (school { name:"Penn State University" })--(team)--(conference) 
+	WHERE conference.name = "American Athletic Conference" 
+	RETURN team.name
+----
+
+//table
+
+== Show all nodes of teams Penn State will play in the 2014 season that are division rivals in the Big Ten Eastern division.
+[source,cypher]
+----
+	MATCH (psu { name:'Penn State University' })--(team)--(conferance)--(division) 
+	WHERE conferance.name = "Big Ten" AND division.name = "Eastern" AND filter(x IN division.teams 
+																			   WHERE x = team.name) 
+	RETURN team
+----
+
+//table
+
+== Show the average age of the schools Penn State will play in the 2014 season (most of the teams were established before Penn State).
+[source,cypher]
+----
+	MATCH (s:school) 
+	WHERE s.name <> "Penn State University" 
+	RETURN avg(2014 - s.established) as AverageYearsOld
+----
+
+//table

@@ -1,0 +1,365 @@
+//= A small social networking website +
+
+:neo4j-version: 3.5
+
+This database is a small example of a networking site where users can watch movies, subscribe to TV shows 
+and comment and rate any of the previous media. Users may follow or block other users, just like any other networking
+website nowadays.
+
+Purpose: 
+
+The theme was chosen because of the success these type of webs have all over the world, and because in general their 
+structure can easily and naturally be displayed as a graph with very different types of relationships and very connected data. So, in a nutshell,
+ they are a very good environment to start working with graph databases.
+ 
+
+//console
+
+'''
+
+== Model
+
+As explained before, the networking site has users with relationships between them (they can follow or block each other), and media items users may interact with by watching, 
+rating, subscribing to or commenting. The following diagram is a tiny sample of the database that will hopefully help you see how data is structured and interconnected.
+
+image::http://i.imgur.com/XBotTMJ.png[Model]
+
+The following are links to other diagrams that can also help understand the model: 
+http://i.imgur.com/9Y9z79Z.png[users diagram], 
+http://i.imgur.com/UddC0Ca.png[watched and subscribed diagram], 
+http://i.imgur.com/pRnbOQW.png[rated diagram],
+http://i.imgur.com/emK8tIU.png[commented diagram] 
+and 
+http://i.imgur.com/zwAPJtj.jpg[complete diagram].
+
+== Creating the database
+
+The following is the script used to create all the nodes of the database and the relationships between them.
+
+//setup
+//hide
+[source, cypher]
+----
+CREATE
+//Media
+    //Movies
+    (toystory:Movie:Media {title:'Toy Story 3', tagline:'No toy gets left behind.', genre:'Animation', runtime_min:103, won:'2 Oscars'}),
+    (wreckitralph:Movie:Media {title:'Wreck-It Ralph', tagline:'When the arcade closes, the fun begins', genre:'Animation', runtime_min:108}),
+    (thelmalouise:Movie:Media {title:'Thelma & Louise', genre:'Drama', runtime_min:130, won:'1 Oscar'}),
+    (thehours:Movie:Media {title:'The Hours', genre:'Drama', runtime_min:114, won:'1 Oscar'}),
+    (misssunshine:Movie:Media {title:'Little Miss Sunshine', genre:'Comedy', runtime_min:101, won:'2 Oscars'}),
+    (erinbrockovich:Movie:Media {title:'Erin Brockovich', genre:'Drama', runtime_min:131, won:'1 Oscar'}),
+    (avengers:Movie:Media {title:'The Avengers', genre:'Action', runtime_min:143}),
+    //TV SHOWS
+    (friends:TV_Show:Media {title:'Friends', episode_duration:'22 min', seasons:'10', genre:'Comedy', spin_off:'Joey'}),
+    (office:TV_Show:Media {title:'The Office', episode_duration:'22 min', seasons:'9', genre:'Comedy'}),
+    (fringe:TV_Show:Media {title:'Fringe', episode_duration:'60 min', seasons:'5', genre:'Sci-Fi'}),
+//USERS
+    (bradley:User {name:'Bradley', surname:'Green', age:24, city:'Los Angeles'}),
+    (matthew:User {name:'Matthew', surname:'Cooper', age:36, city:'Los Angeles'}),
+    (lisa:User {name:'Lisa', surname:'Adams', age:15, city:'New York'}),
+    (annie:User {name:'Annie', surname:'Behr', age:25, city:'Chicago'}),
+    (ripley:User {name:'Ripley', surname:'Aniston', city:'Los Angeles'}),
+    (john:User {name:'John', surname:'Goodman', age:34, city:'New York'}),
+    (amy:User {name:'Amy', surname:'Cooper', age:22}),
+    (mark:User {name:'Mark', surname:'McAdams', age:17, city:'Los Angeles'}),
+    (dennis:User {name:'Dennis', surname:'Lemon', age:42, city:'Los Angeles'}),
+//FOLLOWS
+    (bradley)-[:FOLLOWS]->(matthew),
+    (bradley)-[:FOLLOWS]->(ripley),
+    (bradley)-[:FOLLOWS]->(john),
+    (matthew)-[:FOLLOWS]->(bradley),
+    (lisa)-[:FOLLOWS]->(matthew),
+    (lisa)-[:FOLLOWS]->(annie),
+    (annie)-[:FOLLOWS]->(lisa),
+    (annie)-[:FOLLOWS]->(matthew),
+    (annie)-[:FOLLOWS]->(ripley),
+    (ripley)-[:FOLLOWS]->(annie),
+    (ripley)-[:FOLLOWS]->(matthew),
+    (ripley)-[:FOLLOWS]->(john),
+    (amy)-[:FOLLOWS]->(ripley),
+    (amy)-[:FOLLOWS]->(mark),
+    (mark)-[:FOLLOWS]->(amy),
+    (mark)-[:FOLLOWS]->(dennis),
+//BLOCKED
+    (bradley)-[:BLOCKED {reason:'Too much spam'}]->(amy),
+    (bradley)-[:BLOCKED]->(annie),
+    (matthew)-[:BLOCKED]->(lisa),
+    (annie)-[:BLOCKED]->(john),
+    (amy)-[:BLOCKED {reason:'Too much spam'}]->(john),
+//WATCHED
+    (bradley)-[:WATCHED {date:'2013-12-01'}]->(wreckitralph),
+    (bradley)-[:WATCHED {date:'2013-12-05'}]->(toystory),
+    (matthew)-[:WATCHED {date:'2013-10-10'}]->(wreckitralph),
+    (matthew)-[:WATCHED {date:'2013-11-20'}]->(toystory),
+    (matthew)-[:WATCHED {date:'2013-11-25'}]->(misssunshine),
+    (matthew)-[:WATCHED {date:'2013-12-01'}]->(thehours),
+    (matthew)-[:WATCHED {date:'2013-12-15'}]->(avengers),
+    (lisa)-[:WATCHED {date:'2013-05-08'}]->(misssunshine),
+    (lisa)-[:WATCHED {date:'2013-09-26'}]->(wreckitralph),
+    (lisa)-[:WATCHED {date:'2013-11-29'}]->(toystory),
+    (annie)-[:WATCHED {date:'2013-12-10'}]->(misssunshine),
+    (annie)-[:WATCHED {date:'2013-12-11'}]->(thehours),
+    (annie)-[:WATCHED {date:'2013-12-12'}]->(toystory),
+    (annie)-[:WATCHED {date:'2013-12-29'}]->(thelmalouise),
+    (ripley)-[:WATCHED {date:'2013-06-14'}]->(erinbrockovich),
+    (john)-[:WATCHED {date:'2013-07-11'}]->(erinbrockovich),
+    (john)-[:WATCHED {date:'2013-08-18'}]->(avengers),
+    (dennis)-[:WATCHED {date:'2013-08-19'}]->(avengers),
+//SUBSCRIBED
+    (bradley)-[:SUBSCRIBED]->(friends),
+    (bradley)-[:SUBSCRIBED]->(office),
+    (annie)-[:SUBSCRIBED]->(friends),
+    (lisa)-[:SUBSCRIBED]->(friends),
+    (lisa)-[:SUBSCRIBED]->(fringe),
+    (john)-[:SUBSCRIBED]->(office),
+    (john)-[:SUBSCRIBED]->(fringe),
+    (ripley)-[:SUBSCRIBED]->(office),
+    (dennis)-[:SUBSCRIBED]->(office),
+//COMMENTED
+    (bradley)-[:COMMENTED {date:'2013-12-05', comment:'I hardly ever like a sequel, yet I absolutely loved this one'}]->(toystory),
+    (matthew)-[:COMMENTED {date:'2013-10-11', comment:'It was highly entertaining. I laughed and cried and sometimes both at the same time'}]->(wreckitralph),
+    (matthew)-[:COMMENTED {date:'2013-11-20', comment:'I was moved very deeply. I really recommend this one to kids and grown ups and everyone in between'}]->(toystory),
+    (matthew)-[:COMMENTED {date:'2013-12-03', comment:'Deeply moving. Great performances too!'}]->(thehours),
+    (lisa)-[:COMMENTED {date:'2013-05-08', comment:'The cast was great. They really did a great job choosing the girl who played Olive'}]->(misssunshine),
+    (lisa)-[:COMMENTED {date:'2013-09-27', comment:'They tried to cover too much and reach to too many people. This movie is really overrated'}]->(wreckitralph),
+    (lisa)-[:COMMENTED {date:'2013-12-05', comment:'It was entertaining in the beginning, but it was repetitive in the end'}]->(fringe),
+    (annie)-[:COMMENTED {date:'2013-12-19', comment:'Mostly boring and way overrated'}]->(thehours),
+    (annie)-[:COMMENTED {date:'2013-12-12', comment:'Impressive. That is all I have to say'}]->(toystory),
+    (ripley)-[:COMMENTED {date:'2013-06-14', comment:'I was reluctant to see this movie because I usually hate Julia Roberts crappy romantic comedies, but I was very surprised by this movie. I think it is the best performance Roberts has made ever and the story is just incredible. It was awesome'}]->(erinbrockovich),
+    (john)-[:COMMENTED {date:'2013-08-18', comment:'I liked this one. I was amused and entertained through the whole movie and that is enough for me. And the special effects are great.'}]->(avengers),
+//RATED
+    (bradley)-[:RATED {date:'2013-12-05', score:10}]->(toystory),
+    (bradley)-[:RATED {date:'2013-12-01', score:9}]->(wreckitralph),
+    (matthew)-[:RATED {date:'2013-11-20', score:10}]->(toystory),
+    (matthew)-[:RATED {date:'2013-11-25', score:9}]->(misssunshine),
+    (lisa)-[:RATED {date:'2013-11-29', score:9}]->(friends),
+    (lisa)-[:RATED {date:'2013-09-27', score:6}]->(wreckitralph),
+    (lisa)-[:RATED {date:'2013-11-29', score:8}]->(toystory),
+    (annie)-[:RATED {date:'2013-12-10', score:9}]->(misssunshine),
+    (annie)-[:RATED {date:'2013-12-10', score:8}]->(friends),
+    (annie)-[:RATED {date:'2013-12-12', score:8}]->(toystory),
+    (ripley)-[:RATED {date:'2013-06-14', score:9}]->(erinbrockovich),
+    (john)-[:RATED {date:'2013-10-18', score:8}]->(office),
+    (john)-[:RATED {date:'2013-08-18', score:8}]->(avengers)
+----
+
+The following is the graph representing users, media and the connection between all of them.
+
+//graph
+
+'''
+'''
+
+== Queries
+
+===== Note:
+
+From now on, in these queries and examples "we" will be the user 'Bradley Green'. Furthermore, an active user is a given user that has watched
+at least one movie, subscribed to some TV show or both.
+
+
+
+
+==== Which are the active users that live in the same city as I do?
+
+This query looks for active users that live in the same city as I do. It also displays their activity level, that is, the total number of movies watched and TV Shows subscribed to.
+
+[source, cypher]
+----
+MATCH (me:User {name:'Bradley', surname:'Green'}), (other:User)-[:WATCHED|:SUBSCRIBED]->(media:Media)
+WHERE other.city = me.city AND other<>me
+RETURN toString(other.surname + ", " + other.name) as Other_User, other.city as City, count(other) as Activity_Level ORDER BY Other_User ASC;
+----
+
+//table
+
+'''
+
+==== Which are the users I have blocked?
+
+In any social networking site there exists the possibility of blocking other users in order not to be contacted by those users
+and not to receive news from them. 
+
+http://i.imgur.com/7Tavsid.png[Figure 1. Example of blocking in Tumblr and Twitter]
+
+Since users have such operation available, they should be able to see 
+who they have blocked.
+
+In this example, we list those users that we (remember, we are Bradley Green), have blocked and the reason why we blocked them. If there is no reason, 'No reason known' will appear instead.
+
+[source, cypher]
+----
+MATCH (me:User {name:'Bradley', surname:'Green'})-[b:BLOCKED]->(other:User)
+RETURN toString(other.name + ' ' + other.surname) AS Blocked,
+CASE WHEN b.reason is not NULL 
+THEN b.reason
+ELSE 'No reason known' END AS Reason;
+----
+
+//table
+
+'''
+
+==== List all the reviews of a given movie
+
+It's very common in webs with media content like movies or tv shows such as IMDB, Rotten Tomatoes, FilmAffinity, SeriesLy and whatnot to 
+allow users to list and view the comments and opinions other users have posted about a given item.
+
+http://i.imgur.com/WNDJyZ9.png[Figure 2. Example of reviews posted of a given movie in IMDB and Rotten Tomatoes]
+
+In this example, we list all the comments posted about a given movie (Toy Story 3), ordered by the date they were posted.
+
+[source, cypher]
+----
+MATCH (movie:Movie {title:'Toy Story 3'})<-[c:COMMENTED]-(author:User)
+WITH c, author
+MATCH (me:User{name:'Bradley', surname:'Green'})-[:FOLLOWS]->(other:User)
+WITH c, author, collect(other) as Friends, me
+RETURN c.comment AS Comment, toString(author.name + ' ' + author.surname) AS Author, c.date AS Date,
+CASE WHEN (author) in Friends
+THEN toString('Following the author')
+WHEN (author) = (me)
+THEN toString('me')
+ELSE toString('Not following the author') END AS Following
+ORDER BY Date DESC;
+----
+
+//table
+
+'''
+
+==== Users that have watched this movie have also watched...
+
+http://i.imgur.com/xjPlMVb.png[Figure 3. Example of recommendations in FNAC and IMDB]
+
+Another usual thing to run into not only in these kind of websites, but also in ecommerces is a list of other items
+visited/liked/bought by users that have also visited the item we're currently seeing. 
+
+In this example we are in the movie 'Toy Story 3' and we list those movies users that watched 'Toy Story 3' also watched. These recommendations are ordered by how many times those movies appear as recommended.
+
+[source, cypher]
+----
+MATCH (target:Movie)<-[:WATCHED]-(u:User)-[:WATCHED]->(p:Movie)
+WHERE p.title = 'Toy Story 3'
+WITH toString(target.title + ' (' + target.genre + ')') AS Suggestion, count(target.title) as Occurrences
+RETURN distinct Suggestion, Occurrences ORDER BY Occurrences DESC, Suggestion ASC;
+----
+
+//table
+
+'''
+
+==== Users that follow someone I follow too
+
+Sometimes we are suggested to follow someone because that user and I follow the same people. In this example we show which users we are recommended to follow and which are our common 'links' (people we follow)
+
+[source, cypher]
+----
+MATCH (me:User)-[:FOLLOWS]->(common:User)<-[:FOLLOWS]-(stranger:User)
+WHERE NOT (me)-[:BLOCKED]->(stranger) AND me.name = 'Bradley' AND me.surname = 'Green' AND
+NOT (me)-[:FOLLOWS]->(stranger)
+RETURN toString(stranger.name + ' ' + stranger.surname) AS User, COLLECT(toString(common.name + ' ' + common.surname)) AS Common_Friends, COUNT(*) AS Occurrences ORDER BY Occurrences DESC;
+----
+
+//table
+
+'''
+
+==== List the rates of people I follow.
+
+In websites with media content (movies, tv shows, music, ...), if we follow someone is because we may be interested in knowing which items that user liked or recommended. There are webs like Filmaffinity or IMDB that allow you to list the rates people you follow have given to media items.
+
+In this example that's what we'll do.
+
+[source, cypher]
+----
+MATCH (me:User)-[:FOLLOWS]->(friend:User)-[r:RATED]->(media:Media)
+WHERE me.name = 'Bradley' AND me.surname = 'Green'
+RETURN r.score as SCORE, friend.name as FRIEND, media.title as TITLE 
+ORDER BY SCORE;
+----
+
+//table
+
+'''
+
+==== Display those users that have watched movies from all the different genres but not subscribed to a TV Show
+
+This query or example, even though it could be a feature of a given social website, it's more of a query that allows us to play a little bit with the graph. The purpose is to find users that have watched at least a movie from every genre, but are not subscribed to a TV Show
+
+[source, cypher]
+----
+MATCH (movie:Movie)
+WITH COLLECT(DISTINCT movie.genre) AS genres
+MATCH (user:User)-[:WATCHED]->(movie:Movie)
+WITH user, genres, COLLECT(DISTINCT movie.genre) AS watched
+WHERE ALL(x IN genres WHERE x IN watched) AND NOT (user)-[:SUBSCRIBED]->(:TV_Show)
+RETURN toString(user.name + ' ' + user.surname) AS User;
+----
+
+//table
+
+'''
+
+==== Ready to mingle
+
+Sometimes in networking websites we want to list our friends, or friends of friends, or even friends of friends of friends. In this example that's exactly what we'll do, and we'll display the relationship between us. (Remember: We are Bradley Green)
+
+[source, cypher]
+----
+MATCH (me:User{name:'Bradley', surname:'Green'})-[p:FOLLOWS*1..3]->(other:User)
+WHERE NOT (me)-[:BLOCKED]->(other) AND me<>other
+RETURN DISTINCT toString(other.name + ' ' + other.surname) AS User, 
+CASE WHEN LENGTH(shortestPath((me)-[:FOLLOWS*]->(other))) = 1 THEN
+toString('Friend')
+WHEN LENGTH(shortestPath((me)-[:FOLLOWS*]->(other))) = 2 THEN
+toString('Friend of friend')
+ELSE
+toString('Friend of friend of friend') END AS Relation;
+----
+
+//table
+
+'''
+
+==== Top 3 favourites since July 2013
+
+Another feature of almost any website is the Top 10, Top 3 and whatnot. In our example, we'll show the Top 3 movies since July 2013. The criteria to be 'higher' in this 'scale' is to have higher ratings, and if two movies have the same rating, it's higher the one with more views by the users.
+
+[source, cypher]
+----
+MATCH ()-[r:RATED]->(m:Movie)
+WHERE r.date >= '2013-07-01'
+WITH m, AVG(r.score) AS rating
+MATCH path=()-[w:WATCHED]->(m)
+WHERE w.date >= '2013-07-01'
+WITH m, rating, count(path) as views
+ORDER BY rating DESC, views DESC
+RETURN toString(m.title + ' (' + m.genre + ')') AS Movie, rating, views LIMIT 3;
+----
+
+//table
+
+'''
+
+==== See how much time people we follow have spend watching movies
+
+Last, but not least, we'll write a query that calculates the total amount of minutes people we follow have spend watching movies (let's suppose they watched those movies once)
+
+[source, cypher]
+----
+MATCH (me:User{name:'Amy'})-[:FOLLOWS]->(other:User)
+WITH other
+OPTIONAL MATCH (other)-[:WATCHED]->(movie:Movie)
+WITH other, COLLECT(movie) AS watched
+RETURN toString(other.name + ' ' + other.surname) AS User,
+reduce(time = 0, mov IN watched | time + mov.runtime_min) AS Total_minutes
+ORDER BY Total_minutes DESC;
+----
+
+//table
+
+===== *Note* : The OPTIONAL MATCH clause is used because otherwise, if the user we follow hasn't watched any movie, that user will not appear in the result. This way, if the user hasn't watched any movie, he/she will appear anyway and the total amount of time will be 0.
+
+That's the reason why in this query 'we' are Amy and not Bradley, since all the people Bradley follows have watched some movie.

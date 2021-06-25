@@ -1,0 +1,111 @@
+= Social Network Graph Example from Diaspora
+
+Sarah Mei recently wrote a http://www.sarahmei.com/blog/2013/11/11/why-you-should-never-use-mongodb/[blog post] describing how she and her colleagues modeled a collection of TV shows and a social network. A few of us at Neo felt strongly that these domains were very graphy in nature.
+
+We wanted to see if our intuition was right (we love the Diaspora project and extend our help to you) and so with the help of http://docs.neo4j.org/chunked/preview/cypher-query-lang.html[Cypher], created a mini version of each of the domains that Sarah described.
+
+This is the second of two GraphGists that are part of the http://blog.neo4j.org/2013/11/why-graph-databases-are-best-tool-for-handling-connected-data-like-diaspora.html[response to Sarah's blog post]. If you would like to quickly jump to the first one that details the TV Show Graph data model, you can find it here: http://gist.neo4j.org/?github-neo4j-contrib%2Fgists%2F%2Fother%2FTVShowGraph.adoc[TV Show Graph Diaspora example]
+
+== Social Network Data Model
+
+image::http://www.sarahmei.com/blog/wp-content/uploads/2013/11/Screen-Shot-2013-11-09-at-8.11.30-PM.png[]
+
+== Social Network Setup
+
+// setup
+// hide
+[source,cypher]
+----
+CREATE (rachel:User {name: "Rachel Green"})
+CREATE (monica:User {name: "Monica Geller"})
+CREATE (phoebe:User {name: "Phoebe Buffay"})
+CREATE (joey:User {name: "Joey Tribbiani"})
+CREATE (chandler:User {name: "Chandler Bing"})
+CREATE (ross:User {name: "Ross Geller"})
+
+CREATE (rachel)-[:FRIEND]->(monica)
+CREATE (rachel)-[:FRIEND]->(phoebe)
+CREATE (rachel)-[:FRIEND]->(joey)
+CREATE (rachel)-[:FRIEND]->(chandler)
+CREATE (rachel)-[:FRIEND]->(ross)
+
+CREATE (monica)-[:FRIEND]->(phoebe)
+CREATE (monica)-[:FRIEND]->(joey)
+CREATE (monica)-[:FRIEND]->(chandler)
+CREATE (monica)-[:FRIEND]->(ross)
+
+CREATE (phoebe)-[:FRIEND]->(joey)
+CREATE (phoebe)-[:FRIEND]->(chandler)
+CREATE (phoebe)-[:FRIEND]->(ross)
+
+CREATE (joey)-[:FRIEND]->(chandler)
+CREATE (joey)-[:FRIEND]->(ross)
+
+CREATE (chandler)-[:FRIEND]->(ross)
+
+CREATE (monica)-[:POSTED]->(post0:Post { id: "0", text: "You don't like the game, because you suck at it." })
+CREATE (phoebe)-[:POSTED]->(post1:Post { id: "1", text: "Chandler still thinks I'm pregnant and he hasn't asked me how I'm feeling or offered to carry my bags. I feel bad for the woman who ends up with him." })
+CREATE (joey)-[:POSTED]->(post2:Post { id: "2", text: "Just because she went to Yale drama, she thinks she's like the greatest actress since, since, sliced bread!" })
+CREATE (chandler)-[:POSTED]->(post3:Post { id: "3", text: " In my defense, it was dark and he was a very pretty guy." })
+CREATE (rachel)-[:POSTED]->(post4:Post { id: "4", text: "I don't want my baby's first words to be 'How You Doing'" })
+CREATE (ross)-[:POSTED]->(post5:Post { id: "5", text: "Chandler entered a Vanilla Ice look-alike contest and *won*!" })
+
+// Comments
+CREATE (post0)<-[:COMMENTED{ id: "6", text: "lol" }]-(ross)
+CREATE (post1)<-[:COMMENTED{ id: "7", text: "lol" }]-(rachel)
+CREATE (post2)<-[:COMMENTED{ id: "8", text: "lol" }]-(chandler)
+CREATE (post3)<-[:COMMENTED{ id: "9", text: "lol" }]-(joey)
+CREATE (post4)<-[:COMMENTED{ id: "10", text: "lol" }]-(phoebe)
+CREATE (post5)<-[:COMMENTED{ id: "11", text: "lol" }]-(monica)
+
+
+// Likes
+CREATE (post0)<-[:LIKED{ id: "12", text: "Ross likes this." }]-(ross)
+CREATE (post1)<-[:LIKED{ id: "13", text: "Rachel likes this." }]-(rachel)
+CREATE (post2)<-[:LIKED{ id: "14", text: "Chandler likes this." }]-(chandler)
+CREATE (post3)<-[:LIKED{ id: "15", text: "Joey likes this." }]-(joey)
+CREATE (post4)<-[:LIKED{ id: "16", text: "Phoebe likes this." }]-(phoebe)
+CREATE (post5)<-[:LIKED{ id: "17", text: "Monica likes this." }]-(monica)
+----
+
+image::https://raw.github.com/neo4j-contrib/gists/master/other/images/social-network-graph-1.png[]
+
+Now let's write some queries!
+
+We'll start with one to find the posts made by Rachel's friends:
+
+[source,cypher]
+----
+MATCH (u:User)-[:FRIEND]-(f)-[:POSTED]->(post)
+WHERE u.name = "Rachel Green"
+RETURN f.name AS friend, post.text as content
+----
+
+// table
+
+Our next query might be a slight variation on this to collect the people who have liked a post:
+
+[source,cypher]
+----
+MATCH (u:User)-[:FRIEND]-(f)-[:POSTED]->(post)<-[like:LIKED]-(liker)
+WHERE u.name = "Rachel Green"
+RETURN f.name AS friend, post.text as content, COLLECT(liker.name) as liked_by
+----
+
+// table
+
+A third query could collect all actions on a post, be they likes or comments:
+
+[source,cypher]
+----
+MATCH (u:User)-[:FRIEND]-(f)-[:POSTED]->(post)<-[a:LIKED|:COMMENTED]->(person) 
+WHERE u.name = "Rachel Green" 
+RETURN f.name AS friend, post.text AS content, 
+       COLLECT({ text: a.text, person: person.name, action: TYPE(a)}) AS actions
+----
+
+// table
+
+
+//graph
+

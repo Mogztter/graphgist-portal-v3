@@ -1,0 +1,149 @@
+= People, books and cities 
+
+=== “Those who find ugly meanings in beautiful things are corrupt without being charming. This is a fault. Those who find beautiful meanings in beautiful things are the cultivated. For these there is hope. They are the elect to whom beautiful things mean only Beauty. There is no such thing as a moral or an immoral book. Books are well written, or badly written. That is all.” 
+― Oscar Wilde, The Picture of Dorian Gray
+
+image::http://i.imgur.com/425PvXE.jpg[]
+
+== Modeling the Graph
+
+Let's take a look at the domain model:
+
+image::http://i.imgur.com/vKO4V8s.png?1[]
+
+
+=== OUR DATASET
+
+[source, cypher]
+----
+CREATE 
+       
+ //People 
+       (jane:Person{name:'Jane'}),
+       (mike:Person{name:'Mike'}),
+       (steve:Person{name:'Steve'}),
+       (lisa:Person{name:'Lisa'}),
+       (stella:Person{name:'Stella'}),
+       (jim:Person{name:'Jim'}),
+       (pernilla:Person{name:'Pernilla'}),
+       (kim:Person{name:'Kim'}),
+//Books
+       (pride_and_prejudice:Book:Classic {title:'Pride and Prejudice'}),
+       (_1984:Book:Fantasy {title:'1984'}),
+       (emma:Book:Classic {title:'Emma'}),
+       (sofies_world:Book:Philosophy {title:'Sofies World'}),
+       (dracula:Book:Horror {title:'Dracula'}),
+       (of_mice_and_men:Book:Classic {title:'Of mice and men'}),
+       (les_miserable:Book:Classic {title:'Les Miserable'}),
+       (life_of_pi:Book:Animee {title:'Life of Pi'}),
+//Cities      
+       (malmo:City{name:'Malmo'}),
+       (stockholm:City{name:'Stockholm'}),
+       (san_francisco:City{name:'San Francisco'}),
+       (london:City{name:'London'}),
+       (paris:City{name:'Paris'}),
+//Read
+      (pernilla)-[:READ]->(pride_and_prejudice),
+      (pernilla)-[:READ]->(dracula),
+      (pernilla)-[:READ]->(les_miserable),
+      (pernilla)-[:READ]->(of_mice_and_men),
+      (pernilla)-[:READ]->(sofies_world),
+      (pernilla)-[:READ]->(emma),
+      (pernilla)-[:READ]->(_1984),
+      (pernilla)-[:READ]->(life_of_pi),
+      (lisa)-[:READ]->(pride_and_prejudice),
+      (lisa)-[:READ]->(sofies_world),
+      (lisa)-[:READ]->(dracula),
+      (mike)-[:READ]->(dracula),
+      (kim)-[:READ]->(emma),
+      (mike)-[:READ]->(emma),
+      (lisa)-[:READ]->(les_miserable),
+      (steve)-[:READ]->(of_mice_and_men),
+      (jim)-[:READ]->(of_mice_and_men),
+      (kim)-[:READ]->(life_of_pi),
+      (mike)-[:READ]->(sofies_world),
+      (stella)-[:READ]->(dracula),
+      (stella)-[:READ]->(sofies_world),
+      (jim)-[:READ]->(emma),
+      (jim)-[:READ]->(les_miserable),
+      (jim)-[:READ]->(_1984),
+      (stella)-[:READ]->(_1984),
+      (jim)-[:READ]->(life_of_pi),
+ //LIVES_IN
+     (lisa)-[:LIVES_IN]->(paris),
+     (mike)-[:LIVES_IN]->(stockholm),
+     (stella)-[:LIVES_IN]->(san_francisco),
+     (jane)-[:LIVES_IN]->(malmo),
+     (jim)-[:LIVES_IN]->(london),
+//RELATIONSHIPS
+     (jim)-[:KNOW]->(jane),
+     (jim)<-[:KNOW]-(jane),
+     (stella)-[:FRIEND_WITH]->(jane),
+     (stella)<-[:FRIEND_WITH]-(jane),
+     (stella)<-[:FATHER_OF]-(steve),
+     (mike)<-[:MARRIED_TO]-(steve),
+     (mike)-[:MARRIED_TO]->(steve),
+     (mike)<-[:SISTER_TO]-(lisa)
+
+RETURN london as node
+----
+//table
+//graph 
+=== Which person had read which book?
+[source, cypher]
+----
+MATCH (person)-[:READ]->(book)
+RETURN person.name, book.title;
+----
+//table
+//graph 
+=== Which books have Jim read?
+[source, cypher]
+----
+MATCH (jim:Person)-[:READ]->(book:Book)
+WHERE jim.name="Jim"
+RETURN book.title;
+----
+//table
+//graph 
+
+=== Which books has Jim and Stella read?
+[source, cypher]
+----
+MATCH (jim:Person)-[:READ]->(book),
+(stella:Person)-[:READ]->(book)
+WHERE jim.name="Jim" AND
+      stella.name="Stella"
+RETURN DISTINCT book.title;
+----
+//table
+//graph 
+
+=== Who is the reader in our graph?
+[source, cypher]
+----
+MATCH (person:Person)-[:READ]->()
+RETURN person.name, count(*) AS count
+ORDER BY count DESC
+LIMIT 5;
+----
+//table
+//graph 
+
+=== Who read the same book as Jim? 
+[source, cypher]
+----
+MATCH (jim:Person)-[:READ]->(book)<-[:READ]-(fof)
+WHERE jim.name="Jim"
+RETURN fof.name, collect(book.title);
+
+----
+//table
+//graph 
+
+
+== “If I'm honest I have to tell you I still read fairy-tales and I like them best of all." - Audrey Hepburn
+image::http://i.imgur.com/TJCNW0b.jpg?1[]
+
+
+ 

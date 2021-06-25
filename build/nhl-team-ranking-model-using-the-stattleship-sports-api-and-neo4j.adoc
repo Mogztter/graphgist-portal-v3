@@ -1,0 +1,323 @@
+= NHL Team Ranking Model using the Stattleship Sports API and Neo4j
+
+:neo4j-version: 2.3.1
+:author: Brock Tibert
+:twitter: @brocktibert
+
+
+== Introduction
+As part of the sports track, this post will collect data from http://playbook.stattleship.com/[Stattleship's] API using their https://github.com/stattleship/stattleship-r[R package], and store the data in Neo4j.  I want to demonstrate how to easy it is with cypher to rank NHL teams based on their season performance as well as the team's they have played.  Querying the data from the API will require a token, but you can sign up for one https://stattleship.com/[here].
+
+For the purposes of this exercise, we will only use a small fraction of the data available.  More specifically, I am restricting both the teams and games to those within the Atlantic Division.
+
+The R code used to college the data is included at the end of the post.  Within that script, I am saving the data to local CSV files.  To make this exercise reproducible, I simply committed the datasets to Github.
+
+*One Note:* The data for this post include all of the games completed through January 15th, 2016 within the Atlantic Division.
+
+
+== The Data Model
+
+The image below represents the data model.
+
+
+image::https://dl.dropboxusercontent.com/u/15276022/blog-images/stattle-neo-team-datamodel.png[width="800" height="600" alt="NHL Games data model", align="center"]
+
+
+In short, there are two types of nodes. `Game` nodes represent a contest between two `Team` nodes.  Each team is connected to the game via a `HOME_TEAM` or an `AWAY_TEAM` relationship type.  In both cases, the nodes and relationships have properties.  The `Game` nodes have various information about the contest, and the relationships have information about that team's performance within the game.
+
+
+
+== Load the data into Neo4j
+
+First, set the contraint on the `id` property for teams (which is a value returned by the API)
+
+
+//output
+[source,cypher]
+----
+CREATE CONSTRAINT ON (n:Team) ASSERT n.id IS UNIQUE;
+----
+
+And now import the teams.
+
+
+//output
+[source,cypher]
+----
+// Import the teams
+USING PERIODIC COMMIT 10000
+LOAD CSV WITH HEADERS FROM  "https://raw.githubusercontent.com/Btibert3/neo4j-stattleship-nhl-team-ranking/master/data/teams.csv" as row
+MERGE (t:Team {id:row.id, nickname:row.nickname, slug:row.slug})
+----
+
+Now let's set the game constraints.
+
+//output
+[source,cypher]
+----
+CREATE CONSTRAINT ON (n:Game) ASSERT n.id IS UNIQUE;
+----
+
+
+And load the games.
+
+
+//output
+[source,cypher]
+----
+// Import the games
+USING PERIODIC COMMIT 10000
+LOAD CSV WITH HEADERS FROM "https://raw.githubusercontent.com/Btibert3/neo4j-stattleship-nhl-team-ranking/master/data/games.csv" as row
+MERGE (g:Game {id:row.id,
+	           attendance:toInt(row.attendance),
+	           year:toInt(row.year),
+	           month:toInt(row.month),
+	           day:toInt(row.day)});
+----
+
+Finally, join the teams and games, an set some properties on the relationship that we will use later.
+
+
+
+//output
+[source,cypher]
+----
+// Relate the teams and games
+USING PERIODIC COMMIT 10000
+LOAD CSV WITH HEADERS FROM "https://raw.githubusercontent.com/Btibert3/neo4j-stattleship-nhl-team-ranking/master/data/games.csv" as row
+WITH row
+MATCH (g:Game {id:row.id})
+MATCH (a:Team {id:row.away_team_id})
+MATCH (h:Team {id:row.home_team_id})
+WITH row, g, a, h
+MERGE (a) -[:AWAY_TEAM {goals:toInt(row.away_team_score),
+	                    outcome:row.away_team_outcome,
+	                    win: CASE WHEN row.away_team_outcome='win' THEN 1 ELSE 0 END,
+	                    points: CASE WHEN row.away_team_outcome='win' THEN 2
+	                                 WHEN row.away_team_outcome='overtime_loss' THEN 1
+	                                 ELSE 0
+	                             END}]-> (g)
+MERGE (h) -[:HOME_TEAM {goals:toInt(row.home_team_score),
+	                    outcome:row.home_team_outcome,
+	                    win: CASE WHEN row.home_team_outcome='win' THEN 1 ELSE 0 END,
+	                    points: CASE WHEN row.home_team_outcome='win' THEN 2
+	                                 WHEN row.home_team_outcome='overtime_loss' THEN 1
+	                                 ELSE 0
+	                             END}]-> (g);
+----
+
+
+== Explore the data
+
+
+To make sure that everything loaded properly, let's do a simple count of nodes by type.
+
+[source,cypher]
+----
+MATCH (n)
+RETURN labels(n) AS `Node Type`, count(*) AS total
+----
+
+//table
+
+Because sometimes pictures are easier to interpret, here is a small subset of the graph.
+
+[source, cypher]
+----
+MATCH (n)
+RETURN n
+LIMIT 15
+----
+
+//graph_result
+
+We could even look at the games played by a specific team.  Below, I am going to filter on the Bruins.
+
+[source, cypher]
+----
+MATCH (t1:Team {nickname:'Bruins'})-[r1]->(g1)<-[r2]-(t2)
+RETURN t1, r1, g1, r2, t2
+----
+
+//graph_result
+
+It's easy to calculate a team's winning percentage.
+
+[source, cypher]
+----
+// win loss percentage for each team
+MATCH (n:Team)-[r]->(g:Game)
+WITH n.nickname as team, sum(r.win) as wins, count(r) as games
+RETURN team, wins, games, (wins*1.0/games*1.0) as wpc
+----
+
+//table
+
+Because we will be factoring in performance at home and on the road in a second, the query below looks at games by location.
+
+[source, cypher]
+----
+MATCH (t:Team)-[r]->(x:Game)
+WITH t.nickname as team, CASE TYPE(r) WHEN 'AWAY_TEAM' THEN 1 ELSE 0 END as away_game, CASE TYPE(r) WHEN 'HOME_TEAM' THEN 1 ELSE 0 END as home_game, r
+RETURN team, sum(away_game) as away_games, sum(home_game) as home_games, count(r) as total_games
+ORDER BY total_games DESC
+----
+
+//table
+
+Lastly, looking at a team's goal differential is a breeze.
+
+[source, cypher]
+----
+MATCH (t1:Team)-[r1]->(g1:Game)<-[r2]-(opponent:Team) 
+WITH t1.nickname as team, sum(r1.goals) as score, sum(r2.goals) AS opp_score
+RETURN team, score, opp_score, score-opp_score as score_diff
+ORDER BY score_diff DESC
+----
+
+// table
+
+
+
+
+
+== Ranking the teams
+
+
+There a host of methods by which you can rank teams, but for the purposes of this post, I am going to use a method similar to the one  http://www.collegerpi.com/rpifaq.html[described here].  The only material difference is that instead of using wins and losses, I am going to use a team's goal differential.  
+
+Basically, the ranking is a weighted function of 3 things:
+
+* 25% = A weighted combination of a team's goal differentials based on home and away games (*GD*).  More on that below.
+* 50% = The team's opponents' goal differential (*OGD*)
+* 25% The simple average of a team's opponents opponents goal differental *(OOGD)*
+
+The goal differential *GD* has one additional component in that away games (*AGD*) have a weight of `1.4`, and home games (*HGD*) of `.6`.
+
+
+The query below ranks the teams by travesing the graph to capture the information that we need.
+
+[source, cypher]
+----
+MATCH (t1:Team)-[r1]->(g1:Game)<-[r2]-(opponent:Team)-[r3]->(g2:Game)<-[r4]-(t2:Team)-[r5]->(g3:Game)<-[r6]-(t3:Team)
+WHERE NOT t1=t2 AND NOT t1=t3
+WITH t1, sum(r6.goals) AS oop_gf, sum(r5.goals) as oop_ga
+// goal differentials for team, and the teams they played (OPP)
+MATCH (t1:Team)-[r1]->(g1:Game)<-[r2]-(opponent:Team)-[r3]->(g2:Game)<-[r4]-(t2:Team)
+WHERE NOT t1=t2 
+WITH t1, sum(r3.goals) AS opp_gf, sum(r4.goals) as opp_ga, oop_gf, oop_ga
+// goal differential for the team's opponents
+MATCH (t1)-[r1]->(g1:Game)<-[r2]-(opponent:Team) 
+WHERE NOT t1=opponent
+WITH t1.nickname as team, 
+     sum(CASE WHEN type(r1) = "HOME_TEAM" THEN r1.goals ELSE 0 END) as home_gf,
+     sum(CASE WHEN type(r1) = "HOME_TEAM" THEN r2.goals ELSE 0 END) as home_ga,
+     sum(CASE WHEN type(r1) = "AWAY_TEAM" THEN r1.goals ELSE 0 END) as away_gf,
+     sum(CASE WHEN type(r1) = "AWAY_TEAM" THEN r2.goals ELSE 0 END) as away_ga,
+     sum(r1.goals) as gf,
+     sum(r2.goals) as ga, 
+     opp_gf, 
+     opp_ga, 
+     oop_gf, 
+     oop_ga
+WITH team, 
+     home_gf, 
+     home_ga, 
+     away_gf, 
+     away_ga, 
+     gf, 
+     ga, 
+     opp_gf, 
+     opp_ga, 
+     home_gf-home_ga as HGD,
+     away_gf-away_ga as AGD,
+     gf-ga as GD, 
+     opp_gf-opp_ga as OGD, 
+     oop_gf, 
+     oop_ga,
+     oop_gf-oop_ga as OOGD
+RETURN team, .25*(1.4*AGD + .6*HGD) + .5*(OGD) + .25*(OOGD) as rpi
+ORDER BY rpi DESC
+----
+
+//table
+
+Above, we are traversing the graph to isolate a team's goal differential at home and on the road, the goal differential for all of their opponents, and even the goal differential for the teams that the opponent has played.  With just a few traversals, and the amazing `WITH` clause, this type of ranking is easy.  
+
+While the rankings do not make inuitive sense relative to the actual standings today, we have to keep in mind that we are only using games played within the Atlantic Division, and are ignoring the strength of other teams across the league.  Beyond including the entire NHL, another modification could include only "recent" games or simply just modify the weights applied above.
+
+*Note:* Towards the end of the query, you will notice that I chaining results together using the `WITH` clause.  I opted for a more verbose process in order to allow certain calculations to be returned, which was helpful for degbugging the query.
+
+
+== Appendix 1: R Code to Get the Data from the Stattleship API
+
+//hide
+[source, r]
+----
+###############################################################################
+## Use Stattleship and Neo4j to Rank NHL Teams for the 2015-16 Season
+## @brocktibert
+###############################################################################
+
+## factors are the devil
+options(stringsAsFactors = FALSE)
+
+## packages -- if errors, install with ?install.packages
+library(stattleshipR)
+library(dplyr)
+library(lubridate)
+library(stringr)
+
+## set the token from an environment variable
+set_token("STATTLE_TOKEN_HERE")
+
+## parse out entries from ss_get_result when walk=T and length > 1
+parse_stattle <- function(stattle_list, entry) {
+  x <- do.call("rbind", lapply(stattle_list, function(x) x[[entry]]))
+  stopifnot(is.data.frame(x))
+  return(x)
+}
+
+## The Atlantic Division id
+atlantic_div <- "15ca4e46-2b49-4f37-84ea-befb62de28c5"
+
+## get the NHL teams in the atlantic division and keep just the key fields
+teams <- hockey_teams() %>% 
+  filter(division_id == atlantic_div) %>% 
+  select(id, nickname, slug)
+
+## get the finished games, keep only those between atlantic division teams
+all_games <- hockey_games(team_id="") 
+games <- filter(all_games, 
+                !is.na(ended_at) & 
+                  home_team_id %in% teams$id &
+                  away_team_id %in% teams$id)
+games <- select(games, 
+                id, 
+                started_at,
+                scoreline, 
+                home_team_id, 
+                away_team_id, 
+                winning_team_id, 
+                attendance, 
+                duration,
+                home_team_score,
+                away_team_score,
+                score_differential,
+                home_team_outcome,
+                away_team_outcome)
+
+## extract dateparts from started date
+games <- transform(games, 
+                   start_date = strptime(started_at, "%Y-%m-%dT%H:%M:%S"))
+games <- transform(games,
+                   year = year(start_date),
+                   month = month(start_date),
+                   day = day(start_date))
+games$start_date <- NULL
+games$started_at <- NULL
+
+## save the csvs for import -- put on google drive for public access
+write.table(teams, file="teams.csv", sep=",", row.names=F)
+write.table(games, file="games.csv", sep=",", row.names=F)
+----

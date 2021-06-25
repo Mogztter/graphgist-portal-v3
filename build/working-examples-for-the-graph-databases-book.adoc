@@ -1,0 +1,561 @@
+= Working examples for the 'Graph Databases' book 
+
+image::http://assets.neo4j.org/img/books/graphdatabases_thumb.gif["frontpage thumbnail",align="left"]
+
+The examples in the 'Graph Databases' book don't work out of the box. I've modified them, so that they do work (for chapter 3, that is). 
+
+This is a graphgist version of my https://baach.de/Members/jhb/working-examples-for-the-graph-databases-book/[blog post]. 
+
+If you click one of the green play buttons in the examples below, they will show in this console. Usually the code formatting is messed up, so it might be a bit ugly.
+
+//console
+
+
+= The Graph Databases book and it's examples
+
+
+I downloaded the 'Graph Databases' book from http://graphdatabases.com/, and even got a printed version for free at a neo4j meetup on tuesday. I like neo4j, and the book, and I am really grateful for both.
+
+The book says, on page 27,  it uses cypher in the 2.0 version. Great. I'm using neo4j-community-2.0.0-M03 anyhow, because I need to use the transactional http endpoint. That exists in 2.0 only, and only speaks cypher.
+
+The problem: the examples (starting from page 44) don't work. You can use the create statement from page 44, but when you try to use the reading request from page 47:
+
+
+[source]
+    START   theater=node:venue(name='Theatre Royal'),
+            newcastle=node:city(name='Newcastle'),
+            bard=node:author(lastname='Shakespeare')
+    MATCH   (newcastle)<-[:STREET|CITY*1..2]-(theater)
+            <-[:VENUE]-()-[:PERFORMANCE_OF]->()-[:PRODUCTION_OF]->
+            (play)<-[:WROTE_PLAY]-(bard)
+    RETURN  DISTINCT play.title AS play  
+    
+you get the following result:
+
+[source]
+    MissingIndexException: Index 'author' does not exist
+
+Why?
+
+= Indexing using cypher
+
+
+Lets look at the first line:
+    
+[source]
+    START   theater=node:venue(name='Theatre Royal'),
+
+This line tries to lookup up a node in the venue index, which has 'Theatre Royal' stored for the index property name. One could also say, its using a legacy index. This index needs setting up first. You can't do that from cypher, but thats not even the main problem. To use legacy indexes, you need to manually trigger adding/updates/deletes of nodes and relationships to this index. And you can't do that from cypher either, and thats a problem. So even though we can put the shakespeare data into our graph, we don't get it into the indexes. And hence we can't search the indexes. Now we could use the command line interface, or the REST Api, but we won't, because I need to use the transactional http endpoint (with seperate rollback commands etc.) :-). 
+
+Rescue comes in the form of Schema/Labels. You can attach as many labels to a node if you like, and you can create auto updating indexes. Using cypher only. Those indexes will not only automaticly update, they also are used behind the scenes without explicit mentioning. Isn't this great? Thought so...
+
+I prepared some modified examples below (for chapter 4). They actually run, using cypher only. Before you use them, clean out your database of the example data above, if needed:
+
+[source]
+    start n=node(*) match n-[r]->m delete r,n,m;
+
+(This actually cleans out everything, so know what you do)
+
+= Modified examples (chapter 3)
+
+Besides updating the examples, I also add semicola at the end of phrases, so that you don't stumple upon errors every time you copy and paste (like I do). And changed the formatting a bit to my preferred style.
+
+
+== Creating the Shakespeare Graph
+
+Page 44:
+
+[source,cypher]
+----
+CREATE
+    (shakespeare:Author { firstname: 'William', lastname: 'Shakespeare' }),
+    (juliusCaesar:Character { title: 'Julius Caesar' }),
+    (shakespeare)-[:WROTE_PLAY { year: 1599 }]->(juliusCaesar),
+    (theTempest:Play { title: 'The Tempest' }),
+    (shakespeare)-[:WROTE_PLAY { year: 1610}]->(theTempest),
+    (rsc:Company { name: 'RSC' }),
+    (production1:Production { name: 'Julius Caesar' }),
+    (rsc)-[:PRODUCED]->(production1),
+    (production1)-[:PRODUCTION_OF]->(juliusCaesar),
+    (performance1:Performance { date: 20120729 }),
+    (performance1)-[:PERFORMANCE_OF]->(production1),
+    (production2:Production { name: 'The Tempest' }),
+    (rsc)-[:PRODUCED]->(production2),
+    (production2)-[:PRODUCTION_OF]->(theTempest),
+    (performance2:Performance { date: 20061121 }),
+    (performance2)-[:PERFORMANCE_OF]->(production2),
+    (performance3:performance { date: 20120730 }),
+    (performance3)-[:PERFORMANCE_OF]->(production1),
+    (billy:Person { name: 'Billy' }),
+    (review:Review { rating: 5, review: 'This was awesome!' }),
+    (billy)-[:WROTE_REVIEW]->(review),
+    (review)-[:RATED]->(performance1),
+    (theatreRoyal:Venue { name: 'Theatre Royal' }),
+    (performance1)-[:VENUE]->(theatreRoyal),
+    (performance2)-[:VENUE]->(theatreRoyal),
+    (performance3)-[:VENUE]->(theatreRoyal),
+    (greyStreet:Street { name: 'Grey Street' }),
+    (theatreRoyal)-[:STREET]->(greyStreet),
+    (newcastle:City { name: 'Newcastle' }),
+    (greyStreet)-[:CITY]->(newcastle),
+    (tyneAndWear:County { name: 'Tyne and Wear' }),
+    (newcastle)-[:COUNTY]->(tyneAndWear),
+    (england:Country { name: 'England' }),
+    (tyneAndWear)-[:COUNTRY]->(england),
+    (stratford:City { name: 'Stratford upon Avon' }),
+    (stratford)-[:COUNTRY]->(england),
+    (rsc)-[:BASED_IN]->(stratford),
+    (shakespeare)-[:BORN_IN]->stratford;
+----
+
+
+I assigned now labels to all node. That wouldn't have been necessary, but it felt a bit clearer to me. The labes are :Author, :Character and so forth. 
+
+
+Lets also create some indexes on some of the labels:
+
+
+[source,cypher]
+----
+    create index on :Author(firstname);
+----
+
+[source,cypher]
+----
+    create index on :Author(lastname);
+----
+
+[source,cypher]
+----
+    create index on :City(name);
+----
+
+[source,cypher]
+----
+    create index on :Venue(name);
+----
+
+== Beginning a Query
+
+As the text talks about the START statement, and this won't be used in the same way with the label 
+indexes, it's a bit hard to translate. But lets try.
+
+Page 46:
+
+[source]
+    match 
+        theater:Venue,
+        newcastle:City,
+        bard:Author
+    where 
+        theater.name='Theatre Royal' and
+        newcastle.name='Newcastle' and
+        bard.lastname='Shakespeare'
+
+(Just like in the book, it doesn't do anything)
+
+== Declaring Information Patterns to Find
+
+Page 46:
+
+[source]
+    match
+        (newcastle)<-[:STREET|CITY*1..2]-(theater)
+        <-[:VENUE]-()-[:PERFORMANCE_OF]->()-[:PRODUCTION_OF]->
+        (play)<-[:WROTE_PLAY]-(bard)
+
+This is exactly the same.
+
+Page 47:
+
+[source,cypher]
+----
+    match 
+        (theater:Venue),
+        (newcastle:City),
+        (bard:Author),
+        (newcastle)<-[:STREET|CITY*1..2]-(theater)
+        <-[:VENUE]-()-[:PERFORMANCE_OF]->()-[:PRODUCTION_OF]->
+        (play)<-[:WROTE_PLAY]-(bard)
+    where
+        theater.name='Theatre Royal' and
+        newcastle.name='Newcastle' and
+        bard.lastname='Shakespeare'                  
+    return 
+        distinct play.title as play; 
+----
+
+//table
+
+
+
+==  Contstraining Matches
+
+Page 48:
+
+[source,cypher]
+----
+
+    match 
+        (theater:Venue),
+        (newcastle:City),
+        (bard:Author),
+        (newcastle)<-[:STREET|CITY*1..2]-(theater)
+        <-[:VENUE]-()-[:PERFORMANCE_OF]->()-[:PRODUCTION_OF]->
+        (play)<-[w:WROTE_PLAY]-(bard)
+    where 
+        theater.name='Theatre Royal' and
+        newcastle.name='Newcastle' and
+        bard.lastname='Shakespeare' and
+        w.year > 1608
+    return 
+        distinct play.title as play; 
+----
+
+//table
+
+
+== Processing Results
+
+Page 49:
+
+[source,cypher]
+----
+    match 
+        (theater:Venue),
+        (newcastle:City),
+        (bard:Author),
+        (newcastle)<-[:STREET|CITY*1..2]-(theater)
+        <-[:VENUE]-()-[p:PERFORMANCE_OF]->()-[:PRODUCTION_OF]->
+        (play)<-[:WROTE_PLAY]-(bard)
+    where 
+        theater.name='Theatre Royal' and
+        newcastle.name='Newcastle' and
+        bard.lastname='Shakespeare'
+    return 
+        play.title as play, count(p) as performance_count
+    order by 
+        performance_count desc;
+----
+
+//table
+
+
+== Query Chaining
+
+Page 50:
+
+[source,cypher]
+----
+    match 
+        (bard:Author),
+        (bard)-[w:WROTE_PLAY]->(play)
+    where 
+        bard.lastname='Shakespeare'
+    with  
+        play
+    order by 
+        w.year desc
+    return 
+        collect(play.title) as plays;
+----
+
+//table
+
+
+
+== A Sensible First Iteration?
+
+
+Create another index:
+
+[source,cypher]
+----
+    create index on :User(username);
+----
+
+
+
+Page 51:
+
+[source,cypher]
+----
+   create  
+        (alice:User {username: 'Alice'}),
+        (bob:User {username: 'Bob'}),
+        (charlie:User {username: 'Charlie'}),
+        (davina:User {username: 'Davina'}),
+        (edward:User {username: 'Edward'}),
+        (alice)-[:ALIAS_OF]->(bob);
+----
+
+
+Page 51, 2nd:
+
+[source,cypher]
+----
+    match 
+        (bob:User),
+        (charlie:User),
+        (davina:User),
+        (edward:User)
+    where 
+        bob.username='Bob' and
+        charlie.username='Charlie' and
+        davina.username='Davina' and
+        edward.username='Edward'
+    create 
+        (bob)-[:EMAILED]->(charlie),
+        (bob)-[:CC]->(davina),
+        (bob)-[:BCC]->(edward);
+----
+
+
+
+Page 52:
+
+[source,cypher]
+----
+   match 
+        (bob:User),
+        (charlie:User),
+        (bob)-[e:EMAILED]->(charlie)
+    where
+        bob.username='Bob' and 
+        charlie.username='Charlie'
+    return 
+        e;
+----
+
+//table
+
+== Second Time's the Charm
+
+Page 53:
+
+[source]
+    create 
+        (email_1:Email {id: '1', content: 'Hi Charlie, ... Kind regards, Bob'}),
+        (bob)-[:SENT]->(email_1),
+        (email_1)-[:TO]->(charlie),
+        (email_1)-[:CC]->(davina),
+        (email_1)-[:CC]->(alice),
+        (email_1)-[:BCC]->(edward)
+
+Dont' use this example yet, its incomplete. Instead, create some indexes:
+
+
+[source,cypher]
+----
+    create index on :Email(id);
+----
+
+[source,cypher]
+----
+    create index on :Email(content);
+----
+
+Page 54:
+
+[source,cypher]
+----
+    match 
+        (alice:User),
+        (bob:User),
+        (charlie:User),
+        (davina:User),
+        (edward:User)
+    where 
+        alice.username='Alice' and
+        bob.username='Bob' and
+        charlie.username='Charlie' and
+        davina.username='Davina' and
+        edward.username='Edward'
+    create 
+        (email_1:Email {id: '1', content: 'email contents'}),
+        (bob)-[:SENT]->(email_1),
+        (email_1)-[:TO]->(charlie),
+        (email_1)-[:CC]->(davina),
+        (email_1)-[:CC]->(alice),
+        (email_1)-[:BCC]->(edward),
+        (email_2:Email {id: '2', content: 'email contents'}),
+        (bob)-[:SENT]->(email_2),
+        (email_2)-[:TO]->(davina),
+        (email_2)-[:BCC]->(edward),
+        (email_3:Email {id: '3', content: 'email contents'}),
+        (davina)-[:SENT]->(email_3),
+        (email_3)-[:TO]->(bob),
+        (email_3)-[:CC]->(edward),
+        (email_4:Email {id: '4', content: 'email contents'}),
+        (charlie)-[:SENT]->(email_4),
+        (email_4)-[:TO]->(bob),
+        (email_4)-[:TO]->(davina),
+        (email_4)-[:TO]->(edward),
+        (email_5:Email {id: '5', content: 'email contents'}),
+        (davina)-[:SENT]->(email_5),
+        (email_5)-[:TO]->(alice),
+        (email_5)-[:BCC]->(bob),
+        (email_5)-[:BCC]->(edward);
+----
+
+I added the missing start(now match/where) at the top, and brought the create statements
+all into one, to shorten the code a bit.
+
+Page 55:
+
+[source,cypher]
+----
+    match 
+        (bob:User),
+        (bob)-[:SENT]->(email)-[:CC]->(alias),
+        (alias)-[:ALIAS_OF]->(bob)
+    where 
+        bob.username='Bob'
+    return 
+        email;
+----
+
+//table
+
+== Evolving the Domain
+
+Another theoretical example, don't use it, on Page 57:
+
+[source]
+    match email:Email
+    where emai.id='1234'
+    create (alice)-[:REPLIED_TO]->(email);
+    create (davina)-[:FORWARDED]->(email)-[:TO]->(charlie);
+
+
+
+Page 57, bottom:
+
+[source,cypher]
+----
+   match   
+        (alice:User),
+        (bob:User),
+        (charlie:User),
+        (davina:User),
+        (edward:User)
+    where
+        alice.username='Alice' and
+        bob.username='Bob' and
+        charlie.username='Charlie' and
+        davina.username='Davina' and
+        edward.username='Edward'
+     create 
+        (email_6:Email {id: '6', content: 'email'}),
+        (bob)-[:SENT]->(email_6),
+        (email_6)-[:TO]->(charlie),
+        (email_6)-[:TO]->(davina),
+        (reply_1:Email {id: '7', content: 'response'}),
+        (reply_1)-[:REPLY_TO]->(email_6),
+        (davina)-[:SENT]->(reply_1),
+        (reply_1)-[:TO]->(bob),
+        (reply_1)-[:TO]->(charlie),
+        (reply_2:Email {id: '8', content: 'response'}),
+        (reply_2)-[:REPLY_TO]->(email_6),
+        (bob)-[:SENT]->(reply_2),
+        (reply_2)-[:TO]->(davina),
+        (reply_2)-[:TO]->(charlie),
+        (reply_2)-[:CC]->(alice),
+        (reply_3:Email {id: '9', content: 'response'}),
+        (reply_3)-[:REPLY_TO]->(reply_1),
+        (charlie)-[:SENT]->(reply_3),
+        (reply_3)-[:TO]->(bob),
+        (reply_3)-[:TO]->(davina),
+        (reply_4:Email {id: '10', content: 'response'}),
+        (reply_4)-[:REPLY_TO]->(reply_3),
+        (bob)-[:SENT]->(reply_4),
+        (reply_4)-[:TO]->(charlie),
+        (reply_4)-[:TO]->(davina);
+----
+
+
+
+Page 58,bottom:
+
+[source,cypher]
+----
+    match 
+        (email:Email),
+        p=(email)<-[:REPLY_TO*1..4]-()<-[:SENT]-(replier)
+    where
+        email.id='6'
+    return 
+        replier.username AS replier, length(p) - 1 AS depth
+    order by
+        depth;
+----
+
+//table
+
+
+
+Page 60:
+
+[source,cypher]
+----
+    match   
+        (alice:User),
+        (bob:User),
+        (charlie:User),
+        (davina:User)
+    where
+        alice.username='Alice' and
+        bob.username='Bob' and
+        charlie.username='Charlie' and
+        davina.username='Davina'
+    create
+        (email_11:Email {id: '11', content: 'email'}),
+        (alice)-[:SENT]->(email_11)-[:TO]->(bob),
+        (email_12:Email {id: '12', content: 'email'}),
+        (email_12)-[:FORWARD_OF]->(email_11),
+        (bob)-[:SENT]->(email_12)-[:TO]->(charlie),
+        (email_13:Email {id: '13', content: 'email'}),
+        (email_13)-[:FORWARD_OF]->(email_12),
+        (charlie)-[:SENT]->(email_13)-[:TO]->(davina);
+----
+
+
+Page 61:
+
+
+[source,cypher]
+----
+   match
+        (email:Email),
+        (email)<-[f:FORWARD_OF*]-()
+    where
+        email.id='11'
+    return
+        count(f);
+----
+
+//table
+
+= Other approaches
+
+== node_auto_index
+
+One other possibility would be to use the node_auto_index instead (by uncommenting the related statements in the neo4j.properties file, and setting the appropriate properties to be indexed). 
+
+This would then turn the query:
+
+[code]    
+    START   theater=node:venue(name='Theatre Royal') return theater;
+
+into:
+
+[code]
+    START   theater=node:node_auto_index(name='Theatre Royal') return theater;
+
+This would be doable I guess.One could not only index name, but a property called label as well, to avoid namespace issues. But I guess this would 
+
+. contradict the efforts of labels in the 2.0 version, and 
+. lead to one gigantic index for all of the properties of all of the nodes.
+
+So even though it works for the book, don't see it as a good way forward.
+

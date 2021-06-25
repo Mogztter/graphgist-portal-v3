@@ -1,0 +1,194 @@
+= The graph of fire
+
+:neo4j-version: 2.0.0
+:author: Stefan Armbruster
+:twitter: @darthvader42
+
+== a little story to understand the domain
+
+In case of a fire or technical rescue incident it is highly critical to send an appropriate number of firemen and tools on site. This graph gist explains how this happens in my local region, about 15km to the east of Munich, Germany. 
+
+WARNING: Since I'm not 100% familiar with the English translation of the vocabulary regarding firefighting, I'll put the German translation in brackets. If you find some incorrect translation please drop me a note.
+
+When a emergency call reaches the main control center [Leitstelle] (responsible 2 or 3 counties) the person picking up the call tries to qualify the call by a set of standard question and finally associate the call with a keyword. A keyword might be "Fire 1" [B1] for a small fire like a waste container or e.g. "Fire 4" [B 4] when there is a fire in a farm or a large building. In total there are ~100 keywords. Each keyword has a chain of operating resources [Einsatzmittelkette] attached to enable an appropriate response.
+
+E.g. for "Fire 1" (B1) the chain contains:
+
+. 1000l water
+. 4 compressed air apparatus
+
+For "fire 4" (B 4) the chain is:
+
+. 6000l water
+. 16 compressed air apparatus [Pressluftatmer]
+. much more we don't care in this example: ladder truck [Drehleiter], heavy technical resuce truck [Rüstwagen], 4 portable pumps (TS 8/8), 2 water monitors [Wasserwerfer], command car [KdoW/ELW], 2 hose components (500m fire hose each), detector for gas explosives [Ex-Ox-Messgerät], IR camera [Wäremebildkamera], 2 overpressure ventilators [Überdrucklüfter], heavy set of hydraulic rescue tools (cutter, spreader, rams) [Rettungssatz schwer], standard set of hydraulic resuce tools (cutter, spreader) [Rettungssatz standard], cable winch [Seilwinde]
+
+It's important to mantain the defined order in the chain, so we can model the chain of operating resources as shown: 
+
+image::http://i.imgur.com/1THMGkh.png[]
+ 
+Except cities with +100k inhabitants, firefighting here in Bavaria is completely volunteer driven. Therefore a lot of fire houses exist - even the smallest village has one. Their equipment ranges from a simple trailer pump to departments of up to 20 trucks. Each of the  trucks has a set of operating resources. In our example we have a truck called 'Florian P-Town 49/1' which is equipped with 4 compressed air apparatus and 2000 l of water - of course this is just a very small subset of the full equipment.
+
+image::http://i.imgur.com/fMd0yzX.png[]
+
+The central control center [Leitstelle] has to the send the closest available forces fulfulling the chain defined by the keyword. The definition of 'closest available' is done by a splitting up the whole landscape into areas and define a ordered list of nearby fire houses [Bereichsfolgen] depending on their travel time per area. 
+
+In our model each of these ordered lists is represented by a seperate relationship type - so each area has its own relationship type.
+
+Assume a area called `P-Town`. Most close fire house is the local P-town fire department, next is `A-Village` and then `Pl-Village`. The relationship type for this chain is `AREA_CHAIN_P_TOWN`.
+
+image::http://i.imgur.com/KyvbaG0.png[]
+
+//hide
+//setup
+[source,cypher]
+----
+CREATE
+(water:Resource {name:'Water', unit:'l'}),
+(pa:Resource {name:'compressed air apparatus	', unit:'pcs'}),
+
+// keyword fire 1
+(k_fire1:Keyword {keyword:'Fire 1'})-[:CHAIN_OF_RESOURCES]->(r11 {quantity: 1000}),
+(r11)-[:INSTANCE_OF]->(water),
+(r11)-[:NEXT]->(r12 {quantity: 4}),
+(r12)-[:INSTANCE_OF]->(pa),
+
+// keyword fire 4
+(k_fire4:Keyword {keyword:'Fire 4'})-[:CHAIN_OF_RESOURCES]->(r21 {quantity: 10000}),
+(r21)-[:INSTANCE_OF]->(water),
+(r21)-[:NEXT]->(r22 {quantity: 16}),
+(r22)-[:INSTANCE_OF]->(pa),
+
+// fire department P-Town with equipment
+(fd_ptown:Department {name:'FD P-Town'})-[:HAS_TRUCK]->(p49:Truck {name:'Florian P-Town 49/1'}),
+(p49)-[:EQUIPPED_WITH {quantity:4}]->(pa),
+(p49)-[:EQUIPPED_WITH {quantity:2000}]->(water),
+
+// fire department A-Village with equipment
+(fd_avillage:Department {name:'A-Village'})-[:HAS_TRUCK]->(a40:Truck {name:'Florian A-Village 40/1'}),
+(a40)-[:EQUIPPED_WITH {quantity:4}]->(pa),
+(a40)-[:EQUIPPED_WITH {quantity:1600}]->(water),
+
+// fire department P1-Village with equipment
+(fd_plvillage:Department {name:'Pl-Village'})-[:HAS_TRUCK]->(pl42:Truck {name:'Florian Pl-Village 42/1'}),
+(pl42)-[:EQUIPPED_WITH {quantity:4}]->(pa),
+(pl42)-[:EQUIPPED_WITH {quantity:600}]->(water),
+
+// area chain
+(p_town:Area {name:'P-Town'})-[:AREA_CHAIN_P_TOWN]->(fd_ptown),
+(fd_ptown)-[:AREA_CHAIN_P_TOWN]->(fd_avillage),
+(fd_avillage)-[:AREA_CHAIN_P_TOWN]->(fd_plvillage)
+----
+
+//graph
+
+== some sample queries
+
+=== find the full area chain for area 'P-Town'
+
+Since cypher does not have a longest path function, we need to identify all paths in a variable length match and filter for the longest one.
+
+[source,cypher]
+----
+MATCH p=(:Area {name: 'P-Town'})-[:AREA_CHAIN_P_TOWN*]->(fd:Department) 
+RETURN extract(n in nodes(p) | n.name) as names
+ORDER BY length(p) DESC
+LIMIT 1
+----
+
+//table
+
+=== find the chain of operation tools for a given keyword, 'Fire 1'
+
+[source,cypher]
+----
+MATCH (k:Keyword {keyword:'Fire 1'})-[:CHAIN_OF_RESOURCES]-(x), p=(x)-[:NEXT*0..100]->(q), (q)-[:INSTANCE_OF]->(r:Resource)
+RETURN q.quantity,r.name order by length(p)
+----
+
+//table
+
+=== find required trucks for a 'fire 1' emergency in P-Town
+
+This is getting more complex. We need the previous result to build up a list of required resources.
+
+Then we start at our area node, traverse to the first fire house, iterate to the trucks and see what they can provide. We'll reduce the list from step 1 by the items we've found there. We'll proceed to the next fire house and so until the list is empty. 
+
+This algorithm applies too much logic for a declarative graph traversal language like Cypher. Therefore we'll get handy dirty and code some traversal on API level, for simplicity I'll show the code in groovy language:
+
+[source,groovy]
+----
+// find items for 'fire 1'
+def keyword = "Fire 1"
+def area = "P-Town"
+def relTypeArea = "AREA_CHAIN_P_TOWN"
+
+Node areaNode = IteratorUtil.single(ee.execute("MATCH (a:Area {name: {name}}) RETURN a", [name: area]).columnAs("a"));
+
+def result = ee.execute("""
+MATCH (k:Keyword {keyword:{keyword}})-[:CHAIN_OF_RESOURCES]-(x), p=(x)-[:NEXT*0..100]->(q), (q)-[:INSTANCE_OF]->(r:Resource)
+RETURN q.quantity,r order by length(p)
+""", [keyword: keyword])
+
+Map<Node, Number> resources = result.collectEntries { println it; [(it.r): it['q.quantity']] }
+println resources
+
+def tx = graphDb.beginTx()
+try {
+
+    def td = graphDb.traversalDescription()
+            .depthFirst()
+            .relationships(DynamicRelationshipType.withName(relTypeArea), Direction.BOTH)
+            .relationships(DynamicRelationshipType.withName("HAS_TRUCK"), Direction.OUTGOING)
+            .evaluator(new Evaluator() {
+        @Override
+        Evaluation evaluate(Path path) {
+            def endNode = path.endNode()
+            if (endNode.hasLabel(DynamicLabel.label("Truck"))) {
+
+                if (resources.isEmpty()) {
+                    return Evaluation.EXCLUDE_AND_PRUNE
+                }
+
+                // using iterator explicitly since we might need to change the map while iterating
+                for (Iterator<Node, Number> it = resources.entrySet().iterator(); it.hasNext(); ) {
+                    Map.Entry<Node, Number> entry = it.next()
+                    def resourceNode = entry.key
+
+                    // resource matches -> adopt quantity
+                    def relationship = findRelationshipBetween(endNode, resourceNode, DynamicRelationshipType.withName('EQUIPPED_WITH'), Direction.OUTGOING)
+                    if (relationship) {
+                        def newValue = entry.value - relationship.getProperty("quantity")
+                        newValue > 0 ? resources[resourceNode] = newValue : it.remove()
+                    }
+                }
+                Evaluation.INCLUDE_AND_CONTINUE
+            } else {
+                // we're not at a truck currently
+                Evaluation.EXCLUDE_AND_CONTINUE
+            }
+        }
+
+    })
+
+    def trucks = td.traverse(areaNode).nodes().collect {it.getProperty("name")}
+    println "trucks to be set on site: $trucks"
+    println "non fulfilled resources: $resources"
+
+    tx.success()
+} finally {
+    tx.close()
+}
+
+private Relationship findRelationshipBetween(Node start, Node end, RelationshipType type, Direction direction) {
+    for (r in start.getRelationships(type, direction)) {
+        if (r.getOtherNode(start)==end) {
+            return r
+        }
+    }
+    return null
+}
+
+----
+
+

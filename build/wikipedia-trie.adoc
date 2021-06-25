@@ -1,0 +1,180 @@
+*Wikipedia Trie*
+
+This will generate a super simple (and it is super simple) Trie based on the Wikipedia entry on, well, Tries (see http://en.wikipedia.org/wiki/Trie), and _then_ look at how we can use that to do some simple things like intellisense and spelling guidance. 
+
+//hide
+//setup
+[source,cypher]
+----
+CREATE 
+	(initial:en_GB),
+	(t:en_GB),
+	(a:en_GB {key:15}),
+	(i:en_GB {key:11}),
+	(to:en_GB {key:7}),
+	(te:en_GB ),
+	(in:en_GB { key:5}),
+	(tea:en_GB { key:3}),
+	(ted:en_GB { key:4}),
+	(ten:en_GB { key:12}),
+	(inn:en_GB { key:9}),
+	(initial)-[:t {value:'t'}]->(t),
+	(initial)-[:a {value:'a'}]->(a),
+	(initial)-[:i {value:'i'}]->(i),
+	(t)-[:o {value:'o'}]->(to),
+	(t)-[:e {value:'e'}]->(te),
+	(te)-[:a {value:'a'}]->(tea),
+	(te)-[:d {value:'d'}]->(ted),
+	(te)-[:n {value:'n'}]->(ten),
+	(i)-[:n {value:'n'}]->(in),
+	(in)-[:n {value:'n'}]->(inn)
+----
+
+So this creates the below graph - which is pretty similar to the one in wikipedia (you can't see the relationship labels:
+
+//graph
+
+The important bit is the relationships in this case, any nodes with a 'isWord' value are complete words.
+
+*HOWEVER*
+I think to make it more queryable, we might improve things by going down a route of adding values to the nodes, first I'll clear the old DB.
+
+//hide
+[source,cypher]
+----
+MATCH (n)
+OPTIONAL MATCH (n)-[r]-()
+DELETE n,r
+----
+
+Then add some words....
+
+//hide
+[source,cypher]
+----
+CREATE 
+	(initial:en_GB),
+	(t:en_GB {value:'t'}),
+	(a:en_GB {value:'a', key:15}),
+	(i:en_GB {value:'i', key:11}),
+	(to:en_GB {value:'to', key:7}),
+	(te:en_GB {value:'te'}),
+	(in:en_GB {value:'in', key:5}),
+	(tea:en_GB {value:'tea', key:3}),
+	(ted:en_GB {value:'ted', key:4}),
+	(ten:en_GB {value:'ten', key:12}),
+	(inn:en_GB {value:'inn', key:9}),
+	(initial)-[:t {value:'t'}]->(t),
+	(initial)-[:a {value:'a'}]->(a),
+	(initial)-[:i {value:'i'}]->(i),
+	(t)-[:o {value:'o'}]->(to),
+	(t)-[:e {value:'e'}]->(te),
+	(te)-[:a {value:'a'}]->(tea),
+	(te)-[:d {value:'d'}]->(ted),
+	(te)-[:n {value:'n'}]->(ten),
+	(i)-[:n {value:'n'}]->(in),
+	(in)-[:n {value:'n'}]->(inn)
+----
+
+Which will look like: 
+
+//graph
+
+We can perform some basic queries and use this now for a couple of the usual things tries are used for...
+
+*Next letter intellisense*
+
+Let's imagine we're writing into a textbox and want to know the next acceptable letters in our incredibly small world.
+Ideally, we enter the letter 't' and we want to be given the next letters of 'o' and 'e':
+
+[source,cypher]
+----
+MATCH (t:en_GB {value: 't'})-[r]->() 
+RETURN r.value
+----
+
+//table
+
+Which we could return to the user, and guide them towards spelling correctly.
+
+*Full word intellisense*
+
+In this case, if we start with the letter t, we'd like to get back 'to', 'tea', 'ted', 'ten' as these are the actual words in the trie. 'te' isn't an actual word, so we don't want to be shown that. We can write the cypher as:
+
+[source,cypher]
+----
+MATCH (t:en_GB {value: 't'})-[*]->(next)
+WHERE has(next.key)
+RETURN next.value
+----
+
+//table
+
+There is an obvious problem here, I'm using `*` in my query, which for this menial set of values is _fine_ but would be inappropriate for a large data set (say an _actual_ dictionary). Of course in practice, you're not going to run an intellisense query on just one letter, but more likely after a user has typed 2,3,4... etc so your queries become more like:
+
+[source,cypher]
+----
+MATCH (n:en_GB {value: 'te'})-[*]->(next)
+WHERE has(next.key)
+RETURN next.value
+----
+
+//table
+
+But it's probably worth limiting your traversal depth if you were to take this to the next level.
+
+*Changes*
+
+This is all well and theoretically good, but the `isWords` in use here aren't practical for a spell checking / intellisense scenario as they have no meaning. Better off to replace `isWords` with a bool like `isWord`...
+
+So... teardown:
+
+//hide
+[source,cypher]
+----
+MATCH (n)
+OPTIONAL MATCH (n)-[r]-()
+DELETE n,r
+----
+
+Rebuild...
+
+//hide
+[source,cypher]
+----
+CREATE 
+	(initial:en_GB),
+	(t:en_GB {value:'t'}),
+	(a:en_GB {value:'a', isWord:true}),
+	(i:en_GB {value:'i', isWord:true}),
+	(to:en_GB {value:'to', isWord:true}),
+	(te:en_GB {value:'te'}),
+	(in:en_GB {value:'in', isWord:true}),
+	(tea:en_GB {value:'tea', isWord:true}),
+	(ted:en_GB {value:'ted', isWord:true}),
+	(ten:en_GB {value:'ten', isWord:true}),
+	(inn:en_GB {value:'inn', isWord:true}),
+	(initial)-[:t {value:'t'}]->(t),
+	(initial)-[:a {value:'a'}]->(a),
+	(initial)-[:i {value:'i'}]->(i),
+	(t)-[:o {value:'o'}]->(to),
+	(t)-[:e {value:'e'}]->(te),
+	(te)-[:a {value:'a'}]->(tea),
+	(te)-[:d {value:'d'}]->(ted),
+	(te)-[:n {value:'n'}]->(ten),
+	(i)-[:n {value:'n'}]->(in),
+	(in)-[:n {value:'n'}]->(inn)
+----
+
+and query again, the next letter query doesn't change, only the next word, and even then it's a very minor change:
+
+[source,cypher]
+----
+MATCH (n:en_GB {value: 'te'})-[*]->(next)
+WHERE has(next.isWord)
+RETURN next.value
+----
+
+//table
+
+whether that change is really needed or not is up to you, it makes the intent of the query a bit more obvious (or so _I_ think :))

@@ -1,0 +1,243 @@
+= Recruitment Graph Model
+
+:neo4j-version: 2.1
+:author: Luanne Misquitta
+:twitter: luannem
+:tags: domain:organization, example:recruiting
+
+Professionals from the recruiting industry deal with highly interconnected data every day. Making sense of data from various sources in order to match the best candidate for the job is challenging. Companies are now more specific in terms of job profiles and requirements and candidates are more choosy about their roles and responsibilities.
+
+Graphs are a perfect way to model this data. An extremely simple model is depicted in this GraphGist but one can see how it could be extended very naturally to include a much larger variety of data.
+
+image::https://dl.dropboxusercontent.com/u/15330610/RecruitmentModel.jpg[]
+This sample dataset includes the following:
+
+ * Persons and the county they reside in
+ * Their jobs,roles and companies
+ * Competencies, skills and certifications
+ * Ratings (employees rating companies and managers rating employees)
+
+== Setup
+
+//hide
+
+//setup
+
+[source,cypher]
+----
+create (_2278:`Person` {`name`:"Evan"})
+create (_2279:`County` {`name`:"Kent"})
+create (_2280:`Company` {`name`:"Practical Software"})
+create (_2281:`Role` {`name`:"Software Engineer"})
+create (_2282:`Job` {`name`:"SE-Practical-01", `startDate`:"June 2011"})
+create (_2283:`Person` {`name`:"Eric"})
+create (_2284:`County` {`name`:"West Midlands"})
+create (_2285:`Company` {`name`:"IT Wizards"})
+create (_2286:`Role` {`name`:"QA Engineer"})
+create (_2287:`Job` {`name`:"QA-IT-01", `startDate`:"Dec 2012"})
+create (_2288:`Person` {`name`:"Margaret"})
+create (_2289:`County` {`name`:"Surrey"})
+create (_2290:`Company` {`name`:"Amazing Inc"})
+create (_2291:`Role` {`name`:"Support Staff"})
+create (_2292:`Job` {`name`:"SU-Amazing-01", `startDate`:"Jan 2011"})
+create (_2293:`Person` {`name`:"Fernanda"})
+create (_2294:`Company` {`name`:"Pineapple Corp"})
+create (_2295:`Job` {`name`:"SE-Pineapple-01", `startDate`:"Feb 2013"})
+create (_2296:`Person` {`name`:"Corrine"})
+create (_2297:`Company` {`name`:"Practical Software"})
+create (_2298:`Job` {`name`:"SU-Practical-01", `startDate`:"Jan 2014"})
+create (_2299:`Person` {`name`:"Reuben"})
+create (_2300:`County` {`name`:"Northamptonshire"})
+create (_2301:`Person` {`name`:"Michelle"})
+create (_2302:`County` {`name`:"Southampton"})
+create (_2303:`Person` {`name`:"Edgar"})
+create (_2304:`Role` {`name`:"Intern"})
+create (_2305:`Job` {`endDate`:"Dec 2012", `name`:"IN-Amazing-01", `startDate`:"Jan 2011"})
+create (_2306:`Job` {`endDate`:"Jan 2011", `name`:"QA-IT-02", `startDate`:"Aug 2010"})
+create (_2307:`Job` {`endDate`:"Feb 2014", `name`:"SE-Practical-02", `startDate`:"Jul 2013"})
+create (_2308:`Skill` {`name`:"Java"})
+create (_2309:`Competency` {`highestLevel`:2})
+create (_2310:`Skill` {`name`:"Testing"})
+create (_2311:`Competency` {`highestLevel`:3})
+create (_2312:`Skill` {`name`:"Troubleshooting"})
+create (_2313:`Competency` {`highestLevel`:3})
+create (_2314:`Competency` {`highestLevel`:4})
+create (_2315:`Competency` {`highestLevel`:1})
+create (_2316:`Skill` {`name`:"Android"})
+create (_2317:`Competency` {`highestLevel`:1})
+create (_2318:`Skill` {`name`:"Automation"})
+create (_2319:`Competency` {`highestLevel`:3})
+create (_2320:`Skill` {`name`:"C"})
+create (_2321:`Competency` {`highestLevel`:2})
+create (_2322:`Skill` {`name`:"Oracle"})
+create (_2323:`Competency` {`highestLevel`:4})
+create (_2324:`Skill` {`name`:"Networks"})
+create (_2325:`Competency` {`highestLevel`:3})
+create (_2326:`Competency` {`highestLevel`:2})
+create (_2327:`Competency` {`highestLevel`:3})
+create (_2328:`Competency` {`highestLevel`:4})
+create (_2329:`Competency` {`highestLevel`:1})
+create (_2330:`Certification` {`name`:"SJCP"})
+create (_2331:`Certification` {`name`:"Certified QA"})
+create (_2332:`Person` {`name`:"Manager 1"})
+create (_2333:`Person` {`name`:"Manager 2"})
+create (_2334:`Person` {`name`:"Manager 3"})
+create _2278-[:`LocatedIn`]->_2279
+create _2278-[:`HasJob`]->_2282
+create _2278-[:`CurrentJob`]->_2282
+create _2278-[:`HasCompetency`]->_2309
+create _2278-[:`HasCompetency`]->_2317
+create _2278-[:`HasCompetency`]->_2326
+create _2282-[:`HasRole`]->_2281
+create _2282-[:`AtCompany`]->_2280
+create _2283-[:`LocatedIn`]->_2284
+create _2283-[:`HasJob`]->_2287
+create _2283-[:`CurrentJob`]->_2287
+create _2283-[:`Hasjob`]->_2305
+create _2283-[:`HasCompetency`]->_2311
+create _2283-[:`HasCompetency`]->_2319
+create _2287-[:`HasRole`]->_2286
+create _2287-[:`AtCompany`]->_2285
+create _2288-[:`LocatedIn`]->_2289
+create _2288-[:`HasJob`]->_2292
+create _2288-[:`CurrentJob`]->_2292
+create _2288-[:`Hasjob`]->_2306
+create _2288-[:`HasCompetency`]->_2313
+create _2288-[:`HasCompetency`]->_2321
+create _2288-[:`Rated` {`rating`:4}]->_2280
+create _2288-[:`Rated` {`rating`:4}]->_2297
+create _2292-[:`HasRole`]->_2291
+create _2292-[:`AtCompany`]->_2290
+create _2293-[:`LocatedIn`]->_2279
+create _2293-[:`HasJob`]->_2295
+create _2293-[:`CurrentJob`]->_2295
+create _2293-[:`Hasjob`]->_2307
+create _2293-[:`HasCompetency`]->_2314
+create _2293-[:`HasCompetency`]->_2323
+create _2293-[:`Rated` {`rating`:2}]->_2294
+create _2295-[:`HasRole`]->_2281
+create _2295-[:`AtCompany`]->_2294
+create _2296-[:`LocatedIn`]->_2284
+create _2296-[:`HasJob`]->_2298
+create _2296-[:`CurrentJob`]->_2298
+create _2296-[:`HasCompetency`]->_2315
+create _2296-[:`HasCompetency`]->_2325
+create _2296-[:`Rated` {`rating`:3}]->_2280
+create _2296-[:`Rated` {`rating`:3}]->_2297
+create _2298-[:`HasRole`]->_2291
+create _2298-[:`AtCompany`]->_2297
+create _2299-[:`LocatedIn`]->_2300
+create _2299-[:`HasCompetency`]->_2327
+create _2301-[:`LocatedIn`]->_2302
+create _2301-[:`HasCompetency`]->_2328
+create _2303-[:`LocatedIn`]->_2289
+create _2303-[:`HasCompetency`]->_2329
+create _2305-[:`HasRole`]->_2304
+create _2305-[:`AtCompany`]->_2290
+create _2305-[:`NextJob`]->_2287
+create _2306-[:`HasRole`]->_2286
+create _2306-[:`AtCompany`]->_2285
+create _2306-[:`NextJob`]->_2292
+create _2307-[:`HasRole`]->_2281
+create _2307-[:`AtCompany`]->_2280
+create _2307-[:`AtCompany`]->_2297
+create _2307-[:`NextJob`]->_2295
+create _2309-[:`ForSkill` {`level`:2}]->_2308
+create _2309-[:`AtJob`]->_2282
+create _2309-[:`Certified`]->_2330
+create _2311-[:`ForSkill` {`level`:3}]->_2310
+create _2311-[:`AtJob`]->_2287
+create _2311-[:`Certified`]->_2331
+create _2313-[:`ForSkill` {`level`:3}]->_2312
+create _2313-[:`AtJob`]->_2292
+create _2314-[:`ForSkill` {`level`:4}]->_2308
+create _2314-[:`AtJob`]->_2295
+create _2314-[:`Certified`]->_2330
+create _2315-[:`ForSkill` {`level`:1}]->_2312
+create _2315-[:`AtJob`]->_2298
+create _2317-[:`ForSkill` {`level`:1}]->_2316
+create _2317-[:`AtJob`]->_2305
+create _2319-[:`ForSkill` {`level`:3}]->_2318
+create _2319-[:`AtJob`]->_2306
+create _2321-[:`ForSkill` {`level`:2}]->_2320
+create _2321-[:`AtJob`]->_2307
+create _2323-[:`ForSkill` {`level`:4}]->_2322
+create _2323-[:`AtJob`]->_2295
+create _2325-[:`ForSkill` {`level`:3}]->_2324
+create _2325-[:`AtJob`]->_2298
+create _2326-[:`ForSkill` {`level`:1}]->_2308
+create _2326-[:`AtJob`]->_2305
+create _2326-[:`Certified`]->_2330
+create _2327-[:`ForSkill` {`level`:3}]->_2308
+create _2328-[:`ForSkill` {`level`:4}]->_2308
+create _2329-[:`ForSkill` {`level`:1}]->_2310
+create _2332-[:`Rated` {`rating`:1}]->_2283
+create _2333-[:`Rated` {`rating`:4}]->_2293
+create _2334-[:`Rated` {`rating`:4}]->_2278
+
+
+----
+
+== The graph
+[source,cypher]
+----
+match n return n
+----
+//graph
+
+== Queries:
+
+=== Find me the highest rated persons and their certifications
+
+[source,cypher]
+----
+match (person:Person)<-[r:Rated]-()
+with person as person,count(*) as raters, collect(r.rating) as ratings
+match (person)-[:HasCompetency]->(comp)-[:Certified]->(cert)
+with person, raters, ratings, collect(distinct cert.name) as certs
+return person.name, reduce(total = 0, n IN ratings| total + n) /raters as avgRating,certs
+order by avgRating desc;
+----
+//table
+
+=== Find me all Java people with skill level greater than 2. They should be using Java at their current job and be located in Kent.
+
+[source,cypher]
+----
+match (skill:Skill {name:"Java"})<-[:ForSkill]-(competency)
+where competency.highestLevel>1 with competency
+match (county:County {name:"Kent"}) with competency,county
+match (competency)-[:AtJob]->(job)<-[:CurrentJob]-(person)-[:LocatedIn]->(kent), (job)-[:AtCompany]->(company)
+return person.name as person, competency.highestLevel as skillLevel, company.name as company, kent.name as location
+----
+//table
+
+=== Show me all unemployed people skilled in Java?
+
+
+[source,cypher]
+----
+match (skill:Skill {name:"Java"})<-[:ForSkill]-(competency)-[:HasCompetency]-(person) where not((person)-[:HasJob]->()) return person.name as person,competency.highestLevel as javaSkillLevel
+----
+//table
+
+
+=== Which are the highest rated companies and what job roles do they offer?
+
+
+[source,cypher]
+----
+match (company:Company)<-[r:Rated]-()
+with company as company,count(*) as raters, collect(r.rating) as ratings
+match (company)<-[:AtCompany]->(job)-[:HasRole]->(role)
+with company, raters, ratings, collect(distinct role.name) as roles
+return company.name, reduce(total = 0, n IN ratings| total + n) /raters as avgRating,roles
+order by avgRating desc;
+
+----
+//table
+
+
+Created by link:http://graphaware.com[GraphAware]
+
+_link:http://graphaware.com[GraphAware] is an official consulting partner of Neo Technology_

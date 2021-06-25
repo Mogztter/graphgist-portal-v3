@@ -1,0 +1,213 @@
+= The #PanamaPapers - Example Dataset President of Azerbaijan
+:neo4j-version: 3.5
+:author: Michael Hunger
+:twitter: @mesirii
+:style: #58b535:Person(name),#f58220:Company(name),#65b144:Officer(name),#008cc1:Client(name)
+
+Let’s look at the family of the Azerbaijan’s President Ilham Aliyev who was already the topic of a GraphGist by Linkurious in the past. 
+We see his wife, two daughters and son depicted.
+
+== Source
+
+Summarizing the ICIJ https://panamapapers.icij.org/the_power_players/[“The Power Players”] Publication:
+
+____
+The family of Azerbaijan President Ilham Aliyev leads a charmed, glamorous life, thanks in part to financial interests in almost every sector of the economy. His wife, Mehriban, comes from the privileged and powerful Pashayev family that owns banks, insurance and construction companies, a television station and a line of cosmetics. She has led the Heydar Aliyev Foundation, Azerbaijan’s pre-eminent charity behind the construction of schools, hospitals and the country’s major sports complex. Their eldest daughter, Leyla*, editor of Baku magazine, and her sister, Arzu, have financial stakes in a firm that won rights to mine for gold in the western village of Chovdar and Azerfon, the country’s largest mobile phone business. Arzu is also a significant shareholder in SW Holding, which controls nearly every operation related to Azerbaijan Airlines ("Azal"), from meals to airport taxis. Both sisters and brother Heydar own property in Dubai valued at roughly 75 million USD in 2010; Heydar is the legal owner of nine luxury mansions in Dubai purchased for some 44 million USD.
+____
+
+== Setup
+
+We took the data from the ICIJ visualization and converted the 2d graph visualization into Graph patterns in our Cypher Query language. If you squint you can still see the same structure as in the visualization. We only shortened the “is officer of - Beneficiary, Shareholder, Director” to `IOO_BSD` and prefixed the other “is officer of” relationships with `IOO`.
+
+We didn’t add shares, citizenship, reg-numbers, addresses that were properties of the entities or relationships, you can see them when clicking on the elements of the embedded original visualization.
+
+++++
+<iframe src="https://linkurious.icij.org/widget/4c040978" width="750" height="450"></iframe>
+++++
+
+Cypher Statement to set up the visualized Entities and Relationships
+//setup
+[source,cypher]
+----
+CREATE
+(leyla: Officer {name:"Leyla Aliyeva"})-[:IOO_BSD]->(ufu:Company {name:"UF Universe Foundation"}),
+(mehriban: Officer {name:"Mehriban Aliyeva"})-[:IOO_PROTECTOR]->(ufu),
+(arzu: Officer {name:"Arzu Aliyeva"})-[:IOO_BSD]->(ufu),
+(mossack_uk: Client {name:"Mossack Fonseca & Co (UK)"})-[:REGISTERED]->(ufu),
+(mossack_uk)-[:REGISTERED]->(fm_mgmt: Company {name:"FM Management Holding Group S.A."}),
+
+(leyla)-[:IOO_BSD]->(kingsview:Company {name:"Kingsview Developents Limited"}),
+(leyla2: Officer {name:"Leyla Ilham Qizi Aliyeva"}),
+(leyla3: Officer {name:"LEYLA ILHAM QIZI ALIYEVA"})-[:HAS_SIMILIAR_NAME]->(leyla),
+(leyla2)-[:HAS_SIMILIAR_NAME]->(leyla3),
+(leyla2)-[:IOO_BENEFICIARY]->(exaltation:Company {name:"Exaltation Limited"}),
+(leyla3)-[:IOO_SHAREHOLDER]->(exaltation),
+(arzu2:Officer {name:"Arzu Ilham Qizi Aliyeva"})-[:IOO_BENEFICIARY]->(exaltation),
+(arzu2)-[:HAS_SIMILIAR_NAME]->(arzu),
+(arzu2)-[:HAS_SIMILIAR_NAME]->(arzu3:Officer {name:"ARZU ILHAM QIZI ALIYEVA"}),
+(arzu3)-[:IOO_SHAREHOLDER]->(exaltation),
+(arzu)-[:IOO_BSD]->(exaltation),
+(leyla)-[:IOO_BSD]->(exaltation),
+(arzu)-[:IOO_BSD]->(kingsview),
+
+(redgold:Company {name:"Redgold Estates Ltd"}),
+(:Officer {name:"WILLY & MEYRS S.A."})-[:IOO_SHAREHOLDER]->(redgold),
+(:Officer {name:"LONDEX RESOURCES S.A."})-[:IOO_SHAREHOLDER]->(redgold),
+(:Officer {name:"FAGATE MINING CORPORATION"})-[:IOO_SHAREHOLDER]->(redgold),
+(:Officer {name:"GLOBEX INTERNATIONAL LLP"})-[:IOO_SHAREHOLDER]->(redgold),
+(:Client {name:"Associated Trustees"})-[:REGISTERED]->(redgold)
+----
+//graph
+
+Now let's run some interesting queries on this dataset using http://neo4j.com/developer/cypher[Cypher], Neo4j's open natural graph query language.
+
+== Family ties via last name
+
+[source,cypher]
+----
+MATCH (o:Officer) 
+WHERE toLower(o.name) CONTAINS "aliyev"
+RETURN o
+----
+//graph
+
+
+== Family Involvements
+
+[source,cypher]
+----
+MATCH (o:Officer) WHERE toLower(o.name) CONTAINS "aliyev"
+MATCH (o)-[r]-(c:Company)
+RETURN o,r,c
+----
+
+//graph_result
+
+== Who are the officers of a company and their roles
+
+[source,cypher]
+----
+MATCH (c:Company)-[r]-(o:Officer) WHERE c.name = "Exaltation Limited"
+RETURN *
+----
+//graph
+
+== Show joint company involvements of family members
+
+[source,cypher]
+----
+MATCH (o1:Officer)-[r1]->(c:Company)<-[r2]-(o2:Officer)
+WITH o1.name AS first, o2.name AS second, count(*) AS c, collect({ name: c.name, kind1: type(r1), kind2:type(r2)}) AS involvements
+WHERE c > 1 AND first < second
+RETURN first, second, involvements, c
+----
+//table
+
+
+== Resolve Duplicate Entities
+
+[source,cypher]
+----
+MATCH (o:Officer) 
+RETURN toLower(split(o.name," ")[0]) as first_name, collect(o.name) as names, count(*) as count
+----
+//table
+
+== Resolve Duplicate Entities by first and last part of the name
+
+
+[source,cypher]
+----
+MATCH (o:Officer)
+WITH split(toLower(o.name), " ") AS name_parts, o
+WITH name_parts[0] + " " + name_parts[-1] as name,  collect(o.name) AS names, count(*) AS count
+WHERE count > 1
+RETURN name, names, count
+ORDER BY count DESC
+----
+//table
+
+
+== Transitive path from Mossack to the officers in that example
+
+[source,cypher]
+----
+MATCH path=(:Client {name: "Mossack Fonseca & Co (UK)"})-[rels*]-(o:Officer)
+WHERE NONE(r in rels WHERE type(r)="HAS_SIMILIAR_NAME")
+RETURN [n in nodes(path) | n.name] as hops, length(path)
+----
+//table
+
+== Shortest path between two people
+
+[source,cypher]
+----
+MATCH (a:Officer {name: "Mehriban Aliyeva"})
+MATCH (b:Officer {name: "Arzu Aliyeva"}) 
+MATCH p=allShortestPaths((a)-[*]-(b))
+RETURN p
+----
+//graph
+
+Let's see how we can extend this model further.
+
+== Merge Duplicates
+
+Create a person node and connect all officers to that single person. Reuse our statement from the duplicate detection.
+
+//results
+[source,cypher]
+----
+MATCH (o:Officer)
+WITH split(toLower(o.name), " ") AS name_parts, o
+WITH name_parts[0]+ " " + name_parts[-1] AS name, collect(o) AS officers
+
+// originally natural people have a “citizenship” property
+WHERE name CONTAINS "aliyev"
+
+CREATE (p:Person { name:name })
+FOREACH (o IN officers | CREATE (o)-[:IDENTIY]->(p))
+----
+
+== Introduce family ties between those people
+
+[source,cypher]
+----
+CREATE (ilham:Person {name:"ilham aliyev"})
+CREATE (heydar:Person {name:"heydar aliyev"})
+WITH ilham, heydar
+MATCH (mehriban:Person {name:"mehriban aliyeva"})
+
+MATCH (leyla:Person {name:"leyla aliyeva"})
+MATCH (arzu:Person {name:"arzu aliyeva"})
+
+FOREACH (child in [leyla,arzu,heydar] | CREATE (ilham)-[:CHILD_OF]->(child) CREATE (mehriban)-[:CHILD_OF]->(child))
+CREATE (leyla)-[:SIBLING_OF]->(arzu)
+CREATE (leyla)-[:SIBLING_OF]->(heydar)
+CREATE (arzu)-[:SIBLING_OF]->(heydar)
+CREATE (ilham)-[:MARRIED_TO]->(mehriban)
+----
+//graph
+
+== Show the Family
+
+[source,cypher]
+----
+MATCH (p:Person) RETURN p
+----
+//graph
+
+== Family ties to Companies
+
+[source,cypher]
+----
+MATCH (p:Person) WHERE p.name CONTAINS "aliyev"
+OPTIONAL MATCH (c:Company)<--(o:Officer)-[:IDENTITY]-(p) 
+RETURN c,o,p
+----
+//graph
+
+== Conclusion
+
+This GraphGist was developed by http://twitter.com/lyonw[Will Lyon] and http://twitter.com/mesirii[Michael Hunger] as part of a technical article about using graph databases to for journalistic analysis.
+

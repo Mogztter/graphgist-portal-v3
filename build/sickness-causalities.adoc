@@ -1,0 +1,30 @@
+= Sickness causalities
+
+This shows a setup to find what symptons are triggered by certain sicknesses, see http://stackoverflow.com/a/19336432/83490[this question] for reference.
+
+== Create the data
+
+//setup
+[source,cypher]
+----
+CREATE 
+  (Fever { name:"Fever" })-[:causes]->(Malaria { name:"Malaria" }), 
+  Fever-[:causes]->(dehydration { name:"Dehydration" }),
+  (Flu { name:"Flu" })-[:causes]-> Malaria , 
+  Flu-[:causes]->(SwineFlu { name:"SwineFlu" })
+----
+
+//graph
+== What sicknesses have been caused by +Fever+ and +Flu+?
+
+[source,cypher]
+----
+START aa=node(*) 
+MATCH aa-[:causes]->symptom 
+WITH collect(aa.name) AS aa, symptom 
+WHERE ALL (x IN ['Fever' , 'Flu'] 
+           WHERE x IN aa) 
+RETURN symptom
+----
+
+//table

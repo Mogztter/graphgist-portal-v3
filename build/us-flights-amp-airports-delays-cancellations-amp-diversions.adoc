@@ -1,0 +1,384 @@
+[[TOP]]
+= US Flights & Airports: Delays, Cancellations, & Diversions
+
+:author: Nicole White
+:twitter: @_nicolemargaret
+
+'''
+
+*Table of Contents*
+
+* <<X1, Inspiration>>
+** <<X1-1, Included Variables>>
+** <<X1-2, Included Airports>>
+* <<X2, Proposed Model>>
+* <<X3, Applications>>
+** <<X3-1, What is the average taxi time...>>
+** <<X3-2, What is the leading cause of departure delays...>>
+** <<X3-3, How many outbound flights were cancelled...>>
+** <<X3-4, Which flights from LAX to ORD...>>
+** <<X3-5, How does seasonality affect...>>
+** <<X3-6, What is the standard deviation of...>>
+* <<X4, "Visualizations">>
+** <<X4-1, "Flights from DFW to ATL">>
+** <<X4-2, "Shortest Path Between ORD and ATL">>
+* <<X6, Moving Forward>>
+
+'''
+
+[[X1]]
+== Inspiration
+
+For any airline carrier, efficiency is key: delayed or cancelled flights and long taxi times often lead to unhappy customers. Flight planning is one the most complex optimization and scheduling problems out there, requiring a deep analysis of flight and airport data.
+
+There is a dataset link:http://www.transtats.bts.gov/DL_SelectFields.asp?Table_ID=236&DB_Short_Name=On-Time["Airline On-Time Performance and Causes of Flight Delays"] released by the Bureau of Transportation Statistics that contains detailed information on all United States flights since 1987. For demonstrational purposes and for the sake of simplicity, I have only included 30 observations of American Airlines (AA) flights travelling between four (4) major airports in the year 2012.
+
+[[X1-1]]
+==== Included Variables
+
+- Date of flight
+- Flight number
+- Origin airport
+- Duration of `taxi out' time at origin airport
+- Duration of departure delay at origin airport
+- Destination airport
+- Duration of `taxi in' time at destination airport
+- Duration of arrival delay at destination airport
+- Duration of delay due to carrier
+- Duration of delay due to weather
+- Duration of delay due to NAS (National Aviation System)
+- Duration of delay due to security
+- Duration of delay due to late aircraft
+- Diversion airport
+- Duration of diversion arrival delay
+- Cancelled indicator
+- Cancellation reason
+
+All duration times are in minutes and delay type definitons can be found link:http://www.rita.dot.gov/bts/help/aviation/html/understanding.html#q4[here]. 
+
+[[X1-2]]
+==== Included Airports
+
+++++
+<table>
+<tr>
+<td><b>Name</b></td>
+<td><b>City</b></td>
+<td><b>Abbreviation</b></td>
+</tr>
+<tr>
+<td>Hartsfield-Jackson Atlanta International Airport</td>
+<td>Atlanta</td>
+<td>ATL</td>
+</tr>
+<tr>
+<td>O'Hare International Airport</td>
+<td>Chicago</td>
+<td>ORD</td>
+</tr>
+<tr>
+<td>Los Angeles International Airport</td>
+<td>Los Angeles</td>
+<td>LAX</td>
+</tr>
+<tr>
+<td>Dallas/Fort Worth International Airport</td>
+<td>Dallas/Fort Worth</td>
+<td>DFW</td>
+</tr>
+</table>
+++++
+
+'''
+
+[[X2]]
+== Proposed Model
+
+++++
+<iframe src="http://prezi.com/embed/srcgatzjcpaj/?bgcolor=ffffff&amp;lock_to_path=0&amp;autoplay=0&amp;autohide_ctrls=0&amp;features=undefined&amp;disabled_features=undefined" width="100%" height="600" frameBorder="0"></iframe>
+++++
+
+
+'''
+
+[[X3]]
+== Applications
+
+A database of this nature can answer broad questions such as:
+
+* What is the average taxi time at each airport for both departures and arrivals?
+* What is the leading cause of departure delays at each airport?
+* How many outbound flights were cancelled at each airport?
+
+Or more specific questions such as:
+
+* Which flights from Los Angeles (LAX) to Chicago (ORD) were delayed for more than 10 minutes due to late arrivals?
+* How does seasonality affect departure taxi times at Chicago's O'Hare International Airport (ORD)?
+* What is the standard deviation of arrival taxi times at Dallas/Fort Worth (DFW)?
+
+These are the types of questions airline carriers are asking when attempting to construct efficient flight plans for their customers. After initializing the data (Query 1), we can start answering these questions and drawing insights.
+
+//hide
+//setup
+
+[source, cypher]
+----
+//Airports
+CREATE (ATL:Airport {name:'Hartsfield-Jackson Atlanta International Airport', abbr:'ATL', city:'Atlanta'}),
+       (ORD:Airport {name:'O\'Hare International Airport', abbr:'ORD', city:'Chicago'}),
+       (LAX:Airport {name:'Los Angeles International Airport', abbr:'LAX', city:'Los Angeles'}),
+       (DFW:Airport {name:'Dallas/Fort Worth International Airport', abbr:'DFW', city:'Dallas/Fort Worth'})
+
+//Delay & Cancellation Causes
+CREATE (Carrier:Cause 		{name:'Carrier'}),
+       (Weather:Cause      	{name:'Weather'}),
+       (NAS:Cause        	{name:'NAS'}),
+       (Security:Cause     	{name:'Security'}),
+       (LateAircraft:Cause 	{name:'Late Aircraft'})
+
+//Flights
+CREATE 	(flight1:Flight {flight_number:2412, month:'August'}),
+	(flight2:Flight {flight_number:2321, month:'April'}),
+	(flight3:Flight {flight_number:1890, month:'February'}),
+	(flight4:Flight {flight_number:2420, month:'November'}),
+	(flight5:Flight {flight_number:1092, month:'July'}),
+	(flight6:Flight {flight_number:2497, month:'March'}),
+	(flight7:Flight {flight_number:1609, month:'May'}),
+	(flight8:Flight {flight_number:557, month:'April'}),
+	(flight9:Flight {flight_number:1894, month:'September'}),
+	(flight10:Flight {flight_number:1011, month:'August'}),
+	(flight11:Flight {flight_number:2324, month:'August'}),
+	(flight12:Flight {flight_number:1332, month:'September'}),
+	(flight13:Flight {flight_number:2430, month:'May'}),
+	(flight14:Flight {flight_number:607, month:'November'}),
+	(flight15:Flight {flight_number:2336, month:'February'}),
+	(flight16:Flight {flight_number:2222, month:'December'}),
+	(flight17:Flight {flight_number:2404, month:'December'}),
+	(flight18:Flight {flight_number:2401, month:'March'}),
+	(flight19:Flight {flight_number:693, month:'March'}),
+	(flight20:Flight {flight_number:565, month:'January'}),
+	(flight21:Flight {flight_number:1829, month:'November'}),
+	(flight22:Flight {flight_number:2495, month:'December'}),
+	(flight23:Flight {flight_number:2327, month:'July'}),
+	(flight24:Flight {flight_number:1062, month:'November'}),
+	(flight25:Flight {flight_number:1282, month:'November'}),
+	(flight26:Flight {flight_number:2450, month:'December'}),
+	(flight27:Flight {flight_number:2336, month:'January'}),
+	(flight28:Flight {flight_number:2357, month:'October'}),
+	(flight29:Flight {flight_number:557, month:'June'}),
+	(flight30:Flight {flight_number:2339, month:'March'})
+
+//Origins & Destinations
+CREATE 	(flight1)-[:ORIGIN]->(LAX),(flight1)-[:DESTINATION]->(DFW),
+	(flight2)-[:ORIGIN]->(ORD),(flight2)-[:DESTINATION]->(DFW),
+	(flight3)-[:ORIGIN]->(LAX),(flight3)-[:DESTINATION]->(ORD),
+	(flight4)-[:ORIGIN {taxi_time:56, dep_delay:32}]->(LAX),(flight4)-[:DESTINATION]->(DFW),
+	(flight5)-[:ORIGIN {taxi_time:17, dep_delay:1}]->(LAX),(flight5)-[:DESTINATION]->(ORD),
+	(flight6)-[:ORIGIN {taxi_time:21, dep_delay:43}]->(DFW),(flight6)-[:DESTINATION]->(LAX),
+	(flight7)-[:ORIGIN {taxi_time:20, dep_delay:0}]->(ATL),(flight7)-[:DESTINATION {taxi_time:16, arr_delay:0}]->(DFW),
+	(flight8)-[:ORIGIN {taxi_time:8, dep_delay:0}]->(ORD),(flight8)-[:DESTINATION {taxi_time:5, arr_delay:0}]->(LAX),
+	(flight9)-[:ORIGIN {taxi_time:33, dep_delay:15}]->(LAX),(flight9)-[:DESTINATION {taxi_time:5, arr_delay:31}]->(ORD),
+	(flight10)-[:ORIGIN {taxi_time:14, dep_delay:0}]->(ATL),(flight10)-[:DESTINATION {taxi_time:6, arr_delay:0}]->(DFW),
+	(flight11)-[:ORIGIN {taxi_time:11, dep_delay:0}]->(DFW),(flight11)-[:DESTINATION {taxi_time:6, arr_delay:0}]->(ORD),
+	(flight12)-[:ORIGIN {taxi_time:15, dep_delay:53}]->(DFW),(flight12)-[:DESTINATION {taxi_time:13, arr_delay:60}]->(ATL),
+	(flight13)-[:ORIGIN {taxi_time:26, dep_delay:0}]->(LAX),(flight13)-[:DESTINATION {taxi_time:5, arr_delay:0}]->(DFW),
+	(flight14)-[:ORIGIN {taxi_time:17, dep_delay:3}]->(ORD),(flight14)-[:DESTINATION {taxi_time:7, arr_delay:27}]->(LAX),
+	(flight15)-[:ORIGIN {taxi_time:11, dep_delay:0}]->(DFW),(flight15)-[:DESTINATION {taxi_time:3, arr_delay:0}]->(ORD),
+	(flight16)-[:ORIGIN {taxi_time:11, dep_delay:0}]->(DFW),(flight16)-[:DESTINATION {taxi_time:8, arr_delay:0}]->(ATL),
+	(flight17)-[:ORIGIN {taxi_time:20, dep_delay:0}]->(LAX),(flight17)-[:DESTINATION {taxi_time:6, arr_delay:0}]->(DFW),
+	(flight18)-[:ORIGIN {taxi_time:13, dep_delay:0}]->(DFW),(flight18)-[:DESTINATION {taxi_time:14, arr_delay:0}]->(LAX),
+	(flight19)-[:ORIGIN {taxi_time:26, dep_delay:0}]->(ATL),(flight19)-[:DESTINATION {taxi_time:9, arr_delay:0}]->(DFW),
+	(flight20)-[:ORIGIN {taxi_time:15, dep_delay:0}]->(ATL),(flight20)-[:DESTINATION {taxi_time:4, arr_delay:0}]->(DFW),
+	(flight21)-[:ORIGIN {taxi_time:16, dep_delay:0}]->(ATL),(flight21)-[:DESTINATION {taxi_time:12, arr_delay:0}]->(DFW),
+	(flight22)-[:ORIGIN {taxi_time:18, dep_delay:22}]->(DFW),(flight22)-[:DESTINATION {taxi_time:10, arr_delay:37}]->(LAX),
+	(flight23)-[:ORIGIN {taxi_time:15, dep_delay:0}]->(ORD),(flight23)-[:DESTINATION {taxi_time:6, arr_delay:0}]->(DFW),
+	(flight24)-[:ORIGIN {taxi_time:19, dep_delay:35}]->(LAX),(flight24)-[:DESTINATION {taxi_time:8, arr_delay:19}]->(ORD),
+	(flight25)-[:ORIGIN {taxi_time:10, dep_delay:0}]->(DFW),(flight25)-[:DESTINATION {taxi_time:6, arr_delay:0}]->(ATL),
+	(flight26)-[:ORIGIN {taxi_time:12, dep_delay:0}]->(LAX),(flight26)-[:DESTINATION {taxi_time:8, arr_delay:0}]->(DFW),
+	(flight27)-[:ORIGIN {taxi_time:8, dep_delay:0}]->(DFW),(flight27)-[:DESTINATION {taxi_time:6, arr_delay:0}]->(ORD),
+	(flight28)-[:ORIGIN {taxi_time:12, dep_delay:0}]->(ORD),(flight28)-[:DESTINATION {taxi_time:8, arr_delay:0}]->(DFW),
+	(flight29)-[:ORIGIN {taxi_time:11, dep_delay:0}]->(ORD),(flight29)-[:DESTINATION {taxi_time:6, arr_delay:0}]->(LAX),
+	(flight30)-[:ORIGIN {taxi_time:17, dep_delay:0}]->(ORD),(flight30)-[:DESTINATION {taxi_time:6, arr_delay:0}]->(DFW)
+
+//Carrier Delays
+CREATE 	(flight22)-[:DELAYED_BY {time:22}]->(Carrier),
+	(flight24)-[:DELAYED_BY {time:3}]->(Carrier)
+
+//Weather Delays
+
+//NAS Delays
+CREATE 	(flight9)-[:DELAYED_BY {time:16}]->(NAS),
+	(flight12)-[:DELAYED_BY {time:7}]->(NAS),
+	(flight14)-[:DELAYED_BY {time:27}]->(NAS),
+	(flight22)-[:DELAYED_BY {time:15}]->(NAS)
+
+//Late Aircraft Delays
+CREATE 	(flight9)-[:DELAYED_BY {time:15}]->(LateAircraft),
+	(flight12)-[:DELAYED_BY {time:53}]->(LateAircraft),
+	(flight24)-[:DELAYED_BY {time:16}]->(LateAircraft)
+
+//Cancellations
+CREATE 	(flight1)-[:CANCELLED_BY]->(Carrier),
+	(flight2)-[:CANCELLED_BY]->(NAS),
+	(flight3)-[:CANCELLED_BY]->(Weather)
+
+//Diversions
+CREATE 	(flight4)-[:DIVERTED_TO {taxi_time:14, div_arr_delay:280}]->(LAX),
+	(flight5)-[:DIVERTED_TO {taxi_time:17, div_arr_delay:145}]->(LAX),
+	(flight6)-[:DIVERTED_TO {taxi_time:6, div_arr_delay:257}]->(DFW)
+----
+
+//graph
+
+'''
+[[X3-1]]
+=== What is the average taxi time at each airport for both departures and arrivals?
+
+A flight planner will want to take into consideration how long it takes on average for a plane to travel from its gate to the runway, or vice versa, at a given airport. The consequences for leaving customers sitting on a tarmac for too long can range from a few angry letters to a PR nightmare.
+
+[source, cypher]
+----
+MATCH (a)<-[q:ORIGIN]-(), ()-[r:DESTINATION|DIVERTED_TO]->(a)
+WITH a, ROUND(AVG(q.taxi_time)) AS avg1, ROUND(AVG(r.taxi_time)) AS avg2
+RETURN a.name AS Airport, avg1 AS `Average Departure Taxi Time`, avg2 AS `Average Arrival Taxi Time`
+----
+//table
+
+'''
+
+[[X3-2]]
+=== What is the leading cause of departure delays at each airport?
+
+Are the delays at a given airport mostly out of one's control (weather delays) or are the delays mostly preventable (carrier delays)? A flight planner would be interested to learn which of these types of delays are most prevalent at each of its airports.
+
+[source, cypher]
+----
+MATCH (a)<-[:ORIGIN]-()-[r:DELAYED_BY]->(d)
+WITH a.name AS Airport, d.name AS Delay, SUM(r.time) AS total
+ORDER BY Airport, total desc
+RETURN Airport, Delay, total as `Total Delay Time`
+----
+//table
+
+'''
+
+[[X3-3]]
+=== How many outbound flights were cancelled at each airport?
+
+Cancelled flights are the worst. An analyst will want to know the volume of cancelled flights by airport for the purposes of identifying outliers for further analysis.
+
+[source, cypher]
+----
+MATCH (a)<-[:ORIGIN]-()-[:CANCELLED_BY]->()
+WITH a, COUNT(*) AS total
+ORDER BY total desc
+RETURN a.name AS Airport, total AS `Total Cancelled Flights`
+----
+//table
+
+'''
+
+[[X3-4]]
+=== Which flights from Los Angeles (LAX) to Chicago (ORD) were delayed for more than 10 minutes due to late arrivals?
+
+If a flight planner has identified that there are long delay times for flights from LAX to ORD, he or she can investigate the issue on a deeper, increasingly-micro level.
+
+[source, cypher]
+----
+MATCH (a {abbr:'LAX'})<-[:ORIGIN]-(f)-[:DESTINATION|DIVERTED_TO]->(b {abbr:'ORD'}), (f)-[r:DELAYED_BY]->(d {name:'Late Aircraft'})
+WHERE r.time > 10
+WITH f, r.time AS latedelay
+ORDER BY latedelay DESC
+RETURN f.flight_number AS Flight, latedelay AS `Delay Time Due to Late Arrival`
+----
+//table
+
+'''
+
+[[X3-5]]
+=== How does seasonality affect departure taxi times at Chicago's O'Hare International Airport (ORD)?
+
+The effects of seasonal travel are huge in the airline industry. People travel more during the summer. Weather delays occur more frequently during the winter. A flight planner should be very aware of any and all seasonal trends.
+
+[source, cypher]
+----
+MATCH (a {abbr:'ORD'})<-[r:ORIGIN]-(f)
+WITH f.month AS Month, ROUND(AVG(r.taxi_time)) AS avg
+ORDER BY avg desc
+RETURN Month, avg AS `Average Departure Taxi Time`
+----
+//table
+
+'''
+
+[[X3-6]]
+=== What is the standard deviation of arrival taxi times at Dallas/Fort Worth (DFW)?
+
+The link:http://en.wikipedia.org/wiki/Standard_deviation[standard deviation] of a parameter can tell us about the variability, and thus the reliability, of a sample estimate of an unknown population parameter (\( \mu \)). In the <<X3-1, first application>>, we found that the sample mean of arrival taxi times at DFW is roughly 8 minutes. But what is the variability (or reliability) of this sample estimate?
+
+[source, cypher]
+----
+MATCH (f)-[r:DESTINATION|DIVERTED_TO]->(a {abbr:'DFW'})
+WHERE HAS(r.taxi_time)
+RETURN STDEV(r.taxi_time) AS `Standard Deviation`, COUNT(*) as N
+----
+
+//table
+
+With this result, let's summarize what we know. The sample mean of arrival taxi times at DFW is 8 minutes, and we just calculated that the standard deviation is 3.37 minutes. We also asked the query for the number of observations, N.
+
+\(\large \bar x = 8\)
+
+\(\large \sigma = 3.37\)
+
+\(\large N = 12\)
+
+Using these, we can calculate the 95% link:http://en.wikipedia.org/wiki/Confidence_interval[confidence interval]. The 95% confidence interval tells us the range in which we believe the true population parameter value lies, with 95% confidence. The narrower this range, the better; that means we know more about the true population parameter. Calculating this range is simple:
+
+\( \large \bar x \pm 1.96 \cdot \frac{\sigma}{\sqrt N} \)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;footnote:[See link:http://en.wikipedia.org/wiki/1.96[here] for an explanation of 1.96.]
+
+Substituting in our values, we can find the 95% confidence interval of \( \mu \):
+
+\( \large 8 \pm 1.96 \cdot \frac{3.37}{\sqrt 12} = [6.09, 9.91] \)
+
+We now say, with 95% confidence, that we believe the true population parameter value, or the true mean of arrival taxi times at DFW, lies between 6.09 and 9.91 minutes. Using standard deviations and confidence intervals, we now know more about the variability and reliability of our sample parameter estimate of 8 minutes calculated earlier.
+
+'''
+
+[[X4]]
+== Visualizations
+
+[[X4-1]]
+=== Flights from DFW to ATL
+[source,cypher]
+----
+MATCH p = (:Airport {abbr:'DFW'})<-[:ORIGIN]-(:Flight)-[:DESTINATION]->(:Airport {abbr:'ATL'})
+RETURN p
+----
+//graph_result
+
+[[X4-2]]
+=== Shortest Path Between ORD and ATL
+
+There are several pairs of airports for which no direct flights exist. With this, we can use `shortestPath` to find a flight pattern that minimizes the number of overlays.
+
+[source,cypher]
+----
+MATCH (a1:Airport {abbr:'ORD'}), (a2:Airport {abbr:'ATL'})
+MATCH p = shortestPath((a1)-[*]-(a2))
+RETURN p
+----
+//graph_result
+
+[[X6]]
+== Moving Forward
+
+I am implementing the full version of this database for a class project, including all variables across all flights dating back to 1987. I plan to analyze carrier performance, specifically with attention to the Hub-And-Spoke versus Point-To-Point models of air travel.
+
+Created by Nicole White:
+
+- link:https://twitter.com/_nicolemargaret[Twitter]
+
+- link:http://nicolewhite.github.io[Blog]
+
+<<TOP, Back to top.>>

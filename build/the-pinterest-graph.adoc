@@ -1,0 +1,54 @@
+= The Pinterest Graph
+
+This GraphGist is inspired by the blog http://engineering.pinterest.com/post/55272557617/building-a-follower-model-from-scratch[Building a follower model from scratch], kudos to the Pinterest Engineers!
+
+== The model
+
+The basic model is just users following users, something like the following.
+
+[source,cypher]
+----
+CREATE (anders:User{name:'Anders'})
+CREATE (michael:User{name:'Michael'})
+CREATE (peter:User{name:'Peter'})
+CREATE (peter)-[:owns_board]->(board1:Board{name:'board1'})
+CREATE (peter)-[:owns_board]->(board2:Board{name:'board2'})
+CREATE (peter)-[:owns_board]->(board3:Board{name:'board3'})
+CREATE (anders)-[:follows_user]->(michael)
+----
+
+//graph
+
+== Action: User follows board
+
+When a user follows a board, an explicit relationship can be created in the model.
+
+[source,cypher]
+----
+MATCH (anders:User), (board1:Board)
+WHERE anders.name='Anders' and board1.name='board1'
+//create the follow relatoinship to board1
+CREATE (anders)-[:follows_board]->(board1)
+----
+
+//graph
+
+=== Find all users followed by Anders (exclicit and implicit)
+
+With the explicit relationships, we can now infer all users that are of interest to the first user `Anders`. Some quirk is made here to get both categories returned in one column.
+
+[source,cypher]
+----
+MATCH 
+//explicitly following users
+(user:User)-[:follows_user]->(expl_following), 
+//implicitly following users via followed boards
+user-[:follows_board]->()<-[:owns_board]-(impl_following) 
+WHERE user.name='Anders' 
+RETURN expl_following, impl_following
+----
+
+//table
+
+//console
+

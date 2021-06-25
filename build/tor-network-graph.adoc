@@ -1,0 +1,194 @@
+= Tor Network Graph
+:neo4j-version: 2.0.0-RC1
+:twitter: @esoufy
+:tags: domain:networks, use-case:Tor
+
+This interactive Neo4j tutorial covers a scenario in a Tor Network with a large infrastructure that includes a number of host and servers, a Hidden Web Server, ARM application for monitoring the Tor network status. 
+
+'''
+
+=== Tor Network meta-model
+
+image::http://yuml.me/bb5cc290[]
+
+=== Database Setup
+
+Below you will find the full Cypher script for creating Tor's Network Graph in Neo4j. This simple script is the full setup of the data set that we will later perform analysis on.
+
+//setup
+[source,cypher]
+----
+// Create Alice
+CREATE (alice:TorHost { 
+			name:'alice-pc.onion', 
+			isTorNode: true
+		}) 
+
+// Create Dave
+CREATE (dave:Server { 
+			name:'dave-server.onion',
+			type: 'Directory',
+			isTorNode: true
+		}) 
+
+// Create Node1
+CREATE (node1:Host { 
+			name:'node1-router.onion',
+			isTorNode: false
+		}) 
+
+
+// Create Node2
+CREATE (node2:TorHost { 
+			name:'node2-pc.onion',
+			isTorNode: true
+		}) 
+
+// Create Node3
+CREATE (node3:Host { 
+			name:'node3-pc.onion',
+			isTorNode: false
+		}) 
+
+
+// Create Node4
+CREATE (node4:Host { 
+			name:'node4-pc.onion',
+			isTorNode: true
+		}) 
+
+
+// Create Node5
+CREATE (node5:Host { 
+			name:'node5-pc.onion',
+			isTorNode: false
+		}) 
+
+// Create Bob
+CREATE (bob:TorHost { 
+			name:'bob-mac.onion',
+			isTorNode: true
+		}) 
+
+// Create Bob
+CREATE (chuck:TorHost { 
+			name:'chuck-ubuntu.onion',
+			isTorNode: true
+		}) 
+
+// Create Hidden service
+CREATE (webServer:HiddenService {
+			name:'Web Server', 
+			publicKey:'3048 0241 ...', 
+			port: '9999'
+		}) 
+
+// Create Hidden service
+CREATE (arm:Application {
+			name:'Anonymizing Relay Monitor'
+		}) 
+
+// Connect Alice to Directory Server Dave
+CREATE (alice)-[:DEPENDS_ON]->(dave)
+
+// Connect Alice to Node-1
+CREATE (alice)-[:CONNECTS]->(node1)
+
+// Connect Node-1 to Node-2
+CREATE (node1)-[:CONNECTS]->(node2)
+
+// Connect Node-2 to Node-3
+CREATE (node2)-[:CONNECTS]->(node3)
+
+// Connect Node-3 to Bob
+CREATE (node3)-[:CONNECTS]->(bob)
+
+// Connect Chuck to Node-3
+CREATE (chuck)-[:CONNECTS]->(node3)
+
+
+// Connect Node-5 to Node-2
+CREATE (node5)-[:CONNECTS]->(node2)
+
+// Connect Node-4 to Node-5
+CREATE (node4)-[:CONNECTS]->(node5)
+
+// Connect Node-1 to Node-4
+CREATE (node1)-[:CONNECTS]->(node4)
+
+// Connect Node-3 to Node-4
+CREATE (node3)-[:CONNECTS]->(node4)
+
+// Connect Chuck to Node-3
+CREATE (chuck)-[:CONNECTS]->(node3)
+
+// Connect Chuck to ARM
+CREATE (chuck)-[:RUNS]->(arm)
+
+// Connect Bob to WebServer
+CREATE (bob)-[:RUNS]->(webServer)
+
+RETURN *
+
+----
+
+'''
+
+=== Interactive Graph Visualization
+//graph
+
+'''
+
+=== Tor's Network Inventory
+
+The query below generates a data table that gives a quick overview of Tor's network infrastructure.
+
+[source,cypher]
+----
+MATCH 	(n) 
+RETURN 	labels(n)[0] as type,
+		count(*) as count, 
+		collect(n.name) as names
+----
+
+//table
+
+'''
+
+=== Find the most connected component
+
+The query below finds the most heavily connected upon component within Tor's network infrastructure. As expected, the most depended upon component is the Node 5.
+
+[source,cypher]
+----
+MATCH 		(n)<-[:CONNECTS*]-(connect)
+RETURN 		n.name as Host, 
+			count(DISTINCT connect) AS Connects
+ORDER BY 	Connects DESC
+LIMIT 		1
+----
+
+//table
+
+'''
+
+=== Find dependency chain for components:  ARM
+
+The query below finds the path of dependent components from left to right for Tor's ARM application. If any one of the components to the right of the ARM application fails, the ARM application will fail.
+
+[source,cypher]
+----
+MATCH 		(dependency)<-[:CONNECTS*]-(dependent)
+WITH 		dependency, count(DISTINCT dependent) AS Dependents
+ORDER BY 	Dependents DESC
+LIMIT		1
+WITH		dependency
+MATCH 		p=(resource)-[:CONNECTS*]->(dependency)
+WHERE		resource.system = "arm"
+RETURN		"[" + head(nodes(p)).name + "]" + 
+			reduce(s = "", n in tail(nodes(p)) | s + " -> " + "[" + n.name + "]") as Chain
+----
+
+//table
+
+'''

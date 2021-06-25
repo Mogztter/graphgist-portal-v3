@@ -1,0 +1,65 @@
+// Fields DEMOG
+
+
+:neo4j-version: 2.3
+:author: Anders Nawroth
+:twitter: @nawroth
+:style: red:Person(name), #54A835/#1078B5/white:Database(name)
+
+//hide
+//setup
+//output
+[source,cypher]
+----
+CREATE (deidnum:Fields {title:'deidnum',deidnum: 903})
+CREATE (GENDER:Fields {title:'GENDER',GENDER: 'MALE'})
+CREATE (AGE:Fields {title:'AGE',AGE: 27})
+CREATE (race:Fields {title:'race',race: 'Black or African American'})
+
+
+CREATE (bio:Mapping {title: 'bio',bio: GENDER.GENDER+race.race})
+MERGE (GENDER)-[:USED_IN]->(bio)
+MERGE (race)-[:USED_IN]->(bio)
+
+
+// Fields CONSENT
+CREATE (consntdt:Fields {title:'consntdt',consntdt: 153})
+
+
+// Fields SAEFORM
+CREATE (SAEDIAG:Fields {title:'SAEDIAG',SAEDIAG: 'COLON ABSCESS'})
+
+
+
+// CREATE DOMAINS - Domains takes values from Fields declared above
+
+CREATE (DEMOG:Source_Files {title: 'DEMOG', deidnum:deidnum.deidnum, GENDER: GENDER.GENDER, AGE: AGE.AGE, race: race.race}), 
+(CONSENT:Source_Files {title: 'CONSENT', consntdt: consntdt.consntdt}), 
+(SAEFORM:Source_Files {title: 'SAEFORM',SAEDIAG: SAEDIAG.SAEDIAG})
+
+MERGE (AGE)-[:PART_OF]->(DEMOG)
+MERGE (race)-[:PART_OF]->(DEMOG)
+MERGE (GENDER)-[:PART_OF]->(DEMOG)
+MERGE (consntdt)-[:PART_OF]->(CONSENT)
+MERGE (SAEDIAG)-[:PART_OF]->(SAEFORM)
+
+
+CREATE (Interfaceval:Interface {title: 'Interfaceval',interfaceval: bio.bio+SAEFORM.SAEDIAG})
+MERGE (bio)-[:USED_IN]->(Interfaceval)
+MERGE (SAEFORM)-[:USED_IN]->(Interfaceval)
+
+// CREATE Target - Target_Files takes values from Domains declared above
+
+CREATE(DM:Target_Files {title: 'Target', deidnum:DEMOG.deidnum, GENDER: DEMOG.GENDER, AGE: DEMOG.AGE, race: DEMOG.race, bio:bio.bio,Interfaceval:Interfaceval.interfaceval, consntdt: CONSENT.consntdt, SAEDIAG: SAEFORM.SAEDIAG})
+
+MERGE (DM)<-[:CORRESPONDS_TO]-(DEMOG)
+MERGE (DM)<-[:CORRESPONDS_TO]-(CONSENT)
+MERGE (DM)<-[:CORRESPONDS_TO]-(SAEFORM)
+MERGE (DM)<-[:FILLS]-(Interfaceval)
+
+WITH DM as d
+MATCH(d)<-[:CORRESPONDS_TO]-(m)
+RETURN d,m
+----
+
+//graph

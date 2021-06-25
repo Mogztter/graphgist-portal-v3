@@ -1,0 +1,49 @@
+= Movie recommendation based on User preferences and Actor weights
+
+Given a movie database, with a structure like
+
+`(actor:Actor)-[:ACTS_IN { percent: y }]->(film:Movie)`
+so that the system knows how long each actor is physically present on the screen, and to what % of the movie duration that corresponds.
+
+Each user can have preferences for some actors (ie: grade them from "bad" to "awesome" or whatnot). To each of this preference the system is associated to a modifier (say from -100 to +100).
+
+
+
+//setup
+[source,cypher]
+----
+CREATE (m1:Movie{name:'m1'})
+CREATE (m2:Movie{name:'m2'})
+CREATE (m3:Movie{name:'m3'})
+CREATE (a1:Actor{name:'a1'})
+CREATE (a2:Actor{name:'a2'})
+CREATE (a3:Actor{name:'a3'})
+CREATE (u1:User{name:'u1'})
+CREATE (u2:User{name:'u2'})
+CREATE (u3:User{name:'u3'})
+CREATE (a1)-[:ACTS_IN { percent: 10 }]->(m1)
+CREATE (a1)-[:ACTS_IN { percent: 20 }]->(m2)
+CREATE (a2)-[:ACTS_IN { percent: 20 }]->(m2)
+CREATE (a3)-[:ACTS_IN { percent: 20 }]->(m1)
+CREATE (u1)-[:VALUES { modifier: -20 }]->(a1)
+CREATE (u1)-[:VALUES { modifier: 20 }]->(a2)
+CREATE (u1)-[:VALUES { modifier: 100 }]->(a3)
+----
+
+//graph
+
+== What are the best movies for Users?
+
+This example shows how to ask the database to return the first movies, ranked by the value given by each preferred actor modifier multiplied by its presence in % on the movie? (Giving 0 to those movies that have no actor in the user preferences.)
+
+[source,cypher]
+----
+MATCH (u:User)-[v:VALUES]->(a:Actor)-[r:ACTS_IN]->(m:Movie)
+WITH u, v.modifier*r.percent as score, a, m
+RETURN u as user, SUM(score) as totalScore, collect(a) as actors_in_movie, m.name as movie
+ORDER BY totalScore DESC
+----
+
+//table
+
+Full context at http://stackoverflow.com/questions/23250046/neo4j-cypher-weighting-nodes[Stack Overflow]

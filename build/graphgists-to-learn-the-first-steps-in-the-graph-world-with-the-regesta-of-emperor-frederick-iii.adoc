@@ -1,0 +1,249 @@
+== GraphGist for the first steps in the graph database using the regesta of emperor Frederick III.
+:author: Andreas Kuczera
+:twitter: andreaskuczera
+:tags: Graph Technologies, Digital Humanities, Medieval History
+:neo4j-version: 3.5
+
+=== First steps in the graph database using the http://www.regesta-imperii.de/en/home.html[regesta of emperor Frederick III.]
+
+image::https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/Hans_Burgkmair_d._%C3%84._%28zugeschr.%29_-_Bildnis_Kaiser_Friedrich_III.jpg/490px-Hans_Burgkmair_d._%C3%84._%28zugeschr.%29_-_Bildnis_Kaiser_Friedrich_III.jpg[]
+
+= B1 Create Graph Database Manually
+== B1.1 Nodes
+=== Create and Find
+With the command "CREATE" you create a node, represented by two brackets: ()
+Within the brackets, you assign a variable to the node, e.g. "n" for "node": (n). The n is followd by a double collon and then the type or the label of the node.
+Within this command you can now use "n" to refer to the created node. The variable remains valid only until the command is terminated with a semicolon. It is not saved afterwards and can be reassigned again and again.
+
+With the command "RETURN" you can output (display) something. Depending on the result this can be done graphically or in table form.
+The node (n) just created with "RETURN n;" or everything created within the command with "RETURN*;". The asterisk stands for all nodes and edges created or found within the command.
+The semicolon closes the command.
+
+[source,cypher]
+----
+CREATE (n:Person) RETURN n;
+----
+*means*: "Create a node, here called n, of type Person and show me n."
+
+The "MERGE" command first checks whether a corresponding node already exists; if not, it is created again.
+
+[source,cypher]
+----
+MERGE (n:Person) RETURN n;
+----
+
+*means*: "Check if there are a node of type Person. If not, create one and show me n."
+
+== Delete and cut off
+To delete a node we use the command DELETE. First we have to find all nodes in the database we want to delete. We do this with the MATCH command.
+
+[source,cypher]
+----
+MATCH (n:Person) DELETE n
+----
+*means*: "Find node n with the label Person and delete n."
+
+This only works because our node has no connections (edges) to other nodes yet. To delete a node that is connected in the database, its edges must first be removed with the DETACH command.
+
+[source,cypher]
+----
+MATCH (n) DETACH DELETE n
+----
+*means*: "Find nodes, hereinafter referred to as n, delete the associated edges and delete n."
+
+By the way, the command "MATCH (n) DETACH DELETE n" deletes your entire database, since the command finds, cuts and deletes every node.
+
+But how do you refer to a specific node in a network?
+
+== Types and Properties
+So far we can create nodes with labels.
+To add further informations to the nodes we provide them with individual properties (e.g. name, date of birth, place of living, place of death ...)
+The node types and properties are not predefined and can be created as required. (Cf.: Data Modeling).
+
+There are two ways to add properties: When you create the nodes or afterwards.
+
+[source,cypher]
+----
+CREATE (f:Person {name:'Friedrich'}) RETURN f;
+----
+*means*: "Create a Person-type node with the property name and the value "Friedrich" and show it to me."
+
+== Set property later
+
+Now, if we want to give Friedrich another property, we add it with SET. It is important that we do not close the command with a semicolon as above, as long as we still want to refer to the node using the variable f.
+
+[source,cypher]
+----
+MATCH (f:Person {name:'Friedrich'})
+SET f.dateOfBirth = '1415-09-21'
+RETURN f;
+----
+*means*: "Find a Person-type node where the property 'name' contains the value 'Friedrich', the node is called 'f' in the following. For 'f', create the property 'date of birth' with the value '1415-09-21'. Show me f."
+
+*INFO*: Labels are written with the first Charakter uppercase, properties are written in lowercase or in camelcase like dateOfBirth as Whitespaces are not allowed.
+
+== Use Properties for Search
+If we want to find Friedrich in our graph database, we search for him by a property (in this case the name):
+
+[source,cypher]
+----
+MATCH (f:Person {name:'Friedrich'}) RETURN f;
+----
+*means*: "Create a person-type node with the property "name" Friedrich, here called f, and show me f."
+
+It would work the same way with the date of birth.
+
+== Exercise
+=== 1 First Delete all existing Nodes and Edges.
+
+=== 2. Now Create the following Nodes:
+* A node of type Person with the property Name "Friedrich".
+* A node of type Person with the property Name "Serious"
+* A node of type Person with the property Name "Cimburgis".
+* Display the result.
+
+=== 3. Add the following Dates of Birth:
+* Friedrich: 1415-09-21
+* Ernst: 1377
+* Cimburgis: 1394 or 1397
+* Display the result.
+
+== Solutions
+
+=== To 1. First Delete all existing Nodes and Edges:
+[source,cypher]
+----
+MATCH (n) DETACH DELETE n
+----
+
+=== To 2. Now Create the following Nodes:
+[source,cypher]
+----
+CREATE (f:Person {name:'Friedrich'})
+CREATE (e:Person {name:'Ernst'})
+CREATE (c:Person {name:'Cymburgis'})
+RETURN *;
+----
+
+=== To 3. Add the following Dates of Birth
+
+[source,cypher]
+----
+MATCH (f:Person {name:'Friedrich'})
+MATCH (c:Person {name:'Cymburgis'})
+MATCH (e:Person {name:'Ernst'})
+
+SET f.DateOfBirth = '1415-09-21'
+SET e.DateOfBirth = '1377'
+SET c.DateOfBirth = '1394'
+
+RETURN *;
+----
+
+== B1.2 Edges
+=== Create and Find
+An edge (connection, relation) between two nodes is represented in Cypher with an arrow:
+
++++-->+++
+
+The edge always has a direction.
+
+Furthermore, the edge type must also be specified. +++-[:CHILD_OF]->+++
+
+*INFO*: The type of an edge is written in uppercase.
+
+Edges, just like nodes, are created with the CREATE or MERGE commands and searched in the database with MATCH.
+
+An edge between two nodes looks like this in Cypher:
+
++++(f)-[r:CHILD_OF]->(e)+++
+
+Here the edge has the variable r. This is important to address the edge if he is used in the following commands.
+
+To create an edge, we have to create the corresponding nodes with MERGE or CREATE or call them from the database with MERGE or MATCH. MERGE is always the safest way for small amounts of data.
+
+== Example 1: Child and Parents
+[source,cypher]
+----
+MERGE (f:Person {name:'Friedrich'})
+MERGE (c:Person {name:'Cimburgis'})
+MERGE (e:Person {name:'Ernst'})
+
+CREATE (f)-[:CHILD_OF]->(c)
+CREATE (f)-[:CHILD_OF]->(e)
+RETURN *;
+----
+*means*:
+"Find or create  a node of type Person with the property name "https://en.wikipedia.org/wiki/Frederick_III,_Holy_Roman_Emperor[Friedrich]", hereinafter referred to as f. +
+Find or create a node of type Person with the property name "https://en.wikipedia.org/wiki/Cymburgis_of_Masovia[Cimburgis]", in the following called c +
+Find or create a node of type Person with the property name "https://en.wikipedia.org/wiki/Ernest_of_Austria_(Habsburg)[Ernest]", hereinafter referred to as e. +
+Create an edge of the type "child of" from f to c. +
+Create an edge of type "child of" from f to e. +
+Show me everything that was just found or created."
+
+== Example 2: Married Couple
+[source,cypher]
+----
+MERGE (c:Person {name:'Cimburgis'})
+MERGE (e:Person {name:'Ernst'})
+CREATE (e)-[:SPOUSE_OF]->(c)
+CREATE (c)-[:SPOUSE_OF]->(e)
+RETURN *;
+----
+*means*:
+"Find or create a node of type "person", here called c, where the property name is "Cimburgis". +
+Find or create a node of type "person", here called e, where the property name is "Ernst". +
+Create an edge of type "SPOUSE_OF" from e to c. +
+Create an edge of type "SPOUSE_OF" from c to e. +
+Show me everything that was just found or created."
+
+*By the way: Since edges in Cypher always have one direction, but a marriage is based on reciprocity, we create "SPOUSE_OF" edges twice, i.e. once in each direction.
+
+== Exercise
+.Now use the MERGE, MATCH, and CREATE commands to create the following edges and, if they do not already exist, the required nodes:
+* Eleonore is married to Frederick
+* Friedrich is married to Eleonore
+* Gwendolyn is a child of Frederick
+* Cunegund is a child of Eleonore
+* Maximilian is a child of Friedrich
+* Maximilian is a child of Cunegond
+
+== Solution
+
+[source,cypher]
+----
+MERGE (f:Person {name:'Friedrich'})
+MERGE (e:Person {name: 'Eleonore'})
+MERGE (k:Person {name: 'Gwendolyn'})
+MERGE (m:Person {name:'Maximilian'})
+
+CREATE (f)-[:MARRIED_WITH]->(e)
+CREATE (e)-[:MARRIED_WITH]->(f)
+
+CREATE (k)-[:CHILD_OF]->(f)
+CREATE (k)-[:CHILD_OF]->(e)
+
+CREATE (m)-[:CHILD_OF]->(f)
+CREATE (m)-[:CHILD_OF]->(e)
+
+RETURN *;
+----
+
+== B 1.3 Repetition
+
+You've learned now:
+[options="header"]
+|=======================
+|Term|Explanation
+|(variable:type {property})|Node
+|+++-[:type]->+++ |Edge
+|MATCH | find
+|CREATE | create
+|MERGE | find, if not available create
+|SET | add property
+|RETURN | display
+|DETACH | cut
+|DELETE | delete
+|* | everything created or found by this command
+|; | end of command
+|=======================

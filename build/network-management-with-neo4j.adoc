@@ -1,0 +1,57 @@
+= Network Management with Neo4j
+
+Neo4j is http://www.neotechnology.com/network/[often used] to model complex graphs in http://en.wikipedia.org/wiki/Network_management[Network Management] scenarios. This is a pseudo setup for a network management graph and some sample queries.
+
+[source,cypher]
+----
+CREATE 
+  (crm {name:"CRM"}),
+	(dbvm {name:"Database VM"}),
+	(www {name:"Public Website"}),
+	(wwwvm {name:"Webserver VM"}),
+	(srv1 {name:"Server 1"}),
+	(san {name:"SAN"}),
+	(srv2 {name:"Server 2"}),
+
+	(crm)-[:DEPENDS_ON]->(dbvm),
+	(dbvm)-[:DEPENDS_ON]->(srv2),
+	(srv2)-[:DEPENDS_ON]->(san),
+	(www)-[:DEPENDS_ON]->(dbvm),
+	(www)-[:DEPENDS_ON]->(wwwvm),
+	(wwwvm)-[:DEPENDS_ON]->(srv1),
+	(srv1)-[:DEPENDS_ON]->(san)
+----
+
+//graph
+
+== Impact analytics: `Server 1` is down - what is affected?
+
+[source,cypher]
+----
+// Server 1 Outage
+MATCH (n)<-[:DEPENDS_ON*]-(upstream)
+WHERE n.name = "Server 1"
+RETURN upstream
+----
+
+//table
+
+== Statistics - What depends on the SAN?
+
+[source,cypher]
+----
+// Most depended on component
+MATCH (n)<-[:DEPENDS_ON*]-(dependent)
+WHERE n.name='SAN'
+RETURN n, 
+count(DISTINCT dependent) 
+AS dependents
+ORDER BY dependents DESC
+LIMIT 1
+----
+
+//table
+
+== Try for yourself!
+
+//console

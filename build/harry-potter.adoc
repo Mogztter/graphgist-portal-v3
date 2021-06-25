@@ -1,0 +1,337 @@
+= Harry Potter
+
+image::https://dl.dropboxusercontent.com/u/15330610/harry.jpg[]
+
+Welcome to the wonderful world of Harry Potter!
+
+v0 of this graph models some of Harrys friends, enemies and their parents. Also have some pets and a few killings.
+The obvious relation missing is the one between Harry Potter and Voldemort- it took us 7 books to figure that one out, so you'll have to wait till I add more data :-)
+
+== The model
+
+To start with, we're modeling friends, enemies, parents, pets, and murderers.
+
+image::https://dl.dropboxusercontent.com/u/15330610/model.png[]
+
+The following labels exist in v0:
+
+* Wizard with property name
+* Witch with property name
+* Muggle with property name
+* Pet link:http://harrypotter.wikia.com/wiki/Category:Pets[Pets] with property name,type
+* Being link:http://harrypotter.wikia.com/wiki/Being[Being] with property name,type
+
+link:http://harrypotter.wikia.com/wiki/Main_Page[harrypotter.wikia.com] was used to look up facts that escape memory. 
+
+== Setup
+
+//hide
+
+//setup
+
+[source,cypher]
+----
+ CREATE (harry:Wizard { name : 'Harry Potter'}),
+ (lily:Witch { name : 'Lily Potter'}),
+ (james:Wizard { name : 'James Potter'}),
+ (ginny:Witch { name : 'Ginny Weasley'}),
+ (ron:Wizard { name : 'Ronald Weasley'}),
+ (arthur:Wizard { name : 'Arthur Weasley'}),
+ (molly:Witch { name : 'Molly Weasley'}),
+ (hermione:Witch { name : 'Hermione Granger'}),
+ (tonks:Witch { name : 'Nymphadora Tonks'}),
+ (dobby:Being { name : 'Dobby', type: 'House-Elf'}),
+ (fred:Wizard { name : 'Fred Weasley'}),
+ (george:Wizard { name : 'George Weasley'}),
+ (bill:Wizard { name : 'Bill Weasley'}),
+ (percy:Wizard { name : 'Percy Weasley'}),
+ (charlie:Wizard { name : 'Charlie Weasley'}),
+ (moody:Wizard { name : 'Alastor "Mad-Eye" Moody'}),
+ (lupin:Wizard:Being { name : 'Remus Lupin', type:'Werewolf'}),
+ (sirius:Wizard { name : 'Sirius Black'}),
+ (mcgonagall:Witch { name : 'Minerva McGonagall'}),
+ (dumbledore:Wizard { name : 'Albus Dumbledore'}),
+ (hagrid:Being { name : 'Rubeus Hagrid', type: 'Giant'}),
+ (luna:Witch { name : 'Luna Lovegood'}),
+ (neville:Wizard { name : 'Neville Longbottom'}),
+ (umbridge:Witch { name : 'Dolores Umbridge'}),
+ (lucius:Wizard { name : 'Lucius Malfoy'}),
+ (draco:Wizard { name : 'Draco Malfoy'}),
+ (voldemort:Wizard { name : 'Voldemort (Tom Riddle)'}),
+ (bellatrix:Witch { name : 'Bellatrix Lestrange'}),
+ (severus:Wizard { name : 'Severus Snape'}),
+ (greyback:Being { name : 'Fenrir Greyback', type: 'Werewolf'}),
+ (goyle:Wizard { name : 'Gregory Goyle'}),
+ (crabbe:Wizard { name : 'Vincent Crabbe'}),
+ (dudley:Muggle { name : 'Dudley Dursley'}),
+ (mrgranger:Muggle { name : 'Mr. Granger'}),
+ (mrsgranger:Muggle { name : 'Mrs. Granger'}),
+ (ted:Wizard { name : 'Edward Tonks'}),
+ (andromeda:Witch { name : 'Andromeda Tonks'}),
+ (mrtonks:Muggle { name : 'Mr. Tonks'}),
+ (mrstonks:Muggle { name : 'Mrs. Tonks'}),
+ (lyall:Wizard { name : 'Lyall Lupin'}),
+ (hope:Muggle { name : 'Hope Lupin'}),
+ (orion:Wizard { name : 'Orion Black'}),
+ (walburga:Wizard { name : 'Walburga Lupin'}),
+ (robert:Muggle { name : 'Reverend Robert McGonagall'}),
+ (isobel:Witch { name : 'Isobel McGonagall'}),
+ (percival:Wizard { name : 'Percival Dumbledore'}),
+ (kendra:Witch { name : 'Kendra Dumbledore'}),
+ (kendramom:Muggle { name : 'Kendras mom'}),
+ (kendradad:Muggle { name : 'Kendras dad'}),
+ (xeno:Wizard { name : 'Xenophilius Lovegood'}),
+ (mrslovegood:Witch { name : 'Mrs. Lovegood'}),
+ (narcissa:Witch { name : 'Narcissa Malfoy'}),
+ (merope:Witch { name : 'Merope Gaunt'}),
+ (tomsr:Muggle { name : 'Tom Riddle Sr'}),
+ (druella:Witch { name : 'Drueller Rosier'}),
+ (cygnus:Wizard { name : 'Cygnus Black'}),
+ (mrgoyle:Wizard { name : 'Goyle Sr'}),
+ (mrsgoyle:Witch { name : 'Mrs. Goyle'}),
+ (mrscrabbe:Witch { name : 'Mrs. Crabbe'}),
+ (mrcrabbe:Wizard { name : 'Crabbe Sr'}),
+ (frank:Wizard { name : 'Frank Longbottom'}),
+ (alice:Witch { name : 'Alice Longbottom'}),
+ (petunia:Muggle { name : 'Petunia Dursley'}),
+ (vernon:Muggle { name : 'Vernon Dursley'}),
+ (mrevans:Muggle { name : 'Mr. Evans'}),
+ (mrsevans:Muggle { name : 'Mrs. Evans'}),
+ (hedwig:Pet { name: 'Hedwig', type : 'Owl'}),
+ (nagini:Pet { name: 'Nagini', type : 'Snake'}),
+ (fawkes:Pet { name: 'Fawkes', type : 'Phoenix'}),
+ (crookshanks:Pet { name: 'Crookshanks', type : 'Cat'}),
+ (pig:Pet { name : 'Pigwidgeon', type : 'Owl'}),
+ (lily)-[:PARENT_OF]->(harry),
+ (james)-[:PARENT_OF]->(harry),
+ (molly)-[:PARENT_OF]->(ron),
+ (molly)-[:PARENT_OF]->(ginny),
+ (molly)-[:PARENT_OF]->(fred),
+ (molly)-[:PARENT_OF]->(george),
+ (molly)-[:PARENT_OF]->(bill),
+ (molly)-[:PARENT_OF]->(percy),
+ (molly)-[:PARENT_OF]->(charlie),
+ (arthur)-[:PARENT_OF]->(ron),
+ (arthur)-[:PARENT_OF]->(ginny),
+ (arthur)-[:PARENT_OF]->(fred),
+ (arthur)-[:PARENT_OF]->(george),
+ (arthur)-[:PARENT_OF]->(bill),
+ (arthur)-[:PARENT_OF]->(percy),
+ (arthur)-[:PARENT_OF]->(charlie),
+ (mrgranger)-[:PARENT_OF]->(hermione),
+ (mrsgranger)-[:PARENT_OF]->(hermione),
+ (ted)-[:PARENT_OF]->(tonks),
+ (andromeda)-[:PARENT_OF]->(tonks),
+ (mrtonks)-[:PARENT_OF]->(ted),
+ (mrstonks)-[:PARENT_OF]->(ted),
+ (cygnus)-[:PARENT_OF]->(andromeda),
+ (druella)-[:PARENT_OF]->(andromeda),
+ (cygnus)-[:PARENT_OF]->(bellatrix),
+ (druella)-[:PARENT_OF]->(bellatrix),
+ (cygnus)-[:PARENT_OF]->(narcissa),
+ (druella)-[:PARENT_OF]->(narcissa),
+ (lyall)-[:PARENT_OF]->(lupin),
+ (hope)-[:PARENT_OF]->(lupin),
+ (orion)-[:PARENT_OF]->(sirius),
+ (walburga)-[:PARENT_OF]->(sirius),
+ (robert)-[:PARENT_OF]->(mcgonagall),
+ (isobel)-[:PARENT_OF]->(mcgonagall),
+ (percival)-[:PARENT_OF]->(dumbledore),
+ (kendra)-[:PARENT_OF]->(dumbledore),
+ (xeno)-[:PARENT_OF]->(luna),
+ (mrslovegood)-[:PARENT_OF]->(luna),
+ (frank)-[:PARENT_OF]->(neville),
+ (alice)-[:PARENT_OF]->(neville),
+ (lucius)-[:PARENT_OF]->(draco),
+ (narcissa)-[:PARENT_OF]->(draco),
+ (tomsr)-[:PARENT_OF]->(voldemort),
+ (merope)-[:PARENT_OF]->(voldemort),
+ (mrgoyle)-[:PARENT_OF]->(goyle),
+ (mrsgoyle)-[:PARENT_OF]->(goyle),
+ (mrcrabbe)-[:PARENT_OF]->(crabbe),
+ (mrscrabbe)-[:PARENT_OF]->(crabbe),
+ (petunia)-[:PARENT_OF]->(dudley),
+ (vernon)-[:PARENT_OF]->(dudley),
+ (kendramom)-[:PARENT_OF]->(kendra),
+ (kendradad)-[:PARENT_OF]->(kendra),
+ (mrevans)-[:PARENT_OF]->(lily),
+ (mrsevans)-[:PARENT_OF]->(lily),
+ (mrevans)-[:PARENT_OF]->(petunia),
+ (mrsevans)-[:PARENT_OF]->(petunia),
+ (ginny)-[:FRIEND_OF]->(harry),
+ (ron)-[:FRIEND_OF]->(harry),
+ (hermione)-[:FRIEND_OF]->(harry),
+ (tonks)-[:FRIEND_OF]->(harry),
+ (dobby)-[:FRIEND_OF]->(harry),
+ (fred)-[:FRIEND_OF]->(harry),
+ (george)-[:FRIEND_OF]->(harry),
+ (bill)-[:FRIEND_OF]->(harry),
+ (charlie)-[:FRIEND_OF]->(harry),
+ (percy)-[:FRIEND_OF]->(harry),
+ (moody)-[:FRIEND_OF]->(harry),
+ (lupin)-[:FRIEND_OF]->(harry),
+ (sirius)-[:FRIEND_OF]->(harry),
+ (mcgonagall)-[:FRIEND_OF]->(harry),
+ (dumbledore)-[:FRIEND_OF]->(harry),
+ (hagrid)-[:FRIEND_OF]->(harry),
+ (luna)-[:FRIEND_OF]->(harry),
+ (neville)-[:FRIEND_OF]->(harry),
+ (severus)-[:FRIEND_OF]->(harry),
+ (dudley)-[:FRIEND_OF]->(harry),
+ (percy)-[:ENEMY_OF]->(harry),
+ (umbridge)-[:ENEMY_OF]->(harry),
+ (draco)-[:ENEMY_OF]->(harry),
+ (voldemort)-[:ENEMY_OF]->(harry),
+ (bellatrix)-[:ENEMY_OF]->(harry),
+ (severus)-[:ENEMY_OF]->(harry),
+ (greyback)-[:ENEMY_OF]->(harry),
+ (goyle)-[:ENEMY_OF]->(harry),
+ (crabbe)-[:ENEMY_OF]->(harry),
+ (dudley)-[:ENEMY_OF]->(harry),
+ (harry)-[:HAS_PET]->(hedwig),
+ (hermione)-[:HAS_PET]->(crookshanks),
+ (ron)-[:HAS_PET]->(pig),
+ (dumbledore)-[:HAS_PET]->(fawkes),
+ (voldemort)-[:HAS_PET]->(nagini),
+ (james)-[:FRIEND_OF]->(lupin),
+ (james)-[:FRIEND_OF]->(sirius),
+ (lily)-[:FRIEND_OF]->(lupin),
+ (lily)-[:FRIEND_OF]->(sirius),
+ (lily)-[:FRIEND_OF]->(severus),
+ (lupin)-[:FRIEND_OF]->(moody),
+ (lupin)-[:FRIEND_OF]->(molly),
+ (lupin)-[:FRIEND_OF]->(arthur),
+ (lupin)-[:FRIEND_OF]->(sirius),
+ (mcgonagall)-[:FRIEND_OF]->(dumbledore),
+ (dumbledore)-[:FRIEND_OF]->(hagrid),
+ (dumbledore)-[:FRIEND_OF]->(severus),
+ (ron)-[:FRIEND_OF]->(neville),
+ (neville)-[:FRIEND_OF]->(luna),
+ (crabbe)-[:FRIEND_OF]->(goyle),
+ (draco)-[:FRIEND_OF]->(goyle),
+ (draco)-[:FRIEND_OF]->(crabbe),
+ (hagrid)-[:FRIEND_OF]->(hermione),
+ (hagrid)-[:FRIEND_OF]->(ron),
+ (lucius)-[:FRIEND_OF]->(bellatrix),
+ (lucius)-[:FRIEND_OF]->(mrcrabbe),
+ (lucius)-[:FRIEND_OF]->(mrgoyle),
+ (voldemort)-[:KILLED]->(severus),
+ (severus)-[:KILLED]->(dumbledore),
+ (voldemort)-[:KILLED]->(james),
+ (voldemort)-[:KILLED]->(lily),
+ (bellatrix)-[:KILLED]->(sirius),
+ (bellatrix)-[:KILLED]->(dobby),
+ (molly)-[:KILLED]->(bellatrix);
+----
+
+== The graph
+[source,cypher]
+----
+match n return n
+----
+//graph
+
+== Exploring the graph
+
+=== Who are Harrys friends?
+[source,cypher]
+----
+match (h:Wizard)-[:FRIEND_OF]-f 
+where h.name="Harry Potter"
+return f.name as friend
+----
+//table
+
+
+=== Who are Harrys enemies?
+[source,cypher]
+----
+match (h:Wizard)-[:ENEMY_OF]-e 
+where h.name="Harry Potter"
+return e.name as enemy
+----
+//table
+
+
+=== Who are the Muggle borns?
+[source,cypher]
+----
+match w<-[:PARENT_OF]-(p) 
+with w, collect(p) as parents
+where all(parent in parents where parent:Muggle) and not(w:Muggle) 
+return distinct w.name as muggleBorn
+----
+//table
+
+=== Who are the Half bloods?
+We'll consider the qualification to be at least one Muggle in the known ancestry
+
+[source,cypher]
+----
+match w<-[:PARENT_OF*]-(p) 
+with w,collect(p) as parents
+where any(parent in parents where parent:Muggle)
+and (not (all(parent in parents where parent:Muggle))) and not(w:Muggle)
+return distinct w.name as halfBlood
+----
+//table
+
+=== Who are Pure bloods?
+We'll consider the qualification to be no Muggles in the known ancestry
+
+[source,cypher]
+----
+match w<-[:PARENT_OF*]-(p) 
+with w,collect(p) as parents
+where none(parent in parents WHERE parent:Muggle) and not(w:Muggle)
+return distinct w.name as pureBlood
+----
+//table
+
+=== Which friends of Harry Potter are Beings?
+[source,cypher]
+----
+match (b:Being)-[:FRIEND_OF]-(harry)
+where harry.name="Harry Potter"
+return b.name as beingName, b.type as beingType
+----
+//table
+
+=== Which half bloods were killed by enemies of Harry?
+[source,cypher]
+----
+match line=h<-[:PARENT_OF*]-(p) 
+with h,collect(p) as parents
+where any(parent in parents where parent:Muggle)
+and (not (all(parent in parents where parent:Muggle)))  and not(h:Muggle)
+with distinct h as halfblood
+match halfblood<-[:KILLED]-(enemy)-[:ENEMY_OF]-(harry)
+where harry.name="Harry Potter"
+return halfblood.name as halfBloodName,enemy.name as enemyName
+----
+//table
+
+=== Which people had love-hate relations with Harry Potter?
+[source,cypher]
+----
+match (harry)-[:FRIEND_OF]-(w)-[:ENEMY_OF]-(harry)
+where harry.name="Harry Potter"
+return w.name as name
+----
+//table
+
+== Changelog
+
+* v0
+** Handpicked friends, enemies and their parents
+* Next
+** Houses, Affiliations, Magical characteristics, Magical and dark creatures
+
+Created by Luanne Misquitta:
+
+- link:https://twitter.com/luannem[Twitter]
+
+- link:http://thought-bytes.blogspot.in/[Blog]
+
+- link:https://in.linkedin.com/in/luannemisquitta/[LinkedIn]
+

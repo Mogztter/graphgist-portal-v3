@@ -1,0 +1,839 @@
+= Graph of the Free Agent players of Major League Baseball 2016
+:neo4j-version: 2.3.0
+:author: Janos Szendi-Varga
+:twitter: @szenyo
+
+// Provide an introduction to your data modeling domain and what you are trying to accomplish
+
+I used the 2016 Free Agent Tracker of http://www.fangraphs.com[FanGraphs] to get the data about the current Free Agent players, and their new contract.  The graph contains the contracts made till 16th December 2015.
+
+// Data modell
+
+My data modell is illustrated by David Price, who signed a record seven-year, $217 million contract with the Boston Red Sox. 
+
+image::http://i.imgur.com/wYcFHZB.png[]
+
+//hide
+//setup
+[source,cypher]
+----
+create (_42:`League` {`name`:"National League"})
+create (_43:`League` {`name`:"American League"})
+create (_81:`Division` {`name`:"National League East"})
+create (_82:`Team` {`city`:"New York", `name`:"Mets"})
+create (_83:`Division` {`name`:"American League East"})
+create (_84:`Team` {`city`:"Toronto", `name`:"Blue Jays"})
+create (_85:`Division` {`name`:"National League Central"})
+create (_86:`Team` {`city`:"St. Louis", `name`:"Cardinals"})
+create (_87:`Division` {`name`:"National League West"})
+create (_88:`Team` {`city`:"Los Angeles", `name`:"Dodgers"})
+create (_89:`Team` {`city`:"Baltimore", `name`:"Orioles"})
+create (_90:`Division` {`name`:"American League Central"})
+create (_91:`Team` {`city`:"Kansas City", `name`:"Royals"})
+create (_92:`Team` {`city`:"San Diego", `name`:"Padres"})
+create (_93:`Team` {`city`:"Pittsburgh", `name`:"Pirates"})
+create (_94:`Team` {`city`:"Chicago", `name`:"Cubs"})
+create (_95:`Team` {`city`:"Washington", `name`:"Nationals"})
+create (_96:`Division` {`name`:"American League West"})
+create (_97:`Team` {`city`:"Houston", `name`:"Astros"})
+create (_98:`Team` {`city`:"Chicago", `name`:"White Sox"})
+create (_99:`Team` {`city`:"Texas", `name`:"Rangers"})
+create (_100:`Team` {`city`:"Seattle", `name`:"Mariners"})
+create (_101:`Team` {`city`:"Los Angeles", `name`:"Angels"})
+create (_102:`Team` {`city`:"Tampa Bay", `name`:"Rays"})
+create (_103:`Team` {`city`:"Atlanta", `name`:"Braves"})
+create (_104:`Team` {`city`:"Minnesota", `name`:"Twins"})
+create (_105:`Team` {`city`:"Detroit", `name`:"Tigers"})
+create (_106:`Team` {`city`:"San Fransisco", `name`:"Giants"})
+create (_107:`Team` {`city`:"Cleveland", `name`:"Indians"})
+create (_108:`Team` {`city`:"Boston", `name`:"Red Sox"})
+create (_109:`Team` {`city`:"New York", `name`:"Yankees"})
+create (_110:`Team` {`city`:"Arizona", `name`:"Diamondbacks"})
+create (_111:`Team` {`city`:"Philadelphia", `name`:"Phillies"})
+create (_112:`Team` {`city`:"Colorado", `name`:"Rockies"})
+create (_113:`Team` {`city`:"Cincinnati", `name`:"Reds"})
+create (_114:`Team` {`city`:"Milwaukee", `name`:"Brewers"})
+create (_115:`Team` {`city`:"Miami", `name`:"Marlins"})
+create (_116:`Team` {`city`:"Oakland", `name`:"Athletics"})
+create (_290:`Player` {`age`:30, `name`:"Yoenis Cespedes"})
+create (_291:`Position` {`name`:"LF"})
+create (_292:`Player` {`age`:30, `name`:"David Price"})
+create (_293:`Position` {`name`:"SP"})
+create (_294:`Player` {`age`:26, `name`:"Jason Heyward"})
+create (_295:`Position` {`name`:"RF"})
+create (_296:`Player` {`age`:32, `name`:"Zack Greinke"})
+create (_297:`Player` {`age`:29, `name`:"Chris Davis"})
+create (_298:`Position` {`name`:"1B"})
+create (_299:`Player` {`age`:29, `name`:"Johnny Cueto"})
+create (_300:`Player` {`age`:37, `name`:"John Lackey"})
+create (_301:`Player` {`age`:28, `name`:"Justin Upton"})
+create (_302:`Player` {`age`:33, `name`:"J.A. Happ"})
+create (_303:`Player` {`age`:29, `name`:"Dexter Fowler"})
+create (_304:`Position` {`name`:"CF"})
+create (_305:`Player` {`age`:29, `name`:"Jordan Zimmermann"})
+create (_306:`Player` {`age`:38, `name`:"A.J. Burnett"})
+create (_307:`Player` {`age`:29, `name`:"Colby Rasmus"})
+create (_308:`Position` {`name`:"CF/RF/LF"})
+create (_309:`Player` {`age`:31, `name`:"Alex Gordon"})
+create (_310:`Player` {`age`:30, `name`:"Wei-Yin Chen"})
+create (_311:`Player` {`age`:30, `name`:"Jeff Samardzija"})
+create (_312:`Player` {`age`:36, `name`:"Colby Lewis"})
+create (_313:`Player` {`age`:42, `name`:"Bartolo Colon"})
+create (_314:`Position` {`name`:"RP"})
+create (_315:`Player` {`age`:29, `name`:"Yovani Gallardo"})
+create (_316:`Player` {`age`:30, `name`:"Daniel Murphy"})
+create (_317:`Position` {`name`:"2B/3B"})
+create (_318:`Player` {`age`:31, `name`:"Scott Kazmir"})
+create (_319:`Player` {`age`:28, `name`:"Austin Jackson"})
+create (_320:`Player` {`age`:32, `name`:"Franklin Gutierrez"})
+create (_321:`Player` {`age`:32, `name`:"David Freese"})
+create (_322:`Position` {`name`:"3B"})
+create (_323:`Player` {`age`:30, `name`:"Asdrubal Cabrera"})
+create (_324:`Position` {`name`:"SS"})
+create (_325:`Player` {`age`:32, `name`:"Howie Kendrick"})
+create (_326:`Position` {`name`:"2B"})
+create (_327:`Player` {`age`:36, `name`:"Mark Buehrle"})
+create (_328:`Player` {`age`:38, `name`:"A.J. Pierzynski"})
+create (_329:`Position` {`name`:"C"})
+create (_330:`Player` {`age`:34, `name`:"Ben Zobrist"})
+create (_331:`Position` {`name`:"2B/LF"})
+create (_332:`Player` {`age`:31, `name`:"Mike Pelfrey"})
+create (_333:`Player` {`age`:36, `name`:"Juan Uribe"})
+create (_334:`Player` {`age`:32, `name`:"Marco Estrada"})
+create (_335:`Player` {`age`:33, `name`:"Darren O'Day"})
+create (_336:`Player` {`age`:34, `name`:"Hisashi Iwakuma"})
+create (_337:`Player` {`age`:35, `name`:"Rajai Davis"})
+create (_338:`Position` {`name`:"CF/LF"})
+create (_339:`Player` {`age`:27, `name`:"Brett Anderson"})
+create (_340:`Player` {`age`:30, `name`:"Ian Desmond"})
+create (_341:`Player` {`age`:28, `name`:"Mike Leake"})
+create (_342:`Player` {`age`:28, `name`:"Mat Latos"})
+create (_343:`Player` {`age`:31, `name`:"Denard Span"})
+create (_344:`Player` {`age`:34, `name`:"Ryan Raburn"})
+create (_345:`Position` {`name`:"DH/LF"})
+create (_346:`Player` {`age`:31, `name`:"Alejandro De Aza"})
+create (_347:`Position` {`name`:"RF/LF"})
+create (_348:`Player` {`age`:33, `name`:"Will Venable"})
+create (_349:`Player` {`age`:32, `name`:"Mark Lowe"})
+create (_350:`Player` {`age`:32, `name`:"Chris Young"})
+create (_351:`Player` {`age`:32, `name`:"Geovany Soto"})
+create (_352:`Player` {`age`:35, `name`:"Joe Blanton"})
+create (_353:`Player` {`age`:35, `name`:"Rich Hill"})
+create (_354:`Player` {`age`:32, `name`:"Tony Sipp"})
+create (_355:`Player` {`age`:38, `name`:"Marlon Byrd"})
+create (_356:`Player` {`age`:34, `name`:"Alfredo Simon"})
+create (_357:`Player` {`age`:29, `name`:"Matt Wieters"})
+create (_358:`Player` {`age`:31, `name`:"Shawn Kelley"})
+create (_359:`Player` {`age`:36, `name`:"Chris Young"})
+create (_360:`Player` {`age`:35, `name`:"Dan Haren"})
+create (_361:`Player` {`age`:35, `name`:"Ryan Madson"})
+create (_362:`Player` {`age`:30, `name`:"Jarrod Saltalamacchia"})
+create (_363:`Player` {`age`:37, `name`:"Aaron Harang"})
+create (_364:`Player` {`age`:30, `name`:"Ian Kennedy"})
+create (_365:`Player` {`age`:35, `name`:"Chris Denorfia"})
+create (_366:`Player` {`age`:34, `name`:"Mike Napoli"})
+create (_367:`Player` {`age`:32, `name`:"John Jaso"})
+create (_368:`Position` {`name`:"DH"})
+create (_369:`Player` {`age`:30, `name`:"Antonio Bastardo"})
+create (_370:`Player` {`age`:32, `name`:"Chris Iannetta"})
+create (_371:`Player` {`age`:31, `name`:"Dioner Navarro"})
+create (_372:`Player` {`age`:37, `name`:"Chad Qualls"})
+create (_373:`Player` {`age`:31, `name`:"Brandon Morrow"})
+create (_374:`Player` {`age`:34, `name`:"Oliver Perez"})
+create (_375:`Player` {`age`:34, `name`:"Justin Morneau"})
+create (_376:`Player` {`age`:33, `name`:"Jason Motte"})
+create (_377:`Player` {`age`:28, `name`:"Gerardo Parra"})
+create (_378:`Player` {`age`:33, `name`:"Manny Parra"})
+create (_379:`Player` {`age`:42, `name`:"LaTroy Hawkins"})
+create (_380:`Player` {`age`:29, `name`:"Franklin Morales"})
+create (_381:`Player` {`age`:32, `name`:"Matt Albers"})
+create (_382:`Player` {`age`:39, `name`:"Matt Thornton"})
+create (_383:`Player` {`age`:31, `name`:"Joakim Soria"})
+create (_384:`Player` {`age`:32, `name`:"Steve Pearce"})
+create (_385:`Position` {`name`:"1B/LF"})
+create (_386:`Player` {`age`:28, `name`:"Alex Avila"})
+create (_387:`Position` {`name`:"C/1B"})
+create (_388:`Player` {`age`:29, `name`:"Tommy Hunter"})
+create (_389:`Player` {`age`:32, `name`:"Burke Badenhop"})
+create (_390:`Player` {`age`:40, `name`:"Tim Hudson"})
+create (_391:`Player` {`age`:34, `name`:"David Murphy"})
+create (_392:`Player` {`age`:34, `name`:"Joe Thatcher"})
+create (_393:`Player` {`age`:31, `name`:"Doug Fister"})
+create (_394:`Player` {`age`:31, `name`:"Tim Lincecum"})
+create (_395:`Player` {`age`:31, `name`:"Jonathan Broxton"})
+create (_396:`Player` {`age`:33, `name`:"Kelly Johnson"})
+create (_397:`Player` {`age`:29, `name`:"Gordon Beckham"})
+create (_398:`Player` {`age`:32, `name`:"Carlos Villanueva"})
+create (_399:`Player` {`age`:34, `name`:"Blaine Boyer"})
+create (_400:`Player` {`age`:32, `name`:"Jerry Blevins"})
+create (_401:`Player` {`age`:37, `name`:"Jimmy Rollins"})
+create (_402:`Player` {`age`:37, `name`:"Kyle Lohse"})
+create (_403:`Player` {`age`:33, `name`:"Brayan Pena"})
+create (_404:`Player` {`age`:37, `name`:"Peter Moylan"})
+create (_405:`Player` {`age`:32, `name`:"Stephen Drew"})
+create (_406:`Player` {`age`:30, `name`:"Tyler Clippard"})
+create (_407:`Player` {`age`:34, `name`:"Alex Rios"})
+create (_408:`Player` {`age`:38, `name`:"Ryan Vogelsong"})
+create (_409:`Player` {`age`:39, `name`:"Randy Wolf"})
+create (_410:`Player` {`age`:29, `name`:"Ryan Webb"})
+create (_411:`Player` {`age`:27, `name`:"Trevor Cahill"})
+create (_412:`Player` {`age`:34, `name`:"Munenori Kawasaki"})
+create (_413:`Player` {`age`:31, `name`:"Chad Billingsley"})
+create (_414:`Player` {`age`:35, `name`:"Matt Belisle"})
+create (_415:`Player` {`age`:32, `name`:"Gavin Floyd"})
+create (_416:`Player` {`age`:40, `name`:"Randy Choate"})
+create (_417:`Player` {`age`:30, `name`:"Bud Norris"})
+create (_418:`Player` {`age`:36, `name`:"Jeremy Guthrie"})
+create (_419:`Player` {`age`:34, `name`:"Casey Janssen"})
+create (_420:`Player` {`age`:35, `name`:"Shane Victorino"})
+create (_421:`Player` {`age`:41, `name`:"Joe Nathan"})
+create (_422:`Player` {`age`:35, `name`:"Don Kelly"})
+create (_423:`Position` {`name`:"1B/3B"})
+create (_424:`Player` {`age`:32, `name`:"Edwin Jackson"})
+create (_425:`Player` {`age`:36, `name`:"Clint Barmes"})
+create (_426:`Player` {`age`:30, `name`:"Wesley Wright"})
+create (_427:`Player` {`age`:33, `name`:"Tom Gorzelanny"})
+create (_428:`Player` {`age`:35, `name`:"Neal Cotts"})
+create (_429:`Player` {`age`:30, `name`:"David Hernandez"})
+create (_430:`Player` {`age`:35, `name`:"Craig Breslow"})
+create (_431:`Player` {`age`:34, `name`:"Jeff Francis"})
+create (_432:`Player` {`age`:31, `name`:"Bobby Parnell"})
+create (_433:`Player` {`age`:31, `name`:"Edward Mujica"})
+create (_434:`Player` {`age`:30, `name`:"Eric O'Flaherty"})
+create (_435:`Player` {`age`:38, `name`:"Fernando Rodney"})
+create (_436:`Player` {`age`:37, `name`:"Barry Zito"})
+create (_437:`Player` {`age`:38, `name`:"Joe Beimel"})
+create (_438:`Player` {`age`:33, `name`:"Ross Ohlendorf"})
+create (_439:`Player` {`age`:36, `name`:"Chase Utley"})
+create (_440:`Player` {`age`:34, `name`:"Alexei Ramirez"})
+create (_441:`Player` {`age`:29, `name`:"Ross Detwiler"})
+create (_442:`Player` {`age`:32, `name`:"Brian Duensing"})
+create (_443:`Player` {`age`:37, `name`:"Chris Capuano"})
+create (_444:`Player` {`age`:31, `name`:"Drew Stubbs"})
+create (_445:`Player` {`age`:31, `name`:"Jeff Francoeur"})
+create (_446:`Player` {`age`:35, `name`:"Dan Uggla"})
+create (_447:`Player` {`age`:32, `name`:"Mark Reynolds"})
+create (_448:`Player` {`age`:34, `name`:"Jerome Williams"})
+create (_449:`Player` {`age`:30, `name`:"Sean Rodriguez"})
+create (_450:`Player` {`age`:32, `name`:"Jeff Mathis"})
+create (_451:`Player` {`age`:31, `name`:"Cliff Pennington"})
+create (_452:`Position` {`name`:"2B/SS"})
+create (_453:`Player` {`age`:33, `name`:"Corey Hart"})
+create (_454:`Position` {`name`:"1B/RF"})
+create (_455:`Player` {`age`:33, `name`:"Grady Sizemore"})
+create (_456:`Player` {`age`:34, `name`:"Mike Aviles"})
+create (_457:`Position` {`name`:"3B/LF"})
+create (_458:`Player` {`age`:35, `name`:"Skip Schumaker"})
+create (_459:`Player` {`age`:31, `name`:"Matt Joyce"})
+create (_460:`Player` {`age`:33, `name`:"Casey McGehee"})
+create (_461:`Player` {`age`:31, `name`:"Josh Johnson"})
+create (_462:`Player` {`age`:35, `name`:"Cesar Izturis"})
+create (_463:`Player` {`age`:40, `name`:"Marco Scutaro"})
+create (_464:`Player` {`age`:34, `name`:"Nate McLouth"})
+create (_465:`Player` {`age`:37, `name`:"Cliff Lee"})
+create (_466:`Player` {`age`:33, `name`:"Sean Marshall"})
+create (_467:`Position` {`name`:"SP/RP"})
+create (_501:`Player` {`age`:"30", `name`:"David Price"})
+create (_502:`Contract` {`date`:"01/12/15", `salary`:217, `years`:7})
+create (_503:`Player` {`age`:"26", `name`:"Jason Heyward"})
+create (_504:`Contract` {`date`:"11/12/15", `salary`:184, `years`:8})
+create (_505:`Player` {`age`:"32", `name`:"Zack Greinke"})
+create (_506:`Contract` {`date`:"04/12/15", `salary`:206, `years`:6})
+create (_507:`Player` {`age`:"29", `name`:"Johnny Cueto"})
+create (_508:`Contract` {`date`:"12/14/2015", `salary`:130, `years`:6})
+create (_509:`Player` {`age`:"37", `name`:"John Lackey"})
+create (_510:`Contract` {`date`:"04/12/15", `salary`:32, `years`:2})
+create (_511:`Player` {`age`:"33", `name`:"J.A. Happ"})
+create (_512:`Contract` {`date`:"11/27/2015", `salary`:36, `years`:3})
+create (_513:`Player` {`age`:"29", `name`:"Jordan Zimmermann"})
+create (_514:`Contract` {`date`:"11/29/2015", `salary`:110, `years`:5})
+create (_515:`Player` {`age`:"29", `name`:"Colby Rasmus"})
+create (_516:`Contract` {`date`:"12/11/15", `salary`:15, `years`:1})
+create (_517:`Player` {`age`:"30", `name`:"Jeff Samardzija"})
+create (_518:`Contract` {`date`:"05/12/15", `salary`:90, `years`:5})
+create (_519:`Player` {`age`:"42", `name`:"Bartolo Colon"})
+create (_520:`Contract` {`date`:"12/16/2015", `salary`:7, `years`:1})
+create (_521:`Player` {`age`:"30", `name`:"Asdrubal Cabrera"})
+create (_522:`Contract` {`date`:"09/12/15", `salary`:18, `years`:2})
+create (_523:`Player` {`age`:"38", `name`:"A.J. Pierzynski"})
+create (_524:`Contract` {`date`:"11/11/15", `salary`:3, `years`:1})
+create (_525:`Player` {`age`:"34", `name`:"Ben Zobrist"})
+create (_526:`Contract` {`date`:"08/12/15", `salary`:56, `years`:4})
+create (_527:`Player` {`age`:"31", `name`:"Mike Pelfrey"})
+create (_528:`Contract` {`date`:"04/12/15", `salary`:8, `years`:2})
+create (_529:`Player` {`age`:"32", `name`:"Marco Estrada"})
+create (_530:`Contract` {`date`:"11/13/2015", `salary`:26, `years`:2})
+create (_531:`Player` {`age`:"33", `name`:"Darren O'Day"})
+create (_532:`Contract` {`date`:"07/12/15", `salary`:31, `years`:4})
+create (_533:`Player` {`age`:"34", `name`:"Hisashi Iwakuma"})
+create (_534:`Contract` {`date`:"06/12/15", `salary`:45, `years`:3})
+create (_535:`Player` {`age`:"35", `name`:"Rajai Davis"})
+create (_536:`Contract` {`date`:"12/16/2015", `salary`:5, `years`:1})
+create (_537:`Player` {`age`:"27", `name`:"Brett Anderson"})
+create (_538:`Contract` {`date`:"11/13/2015", `salary`:15, `years`:1})
+create (_539:`Player` {`age`:"32", `name`:"Mark Lowe"})
+create (_540:`Contract` {`date`:"06/12/15", `salary`:13, `years`:2})
+create (_541:`Player` {`age`:"32", `name`:"Chris Young"})
+create (_542:`Contract` {`date`:"11/30/2015", `salary`:13, `years`:2})
+create (_543:`Player` {`age`:"32", `name`:"Geovany Soto"})
+create (_544:`Contract` {`date`:"11/24/2015", `salary`:2, `years`:1})
+create (_545:`Player` {`age`:"35", `name`:"Rich Hill"})
+create (_546:`Contract` {`date`:"11/17/2015", `salary`:6, `years`:1})
+create (_547:`Player` {`age`:"32", `name`:"Tony Sipp"})
+create (_548:`Contract` {`date`:"10/12/15", `salary`:18, `years`:3})
+create (_549:`Player` {`age`:"29", `name`:"Matt Wieters"})
+create (_550:`Player` {`age`:"31", `name`:"Shawn Kelley"})
+create (_551:`Contract` {`date`:"09/12/15", `salary`:15, `years`:3})
+create (_552:`Player` {`age`:"36", `name`:"Chris Young"})
+create (_553:`Contract` {`date`:"07/12/15", `salary`:11, `years`:2})
+create (_554:`Player` {`age`:"35", `name`:"Ryan Madson"})
+create (_555:`Contract` {`date`:"06/12/15", `salary`:22, `years`:3})
+create (_556:`Player` {`age`:"30", `name`:"Jarrod Saltalamacchia"})
+create (_557:`Contract` {`date`:"06/12/15", `salary`:0, `years`:1})
+create (_558:`Player` {`age`:"34", `name`:"Mike Napoli"})
+create (_559:`Player` {`age`:"32", `name`:"Chris Iannetta"})
+create (_560:`Contract` {`date`:"11/23/2015", `salary`:4, `years`:1})
+create (_561:`Player` {`age`:"31", `name`:"Dioner Navarro"})
+create (_562:`Contract` {`date`:"04/12/15", `salary`:4, `years`:1})
+create (_563:`Player` {`age`:"37", `name`:"Chad Qualls"})
+create (_564:`Contract` {`date`:"08/12/15", `salary`:12, `years`:2})
+create (_565:`Player` {`age`:"34", `name`:"Oliver Perez"})
+create (_566:`Contract` {`date`:"04/12/15", `salary`:7, `years`:2})
+create (_567:`Player` {`age`:"33", `name`:"Jason Motte"})
+create (_568:`Contract` {`date`:"08/12/15", `salary`:10, `years`:2})
+create (_569:`Player` {`age`:"31", `name`:"Joakim Soria"})
+create (_570:`Contract` {`date`:"07/12/15", `salary`:25, `years`:3})
+create (_571:`Player` {`age`:"28", `name`:"Alex Avila"})
+create (_572:`Contract` {`date`:"11/25/2015", `salary`:2, `years`:1})
+create (_573:`Player` {`age`:"31", `name`:"Jonathan Broxton"})
+create (_574:`Contract` {`date`:"10/12/15", `salary`:7, `years`:2})
+create (_575:`Player` {`age`:"29", `name`:"Gordon Beckham"})
+create (_576:`Contract` {`date`:"02/12/15", `salary`:1, `years`:1})
+create (_577:`Player` {`age`:"32", `name`:"Jerry Blevins"})
+create (_578:`Contract` {`date`:"12/15/2015", `salary`:4, `years`:1})
+create (_579:`Player` {`age`:"33", `name`:"Brayan Pena"})
+create (_580:`Contract` {`date`:"11/30/2015", `salary`:5, `years`:2})
+create (_581:`Player` {`age`:"27", `name`:"Trevor Cahill"})
+create (_582:`Contract` {`date`:"07/12/15", `salary`:4, `years`:1})
+create (_583:`Player` {`age`:"30", `name`:"Bud Norris"})
+create (_584:`Player` {`age`:"30", `name`:"David Hernandez"})
+create (_585:`Contract` {`date`:"09/12/15", `salary`:3, `years`:1})
+create (_586:`Player` {`age`:"36", `name`:"Chase Utley"})
+create (_587:`Contract` {`date`:"06/12/15", `salary`:7, `years`:1})
+create (_588:`Player` {`age`:"32", `name`:"Mark Reynolds"})
+create (_589:`Contract` {`date`:"10/12/15", `salary`:2, `years`:1})
+create (_590:`Player` {`age`:"30", `name`:"Sean Rodriguez"})
+create (_591:`Contract` {`date`:"12/15/2015", `salary`:2, `years`:1})
+create (_592:`Player` {`age`:"31", `name`:"Cliff Pennington"})
+create (_593:`Contract` {`date`:"11/17/2015", `salary`:3, `years`:2})
+create _42-[:`HAS_DIVISION`]->_85
+create _42-[:`HAS_DIVISION`]->_87
+create _42-[:`HAS_DIVISION`]->_81
+create _43-[:`HAS_DIVISION`]->_90
+create _43-[:`HAS_DIVISION`]->_96
+create _43-[:`HAS_DIVISION`]->_83
+create _81-[:`MEMBER`]->_115
+create _81-[:`MEMBER`]->_111
+create _81-[:`MEMBER`]->_103
+create _81-[:`MEMBER`]->_95
+create _81-[:`MEMBER`]->_82
+create _83-[:`MEMBER`]->_109
+create _83-[:`MEMBER`]->_108
+create _83-[:`MEMBER`]->_102
+create _83-[:`MEMBER`]->_89
+create _83-[:`MEMBER`]->_84
+create _85-[:`MEMBER`]->_113
+create _85-[:`MEMBER`]->_114
+create _85-[:`MEMBER`]->_93
+create _85-[:`MEMBER`]->_94
+create _85-[:`MEMBER`]->_86
+create _87-[:`MEMBER`]->_110
+create _87-[:`MEMBER`]->_112
+create _87-[:`MEMBER`]->_106
+create _87-[:`MEMBER`]->_92
+create _87-[:`MEMBER`]->_88
+create _90-[:`MEMBER`]->_105
+create _90-[:`MEMBER`]->_107
+create _90-[:`MEMBER`]->_104
+create _90-[:`MEMBER`]->_98
+create _90-[:`MEMBER`]->_91
+create _96-[:`MEMBER`]->_116
+create _96-[:`MEMBER`]->_101
+create _96-[:`MEMBER`]->_97
+create _96-[:`MEMBER`]->_100
+create _96-[:`MEMBER`]->_99
+create _290-[:`SEASON2015`]->_82
+create _290-[:`PLAYS`]->_291
+create _292-[:`SEASON2015`]->_84
+create _292-[:`PLAYS`]->_293
+create _294-[:`SEASON2015`]->_86
+create _294-[:`PLAYS`]->_295
+create _296-[:`SEASON2015`]->_88
+create _296-[:`PLAYS`]->_293
+create _297-[:`SEASON2015`]->_89
+create _297-[:`PLAYS`]->_298
+create _299-[:`SEASON2015`]->_91
+create _299-[:`PLAYS`]->_293
+create _300-[:`SEASON2015`]->_86
+create _300-[:`PLAYS`]->_293
+create _301-[:`SEASON2015`]->_92
+create _301-[:`PLAYS`]->_291
+create _302-[:`SEASON2015`]->_93
+create _302-[:`PLAYS`]->_293
+create _303-[:`SEASON2015`]->_94
+create _303-[:`PLAYS`]->_304
+create _305-[:`SEASON2015`]->_95
+create _305-[:`PLAYS`]->_293
+create _306-[:`SEASON2015`]->_93
+create _306-[:`PLAYS`]->_293
+create _307-[:`SEASON2015`]->_97
+create _307-[:`PLAYS`]->_308
+create _309-[:`SEASON2015`]->_91
+create _309-[:`PLAYS`]->_291
+create _310-[:`SEASON2015`]->_89
+create _310-[:`PLAYS`]->_293
+create _311-[:`SEASON2015`]->_98
+create _311-[:`PLAYS`]->_293
+create _312-[:`SEASON2015`]->_99
+create _312-[:`PLAYS`]->_293
+create _313-[:`SEASON2015`]->_82
+create _313-[:`PLAYS`]->_314
+create _315-[:`SEASON2015`]->_99
+create _315-[:`PLAYS`]->_293
+create _316-[:`SEASON2015`]->_82
+create _316-[:`PLAYS`]->_317
+create _318-[:`SEASON2015`]->_97
+create _318-[:`PLAYS`]->_293
+create _319-[:`SEASON2015`]->_94
+create _319-[:`PLAYS`]->_304
+create _320-[:`SEASON2015`]->_100
+create _320-[:`PLAYS`]->_291
+create _321-[:`SEASON2015`]->_101
+create _321-[:`PLAYS`]->_322
+create _323-[:`SEASON2015`]->_102
+create _323-[:`PLAYS`]->_324
+create _325-[:`SEASON2015`]->_88
+create _325-[:`PLAYS`]->_326
+create _327-[:`SEASON2015`]->_84
+create _327-[:`PLAYS`]->_293
+create _328-[:`SEASON2015`]->_103
+create _328-[:`PLAYS`]->_329
+create _330-[:`SEASON2015`]->_91
+create _330-[:`PLAYS`]->_331
+create _332-[:`SEASON2015`]->_104
+create _332-[:`PLAYS`]->_293
+create _333-[:`SEASON2015`]->_103
+create _333-[:`PLAYS`]->_322
+create _334-[:`SEASON2015`]->_84
+create _334-[:`PLAYS`]->_293
+create _335-[:`SEASON2015`]->_89
+create _335-[:`PLAYS`]->_314
+create _336-[:`SEASON2015`]->_100
+create _336-[:`PLAYS`]->_293
+create _337-[:`SEASON2015`]->_105
+create _337-[:`PLAYS`]->_338
+create _339-[:`SEASON2015`]->_88
+create _339-[:`PLAYS`]->_293
+create _340-[:`SEASON2015`]->_95
+create _340-[:`PLAYS`]->_324
+create _341-[:`SEASON2015`]->_106
+create _341-[:`PLAYS`]->_293
+create _342-[:`SEASON2015`]->_88
+create _342-[:`PLAYS`]->_293
+create _343-[:`SEASON2015`]->_95
+create _343-[:`PLAYS`]->_304
+create _344-[:`SEASON2015`]->_107
+create _344-[:`PLAYS`]->_345
+create _346-[:`SEASON2015`]->_108
+create _346-[:`PLAYS`]->_347
+create _348-[:`SEASON2015`]->_99
+create _348-[:`PLAYS`]->_338
+create _349-[:`SEASON2015`]->_84
+create _349-[:`PLAYS`]->_314
+create _350-[:`SEASON2015`]->_109
+create _350-[:`PLAYS`]->_347
+create _351-[:`SEASON2015`]->_98
+create _351-[:`PLAYS`]->_329
+create _352-[:`SEASON2015`]->_93
+create _352-[:`PLAYS`]->_314
+create _353-[:`SEASON2015`]->_108
+create _353-[:`PLAYS`]->_293
+create _354-[:`SEASON2015`]->_97
+create _354-[:`PLAYS`]->_314
+create _355-[:`SEASON2015`]->_106
+create _355-[:`PLAYS`]->_347
+create _356-[:`SEASON2015`]->_105
+create _356-[:`PLAYS`]->_293
+create _357-[:`SEASON2015`]->_89
+create _357-[:`PLAYS`]->_329
+create _358-[:`SEASON2015`]->_92
+create _358-[:`PLAYS`]->_314
+create _359-[:`SEASON2015`]->_91
+create _359-[:`PLAYS`]->_314
+create _360-[:`SEASON2015`]->_94
+create _360-[:`PLAYS`]->_293
+create _361-[:`SEASON2015`]->_91
+create _361-[:`PLAYS`]->_314
+create _362-[:`SEASON2015`]->_110
+create _362-[:`PLAYS`]->_329
+create _363-[:`SEASON2015`]->_111
+create _363-[:`PLAYS`]->_293
+create _364-[:`SEASON2015`]->_92
+create _364-[:`PLAYS`]->_293
+create _365-[:`SEASON2015`]->_94
+create _365-[:`PLAYS`]->_347
+create _366-[:`SEASON2015`]->_99
+create _366-[:`PLAYS`]->_298
+create _367-[:`SEASON2015`]->_102
+create _367-[:`PLAYS`]->_368
+create _369-[:`SEASON2015`]->_93
+create _369-[:`PLAYS`]->_314
+create _370-[:`SEASON2015`]->_101
+create _370-[:`PLAYS`]->_329
+create _371-[:`SEASON2015`]->_84
+create _371-[:`PLAYS`]->_329
+create _372-[:`SEASON2015`]->_97
+create _372-[:`PLAYS`]->_314
+create _373-[:`SEASON2015`]->_92
+create _373-[:`PLAYS`]->_293
+create _374-[:`SEASON2015`]->_97
+create _374-[:`PLAYS`]->_314
+create _375-[:`SEASON2015`]->_112
+create _375-[:`PLAYS`]->_298
+create _376-[:`SEASON2015`]->_94
+create _376-[:`PLAYS`]->_314
+create _377-[:`SEASON2015`]->_89
+create _377-[:`PLAYS`]->_308
+create _378-[:`SEASON2015`]->_113
+create _378-[:`PLAYS`]->_314
+create _379-[:`SEASON2015`]->_84
+create _379-[:`PLAYS`]->_314
+create _380-[:`SEASON2015`]->_91
+create _380-[:`PLAYS`]->_314
+create _381-[:`SEASON2015`]->_98
+create _381-[:`PLAYS`]->_314
+create _382-[:`SEASON2015`]->_95
+create _382-[:`PLAYS`]->_314
+create _383-[:`SEASON2015`]->_93
+create _383-[:`PLAYS`]->_314
+create _384-[:`SEASON2015`]->_89
+create _384-[:`PLAYS`]->_385
+create _386-[:`SEASON2015`]->_105
+create _386-[:`PLAYS`]->_387
+create _388-[:`SEASON2015`]->_94
+create _388-[:`PLAYS`]->_314
+create _389-[:`SEASON2015`]->_113
+create _389-[:`PLAYS`]->_314
+create _390-[:`SEASON2015`]->_106
+create _390-[:`PLAYS`]->_314
+create _391-[:`SEASON2015`]->_101
+create _391-[:`PLAYS`]->_345
+create _392-[:`SEASON2015`]->_97
+create _392-[:`PLAYS`]->_314
+create _393-[:`SEASON2015`]->_95
+create _393-[:`PLAYS`]->_293
+create _394-[:`SEASON2015`]->_106
+create _394-[:`PLAYS`]->_293
+create _395-[:`SEASON2015`]->_86
+create _395-[:`PLAYS`]->_314
+create _396-[:`SEASON2015`]->_82
+create _396-[:`PLAYS`]->_331
+create _397-[:`SEASON2015`]->_98
+create _397-[:`PLAYS`]->_322
+create _398-[:`SEASON2015`]->_86
+create _398-[:`PLAYS`]->_314
+create _399-[:`SEASON2015`]->_104
+create _399-[:`PLAYS`]->_314
+create _400-[:`SEASON2015`]->_82
+create _400-[:`PLAYS`]->_314
+create _401-[:`SEASON2015`]->_88
+create _401-[:`PLAYS`]->_324
+create _402-[:`SEASON2015`]->_114
+create _402-[:`PLAYS`]->_293
+create _403-[:`SEASON2015`]->_113
+create _403-[:`PLAYS`]->_329
+create _404-[:`SEASON2015`]->_103
+create _404-[:`PLAYS`]->_314
+create _405-[:`SEASON2015`]->_109
+create _405-[:`PLAYS`]->_326
+create _406-[:`SEASON2015`]->_82
+create _406-[:`PLAYS`]->_314
+create _407-[:`SEASON2015`]->_91
+create _407-[:`PLAYS`]->_295
+create _408-[:`SEASON2015`]->_106
+create _408-[:`PLAYS`]->_293
+create _409-[:`SEASON2015`]->_105
+create _409-[:`PLAYS`]->_314
+create _410-[:`SEASON2015`]->_107
+create _410-[:`PLAYS`]->_314
+create _411-[:`SEASON2015`]->_94
+create _411-[:`PLAYS`]->_314
+create _412-[:`SEASON2015`]->_84
+create _412-[:`PLAYS`]->_326
+create _413-[:`SEASON2015`]->_111
+create _413-[:`PLAYS`]->_293
+create _414-[:`SEASON2015`]->_86
+create _414-[:`PLAYS`]->_314
+create _415-[:`SEASON2015`]->_107
+create _415-[:`PLAYS`]->_314
+create _416-[:`SEASON2015`]->_86
+create _416-[:`PLAYS`]->_314
+create _417-[:`SEASON2015`]->_92
+create _417-[:`PLAYS`]->_293
+create _418-[:`SEASON2015`]->_91
+create _418-[:`PLAYS`]->_293
+create _419-[:`SEASON2015`]->_95
+create _419-[:`PLAYS`]->_314
+create _420-[:`SEASON2015`]->_101
+create _420-[:`PLAYS`]->_347
+create _421-[:`SEASON2015`]->_105
+create _421-[:`PLAYS`]->_314
+create _422-[:`SEASON2015`]->_115
+create _422-[:`PLAYS`]->_423
+create _424-[:`SEASON2015`]->_103
+create _424-[:`PLAYS`]->_293
+create _425-[:`SEASON2015`]->_92
+create _425-[:`PLAYS`]->_324
+create _426-[:`SEASON2015`]->_101
+create _426-[:`PLAYS`]->_314
+create _427-[:`SEASON2015`]->_105
+create _427-[:`PLAYS`]->_314
+create _428-[:`SEASON2015`]->_104
+create _428-[:`PLAYS`]->_314
+create _429-[:`SEASON2015`]->_110
+create _429-[:`PLAYS`]->_314
+create _430-[:`SEASON2015`]->_108
+create _430-[:`PLAYS`]->_314
+create _431-[:`SEASON2015`]->_84
+create _431-[:`PLAYS`]->_314
+create _432-[:`SEASON2015`]->_82
+create _432-[:`PLAYS`]->_314
+create _433-[:`SEASON2015`]->_116
+create _433-[:`PLAYS`]->_314
+create _434-[:`SEASON2015`]->_82
+create _434-[:`PLAYS`]->_314
+create _435-[:`SEASON2015`]->_94
+create _435-[:`PLAYS`]->_314
+create _436-[:`SEASON2015`]->_116
+create _436-[:`PLAYS`]->_314
+create _437-[:`SEASON2015`]->_100
+create _437-[:`PLAYS`]->_314
+create _438-[:`SEASON2015`]->_99
+create _438-[:`PLAYS`]->_314
+create _439-[:`SEASON2015`]->_88
+create _439-[:`PLAYS`]->_326
+create _440-[:`SEASON2015`]->_98
+create _440-[:`PLAYS`]->_324
+create _441-[:`SEASON2015`]->_103
+create _441-[:`PLAYS`]->_314
+create _442-[:`SEASON2015`]->_104
+create _442-[:`PLAYS`]->_314
+create _443-[:`SEASON2015`]->_109
+create _443-[:`PLAYS`]->_314
+create _444-[:`SEASON2015`]->_99
+create _444-[:`PLAYS`]->_338
+create _445-[:`SEASON2015`]->_111
+create _445-[:`PLAYS`]->_295
+create _446-[:`SEASON2015`]->_95
+create _446-[:`PLAYS`]->_326
+create _447-[:`SEASON2015`]->_86
+create _447-[:`PLAYS`]->_298
+create _448-[:`SEASON2015`]->_111
+create _448-[:`PLAYS`]->_314
+create _449-[:`SEASON2015`]->_93
+create _449-[:`PLAYS`]->_298
+create _450-[:`SEASON2015`]->_115
+create _450-[:`PLAYS`]->_329
+create _451-[:`SEASON2015`]->_84
+create _451-[:`PLAYS`]->_452
+create _453-[:`SEASON2015`]->_93
+create _453-[:`PLAYS`]->_454
+create _455-[:`SEASON2015`]->_102
+create _455-[:`PLAYS`]->_347
+create _456-[:`SEASON2015`]->_107
+create _456-[:`PLAYS`]->_457
+create _458-[:`SEASON2015`]->_113
+create _458-[:`PLAYS`]->_291
+create _459-[:`SEASON2015`]->_101
+create _459-[:`PLAYS`]->_291
+create _460-[:`SEASON2015`]->_115
+create _460-[:`PLAYS`]->_423
+create _461-[:`PLAYS`]->_293
+create _462-[:`PLAYS`]->_452
+create _463-[:`PLAYS`]->_326
+create _464-[:`PLAYS`]->_291
+create _465-[:`PLAYS`]->_293
+create _466-[:`PLAYS`]->_467
+create _501-[:`SEASON2016`]->_108
+create _501-[:`NEW_CONTRACT`]->_502
+create _502-[:`NEW_TEAM`]->_108
+create _503-[:`SEASON2016`]->_94
+create _503-[:`NEW_CONTRACT`]->_504
+create _504-[:`NEW_TEAM`]->_94
+create _505-[:`SEASON2016`]->_110
+create _505-[:`NEW_CONTRACT`]->_506
+create _506-[:`NEW_TEAM`]->_110
+create _507-[:`SEASON2016`]->_106
+create _507-[:`NEW_CONTRACT`]->_508
+create _508-[:`NEW_TEAM`]->_106
+create _509-[:`SEASON2016`]->_94
+create _509-[:`NEW_CONTRACT`]->_510
+create _510-[:`NEW_TEAM`]->_94
+create _511-[:`SEASON2016`]->_84
+create _511-[:`NEW_CONTRACT`]->_512
+create _512-[:`NEW_TEAM`]->_84
+create _513-[:`SEASON2016`]->_105
+create _513-[:`NEW_CONTRACT`]->_514
+create _514-[:`NEW_TEAM`]->_105
+create _515-[:`SEASON2016`]->_97
+create _515-[:`NEW_CONTRACT`]->_516
+create _516-[:`NEW_TEAM`]->_97
+create _517-[:`SEASON2016`]->_106
+create _517-[:`NEW_CONTRACT`]->_518
+create _518-[:`NEW_TEAM`]->_106
+create _519-[:`SEASON2016`]->_82
+create _519-[:`NEW_CONTRACT`]->_520
+create _520-[:`NEW_TEAM`]->_82
+create _520-[:`NEW_TEAM`]->_107
+create _521-[:`SEASON2016`]->_82
+create _521-[:`NEW_CONTRACT`]->_522
+create _522-[:`NEW_TEAM`]->_82
+create _523-[:`SEASON2016`]->_103
+create _523-[:`NEW_CONTRACT`]->_524
+create _524-[:`NEW_TEAM`]->_103
+create _525-[:`SEASON2016`]->_94
+create _525-[:`NEW_CONTRACT`]->_526
+create _526-[:`NEW_TEAM`]->_94
+create _527-[:`SEASON2016`]->_105
+create _527-[:`NEW_CONTRACT`]->_528
+create _528-[:`NEW_TEAM`]->_105
+create _529-[:`SEASON2016`]->_84
+create _529-[:`NEW_CONTRACT`]->_530
+create _530-[:`NEW_TEAM`]->_84
+create _531-[:`SEASON2016`]->_89
+create _531-[:`NEW_CONTRACT`]->_532
+create _532-[:`NEW_TEAM`]->_89
+create _533-[:`SEASON2016`]->_88
+create _533-[:`NEW_CONTRACT`]->_534
+create _534-[:`NEW_TEAM`]->_88
+create _535-[:`SEASON2016`]->_107
+create _535-[:`NEW_CONTRACT`]->_536
+create _536-[:`NEW_TEAM`]->_107
+create _537-[:`SEASON2016`]->_88
+create _537-[:`NEW_CONTRACT`]->_538
+create _538-[:`NEW_TEAM`]->_88
+create _538-[:`NEW_TEAM`]->_89
+create _539-[:`SEASON2016`]->_105
+create _539-[:`NEW_CONTRACT`]->_540
+create _540-[:`NEW_TEAM`]->_105
+create _541-[:`SEASON2016`]->_108
+create _541-[:`NEW_CONTRACT`]->_542
+create _542-[:`NEW_TEAM`]->_108
+create _543-[:`SEASON2016`]->_101
+create _543-[:`NEW_CONTRACT`]->_544
+create _544-[:`NEW_TEAM`]->_101
+create _545-[:`SEASON2016`]->_116
+create _545-[:`NEW_CONTRACT`]->_546
+create _546-[:`NEW_TEAM`]->_116
+create _547-[:`SEASON2016`]->_97
+create _547-[:`NEW_CONTRACT`]->_548
+create _548-[:`NEW_TEAM`]->_97
+create _549-[:`SEASON2016`]->_89
+create _549-[:`NEW_CONTRACT`]->_538
+create _550-[:`SEASON2016`]->_95
+create _550-[:`NEW_CONTRACT`]->_551
+create _551-[:`NEW_TEAM`]->_95
+create _552-[:`SEASON2016`]->_91
+create _552-[:`NEW_CONTRACT`]->_553
+create _553-[:`NEW_TEAM`]->_91
+create _554-[:`SEASON2016`]->_116
+create _554-[:`NEW_CONTRACT`]->_555
+create _555-[:`NEW_TEAM`]->_116
+create _556-[:`SEASON2016`]->_105
+create _556-[:`NEW_CONTRACT`]->_557
+create _557-[:`NEW_TEAM`]->_105
+create _558-[:`SEASON2016`]->_107
+create _558-[:`NEW_CONTRACT`]->_520
+create _559-[:`SEASON2016`]->_100
+create _559-[:`NEW_CONTRACT`]->_560
+create _560-[:`NEW_TEAM`]->_100
+create _561-[:`SEASON2016`]->_98
+create _561-[:`NEW_CONTRACT`]->_562
+create _562-[:`NEW_TEAM`]->_98
+create _563-[:`SEASON2016`]->_101
+create _563-[:`NEW_CONTRACT`]->_564
+create _564-[:`NEW_TEAM`]->_101
+create _565-[:`SEASON2016`]->_95
+create _565-[:`NEW_CONTRACT`]->_566
+create _566-[:`NEW_TEAM`]->_95
+create _567-[:`SEASON2016`]->_112
+create _567-[:`NEW_CONTRACT`]->_568
+create _568-[:`NEW_TEAM`]->_112
+create _569-[:`SEASON2016`]->_91
+create _569-[:`NEW_CONTRACT`]->_570
+create _570-[:`NEW_TEAM`]->_91
+create _571-[:`SEASON2016`]->_98
+create _571-[:`NEW_CONTRACT`]->_572
+create _572-[:`NEW_TEAM`]->_103
+create _572-[:`NEW_TEAM`]->_98
+create _573-[:`SEASON2016`]->_86
+create _573-[:`NEW_CONTRACT`]->_574
+create _574-[:`NEW_TEAM`]->_86
+create _575-[:`SEASON2016`]->_103
+create _575-[:`NEW_CONTRACT`]->_576
+create _576-[:`NEW_TEAM`]->_103
+create _577-[:`SEASON2016`]->_82
+create _577-[:`NEW_CONTRACT`]->_578
+create _578-[:`NEW_TEAM`]->_82
+create _579-[:`SEASON2016`]->_86
+create _579-[:`NEW_CONTRACT`]->_580
+create _580-[:`NEW_TEAM`]->_86
+create _581-[:`SEASON2016`]->_94
+create _581-[:`NEW_CONTRACT`]->_582
+create _582-[:`NEW_TEAM`]->_94
+create _583-[:`SEASON2016`]->_103
+create _583-[:`NEW_CONTRACT`]->_572
+create _584-[:`SEASON2016`]->_111
+create _584-[:`NEW_CONTRACT`]->_585
+create _585-[:`NEW_TEAM`]->_111
+create _586-[:`SEASON2016`]->_88
+create _586-[:`NEW_CONTRACT`]->_587
+create _587-[:`NEW_TEAM`]->_88
+create _588-[:`SEASON2016`]->_112
+create _588-[:`NEW_CONTRACT`]->_589
+create _589-[:`NEW_TEAM`]->_112
+create _590-[:`SEASON2016`]->_93
+create _590-[:`NEW_CONTRACT`]->_591
+create _591-[:`NEW_TEAM`]->_93
+create _592-[:`SEASON2016`]->_101
+create _592-[:`NEW_CONTRACT`]->_593
+create _593-[:`NEW_TEAM`]->_101
+----
+== Usecases
+=== Top 10 Annual Salary of Player with New Contract
+[source,cypher]
+----
+MATCH (p:Player)-[:NEW_CONTRACT]->(c:Contract) RETURN p.name,c.salary as Total,c.years as Years,c.salary/c.years as Annual order by Annual desc limit 10
+----
+//table
+
+=== Annual Salary Averages by Divisions of Player with New Contract
+[source,cypher]
+----
+MATCH (l:League)-[:HAS_DIVISION]–>(d:Division)-[:MEMBER]-(:Team)<-[:SEASON2016]-(p:Player)-[:NEW_CONTRACT]->(c:Contract) WHERE c.years is not null and c.salary is not null RETURN d.name, AVG(c.salary/c.years) as AnnualAvg order by AnnualAvg desc limit 10
+----
+//table
+
+=== Oldest Players with New Contract
+[source,cypher]
+----
+MATCH (p:Player)-[:NEW_CONTRACT]-(c:Contract) RETURN p.name as Name, p.age as Age, c.years as Years order by Age desc limit 10;
+----
+//table
+
+=== Money in contracts with FA Players by Team
+[source,cypher]
+----
+MATCH (l:League)-[:HAS_DIVISION]–>(d:Division)-[:MEMBER]-(t:Team)<-[:SEASON2016]-(p:Player)-[:NEW_CONTRACT]->(c:Contract) WHERE c.years is not null and c.salary is not null RETURN t.name as Team, SUM(c.salary) as Money order by Money desc limit 10
+----
+//table

@@ -1,0 +1,200 @@
+= Enterprise Content Management with Neo4j
+:author: Pieter-Jan Van Aeken
+:twitter: @PieterJanVA
+:tags: domain:content:enterprise-content-management
+ 
+== Introduction
+ 
+There are several challenges in Enterprise Content Management (ECM) that current technologies cannot tackle efficiently. With Neo4j, a whole new world of possibilities opens up. There are few things more "graphy" than ECM, and so the logical next step is the use of graph databases.
+ 
+What follows is a subset of the possibilities with Neo4J in ECM. We tackle recommendations, time-based versioning, ACL, metadata management and user action registration. 
+ 
+== The dataset 
+ 
+image::http://users.telenet.be/pjvanaeken/neo4jgist.png[]
+ 
+//console
+//hide
+//setup
+[source, cypher]
+----
+CREATE
+(neo4j:COMPANY {name: 'Neo4j'}),
+(mgmt:DEPARTMENT {name: 'Management'}),
+(prodept:DEPARTMENT {name: 'Neo Pro Dept'}),
+ 
+(neo4j)-[:HAS_DEPARTMENT]->(mgmt),
+(neo4j)-[:HAS_DEPARTMENT]->(prodept),
+ 
+(emil:EMPLOYER {name: 'Emil Eifrem'}),
+(peter:EMPLOYER {name: 'Peter Neubauer'}),
+(michael:EMPLOYER {name: 'Michael Hunger'}),
+ 
+(mgmt)-[:HAS_EMPLOYER]->(emil),
+(prodept)-[:HAS_EMPLOYER]->(peter),
+(prodept)-[:HAS_EMPLOYER]->(michael),
+ 
+(rootdir:DIRECTORY {filename: 'root directory'}),
+(subdir: DIRECTORY {filename: 'sub directory'}),
+ 
+(rootdir)-[:HAS_DIRECTORY]->(subdir),
+ 
+(document_gist:DOCUMENT {filename: 'GraphGist Description'}),
+(document_manual:DOCUMENT {filename: 'Neo4j Manual'}),
+ 
+(rootdir)-[:HAS_DOCUMENT]->(document_manual),
+(subdir)-[:HAS_DOCUMENT]->(document_gist),
+ 
+(manual_v1:VERSION {version: 1, starttime: 1379602800, endtime: 1379689200}),
+(manual_v2:VERSION {version: 2, starttime: 1379689200}),
+(gist_v1:VERSION {version: 1}),
+ 
+(document_manual)-[:VERSION]->(manual_v1),
+(manual_v1)-[:VERSION]->(manual_v2),
+(manual_v2)-[:VERSION]->(document_manual),
+ 
+(document_gist)-[:VERSION]->(gist_v1),
+(gist_v1)-[:VERSION]->(document_gist),
+ 
+ 
+(update:ACTION {action: 'update', timestamp: 1379689200}),
+(create:ACTION {action: 'create', timestamp: 1379602800}),
+(read:ACTION {action: 'read', timestamp: '1379689200'}),
+ 
+ 
+(michael)-[:PERFORMED]->(create)-[:AFFECTED_VERSION]->(manual_v1),
+(peter)-[:PERFORMED]->(update)-[:AFFECTED_VERSION]->(manual_v2),
+(emil)-[:PERFORMED]->(read)-[:AFFECTED_VERSION]->(gist_v1),
+ 
+(neo4jtag:TAG {tag: 'Neo4j'}),
+(documentationtag:TAG {tag: 'Documentation'}),
+(githubtag:TAG {tag: 'Github'}),
+ 
+(document_manual)-[:HAS_TAG {starttime: 1379602800}]->(neo4jtag),
+(document_manual)-[:HAS_TAG {starttime: 1379689200}]->(documentationtag),
+(document_gist)-[:HAS_TAG {starttime: 1379689200}]->(neo4jtag),
+(document_gist)-[:HAS_TAG {startime: 1379689200}]->(githubtag),
+(document_manual)-[:HAS_TAG {startime: 1379602800, endtime:1379689200 }]->(githubtag),
+ 
+ 
+(michael)-[:CAN_READ]->(document_manual),
+(michael)-[:CAN_WRITE]->(document_manual),
+(emil)-[:CAN_READ]->(subdir),
+(peter)-[:CAN_READ]->(rootdir),
+(peter)-[:CAN_WRITE]->(rootdir);
+----
+//graph
+ 
+== Versioning with Neo4j
+ 
+=== Find the first version of a document
+ 
+One of the simpler queries in this gist, but none the less a very useful one. Finding the first version allows you to see the document as it was initially intended to be.
+ 
+[source, cypher]
+----
+MATCH (document:DOCUMENT)-[:VERSION]->(version:VERSION)
+WHERE document.filename='Neo4j Manual'
+RETURN version.version;
+----
+//table
+ 
+=== Find the n-th version of a document
+ 
+Finding the n-th version of a document is as simple as adding a *N to your version relationship. You just traverse the relationship n times and end up with the version you were looking for.
+ 
+[source, cypher]
+----
+MATCH (document:DOCUMENT)-[:VERSION*2]->(version:VERSION)
+WHERE document.filename='Neo4j Manual'
+RETURN version.version;
+----
+//table
+ 
+=== Find the last version of a document
+ 
+Due to a nifty little trick, namely the relationship from the last version back to the document node, we can easily find the latest version without traversing all of the previous version nodes first. Technically, this relationship is not necessary but it increases the performance of this very important use case.
+ 
+[source, cypher]
+----
+MATCH (document:DOCUMENT)<-[:VERSION]-(version:VERSION)
+WHERE document.filename='Neo4j Manual'
+RETURN version.version;
+----
+//table
+ 
+=== Find the version that was being used on a specific point in time
+ 
+Finding a version based on time is done with Unix timestamps. Just iterate over the versions and check the starttime and possible endtime.
+ 
+[source, cypher]
+----
+MATCH (document:DOCUMENT)-[:VERSION*]->(version:VERSION)
+WHERE document.filename='Neo4j Manual'
+AND version.starttime<1379602900 AND version.endtime>1379602900
+RETURN version.version;
+----
+// table
+ 
+== Recommendations
+=== Recommendations based on tags
+ 
+This recommendation is based on tags that are attached to documents at one point in time. 
+ 
+[source, cypher]
+----
+MATCH (document:DOCUMENT)-[:HAS_TAG]->(tag:TAG)<-[:HAS_TAG]-(document2:DOCUMENT)
+WHERE document.filename='Neo4j Manual'
+RETURN document2.filename, tag.tag;
+----
+// table
+ 
+=== Recommendations based on tags
+ 
+This recommendation is based on tags that are attached to documents at the current point in time. This is indicated by the lack of a endtime property on the HAS_TAG relationship.
+ 
+[source, cypher]
+----
+MATCH (document:DOCUMENT)-[r1:HAS_TAG]->(tag:TAG)<-[r2:HAS_TAG]-(document2:DOCUMENT) 
+WHERE document.filename='Neo4j Manual' AND r1.endtime = NULL AND r2.endtime = NULL 
+RETURN document2.filename, tag.tag
+----
+// table
+ 
+== Access Control
+=== All users who have read access on a document
+ 
+[source, cypher]
+----
+MATCH (document:DOCUMENT)<-[:CAN_READ|:HAS_DOCUMENT|:HAS_DIRECTORY*]-(employer:EMPLOYER) 
+WHERE document.filename='Neo4j Manual' 
+RETURN employer.name
+----
+// table
+ 
+== User Action Management
+=== Find all user actions, the affected document, version and employer that performed the action
+ 
+This is a very useful query, which can also be adapted to find the user actions on a specific document, for a specific user, for a specific version, ...
+ 
+[source, cypher]
+----
+MATCH (document:DOCUMENT)-[:VERSION*]->(version:VERSION)<-[:AFFECTED_VERSION]-(action:ACTION)<-[:PERFORMED]-(employer:EMPLOYER) 
+RETURN employer.name, action.action, version.version, document.filename
+----
+// table
+ 
+ 
+== Improvements & Feedback
+ 
+=== Improvements
+ 
+Time-based data can be applied to pretty much anything. By simply adding a start and end time to all relationships, you can pretty much find out the state of the database at every point in time. Right now, I already do this for versioning and tag management, but you could do the same for directories so you can see when a document was moved for instance. Or for read/write access, so you know who had access to a file at a certain point in time. Or even to the HAS_EMPLOYER relationship, so you know when an employer was part of a certain department.
+ 
+What I present here is a limited subset to explain some of the concepts that I envision would be used in ECM with Neo4J. It is by no means complete, but I hope it gives you an idea of my vision.
+ 
+=== Feedback
+ 
+On the current dataset, there are hundreds of useful queries I can do depending on the use case. In an attempt to keep this Gist relatively concise, I have not added all of them. But I encourage you, if you know anything about ECM, to challenge me. I have looked into this extensively, and I'm confident that with Neo4J you can build a reliable content managament system.
+ 
+That being said, for actually storing the content itself, Neo4J is not suited, but that was never the goal of this Gist.

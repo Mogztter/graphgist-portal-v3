@@ -1,0 +1,220 @@
+== Smart Accounts - Neo4j
+:neo4j-version: 2.3
+:author: shyam
+
+Walktrough of some use cases discussed yesterday
+
+== Use Case 1: Multi-Level Hierarchies
+
+Smart accounts can have several virtual accounts associated with them and each virtual account can have several other virtual accounts associated with it.
+
+//setup
+//hide
+[source,cypher]
+----
+CREATE (sa0:SmartAccount { name: "sa-0" })
+, (va0:VirtualAccount { name: "va-0" })
+, (va1:VirtualAccount { name: "va-1" })
+, (va2:VirtualAccount { name: "va-2" })
+, (va3:VirtualAccount { name: "va-3" })
+, (va4:VirtualAccount { name: "va-4" })
+, (va5:VirtualAccount { name: "va-5" })
+, (va6:VirtualAccount { name: "va-6" })
+, (va7:VirtualAccount { name: "va-7" })
+, (va8:VirtualAccount { name: "va-8" })
+, (va9:VirtualAccount { name: "va-9" })
+, (va10:VirtualAccount { name: "va-10" })
+, (va11:VirtualAccount { name: "va-11" })
+, (va12:VirtualAccount { name: "va-12" })
+, (va13:VirtualAccount { name: "va-13" })
+, (va14:VirtualAccount { name: "va-14" })
+, (va0)-[:BELONGS_TO]->(sa0)
+, (va1)-[:BELONGS_TO]->(sa0)
+, (va5)-[:BELONGS_TO]->(va1)
+, (va2)-[:BELONGS_TO]->(sa0)
+, (va6)-[:BELONGS_TO]->(va2)
+, (va7)-[:BELONGS_TO]->(va2)
+, (va3)-[:BELONGS_TO]->(sa0)
+, (va8)-[:BELONGS_TO]->(va3)
+, (va9)-[:BELONGS_TO]->(va3)
+, (va10)-[:BELONGS_TO]->(va3)
+, (va4)-[:BELONGS_TO]->(sa0)
+, (va11)-[:BELONGS_TO]->(va4)
+, (va12)-[:BELONGS_TO]->(va4)
+, (va13)-[:BELONGS_TO]->(va4)
+, (va14)-[:BELONGS_TO]->(va4)
+RETURN *
+----
+
+//graph_result
+
+=== Use Case 1.1: 1 Asset under multiple Virtual Accounts
+
+//hide
+[source,cypher]
+----
+MATCH (va0:VirtualAccount { name: "va-0" })-[:BELONGS_TO]->(sa0:SmartAccount { name: "sa-0" })<-[:BELONGS_TO]-(va1:VirtualAccount { name: "va-1" })
+CREATE (as3:Asset { name: "asset-3" })
+, (as4:Asset { name: "asset-4" })
+, (as5:Asset { name: "asset-5" })
+, (as6:Asset { name: "asset-6" })
+, (as7:Asset { name: "asset-7" })
+, (sa0)-[:OWNS]->(as3)
+, (sa0)-[:OWNS]->(as4)
+, (sa0)-[:OWNS]->(as5)
+, (sa0)-[:OWNS]->(as6)
+, (sa0)-[:OWNS]->(as7)
+, (va0)-[:ADMINISTERS]->(as3)
+, (va0)-[:ADMINISTERS]->(as4)
+, (va0)-[:ADMINISTERS]->(as5)
+, (va0)-[:ADMINISTERS]->(as6)
+, (va1)-[:ADMINISTERS]->(as5)
+, (va1)-[:ADMINISTERS]->(as6)
+, (va1)-[:ADMINISTERS]->(as7)
+RETURN *
+----
+
+//graph_result
+
+== Use Case 2: Peer Container Types
+
+Smart & virtual accounts are the primary container type. There might be other container types which might be peers of the primary container type. We need to maintain the peer relationship between such container types.
+
+//hide
+[source,cypher]
+----
+MATCH (sa0:SmartAccount { name: "sa-0" })<-[:BELONGS_TO]-(va0:VirtualAccount { name: "va-0" })
+CREATE (oi0:OrgId { name: "org-id-0" })
+, (as0:Asset { name: "asset-0" })
+, (as1:Asset { name: "asset-1" })
+, (em0:Entitlement { name: "entitlement[VIEW]" })
+, (em1:Entitlement { name: "entitlement[MODIFY]" })
+, (em2:Entitlement { name: "entitlement[VIEW]" })
+, (a0:Access { name: "connector-0"})
+, (a1:Access { name: "connector-1"})
+, (sa0)-[:OWNS]->(as0)
+, (va0)-[:ADMINISTERS]->(as0)
+, (as0)-[:SUPPORTS]->(em0)
+, (as0)-[:SUPPORTS]->(em1)
+, (oi0)-[:OWNS]->(as1)
+, (as1)-[:SUPPORTS]->(em2)
+, (oi0)-[:PEER_OF]->(sa0)
+, (oi0)-[:HAS]->(a0)-[:ON]->(as0)
+, (a0)-[:FOR]->(em0)
+, (oi0)-[:HAS]->(a1)-[:ON]->(as1)
+, (a1)-[:FOR]->(em2)
+RETURN *
+----
+
+//graph_result
+
+== Use Case 3: External Assets
+
+Some assets are highly sensitive like a network topology report of an organization are not part of EB but, are maintained externally (transient content based assets).
+
+//hide
+[source,cypher]
+----
+MATCH (sa0:SmartAccount { name: "sa-0" })<-[:BELONGS_TO]-(va1:VirtualAccount { name: "va-1" })
+CREATE (ea0:Asset:External { name: "external-asset-0" })
+, (a2:Access { name: "connector-2"})
+, (ee0:Entitlement:External { name: "ext-entitlement[VIEW]" })
+, (ee1:Entitlement:External { name: "ext-entitlement[MODIFY]" })
+, (ea0)-[:SUPPORTS]->(ee0)
+, (ea0)-[:SUPPORTS]->(ee1)
+, (sa0)-[:OWNS]->(ea0)
+, (va1)-[:ADMINISTERS]->(ea0)
+, (ee0)<-[:FOR]-(a2)-[:ON]->(ea0)
+RETURN *
+----
+
+//graph_result
+
+== Use Case 4: One Customer different Partners
+
+Maintain relationships where partners procure and maintain the assets for the customer.
+
+//hide
+[source,cypher]
+----
+MATCH (sa0:SmartAccount { name: "sa-0" })<-[:BELONGS_TO]-(va2:VirtualAccount { name: "va-2" })
+CREATE (as1:Asset { name: "asset-1" })
+, (em3:Entitlement { name: "entitlement[VIEW]" })
+, (em4:Entitlement { name: "entitlement[MODIFY]" })
+, (as2:Asset { name: "asset-2" })
+, (em5:Entitlement { name: "entitlement[VIEW]" })
+, (em6:Entitlement { name: "entitlement[MODIFY]" })
+, (em7:Entitlement { name: "entitlement[REBOOT]" })
+, (p0:Partner { name: "partner-0" })
+, (p1:Partner { name: "partner-1" })
+, (a3:Access { name: "connector-3"})
+, (a4:Access { name: "connector-4"})
+, (sa0)-[:OWNS]->(as1)
+, (va2)-[:ADMINISTERS]->(as1)
+, (as1)-[:SUPPORTS]->(em3)
+, (as1)-[:SUPPORTS]->(em4)
+, (p0)-[:HAS]->(a3)
+, (em3)<-[:FOR]-(a3)-[:ON]->(as1)
+, (sa0)-[:OWNS]->(as2)
+, (va2)-[:ADMINISTERS]->(as2)
+, (as2)-[:SUPPORTS]->(em5)
+, (as2)-[:SUPPORTS]->(em6)
+, (as2)-[:SUPPORTS]->(em7)
+, (p1)-[:HAS]->(a4)
+, (em5)<-[:FOR]-(a4)-[:ON]->(as2)
+, (em6)<-[:FOR]-(a4)
+RETURN *
+----
+
+//graph_result
+
+=== Use Case 4.1: Same asset, different partners
+
+Different partners can have access to different entitlements of the the same asset.
+
+//hide
+[source,cypher]
+----
+MATCH (sa0:SmartAccount { name: "sa-0" })<-[:BELONGS_TO]-(va2:VirtualAccount { name: "va-2" })
+CREATE (as1:Asset { name: "asset-1" })
+, (em3:Entitlement { name: "entitlement[VIEW]" })
+, (em4:Entitlement { name: "entitlement[MODIFY]" })
+, (as2:Asset { name: "asset-2" })
+, (em5:Entitlement { name: "entitlement[VIEW]" })
+, (em6:Entitlement { name: "entitlement[MODIFY]" })
+, (em7:Entitlement { name: "entitlement[REBOOT]" })
+, (p0:Partner { name: "partner-0" })
+, (p1:Partner { name: "partner-1" })
+, (a3:Access { name: "connector-3"})
+, (a4:Access { name: "connector-4"})
+, (a5:Access { name: "connector-5"})
+, (sa0)-[:OWNS]->(as1)
+, (va2)-[:ADMINISTERS]->(as1)
+, (as1)-[:SUPPORTS]->(em3)
+, (as1)-[:SUPPORTS]->(em4)
+, (p0)-[:HAS]->(a3)
+, (em3)<-[:FOR]-(a3)-[:ON]->(as1)
+, (sa0)-[:OWNS]->(as2)
+, (va2)-[:ADMINISTERS]->(as2)
+, (as2)-[:SUPPORTS]->(em5)
+, (as2)-[:SUPPORTS]->(em6)
+, (as2)-[:SUPPORTS]->(em7)
+, (p1)-[:HAS]->(a4)
+, (em5)<-[:FOR]-(a4)-[:ON]->(as2)
+, (em6)<-[:FOR]-(a4)
+, (p0)-[:HAS]->(a5)
+, (em7)<-[:FOR]-(a5)-[:ON]->(as1)
+RETURN *
+----
+
+//graph_result
+
+==== Cleanup
+
+Delete all nodes and relationships
+
+//hide
+[source,cypher]
+----
+MATCH (n) DETACH DELETE n
+----

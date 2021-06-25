@@ -1,0 +1,241 @@
+= Contributor Community Graph =
+:author: Jacqui Read
+:twitter: @tekiegirl
+:tags: domain:community, model:network
+
+Developers using Neo4j are currently working alone when they should be working together, but they don't know who is working on the same technologies. This graph aims to solve this by linking developers with similar interests, projects and events.
+
+== Setup of known data
+//hide
+[source,cypher]
+----
+CREATE (m1:Member{first_name:'Jacqui',last_name:'Read'}),
+(m2:Member{first_name:'Kenny',last_name:'Bastani'}),
+(m3:Member{first_name:'Bob',last_name:'Smith'}),
+(m4:Member{first_name:'Hans',last_name:'Schwartz'}),
+(t1:Technology{name:'Neo4j'}),
+(t2:Technology{name:'Neo4jClient'}),
+(t3:Technology{name:'.Net'}),
+(t4:Technology{name:'Python'}),
+(l0:Location{name:'World'}),
+(l1:Location{name:'Europe'}),
+(l2:Location{name:'UK'}),
+(l3:Location{name:'Hampshire'}),
+(l4:Location{name:'North America'}),
+(l5:Location{name:'USA'}),
+(l6:Location{name:'New York'}),
+(l7:Location{name:'Germany'}),
+(l8:Location{name:'New York'}),
+(l9:Location{name:'London'}),
+(l10:Location{name:'California'}),
+(l11:Location{name:'San Diego'}),
+(e1:Event{name:'GraphConnect - London', date:1384761600000}),
+(e2:Event{name:'GraphConnect - New York', date:1383638400000}),
+(e3:Event{name:'AfterGlow Meetup', date:1385571600000}),
+(e4:Event{name:'Intro to Neo4j ', date:1387386000000})
+WITH m1,m2,m3,m4,t1,t2,t3,t4,l0,l1,l2,l3,l4,l5,l6,l7,l8,l9,l10,l11,e1,e2,e3,e4
+CREATE UNIQUE (m1)-[:INTEREST]->(t1),
+(m1)-[:INTEREST]->(t2),
+(m1)-[:INTEREST]->(t3),
+(m2)-[:INTEREST]->(t1),
+(m2)-[:INTEREST]->(t3),
+(m2)-[:INTEREST]->(t4),
+(m3)-[:INTEREST]->(t2),
+(m4)-[:INTEREST]->(t4),
+(t2)-[:FOR]->(t1),
+(t2)-[:FOR]->(t3),
+(t4)-[:FOR]->(t1),
+(l0)-[:PART_OF]->(l1),
+(l1)-[:PART_OF]->(l2),
+(l2)-[:PART_OF]->(l3),
+(l0)-[:PART_OF]->(l4),
+(l4)-[:PART_OF]->(l5),
+(l5)-[:PART_OF]->(l6),
+(l1)-[:PART_OF]->(l7),
+(l8)-[:PART_OF]->(l6),
+(l9)-[:PART_OF]->(l2),
+(l10)-[:PART_OF]->(l5),
+(l11)-[:PART_OF]->(l10),
+(m1)-[:BASED_IN]->(l3),
+(m2)-[:BASED_IN]->(l8),
+(m3)-[:BASED_IN]->(l2),
+(m4)-[:BASED_IN]->(l7),
+(e1)-[:IN]->(l9),
+(e2)-[:IN]->(l8),
+(e3)-[:IN]->(l9),
+(e4)-[:IN]->(l11),
+(e1)-[:INVOLVES]->(t1),
+(e2)-[:INVOLVES]->(t1),
+(e3)-[:INVOLVES]->(t1),
+(e4)-[:INVOLVES]->(t1),
+(m1)-[:ATTEND]->(e1),
+(m1)-[:ATTEND]->(e3),
+(m2)-[:ATTEND]->(e1),
+(m2)-[:SPEAKER]->(e3),
+(m3)-[:ATTEND]->(e1),
+(m4)-[:ATTEND]->(e3),
+(m4)-[:ATTEND]->(e4)
+----
+
+//graph
+
+== Technologies/Interests
+
+=== Who is interested in the same technologies as me?
+
+[source,cypher]
+----
+MATCH (me:Member)-[:INTEREST]->(t:Technology)<-[:INTEREST]-(m:Member)
+WHERE me.first_name = 'Jacqui'
+RETURN m, count(t) AS shared_interests, collect(t.name) AS interests
+ORDER BY shared_interests DESC
+----
+
+//table
+
+=== What are members' primary interests?
+
+[source,cypher]
+----
+MATCH (m:Member)-[:INTEREST]->(t1:Technology)
+RETURN m, collect(DISTINCT t1.name) AS primary_interests
+----
+
+//table
+
+=== What are members' secondary interests?
+
+[source,cypher]
+----
+MATCH (m:Member)-[:INTEREST]->(:Technology)-[]->(t2:Technology)
+RETURN m, collect(DISTINCT t2.name) AS secondary_interests
+----
+
+//table
+
+== Location
+
+=== Which members live in the same location as me?
+
+[source,cypher]
+----
+MATCH (me:Member)-[:BASED_IN]->(l:Location)<-[:BASED_IN]-(m:Member)
+WHERE me.first_name = 'Jacqui'
+RETURN m, l.name
+----
+
+//table
+
+=== Which members live near me?
+See notes for more on how we need to think about this.
+
+[source,cypher]
+----
+MATCH (me:Member)-[:BASED_IN]->(l:Location)<-[*1..3]-(m:Member)
+WHERE me.first_name = 'Jacqui'
+WITH me,m
+MATCH (m)-[:BASED_IN]->(ml:Location)
+RETURN m, ml.name AS location
+----
+
+//table
+
+== Events
+
+=== What events are happening, and where?
+
+[source,cypher]
+----
+MATCH (e:Event)-[:IN]->(l:Location)
+RETURN e.name AS event, e.date AS date, l.name AS location
+----
+
+//table
+
+=== What events are happening in the future?
+
+[source,cypher]
+----
+MATCH (e:Event)-[:IN]->(l:Location)
+WHERE e.date > timestamp()
+RETURN e.name AS event, e.date AS date, l.name AS location
+----
+
+//table
+
+=== What events are happening in the UK in the next week?
+
+[source,cypher]
+----
+MATCH (e:Event)-[*]->(l:Location)
+WHERE l.name = 'UK'
+AND e.date > timestamp()
+AND e.date < 1385683199000
+WITH e
+MATCH (e:Event)-[:IN]->(lo:Location)
+RETURN e.name AS event, e.date AS date, lo.name AS location
+----
+
+//table
+
+=== What events involving technologies that I am interested in, are happening in the future?
+
+[source,cypher]
+----
+MATCH (l:Location)<-[:IN]-(e:Event)-[:INVOLVES]->(t:Technology)<-[:INTEREST]-(me:Member)
+WHERE me.first_name = 'Jacqui'
+AND e.date > timestamp()
+RETURN e.name AS event, e.date AS date, l.name AS location, t.name as technology
+----
+
+//table
+
+=== Who attended an event that I attended?
+[source,cypher]
+----
+MATCH (m:Member)-[*1..1]->(e:Event)<-[:ATTEND]-(me:Member)
+WHERE me.first_name = 'Jacqui'
+AND e.date < timestamp()
+RETURN e.name AS event, m AS member
+----
+
+//table
+
+=== Who is attending a future event that I am attending?
+
+[source,cypher]
+----
+MATCH (m:Member)-[*1..1]->(e:Event)<-[:ATTEND]-(me:Member)
+WHERE me.first_name = 'Jacqui'
+AND e.date > timestamp()
+RETURN e.name AS event, m AS member
+----
+
+//table
+
+=== Who is attending a future event that I am attending, and is interested in the same technologies as me?
+
+[source,cypher]
+----
+MATCH (m:Member)-[*1..1]->(e:Event)<-[:ATTEND]-(me:Member),
+(m:Member)-[:INTEREST]->(t:Technology)<-[:INTEREST]-(me:Member)
+WHERE me.first_name = 'Jacqui'
+AND e.date > timestamp()
+RETURN e.name AS event, m AS member, collect(t.name) as technologies
+----
+
+//table
+
+=== What other technologies are members, who are interested in the same technologies as me, interested in?
+
+[source,cypher]
+----
+MATCH (me:Member)-[:INTEREST]->(t1:Technology)<-[:INTEREST]-(m:Member)
+WHERE me.first_name = 'Jacqui'
+WITH me,t1,m
+MATCH (m:Member)-[:INTEREST]->(t:Technology)
+WHERE NOT (me)-[:INTEREST]->(t)
+RETURN DISTINCT m, collect(t1.name) AS shared_technologies, collect(DISTINCT t.name) as other_technologies
+----
+
+//table

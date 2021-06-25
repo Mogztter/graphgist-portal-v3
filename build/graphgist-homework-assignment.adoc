@@ -1,0 +1,81 @@
+= Homework Assignement: Create a small Graph Use Case Model with Neo4j and Cypher
+
+== Domain and Data
+
+Take a domain that you are really interested in, be it politics, beer, music, arts, cooking, sports, travel, software, organizations.
+
+Draw a model of the domain on a whiteboard or digitally, add a few example entities (nodes) you know and their relationships.
+Think about at least 3 questions you want to answer using this _connected_ data.
+Remember to add all the information you need to answer those questions.
+
+You should end up with *at least 15 nodes and 20 relationships*.
+
+== GraphGist Format
+
+Now go to http://portal.graphgist.org/about and learn about the GraphGist documentation format (which is basically AsciiDoc a text-markup language with a few embellishments).
+
+You can either start from the template that is provided there or a blank plain text file.
+
+You can also explore the other GraphGists on the portal for further inspiration.
+
+== Setup
+
+Add a snappy *title* for your demo and *some prose* that describes the domain and the types of its entities and their relationships.
+
+Now *add an image* link, e.g. to the drawing you created earlier.
+
+Now you can start creating your domain with Cypher, Neo4j's query language in a *Setup* section.
+Follow the syntax example in the template or on the portal page.
+
+//setup
+//hide
+[source,cypher]
+----
+CREATE (john:Person {name:"John"})
+CREATE (ann:Person {name:"Ann"})
+CREATE (john)-[:KNOWS]->(ann)
+CREATE (john)<-[:KNOWS]-(:Person {name:"Fred"})
+----
+
+//graph
+
+Render the resulting graph with the *`//graph`* marker.
+
+== Show all friends of John
+
+Then take your questions from before and put each of them in a titled section (e.g. `== Show all friends of John`) add some prose.
+
+Add the Cypher statement in a `[source,cypher]` codeblock.
+
+[source,cypher]
+----
+MATCH (me:Person {name:"John"})-[:KNOWS]-(friend)
+RETURN friend, me.name
+----
+
+//graph_result
+
+//table
+
+Render the results either as `//table` *or* `//graph_result`.
+
+== Submission & Grading
+
+While you're working and when you are done, you can use the "Preview" functionality of the GraphGist portal to render your document in your browser.
+Go to http://portal.graphgist.org/submit_graphgist add the public URL of your file, your title and click `Preview`.
+
+When done, either hand in the preview link or submit your link to the portal and share the resulting link with your lecturer.
+
+
+*The grading will be on completeness, correct usage of Cypher, good prose and educational quality of your queries (i.e. at least 2 of the 3 should use relationships or paths).*
+
+
+== Resources
+
+* http://neo4j.com/graphacademy/online-course-getting-started/[Online Course]
+* http://neo4j.com/developer/cypher[Cypher Information on the Developer Pages]
+* http://neo4j.com/docs/developer-manual/current/#cypher-getting-started[Cypher in the Neo4j Manual]
+* http://neo4j.com/docs/cypher-refcard/current/[Cypher Refcard]
+
+* http://portal.graphgist.org/about[GraphGist Howto]
+* https://gist.github.com/jexp/a56f7e7587ce5ed97561[Template]

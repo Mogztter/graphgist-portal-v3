@@ -1,0 +1,316 @@
+++++
+<style media="screen" type="text/css">
+div.clear {
+    clear: both;
+}
+.center-wrapper {
+    float:left;
+    position:relative;
+    left:50%;
+   /*overflow:hidden;*/
+}
+.center-inner {
+    float:left;
+    position:relative;
+    left:-50%;
+}
+h1,h2,h3 {
+	font-family: Impact, "Arial Rounded MT Bold","Arial Narrow",Helvetica,sans-serif;
+	font-weight: normal;
+	text-align: center;
+}
+div.title {
+	font-family: "Arial Rounded MT Bold",Arial,Helvetica,sans-serif;
+	font-weight: bold;
+}
+div.note table {
+	margin-bottom: 0;
+}
+div.note .title {
+	font-weight: larger;
+}
+div.sidebarblock div.content {
+	float: left;
+	width: 200px;
+	background:#FFFFEE;
+	border-color:#DDDDDD #DDDDDD #DDDDDD #F0F0F0;
+	border-style:solid;
+	border-width:1px 1px 1px 4px;
+	padding:0.5em;
+	margin-right: 12px;
+}
+div.sidebarblock div.ulist {
+	.font-size: smaller;
+}
+div.quoteblock {
+	margin-left: 20px;
+}
+div.quoteblock div.attribution {
+	text-align: right;
+	font-style: italic;
+}
+div.quoteblock p {
+	margin: 0;
+	font-style: italic;
+	font-size: 100%;
+}
+div.quoteblock blockquote {
+	margin-bottom: 0;
+}
+div.visualization {
+	margin-top:28px;
+}
+</style>
+++++
+== Exploring the Metamodel Subgraph of a FactMiners Fact Cloud
+:Title:     FactMiners and The Softalk Apple Project starring in...__"Where Facts Live"__
+:Author:    Jim Salmons for FactMiners.org
+:Email:     <devs@factminers.org>
+:Date:      07 December 2014
+:Revision:  0.1
+++++
+<div style="float: right; padding-left: 10px;"><a href="http://www.factminers.org/sites/default/files/images/jim_timlynn_mcn2014.jpg">
+<img src="http://www.factminers.org/sites/default/files/images/jim_timlynn_mcn2014.jpg" width="240" height="240" alt="jim_timlynn_mcn2014.jpg" />
+</a></div>
+++++
+
+.Contents
+****
+* <<anchor-1,Step 1. The Document Structure of Softalk magazine...>>
+* <<anchor-2,Step 2. Now Some of What Softalk "IS_ABOUT">>
+* <<anchor-3,Step 3. Modeling a Bestseller List line item.>>
+* <<anchor-4,Step 4. Connecting Magazine Structure to its Content... __WHERE FACTS LIVE!__>>
+* <<anchor-5,Afterword/Foreshadow -- Hey! Where's the CIDOC CRM Stuff? And where are the games? Etc.>>
+****
+Author: {Author} +
+Date: {Date}, +
+Revision: {Revision}
+
+Rendered GraphGist URL: http://portal.graphgist.org/graph_gists/where-facts-live-in-softalk-magazine-exploring-the-metamodel-subgraph-of-a-factminers-fact-cloud
+Source GraphGist URL: https://gist.github.com/Jim-Salmons/8bdcc380cbb240c7d17a 
+
+In 2014 shortly after resurfacing from my horrific cancer battle and determined to "do something amazing" to preserve and celebrate the history of early microcomputing as told in the unique "journalistic amber" of Softalk magazine, I gave a presentation at http://mcn.edu/mcn2014[**#MCN2014**], the http://mcn.edu[__Museum Computer Network__] annual conference. I was lucky enough to be awarded an Emerging Professional scholarship to attend this amazing event on behalf of our interrelated __Citizen Science/History__ projects; http://www.FactMiners.org[FactMiners] and www.SoftalkApple.com[The Softalk Apple Project]. **FactMiners** is the __"means"__ and **Citizen Science** part of our twin projects. **The Softalk Apple Project** is the __"ends"__ and **Citizen History** side of our activity.
+
+The full presentation is about a half-hour long with audience questions. The first half is about **Softalk** magazine and why it is a valuable historical and cultural artifact. In 48-monthly issues published starting in September of 1980, Softalk uniquely captured the **dawn of the microcomputer and digital revolutions** that shape our 24/7 world today.
+
+In the second half of my presentation I give an overview of the technical design of the LAM-based (Libraries, Archives and Museums) **FactMiners social-game platform** that will produce the fine-grained and machine-readable FactMiners' Fact Cloud that captures the detailed **structure and content of Softalk magazine**. [[anchor-mymcn_video]]
+
+**NUTS**: Since writing this GraphGist, the ability to in-line code has gone, so the embedded video isn't showing. I'll make a pseudo-startVideo image and stick it here and link it to the video. ITMT, here is the http://www.youtube.com/embed/o8FzCHl12zQ[YouTube video of my MCN presentation].
+++++
+<div class="center-wrapper"><div class="center-inner"><iframe width="560" height="315" src="http//www.youtube.com/embed/o8FzCHl12zQ" frameborder="0" allowfullscreen></iframe></div></div><div class="clear"></div>
+<div style="float: left;"><img src="http://www.factminers.org/sites/default/files/images/metamodel_subgraph.png" width="440" height="316" alt="metamodel_subgraph.png" /></div>
+FactMiners' Fact Clouds will be accessible to the outside world as <a href="http://lod-cloud.net/"><em>Linked Open Data</em> repositories</a>. Internally, the Fact Cloud will be implemented as a <em>"self-descriptive"</em> <strong>Neo4j graph database</strong> using a <strong>metamodel subgraph</strong> design pattern. The FactMiners' Fact Cloud of Softalk will be a unique resource enhancing the value of The Softalk Apple Project's human-readable digital archive of the magazine.
+++++
+In the __"Where Facts Live"__ section of my conference presentation, I quickly step through four Neo4j Cypher queries. These queries piece-wise begin to build the metamodel subgraph describing the structure of Softalk magazine. The fourth query demonstrates "where facts live" in the FactMiners' Fact Cloud semantic model by linking the magazine's __structure model__ to its **"IS_ABOUT"** __content model.__ The resulting metamodel subgraph is then useful in "**sighting facts**" in the content of Softalk magazine; **facts that are the "actual data" of the Fact Cloud database to be generated by FactMiners' social-gameplay**.
+
+This **Neo4j GraphGist** is a "canned live demo" of the introductory exploration of the metamodel subgraph design pattern I did as part of my #MCN2014 presentation...
+
+== [[anchor-1]]Step 1. The Document Structure of Softalk magazine...
+
+Commercial magazines are devilishly complex documents. Content is intentionally "sliced and diced" to lead the reader hither and yon through the magazine as much as possible without driving the reader to distraction. That's the best way known to get to the necessary delicate balance where advertising revenue helps to lower the cover price of the magazine for the reader.
+
+In the following graphic, on the left are examples of the metamodel subgraph's **META:Structure** partition -- the subset of model elements describing the magazine's document structure. On the right are examples of the **META:Content** partition -- the magazine's content model expressed through "is about" relations in the metamodel subgraph. The magazine's Content model will be the focus of our next step in building out the core structure of the metamodel subgraph describing the FactMiners' Fact Cloud of Softalk magazine.
+++++
+<div class="center-wrapper"><div class="center-inner"><img src="http://www.factminers.org/sites/default/files/images/softalk_structure_content.png" width="800" height="569" alt="softalk_structure_content.png" /></div></div><div class="clear"></div>
+++++
+Our first **Cypher** query -- that's the http://neo4j.com/developer/cypher-query-language/[built-in query language for Neo4j], the Open Source graph database -- creates the metamodel elements that describe the Big Picture of Softalk's document structure. From a whole-part composition point-of-view, Softalk is a **Magazine** serially published as a multi-issue document collection composed of four (annual) **Volumes** of 12 monthly **Issues**. Each Issue is made up of **Pages** which, in turn, may be composed of an arbitrary number and/or type of **Page Parts**. First the query, then the graph visualization of the model elements we've just created to begin to build our FactMiners' metamodel subgraph describing Softalk magazine.
+
+[source,cypher]
+----
+// The basic structure of Softalk magazine
+CREATE
+    (magazine:META_Structure_Nodes {type: "MAGAZINE", name: "Magazine"}),
+    (volume:META_Structure_Nodes {type: "VOLUME", name: "Volume"}),
+    (issue:META_Structure_Nodes {type: "ISSUE", name: "Issue"}),
+    (page:META_Structure_Nodes {type: "PAGE", name: "Page"})
+// And hook them up to reflect their part-subpart relationship...
+CREATE volume - [:FROM_NODE] ->
+        (:META_Structure_Relationships {type: "PART_OF", name: "Part of"})
+        - [:TO_NODE] -> magazine
+CREATE issue - [:FROM_NODE] ->
+        (:META_Structure_Relationships {type: "PART_OF", name: "Part of"})
+        - [:TO_NODE] -> volume
+CREATE page - [:FROM_NODE] ->
+        (:META_Structure_Relationships {type: "PART_OF", name: "Part of"})
+        - [:TO_NODE] -> issue
+// Now some of the most obvious segments, or subpage parts, that make up a Page
+CREATE
+    (fcov:META_Structure_Nodes {type: "FCOV", name: "Front cover"}),
+    (ifcov:META_Structure_Nodes {type: "IFCOV", name: "Inside front cover"}),
+    (bcov:META_Structure_Nodes {type: "BCOV", name: "Back cover"}),
+    (ibcov:META_Structure_Nodes {type: "IBCOV", name: "Inside back cover"}),
+    (masthead:META_Structure_Nodes {type: "MASTHEAD", name: "Masthead"}),
+    (toc:META_Structure_Nodes {type: "TOC", name: "Table of Contents"}),
+    (loa:META_Structure_Nodes {type: "LOA", name: "List of Advertisers"}),
+    (column:META_Structure_Nodes {type: "COLUMN", name: "Column"}),
+    (feature:META_Structure_Nodes {type: "FEATURE", name: "Feature"}),
+    (review:META_Structure_Nodes {type: "REVIEW", name: "Review"}),
+    (top30:META_Structure_Nodes {type: "TOP30", name: "Top 30 List"}),
+    (top10biz:META_Structure_Nodes {type: "TOP10BIZ", name: "Top 10 Business List"}),
+    (top10gam:META_Structure_Nodes {type: "TOP10GAM", name: "Top 10 Games List"}),
+    (ad:META_Structure_Nodes {type: "AD", name: "Advertisement"})
+WITH [fcov, ifcov, bcov, ibcov, masthead, toc, loa, column, feature, review, 
+      top30, top10biz, top10gam, ad] as pg_parts
+// And each Page Part is associated with the Page 
+MATCH (page:META_Structure_Nodes)
+WHERE page.type = "PAGE"
+FOREACH (pg_part IN pg_parts |
+    CREATE pg_part - [:FROM_NODE] ->
+        (r:META_Structure_Relationships {type: "PART_OF", name: "Part of"})
+        - [:TO_NODE] -> page)
+----
+The "bouncy stick-and-ball" graph visualization below shows the nodes and relations we've just added to our FactMiners' metamodel subgraph in the Fact Cloud of Softalk magazine. These initial model elements create the basic foundation of Softalk magazine's Big Picture document structure drilling down to where each Page can have any number of Subpage document structural blocks on it as shown below.
+
+.Viewing Tip
+[QUOTE,Click the crossed-arrow icon below to view full-screen.]
+____
+To view these GraphGist query result visualizations to full advantage, I encourage you to click the "double-headed crossed arrows" icon seen at the top right of the in-line visualization. Clicking this icon with put you in "full screen" mode where you can best see and play around with these "bouncy diagrams." 
+____
+// graph
+
+[NOTE]
+====
+If you are new to metamodelling specifically or graph databases in general, please do not be confused by "seeing Nodes" when we are talking/thinking about graph Relationships in our Fact Cloud graph database. 
+++++
+<div style="float: left;"><img src="http://www.factminers.org/sites/default/files/images/pt2_fig1_pt1meta.png" alt="pt2_fig1_pt1meta.png" /></div>
+++++
+Keep in mind that the metamodel subgraph __models the "actual data"__ in our Fact Cloud graph database. It is a model ABOUT the "actual data" in our Fact Cloud. So it is entirely possible -- indeed, it is almost essential -- that such graph transformations be used when applying this graph database design pattern.
+
+To be very explicit about the Relationships between Nodes in our actual data, we "node-ify" the actual data's Relationships within the metamodel subgraph. That is, we express the Relationships found in the actual data as Nodes in the metamodel subgraph. This basic __graph transformation__ allows us to focus on the Relationship's semantics. We can now build a "minimodel" -- anchored on the "node-ified" Relationship -- that describes the implementation and constraints on the Relationship's use in the actual data of the Fact Cloud -- or within any graph database using this "self-descriptive" design pattern. 
+
+So, for example, where you see a **"Part of" Node** between any two META:Structure Nodes, this means you will find those __types__ of Nodes in the actual data with a "Part of" Relationship between them. The diagram at left shows a simple case of this transformation. See this FactMiners' blog post for further thoughts on http://www.factminers.org/content/thoughts-node-ifying-relations-neo4j-metamodel-subgraph["node-ifying" Relationships in a metamodel subgraph].
+====
+== [[anchor-2]]Step 2. Now Some of What Softalk "IS_ABOUT"
+
+The **META:Content** partition of the FactMiners' Fact Cloud that models the depth and breadth of Softalk's editorial and advertising content is going to be "serious fun" to develop! :-) It will be a Content model sufficient to express the "elementary facts" about all the People, Companies, Products, Technologies, Events, etc., that were all part of the literal __Blast Off__ of the **Rocket Ride of Moore's Law** that has propelled us into the 24/7 global digital world of today. 
+++++
+<div class="center-wrapper"><div class="center-inner"><img src="http://www.factminers.org/sites/default/files/images/Softalk_content_parade.gif" width="1200" height="744" alt="Softalk_content_parade.gif" /></div></div><div class="clear"></div>
+++++
+Given the breadth and depth of Softalk's content, you can easily imagine how richly interesting the **META:Content** partition of the FactMiners' metamodel subgraph will become as it evolves through __"fact discovery" FactMiners' gameplay.__ We start here by adding a few obvious model elements that reflect the content of the magazine; Person, Company, Product, Location, and Event. Each of these new metamodel Content nodes has an "is about" relationship with the Magazine.
+
+[source,cypher]
+----
+// Now some of what Softalk 'IS_ABOUT'... these model elements are the first nodes
+//  in the Content model portion of the metamodel subgraph.
+CREATE
+    (person:META_Content_Nodes {type: "PERSON", name: "Person"}),
+    (company:META_Content_Nodes {type: "COMPANY", name: "Company"}),
+    (product:META_Content_Nodes {type: "PRODUCT", name: "Product"}),
+    (location:META_Content_Nodes {type: "LOCATION", name: "Location"}),
+    (event:META_Content_Nodes {type: "EVENT", name: "Event"})
+WITH [person, company, product, location, event] as content_elements
+MATCH (magazine:META_Structure_Nodes)
+// And hook them up to the Magazine through IS_ABOUT relationships
+WHERE magazine.type = "MAGAZINE"
+FOREACH (content_element IN content_elements |
+    CREATE magazine - [:FROM_NODE] ->
+        (r:META_Content_Relationships {type: "IS_ABOUT", name: "is about"})
+        - [:TO_NODE] -> content_element)
+----
+If you pop the following graph visualization into full-screen view, you will more easily see how our second query begins to build the **META:Content** model "anchored" to the **Magazine** "root" node of the **META:Structure** partition.
+// graph
+
+== [[anchor-3]]Step 3. Modeling a Bestseller List line item.
+
+Although the 9,304 pages of Softalk magazine are literally overflowing with "elementary facts" of what was going on at the dawn of the Digital Age, we can still accurately describe this content as **semantically-rich sparse data**. In other words, we would be hard-pressed to create a more traditional __structured__ database -- that is, a table-based, record-oriented, specific-fields/columns style relational model -- that could express and keep up with the evolving nature of our Digital Humanities use case. To cover all the various facts we will find in so many free-form contexts we need a datastore that is both **semantically expressive** and **easily extensible** as we cannot possibly know all the use cases of what facts we will discover once we dig into our source material. 
+
+To capture semantically-rich data that is sparsely distributed -- think about how many grammatical "filler words" we have "wrapping" the few words needed to convey a specific fact (i.e. an "(object)--[:relationship]->(object)" semantic "statement") -- we turn to the amazing capabilities of a modern graph database. While there are a growing number of such technology offerings, **FactMiners** and **The Softalk Apple Project** have selected the http://neo4j.com/product/[**Neo4j Open Source graph database**] from http://neo4j.com/company/[Neo Technologies] for our projects.
+++++
+<div style="float: right;"><img src="http://www.factminers.org/sites/default/files/images/Softalk_fullofacts_bestseller_list_item.png" width="566" height="602" alt="Softalk_fullofacts_bestseller_list_item.png" /></div>
+++++
+The myriad of facts that FactMiners gameplayers will mine from within the Softalk content are "gems" encoded linguistically and visually in the text and image content of the Magazine. The density and frequency of "fact sightings" will vary greatly within the Magazine -- frequency here being redundant sightings of the "same" fact in various places within the Page Parts of the Magazine.
+
+While much of our source data will be free-form text, there are plenty of situations where additional structure is apparent in the source document. When we discover such additional fine-grained structure that contributes to context and understanding, we can easily extend the semantics expressible by the Fact Cloud's metamodel subgraph. 
+
+Take, for example, our closer inspection of the famous Softalk Bestseller Lists. As our "full of facts" image collage shows, there is the additional fine-grained structure of the Item entries on the list to be incorporated into our metamodel subgraph. The Bestseller Lists are particularly important monthly back-of-book columns of meticulously researched software sales data. Started initially as a single Top Thirty list, the popularity of the lists and the explosive growth of the fledging microcomputer software industry led to the expansion of this feature into multiple category-specific lists.
+
+This Cypher query adds the additional model elements that extend our Softalk metamodel subgraph to accommodate the semantics of a **Bestseller List Line Item** -- a fine-grained structure we find that, in this case, can be found on three different types of Bestseller List:
+
+[source,cypher]
+----
+// Adding a subpage part...
+CREATE (topXlist_item:META_Structure_Nodes {type: "TOPX_LIST_ITEM", 
+         name: "A Bestseller List Line Item"})
+WITH topXlist_item
+MATCH (topXlist:META_Structure_Nodes)
+// And hook is up via a PART_OF relationship from the various 
+//  Bestseller List types.
+WHERE topXlist.type IN ["TOP30", "TOP10BIZ", "TOP10GAM"]
+CREATE topXlist_item - [:FROM_NODE] ->
+        (:META_Structure_Relationships {type: "PART_OF", name: "Part of"})
+        - [:TO_NODE] -> topXlist
+----
+In just such a thoughtful-but-free-form way, we can dynamically extend the "semantic coverage" of the metamodel subgraph and, in turn, begin to recognize and capture new "facts" and interrelate this new data and data-model semantics with existing data in the now-extended FactMiners Fact Cloud -- that is, within our "self-descriptive" Neo4j graph database.
+
+In the next section of this GraphGist, I focus on the __"reach through" semantics__ of our evolving metamodel subgraph; that is, the "**Person** as **Developer** of **Product**" and "**Company** as **Publisher** of **Product**" semantic expressed in the compact format of each Bestseller List item. As you view this iteration of the metamodel subgraph visualization, we have "set the stage" for seeing "where facts live" when using the metamodel subgraph design pattern.
+
+// graph
+[NOTE]
+====
+++++
+<div class="center-wrapper"><div class="center-inner"><img src="http://www.factminers.org/sites/default/files/images/softalk_bestseller_line_item_closeup.png" width="558" height="252" alt="softalk_bestseller_line_item_closeup.png" /></div></div><div class="clear"></div>
+++++
+The List Item-specific attributes of the current and prior month's ordinal position in the list, and the current month's rating index are not addressed here as they are outside the scope of this introduction to the ideas of the metamodel subgraph design pattern. Handling such semantics is done by a __property mapping__ transformation to provide metamodel expressions that specify the properties of Nodes and Relationships in the "actual data" of a FactMiners' Fact Cloud. Neo4j, more specifically, implements a __labeled property graph model__ -- so a property-mapping transformation will be a convenient means to take advantage of these features of this Open Source graph database.
+====
+== [[anchor-4]]Step 4. Connecting Magazine Structure to its Content... __WHERE FACTS LIVE!__
+
+In this final query of our brief exploration of the metamodel subgraph, we will see how this design pattern "locates facts" at the intersection of the metamodel subgraph's **META:Structure** and **META:Content** partitions. To see __"Where Facts Live"__, I'm focusing on the __"reach through" semantics__ of the Bestseller List Line Items.
+
+In the case of Softalk's Bestseller Lists, each Line Item on the list specifies that some specific **Person** has a **Developer** relationship with the **Product**, and a specific "**Company** has a **Publisher** relationship with the listed **Product**. When we enter the **ON_LIST** to the **META:Structure:Relationships** model element elements, we use this "point of contact" to "reach through" from the **META:Structure** partition of our metamodel to the **META:CONTENT** model where we now make our first connection of __"where facts live"__...
+
+[source,cypher]
+----
+// The CONNECTION - Closing the loop of structure and content...
+MATCH (item:META_Structure_Nodes), (product:META_Content_Nodes),
+        (developer:META_Content_Nodes), (publisher:META_Content_Nodes)
+WHERE item.type = 'TOPX_LIST_ITEM' AND product.type = 'PRODUCT' AND 
+                    developer.type = 'PERSON' AND publisher.type = 'COMPANY'
+CREATE
+    // The listing's primary identity is the software:PRODUCT that 
+    //  has earned a place on a bestseller list
+    p3 = ((item) - [:FROM_NODE] ->
+                (:META_Structure_Relationships {type: "ON_LIST", name: "on list"})
+                - [:TO_NODE] -> (product)),
+    // 'Fact bits' in a standard Softalk bestseller listing include the name of the 
+    //   primary developer:PERSON and the name of the publisher:COMPANY. 
+    //   These 'reach-through fact bits' are implemented as relationships accordingly...
+    p4 = ((product) - [:FROM_NODE] ->
+                (:META_Structure_Relationships {type: "DEVELOPER", name: "developer"})
+                - [:TO_NODE] -> (developer)),
+    p5 = ((product) - [:FROM_NODE] ->
+                (:META_Structure_Relationships {type: "PUBLISHER", name: "publisher"})
+                - [:TO_NODE] -> (publisher))
+----
+So in a literal "full circle" sense, we have taken a relatively gentle exploration of the metamodel subgraph design pattern to see how we can model both the complex document structure of the Softalk magazine and its wide-ranging yet-detailed content. We've __"located facts"__ at the intersection of the **META:Structure** and **META:Content** partitions of the metamodel subgraph.
+
+When you open this last graph visualization full-screen, you will see the "vital link" that the **ON_LIST** relationship plays in knitting together the META:Structure and META:Content elements of our metamodel. By first linking the **Product** as being on a specific Bestseller List, we can then "reach through" to create the **Developer** and **Publisher** relationships to the Product's respective **Person** and **Company** responsible for the software's creation and distribution.
+
+// graph
+
+To get a better idea of what a FactMiners Fact Cloud will be, take these basic building block ideas and techniques and "just keep doing it" until we have a wonderfully rich and flexible -- yet computationally rigorous -- semantic dataset that is, in effect, a "full-graph 'X-ray' copy" of every issue of Softalk magazine. To see how a metamodel subgraph supports text-analytics objectives such as fact discovery, validation, editing, and visualization, see my http://gist.neo4j.org/?8640853[__'Man Bites Dog is News' GraphGist__].
+
+== [[anchor-5]]Afterword/Foreshadow -- Hey! Where is the CIDOC CRM Stuff? And where are the games? Etc.
+++++
+<div style="float: right; margin-left: 12px; margin-bottom: 8px;"><a href="http://www.factminers.org/content/thoughts-cidoc-crm-classes"><img src="http://www.factminers.org/sites/default/files/images/cidocCRM_classes_cartoon.png" width="500" height="387" alt="cidocCRM_classes_cartoon.png" style="border: 1px solid black"/></a></div>
+++++
+If you watched the <<anchor-mymcn_video,"lively slides" video of my #MCN2014 presentation>>, or if you are familiar with my recent posts on the topic, you may be wondering why there is no reference in this exploration to the http://www.cidoc-crm.org[**CIDOC CRM**]. That's the **Conceptual Reference Model** -- also known as a metamodel, and now an ISO standard -- developed and maintained by the http://icom.museum/[International Council of Museums]. The FactMiners project is committed to making the backend digital collections management aspects of the FaceMiners Open Source social-game platform #cidocCRM-compatible. So... where's the #cidocCRM stuff?
+
+As I worked on my #MCN2014 presentation, it became clear that I could not do both a "gentle introduction" to the metamodel subgraph design pattern AND introduce a domain-specific extension of the #cidocCRM within this single example. So these most fascinating ideas and topics about how the #cidocCRM fits into our design will have to wait for the New Year and new posts. I do go into a bit more about our project's interest in the #cidocCRM in my #MCN2014 presentation.
+
+The other obvious 900-pound elephant NOT in the room is the games... "Hey, if FactMiners is supposed to be a Digital Humanities social-game platform, where the heck are the games!?" Fair enough. I could fill a book or two with ideas brewing in this regard. But these are just loose ideas at this time. For all practical purposes, we simply are not there yet. By that I mean we have a LOT of **design and infrastructure building** to do before we have a platform on which to host FactMiners games. **We're planning at least a Proof-of-Concept exploration of microservices-based gameplay in 2015.** __Funding to support expansion of our design and development team/activity could greatly accelerate our projects.__
+
+Stay tuned. In the meantime...
+
+**If you are a Neo4j or general graph database enthusiast** and want to know more about "self-descriptive" graph databases, "full graph" explorations of the #cidocCRM, etc., please visit the http://www.FactMiners.org[FactMiners.org] website. If you are a __Kindred Spirit__ who would like to **explore possible collaborations** or **point us to helpful resources**, please do not hesitate to use the http://www.FactMiners.org[Contact form on the FactMiners website] to get in touch.
+
+**If you are a vintage computer enthusiast or researcher, or more generally, a Digital Humanities type who would like to connect**, please don't hesitate to get in touch via either the Contact form on www.SoftalkApple.com/contact[SoftalkApple.com] or www.FactMiners.org[FactMiners.org].
+
+And if you have stuck with me until the proverbial bitter end, **thank you**. Our projects are independent, unfunded, grassroots Citizen Science/History projects. We welcome your interest and involvement. If "we're not your cup of tea" so to speak, but you know someone who might like what we're brewing... please, help spread the word and point folks to our project websites. And finally, I welcome your comments or questions via the Disqus thread below.
+
+Have a safe, happy year-end holiday in whatever way, shape, or form you plan to enjoy it!
+
+Happy-Healthy Vibes to All, +
+-: http://www.Twitter.com/Jim_Salmons[Jim Salmons] :- 
+
+15 December 2014 +
+Cedar Rapids, Iowa USA

@@ -1,0 +1,260 @@
+:neo4j-version: 2.3
+:author: Alba Serena, Cristian Lado, Mar Rodriguez
+:style: red:Person(name), #54A835/#1078B5/white:Database(name)
+
+=== Description
+
+//hide
+//setup
+//output
+[source,cypher]
+----
+CREATE (a1:Aeropuerto{
+			nombre: 'Barajas',
+			terminales: 5,
+			pistas: 7
+				}),
+		(a2:Aeropuerto{
+			nombre: 'Ranon',
+			terminales: 1,
+			pistas: 2
+				}),	
+		(a3:Aeropuerto{
+			nombre: 'Long Beach',
+			terminales: 10 
+				}),	
+		(a4:Aeropuerto{
+			nombre: 'El prat',
+			terminales: 3,
+			pistas: 6
+				}),
+		(a5:Aeropuerto{
+			nombre: 'GatWizk',
+			terminales: 10,
+			pistas: 5
+				}),
+		(a6:Aeropuerto{
+			nombre: 'Santiago de Cuba',
+			terminales: 1,
+			pistas: 2
+				}),
+		(c1:Ciudad{
+			nombre: 'Madrid'
+				}),
+		(c2:Ciudad{
+			nombre: 'Barcelona'
+				}),
+		(c3:Ciudad{
+			nombre: 'Oviedo'
+				}),
+		(c4:Ciudad{
+			nombre: 'California'
+				}),
+		(c5:Ciudad{
+			nombre: 'Londres'
+				}),
+		(c6:Ciudad{
+			nombre: 'Santiago de Cuba'
+				}),
+		(a1)-[:ESTA_EN]->(c1),
+		(a4)-[:ESTA_EN]->(c2),
+		(a2)-[:ESTA_EN]->(c3),
+		(a3)-[:ESTA_EN]->(c4),
+		(a5)-[:ESTA_EN]->(c5),
+		(a6)-[:ESTA_EN]->(c6),
+		(av1:Avion{
+			modelo: 'Airbus A320',
+			plazas: 220,
+			coste: '99M'
+				}),
+		(av2:Avion{
+			modelo: 'Boeing 747',
+			plazas: 747,
+			coste: '402.9M'
+				}),
+		(av3:Avion{
+			modelo: 'Boeing 777',
+			plazas: 550,
+			coste: '280.1M',
+			primerVuelo: '12/06/1994'
+				}),
+		(av4:Avion{
+			modelo: 'Boeing 737',
+			plazas: 180,
+			coste: '116.6M'
+				}),
+		(av5:Avion{
+			modelo: 'Airbus A380',
+			plazas: 853,
+			coste: '445,6M',
+			primerVuelo: '22/02/1987',
+			longitud: 72.7,
+			altura: 24.1
+				}),
+		(v1:Vuelo{
+			id: 'KH356',
+			piloto: 'Juan Ramon Ramirez',
+			compañia: 'Iberia',
+			duracion: '1h 15min'
+				}),
+		(v2:Vuelo{
+			id: 'QT875',
+			piloto: 'Dario Alvarez',
+			compañia: 'Volotea',
+			duracion: '3h'
+				}),
+		(v3:Vuelo{
+			id: 'LG231',
+			piloto: 'Maria Perez',
+			compañia: 'Ryanair',
+			duracion: '2h'
+				}),
+		(v4:Vuelo{
+			id: 'YW046',
+			piloto: 'Menganito de Tal',
+			compañia: 'Lufthansa',
+			duracion: '12h 13min'
+				}),
+		(v5:Vuelo{
+			id: 'NJ278',
+			piloto: 'Jose Ortiz',
+			compañia: 'Air Europa',
+			duracion: '10h 15min'
+				}),
+		(v6:Vuelo{
+			id: 'PB356',
+			piloto: 'Pepito Perez',
+			compañia: 'EasyJet',
+			duracion: '2h'
+				}),
+		(v7:Vuelo{
+			id: 'FX357',
+			piloto: 'Pepito Perez',
+			compañia: 'EasyJet',
+			duracion: '10h 50min'
+				}),
+		(v8:Vuelo{
+			id: 'BR289',
+			piloto: 'Juan Ramon Ramirez',
+			compañia: 'Iberia',
+			duracion: '3h'
+				}),
+		(v9:Vuelo{
+			id: 'TD936',
+			piloto: 'Juan Ramon Ramirez',
+			compañia: 'Cuba Airlines',
+			duracion: '10h'
+				}),
+		(v10:Vuelo{
+			id: 'BW589',
+			piloto: 'Dario Alvarez',
+			compañia: 'Cuba Airlines',
+			duracion: '5h'
+				}),
+		(v11:Vuelo{
+			id: 'FV301',
+			piloto: 'Menganito de Tal',
+			compañia: 'Air Europa',
+			duracion: '12h 24min'
+				}),
+		(v12:Vuelo{
+			id: 'SP227',
+			piloto: 'Maria Perez',
+			compañia: 'Volotea',
+			duracion: '1h 10min'
+				}),
+		(v13:Vuelo{
+			id: 'NR835',
+			piloto: 'Maria Perez',
+			compañia: 'Cuba Airlines',
+			duracion: '11h'
+				}),
+		(v1)-[:DESPEGA {horaSalida: '17:00',
+			fechaSalida: '28/02/2019'}]->(a2),
+		(v2)-[:DESPEGA {horaSalida: '21:00',
+			fechaSalida: '28/02/2019'}]->(a1),
+		(v3)-[:DESPEGA {horaSalida: '7:00',
+			fechaSalida: '15/02/2019'}]->(a4),
+		(v4)-[:DESPEGA {horaSalida: '7:00',
+			fechaSalida: '15/02/2019'}]->(a1),
+		(v5)-[:DESPEGA {horaSalida: '15:00',
+			fechaSalida: '30/03/2019'}]->(a3),
+		(v6)-[:DESPEGA {horaSalida: '12:00',
+			fechaSalida: '01/03/2019'}]->(a2),
+		(v7)-[:DESPEGA {horaSalida: '6:30',
+			fechaSalida: '14/02/2019'}]->(a4),
+		(v8)-[:DESPEGA {horaSalida: '8:00',
+			fechaSalida: '14/04/2019'}]->(a5),
+		(v9)-[:DESPEGA {horaSalida: '12:00',
+			fechaSalida: '14/04/2019'}]->(a1),
+		(v10)-[:DESPEGA {horaSalida: '6:00',
+			fechaSalida: '15/04/2019'}]->(a6),
+		(v11)-[:DESPEGA {horaSalida: '10:00',
+			fechaSalida: '20/04/2019'}]->(a5),
+		(v12)-[:DESPEGA {horaSalida: '10:00',
+			fechaSalida: '21/04/2019'}]->(a2),
+		(v13)-[:DESPEGA {horaSalida: '15:00',
+			fechaSalida: '21/04/2019'}]->(a1),
+		(v1)-[:ATERRIZA]->(a1),
+		(v2)-[:ATERRIZA]->(a5),
+		(v3)-[:ATERRIZA]->(a1),
+		(v4)-[:ATERRIZA]->(a3),
+		(v5)-[:ATERRIZA]->(a5),
+		(v6)-[:ATERRIZA]->(a5),
+		(v7)-[:ATERRIZA]->(a3),
+		(v8)-[:ATERRIZA]->(a1),
+		(v9)-[:ATERRIZA]->(a6),
+		(v10)-[:ATERRIZA]->(a3),
+		(v11)-[:ATERRIZA]->(a3),
+		(v12)-[:ATERRIZA]->(a1),
+		(v13)-[:ATERRIZA]->(a6),
+		(av1)-[:REALIZA]->(v1),
+		(av1)-[:REALIZA]->(v2),
+		(av2)-[:REALIZA]->(v3),
+		(av2)-[:REALIZA]->(v4),
+		(av3)-[:REALIZA]->(v5),
+		(av4)-[:REALIZA]->(v6),
+		(av5)-[:REALIZA]->(v7),
+		(av3)-[:REALIZA]->(v8),
+		(av3)-[:REALIZA]->(v9),
+		(av4)-[:REALIZA]->(v10),
+		(av4)-[:REALIZA]->(v11),
+		(av2)-[:REALIZA]->(v12),
+		(av2)-[:REALIZA]->(v13)
+----
+
+[source,cypher]
+----
+MATCH (n:Vuelo)-[:DESPEGA]->(a:Aeropuerto)-[:ESTA_EN]->(c:Ciudad {nombre:'Madrid'})
+RETURN count(*)
+----
+[source,cypher]
+----
+MATCH (n:Vuelo) WHERE n.piloto="Juan Ramon Ramirez"
+RETURN DISTINCT n.compañia
+----
+[source,cypher]
+----
+MATCH (n:Vuelo)-[:ATERRIZA]->(a:Aeropuerto)-[:ESTA_EN]->(c:Ciudad {nombre:'California'})
+RETURN n.id,n.compañia,n.duracion,n.piloto
+ORDER BY n.id
+----
+[source,cypher]
+----
+MATCH (c:Aeropuerto {nombre:"GatWizk"})<-[:DESPEGA]-(a:Vuelo)-->(b:Aeropuerto {nombre:"Long Beach"})
+RETURN a
+----
+[source,cypher]
+----
+MATCH (n:Vuelo)-[:ATERRIZA]->(a:Aeropuerto {nombre: 'Barajas'})
+WITH n as v
+MATCH (v)-[:DESPEGA]->(x:Aeropuerto)-[:ESTA_EN]->(c:Ciudad)
+RETURN c.nombre, COLLECT(v.id) as vuelos
+----
+[source,cypher]
+----
+MATCH (av:Avion)-[:REALIZA]->(v:Vuelo)-[:ATERRIZA]->(a:Aeropuerto)-[:ESTA_EN]->(c:Ciudad {nombre: "Madrid"})
+WITH max(av.plazas) as maximo
+MATCH (av:Avion {plazas:maximo})
+RETURN av.modelo
+----

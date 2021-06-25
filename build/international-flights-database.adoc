@@ -1,0 +1,372 @@
+= Graph Database Neo4j: International Flights Database
+:Writer: Arsalan Masood & Muhammad Faizan Hameed
+:style: red:Person(Arsalan)
+
+// Please use the style & syntax-help outlined here: https://github.com/neo4j-contrib/graphgist/blob/master/gists/syntax.adoc
+// This is also a good example for a GraphGist: https://gist.github.com/jexp/2014efa6448b307c65e9
+
+== Introduction
+
+As an introduction I used open source data of International Flights Going All over the World. 
+The data is very huge & complex but I was inspired when I looked at thedata & its graph model. 
+Although I have made many changes to bring it in this form & now it become completely new & in workable form. The graph shows that in recent years the flights between all the countries & cities are connected with each other but on the other hand Airlines & Flights in all over the world has increased. 
+The way to understand the differences between airlines & flights are to look at how people of different countries are traveling to different countries & cities for work or meetings & etc.
+
+By using the available data, I have created the graph model outlined below. Each Flight & Airport is represented by a node. The
+label on the node is showing the info about the same. 
+This example only includes flights between the airlines countries & cities so I can see so many connections. 
+
+The purpose of this exercise is to learn & how to use the graph database neo4j and some technical tools & concepts by using neo4j Countries and cities plus Airline & flights. 
+These are the specific problems in traveling which I need to solve.
+
+////
+Provide an introduction to your domain and what you are trying to accomplish, link to http://a.source.com[sources] as needed.
+
+Provide a domain model image - using something like http://www.apcjones.com/arrows/# or https://www.gliffy.com/ or a readable screenshot from Neo4j-Browser.
+
+You can run this query to get an overview of entities and how they are related:
+MATCH (a)-[r]->(b) WHERE labels(a) <> [] AND labels(b) <> []
+RETURN DISTINCT head(labels(a)) AS This, type(r) as To, head(labels(b)) AS That LIMIT 10
+////
+
+image::http://i.imgur.com/ydftT5g.jpg[width=600]
+
+== Setup
+
+////
+A Cypher query to setup the database
+Please use a small sample of your domain, at most 150 nodes and 200 relationships are enough for the pedagocial example.
+You can link to the setup of a larger dataset or LOAD CSV queries in a second file of your GitHub Gist at the end.
+In your setup query you can also use LOAD CSV loading CSV files from your GitHub Gist, like here: https://gist.github.com/jexp/f78df7b232d0faa171ff
+////
+
+//setup
+//hide
+[source,cypher]
+----
+MERGE(flight1:Flight {flightID:"1", airlineID:"410", sourceAirportID:"2965", destinationAirportID:"2990"})
+MERGE(airline410:Airline {airlineID:"410", airlineName:"Aerocondor", countryID:"92"})
+MERGE(airport2965:Airport {airportID:"2965", airportName:"Sochi International Airport", cityID:"2654"}) 
+MERGE(airport2990:Airport {airportID:"2990", airportName:"Kazan International Airport", cityID:"2675"})
+MERGE(city2675:City {cityID:"2675", cityName:"Kazan" , countryID:"186"})  
+MERGE(city2654:City {cityID:"2654", cityName:"Sochi" , countryID:"186"})  
+MERGE(country186:Country {countryID:"186" , countryName:"Russia"})
+
+MERGE (flight1)-[:OF]->(airline410)
+MERGE(airline410)-[:BELONGS_TO]->(country186)
+MERGE(city2675)-[:EXISTS_IN]->(country186)
+MERGE(city2654) - [:EXISTS_IN]->(country186)
+MERGE (airport2965) - [:IS_IN]->(city2654)
+MERGE (airport2990)-[:IS_IN]->(city2675)
+MERGE (flight1)-[:ORIGINATION]->(airport2965)
+MERGE (flight1)-[:DESTINATION]->(airport2990)
+
+MERGE(flight225:Flight {flightID:"225", airlineID:"1729", sourceAirportID:"2564", destinationAirportID:"7380"})
+MERGE(airline1729:Airline {airlineID:"1729", airlineName:"Changan Airlines", countryID:"213"})
+MERGE(airport2564:Airport {airportID:"2564", airportName:"Guarulhos - Governador AndrÔ Franco Montoro International Airport",cityID:"2311"}) 
+MERGE(airport7380:Airport {airportID:"7380", airportName:"Dourados Airport",cityID:"5116"})
+MERGE(city2311:City {cityID:"2311", cityName:"Sao Paulo" , countryID:"155"})  
+MERGE(city5116:City {cityID:"5116", cityName:"Dourados" , countryID:"155"})  
+MERGE(country155:Country {countryID:"155" , countryName:"Brazil"})
+MERGE(country213:Country {countryID:"213" , countryName:"China"})
+
+MERGE (flight225)-[:OF]->(airline1729)
+MERGE(airline1729)-[:BELONGS_TO]->(country213)
+MERGE(city2311)-[:EXISTS_IN]->(country155)
+MERGE(city5116) - [:EXISTS_IN]->(country155)
+MERGE (airport2564) - [:IS_IN]->(city2311)
+MERGE (airport7380)-[:IS_IN]->(city5116)
+MERGE (flight225)-[:ORIGINATION]->(airport2564)
+MERGE (flight225)-[:DESTINATION]->(airport7380)
+
+MERGE(flight15:Flight {flightID:"15", airlineID:"410", sourceAirportID:"2990", destinationAirportID:"2968"})
+MERGE(airport2968:Airport {airportID:"2968", airportName:"Chelyabinsk Balandino Airport", cityID:"2657"})
+MERGE(city2657:City {cityID:"2657", cityName:"Chelyabinsk" , countryID:"186"})  
+MERGE(country92:Country {countryID:"92" , countryName:"Portugal"})
+
+MERGE (flight15)-[:OF]->(airline410)
+MERGE(airline410)-[:BELONGS_TO]->(country92)
+MERGE(city2675)-[:EXISTS_IN]->(country186)
+MERGE(city2657) - [:EXISTS_IN]->(country186)
+MERGE (airport2990) - [:IS_IN]->(city2675)
+MERGE (airport2968)-[:IS_IN]->(city2657)
+MERGE (flight15)-[:ORIGINATION]->(airport2990)
+MERGE (flight15)-[:DESTINATION]->(airport2968)
+
+MERGE(flight427:Flight {flightID:"427", airlineID:"20710", sourceAirportID:"3564", destinationAirportID:"3878"})
+MERGE(airline29710:Airline {airlineID:"20710",airlineName:"Silver Airways (3M)", countryID:"216"})
+MERGE(airport3564:Airport {airportID:"3564", airportName:"Pensacola Regional Airport", cityID:"3167"})
+MERGE(airport3878:Airport {airportID:"3878", airportName:"Orlando International Airport", cityID:"3031"})
+MERGE(city3167:City {cityID:"3167", cityName:"Pensacola" , countryID:"216"})  
+MERGE(city3031:City {cityID:"3031", cityName:"Orlando" , countryID:"216"})  
+MERGE(country216:Country {countryID:"216" , countryName:"United States"})
+
+MERGE (flight427)-[:OF]->(airline20710)
+MERGE(airline20710)-[:BELONGS_TO]->(country216)
+MERGE(city3167)-[:EXISTS_IN]->(country216)
+MERGE(city3031) - [:EXISTS_IN]->(country216)
+MERGE (airport3564) - [:IS_IN]->(city3167)
+MERGE (airport3878)-[:IS_IN]->(city3031)
+MERGE (flight427)-[:ORIGINATION]->(airport3564)
+MERGE (flight427)-[:DESTINATION]->(airport3878)
+
+MERGE(flight4421:Flight {flightID:"4421", airlineID:"24", sourceAirportID:"3700", destinationAirportID:"3670"})
+MERGE(airline24:Airline {airlineID:"24",airlineName:"American Ailrine", countryID:"216"})
+MERGE(airport3700:Airport {airportID:"3700", airportName:"Waco Regional Airport", cityID:"3087"})
+MERGE(airport3670:Airport {airportID:"3670", airportName:"Dallas Fort Worth International Airport", cityID:"3255"})
+MERGE(city3087:City {cityID:"3087", cityName:"Waco" , countryID:"216"})  
+MERGE(city3255:City {cityID:"3255", cityName:"Dallas-Fort Worth" , countryID:"216"})  
+
+MERGE (flight4421)-[:OF]->(airline24)
+MERGE(airline24)-[:BELONGS_TO]->(country216)
+MERGE(city3087)-[:EXISTS_IN]->(country216)
+MERGE(city3255) - [:EXISTS_IN]->(country216)
+MERGE (airport3700) - [:IS_IN]->(city3087)
+MERGE (airport3670)-[:IS_IN]->(city3255)
+MERGE (flight4421)-[:ORIGINATION]->(airport3700)
+MERGE (flight4421)-[:DESTINATION]->(airport3670)
+
+MERGE(flight3452:Flight {flightID:"3452", airlineID:"1629", sourceAirportID:"4021", destinationAirportID:"7071"})
+MERGE(airline1629:Airline {airlineID:"1629",airlineName:"Cape Air", countryID:"216"})
+MERGE(airport4021:Airport {airportID:"4021", airportName:"Billings Logan International Airport", cityID:"3511"})
+MERGE(airport7170:Airport {airportID:"7071", airportName:"L M Clayton Airport", cityID:"4933"})
+MERGE(city3511:City {cityID:"3511", cityName:"Billings" , countryID:"216"})  
+MERGE(city4933:City {cityID:"4933", cityName:"Wolf Point" , countryID:"216"})  
+
+MERGE (flight3452)-[:OF]->(airline1629)
+MERGE(airline1629)-[:BELONGS_TO]->(country216)
+MERGE(city3511)-[:EXISTS_IN]->(country216)
+MERGE(city4933) - [:EXISTS_IN]->(country216)
+MERGE (airport4021) - [:IS_IN]->(city3511)
+MERGE (airport7170)-[:IS_IN]->(city4933)
+MERGE (flight3452)-[:ORIGINATION]->(airport4021)
+MERGE (flight3452)-[:DESTINATION]->(airport7170)
+
+//for recommendation
+MERGE(flight5871:Flight {flightID:"5871", airlineID:"24", sourceAirportID:"3576", destinationAirportID:"351"})
+MERGE(airport3576:Airport {airportID:"3576", airportName:"Miami International Airport", cityID:"3177"})
+MERGE(airport351:Airport {airportID:"351", airportName:"Berlin-Tegel International Airport", cityID:"325"})
+MERGE(city3177:City {cityID:"3576", cityName:"Miami" , countryID:"216"})  
+MERGE(city325:City {cityID:"325", cityName:"Berlin" , countryID:"15"})  
+MERGE(country15:Country {countryID:"15" , countryName:"Germany"})
+
+MERGE (flight5871)-[:OF]->(airline24)
+MERGE(airline24)-[:BELONGS_TO]->(country216)
+MERGE(city3177)-[:EXISTS_IN]->(country216)
+MERGE(city325) - [:EXISTS_IN]->(country15)
+MERGE (airport3576) - [:IS_IN]->(city3177)
+MERGE (airport351)-[:IS_IN]->(city325)
+MERGE (flight5871)-[:ORIGINATION]->(airport3576)
+MERGE (flight5871)-[:DESTINATION]->(airport351)
+
+//for recommendation
+MERGE(flight7800:Flight {flightID:"7800", airlineID:"330", sourceAirportID:"3469", destinationAirportID:"178"})
+MERGE(airline330:Airline {airlineID:"330",airlineName:"Air Canada", countryID:"4"})
+MERGE(airport3469:Airport {airportID:"3469", airportName:"San Francisco International Airport", cityID:"3080"})
+MERGE(airport178:Airport {airportID:"178", airportName:"Calgary International Airport", cityID:"171"})
+MERGE(city3080:City {cityID:"3080", cityName:"San Francisco" , countryID:"216"})  
+MERGE(city171:City {cityID:"171", cityName:"Calgary" , countryID:"4"})  
+MERGE(country4:Country {countryID:"4" , countryName:"Canada"})
+
+
+MERGE (flight7800)-[:OF]->(airline330)
+MERGE(airline330)-[:BELONGS_TO]->(country4)
+MERGE(city3080)-[:EXISTS_IN]->(country216)
+MERGE(city171) - [:EXISTS_IN]->(country4)
+MERGE (airport3469) - [:IS_IN]->(city3080)
+MERGE (airport178)-[:IS_IN]->(city171)
+MERGE (flight7800)-[:ORIGINATION]->(airport3469)
+MERGE (flight7800)-[:DESTINATION]->(airport178)
+
+
+
+
+MERGE(flight8858:Flight {flightID:"8858", airlineID:"137", sourceAirportID:"3682", destinationAirportID:"3747"})
+MERGE(airline137:Airline {airlineID:"137",airlineName:"Air France", countryID:"82"})
+MERGE(airport3682:Airport {airportID:"3682", airportName:"Hartsfield Jackson Atlanta International Airport", cityID:"3264"})
+MERGE(airport3747:Airport {airportID:"3747", airportName:"Chicago Midway International Airport", cityID:"3308"})
+MERGE(city3264:City {cityID:"3264", cityName:"Atlanta" , countryID:"216"})  
+MERGE(city3308:City {cityID:"3308", cityName:"Chicago" , countryID:"216"}) 
+MERGE(country82:Country {countryID:"82" , countryName:"France"})
+ 
+
+
+MERGE (flight8858)-[:OF]->(airline137)
+MERGE(airline137)-[:BELONGS_TO]->(country82)
+MERGE(city3264)-[:EXISTS_IN]->(country216)
+MERGE(city3308) - [:EXISTS_IN]->(country216)
+MERGE (airport3682) - [:IS_IN]->(city3264)
+MERGE (airport3747)-[:IS_IN]->(city3308)
+MERGE (flight8858)-[:ORIGINATION]->(airport3682)
+MERGE (flight8858)-[:DESTINATION]->(airport3747)
+
+
+
+
+
+
+
+
+
+
+MERGE(flight4439:Flight {flightID:"4439", airlineID:"24", sourceAirportID:"2170", destinationAirportID:"146"})
+MERGE(airport2170:Airport {airportID:"2170", airportName:"Queen Alia International Airport", cityID:"1982"})
+MERGE(airport146:Airport {airportID:"146", airportName:"Montreal / Pierre Elliott Trudeau International Airport", cityID:"71"})
+MERGE(city1982:City {cityID:"1982", cityName:"Amman" , countryID:"134"})  
+MERGE(city71:City {cityID:"71", cityName:"Montreal" , countryID:"4"}) 
+MERGE(country134:Country {countryID:"134" , countryName:"Jordan"})
+ 
+
+
+MERGE (flight4439)-[:OF]->(airline24)
+MERGE(airline24)-[:BELONGS_TO]->(country216)
+MERGE(city1982)-[:EXISTS_IN]->(country134)
+MERGE(city71) - [:EXISTS_IN]->(country4)
+MERGE (airport2170) - [:IS_IN]->(city1982)
+MERGE (airport146)-[:IS_IN]->(city71)
+MERGE (flight4439)-[:ORIGINATION]->(airport2170)
+MERGE (flight4439)-[:DESTINATION]->(airport146)
+
+
+
+
+
+
+MERGE(flight8879:Flight {flightID:"8879", airlineID:"137", sourceAirportID:"3682", destinationAirportID:"3830"})
+MERGE(airport3830:Airport {airportID:"3830", airportName:"Chicago O'Hare International Airport", cityID:"3308"})
+ 
+
+
+MERGE (flight8879)-[:OF]->(airline137)
+MERGE(airline137)-[:BELONGS_TO]->(country82)
+MERGE(city3264)-[:EXISTS_IN]->(country216)
+MERGE(city3308) - [:EXISTS_IN]->(country216)
+MERGE (airport3830) - [:IS_IN]->(city3308)
+MERGE (flight8879)-[:ORIGINATION]->(airport3682)
+MERGE (flight8879)-[:DESTINATION]->(airport3830)
+----
+
+//graph
+
+== Retrieve All Countries.
+
+// REMOVEME: Describe what this use-case is solving and how the query represents that
+// REMOVEME: A Cypher query with tabular output, returning scalar values
+
+[source,cypher]
+----
+
+MATCH (country:Country) return country.countryName ORDER BY country.countryName
+----
+
+//table
+
+== Retrieve All Cities.
+
+// REMOVEME: Describe what this use-case is solving and how the query represents that
+// REMOVEME: A Cypher query to with graph output
+
+[source,cypher]
+----
+MATCH (city:City) return city.cityName ORDER BY city.cityName
+
+----
+
+
+== Retrieve All Airports.
+
+// REMOVEME: Describe what this use-case is solving and how the query represents that
+// REMOVEME: A Cypher query with tabular output, returning scalar values
+
+[source,cypher]
+----
+MATCH (airport:Airport) return airport.airportName ORDER BY airport.airportName
+----
+
+//table
+
+== Retrieve All Airlines.
+
+// REMOVEME: Describe what this use-case is solving and how the query represents that
+// REMOVEME: A Cypher query with tabular output, returning scalar values
+
+[source,cypher]
+----
+MATCH (airline:Airline) return airline.airlineName ORDER BY airline.airlineName
+----
+
+//table
+
+
+== Top 2 Most Busiest Aiports.
+
+// REMOVEME: Describe what this use-case is solving and how the query represents that
+// REMOVEME: A Cypher query with tabular output, returning scalar values
+
+[source,cypher]
+----
+MATCH (airport:Airport)<-[r]-(f:Flight)  WITH airport, count(r) AS flight_count order by flight_count desc  return  airport.airportName  , flight_count limit 2
+----
+
+//table
+
+== Top 2 Most Busiest Cities (Most Flights).
+
+// REMOVEME: Describe what this use-case is solving and how the query represents that
+// REMOVEME: A Cypher query with tabular output, returning scalar values
+
+[source,cypher]
+----
+MATCH (city1:City)<-[:IS_IN]- (airport1:Airport)<-[r]-(flight1:Flight) WITH city1, count(DISTINCT flight1) as flight_count order by flight_count desc return city1.cityName,flight_count limit 2
+----
+
+//table
+
+== Top 2 Airlines with Most Flights.
+
+// REMOVEME: Describe what this use-case is solving and how the query represents that
+// REMOVEME: A Cypher query with tabular output, returning scalar values
+
+[source,cypher]
+----
+MATCH (airline:Airline)<-[r]-(f:Flight)  WITH airline, count(r) AS flight_count order by flight_count desc  return airline.airlineName, flight_count limit 2
+----
+
+//table
+
+
+== Top 2 Cities with Most Airports.
+
+// REMOVEME: Describe what this use-case is solving and how the query represents that
+// REMOVEME: A Cypher query with tabular output, returning scalar values
+
+[source,cypher]
+----
+MATCH (city:City)<-[r]-(airport:Airport)  WITH city, count(r) AS airport_count order by airport_count desc  return city.cityName, airport_count limit 2
+----
+
+//table
+
+
+== Top 2 Countries with Most Airlines.
+
+// REMOVEME: Describe what this use-case is solving and how the query represents that
+// REMOVEME: A Cypher query with tabular output, returning scalar values
+
+[source,cypher]
+----
+MATCH (country:Country )<-[:BELONGS_TO]-(airline:Airline)  WITH country,count(DISTINCT airline) as airline_count order by airline_count desc  return  country.countryName,airline_count limit 2
+----
+
+//table
+
+== Conclusions
+
+Conclusion: This exercise gives us the ways what is the
+best to go from point-A to point-B & tells is there an alternative or not &
+shortcuts, long route & many stops in between which helps to make things as per what the
+person or treveler needs to do & helps his traveling needs, also tells which way is the
+fastest or the longest. This solution helps the person able to do whatever he
+wants to do.
+
+// Created by { Arsalan & Faizan } - https://twitter.com/{twitter}[Twitter] | http://your.blog.com/[Blog] | https://in.linkedin.com/in/linked-in-handle/[LinkedIn]
