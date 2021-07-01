@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/neo4j-contrib/graphgist-portal-v3#readme",
   "devDependencies": {
+    "@neo4j-documentation/asciidoc-cypher-query-runner": "github:mogztter/asciidoc-cypher-query-runner#v0.1.8",
     "node-fetch": "^2.6.1"
   }
 }
