@@ -43,22 +43,22 @@ CREATE (bobo:Character{name:'Professor Bobo'})
 CREATE (observer:Character{name:'Observer ("Brain Guy")'})
 
 //Played by
-CREATE tom-[:PLAYED_BY]->kevin
-CREATE tom-[:PLAYED_BY]->josh
-CREATE crow-[:PLAYED_BY]->trace
-CREATE crow-[:PLAYED_BY]->bill
-CREATE mike-[:PLAYED_BY]->michael
-CREATE joel-[:PLAYED_BY]->joelhodgson
-CREATE gypsy-[:PLAYED_BY]->josh
-CREATE gypsy-[:PLAYED_BY]->jim
-CREATE gypsy-[:PLAYED_BY]->patrick
-CREATE cambot-[:PLAYED_BY]->kevin
-CREATE frank-[:PLAYED_BY]->frankconniff
-CREATE forrester-[:PLAYED_BY]->trace
-CREATE pearl-[:PLAYED_BY]->mary
-CREATE erhardt-[:PLAYED_BY]->josh
-CREATE bobo-[:PLAYED_BY]->kevin
-CREATE observer-[:PLAYED_BY]->bill
+create (tom)-[:PLAYED_BY]->(kevin)
+create (tom)-[:PLAYED_BY]->(josh)
+create (crow)-[:PLAYED_BY]->(trace)
+create (crow)-[:PLAYED_BY]->(bill)
+create (mike)-[:PLAYED_BY]->(michael)
+create (joel)-[:PLAYED_BY]->(joelhodgson)
+create (gypsy)-[:PLAYED_BY]->(josh)
+create (gypsy)-[:PLAYED_BY]->(jim)
+create (gypsy)-[:PLAYED_BY]->(patrick)
+create (cambot)-[:PLAYED_BY]->(kevin)
+create (frank)-[:PLAYED_BY]->(frankconniff)
+create (forrester)-[:PLAYED_BY]->(trace)
+create (pearl)-[:PLAYED_BY]->(mary)
+create (erhardt)-[:PLAYED_BY]->(josh)
+create (bobo)-[:PLAYED_BY]->(kevin)
+create (observer)-[:PLAYED_BY]->(bill)
 
 //Character Locations
 CREATE sol<-[:IS_IN]-tom
@@ -88,7 +88,7 @@ RETURN l.name AS Location, c.name AS Character
 === Who plays Crow and Tom Servo?
 [source,cypher]
 ----
-MATCH c-[:PLAYED_BY]->a
+MATCH create (c)-[:PLAYED_BY]->(a)
 WHERE c.name='Tom Servo' OR c.name='Crow T. Robot'
 RETURN c.name AS Character, a.name AS Actor
 ----
@@ -99,7 +99,7 @@ RETURN c.name AS Character, a.name AS Actor
 [source,cypher]
 ----
 MATCH l<-[:IS_IN]-c
-WHERE l.name='Satellite of Love' 
+WHERE l.name='Satellite of Love'
 RETURN l.name AS Location, c.name AS Character
 ----
 //table
@@ -108,7 +108,7 @@ RETURN l.name AS Location, c.name AS Character
 [source,cypher]
 ----
 MATCH l<-[:IS_IN]-c
-WHERE l.name='Deep 13' 
+WHERE l.name='Deep 13'
 RETURN l.name AS Location, c.name AS Character
 ----
 //table
@@ -117,7 +117,7 @@ RETURN l.name AS Location, c.name AS Character
 [source,cypher]
 ----
 MATCH l<-[:IS_IN]-c
-WHERE l.name='Widowmaker' 
+WHERE l.name='Widowmaker'
 RETURN l.name AS Location, c.name AS Character
 ----
 //table

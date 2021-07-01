@@ -7,7 +7,7 @@ image::http://maxdemarzidotcom.files.wordpress.com/2013/06/neoiscoming.jpg?w=580
 //hide
 [source,cypher]
 ----
-CREATE 
+CREATE
 (_0 { name:"Westeros" }),
 (_1 { house:"Tully" }),
 (_2 { house:"Baratheon" }),
@@ -36,23 +36,23 @@ CREATE
 (_25 { name:"Joffrey" }),
 (_26 { name:"Myrcella" }),
 (_27 { name:"Tommen" }),
-(_28 { name:"Tyrion" }), 
-_1-[:HOUSE]->_0, 
-_2-[:HOUSE]->_0, 
-_3-[:HOUSE]->_0, 
-_4-[:HOUSE]->_0, 
-_5-[:HOUSE]->_0, 
-_6-[:CHILD_OF]->_8, 
-_7-[:OF_HOUSE]->_1, 
-_7-[:MARRIED_TO]->_8, 
-_8-[:CHILD_OF]->_9, 
-_9-[:OF_HOUSE]->_4, 
-_10-[:OF_HOUSE]->_2, 
-_11-[:OF_HOUSE]->_3, 
-_13-[:OF_HOUSE]->_5, 
-_13-[:MARRIED_TO]->_12, 
-_14-[:CHILD_OF]->_8, 
-_14-[:CHILD_OF]->_7, 
+(_28 { name:"Tyrion" }),
+_1-[:HOUSE]->_0,
+_2-[:HOUSE]->_0,
+_3-[:HOUSE]->_0,
+_4-[:HOUSE]->_0,
+_5-[:HOUSE]->_0,
+_6-[:CHILD_OF]->_8,
+_7-[:OF_HOUSE]->_1,
+_7-[:MARRIED_TO]->_8,
+_8-[:CHILD_OF]->_9,
+_9-[:OF_HOUSE]->_4,
+_10-[:OF_HOUSE]->_2,
+_11-[:OF_HOUSE]->_3,
+_13-[:OF_HOUSE]->_5,
+_13-[:MARRIED_TO]->_12,
+_14-[:CHILD_OF]->_8,
+_14-[:CHILD_OF]->_7,
 _15-[:CHILD_OF]->_8, _15-[:CHILD_OF]->_7, _16-[:CHILD_OF]->_8, _16-[:CHILD_OF]->_7, _17-[:MARRIED_TO]->_28, _17-[:CHILD_OF]->_8, _17-[:CHILD_OF]->_7, _17-[:PROMISED_TO]->_25, _18-[:CHILD_OF]->_8, _18-[:CHILD_OF]->_7, _19-[:MARRIED_TO]->_22, _19-[:CHILD_OF]->_11, _20-[:CHILD_OF]->_11, _21-[:CHILD_OF]->_11, _22-[:CHILD_OF]->_10, _23-[:CHILD_OF]->_10, _24-[:CHILD_OF]->_10, _25-[:CHILD_OF]->_20, _25-[:CHILD_OF]->_19, _26-[:CHILD_OF]->_20, _26-[:CHILD_OF]->_19, _27-[:CHILD_OF]->_20, _27-[:CHILD_OF]->_19, _28-[:CHILD_OF]->_10
 ----
 
@@ -73,7 +73,7 @@ RETURN house.house, collect(DISTINCT last.name)
 
 [source,cypher]
 ----
-MATCH (kid)-[:CHILD_OF]->(parent1)-[:CHILD_OF]->(ancestor)<-[:CHILD_OF]-(parent2)<-[:CHILD_OF]-(kid) 
+MATCH (kid)-[:CHILD_OF]->(parent1)-[:CHILD_OF]->(ancestor)<-[:CHILD_OF]-(parent2)<-[:CHILD_OF]-(kid)
 RETURN DISTINCT kid.name as name
 ----
 

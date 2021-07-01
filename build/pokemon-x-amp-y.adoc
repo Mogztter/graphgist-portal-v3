@@ -88,7 +88,7 @@ CREATE    (Vaniville:City {name:'Vaniville Town'}),
     (Couriway:City {name:'Couriway Town'}),
     (Snowbelle:City {name:'Snowbelle City'}),
     (PokemonLeague:City {name:'Pokemon League'})
-    
+
 //Points of interest
 CREATE  (Parfum:PointOfInterest {name:'Parfum Palace'}),
     (Berry:PointOfInterest {name:'Berry Fields'}),
@@ -472,7 +472,7 @@ CREATE    (Route1)-[:CONNECTS_TO]->(Vaniville),
     (Victory)-[:CONNECTS_TO]->(PokemonLeague),
     (Berry)-[:CONNECTS_TO]->(Route7),
     (LostHotel)-[:CONNECTS_TO]->(Route15)
-    
+
 //Attraction relationships
 CREATE    (Route3)-[:HAS]->(Surfing),
     (Route3)-[:HAS]->(Fishing),
@@ -508,9 +508,9 @@ CREATE    (Route3)-[:HAS]->(Surfing),
     (AzureBay)-[:HAS]->(Surfing),
     (AzureBay)-[:HAS]->(Fishing),
     (Route13)-[:HAS]->(RockSmashing),
-    (Route14)-[:HAS]->(Fishing),    
+    (Route14)-[:HAS]->(Fishing),
     (Laverre)-[:HAS]->(PokeCenter),
-    (Laverre)-[:HAS]->(Gym),    
+    (Laverre)-[:HAS]->(Gym),
     (Laverre)-[:HAS]->(Fishing),
     (Route15)-[:HAS]->(Surfing),
     (Route15)-[:HAS]->(Fishing),
@@ -539,7 +539,7 @@ CREATE    (Route3)-[:HAS]->(Surfing),
     (Victory)-[:HAS]->(Fishing),
     (PokemonLeague)-[:HAS]->(PokeCenter),
     (Route22)-[:HAS]->(Fishing)
-    
+
 //Places where Pokemon can be caught
 CREATE  (Chespin)-[:CAUGHT_IN {catch_type:'Gift'}]->(Aquacorde),
     (Fennekin)-[:CAUGHT_IN {catch_type:'Gift'}]->(Aquacorde),
@@ -1063,7 +1063,7 @@ It looks like the only place where we can catch a Mr. Mime is Reflection Cave. L
 ----
 MATCH x = shortestPath((o:City)-[:CONNECTS_TO*]-(d:Cave))
 WHERE o.name = "Lumiose City" AND d.name = "Reflection Cave"
-RETURN EXTRACT(n IN NODES(x) | n.name) AS Directions
+RETURN [n IN NODES(x) | n.name] AS Directions
 ----
 //table
 
@@ -1098,11 +1098,11 @@ Thus, we can plan to stop on Route 12 and in Shalour City to go fishing with our
 
 [source,cypher]
 ----
-MATCH x = shortestPath((o:City)-[:CONNECTS_TO*]-(d:Cave)) 
-WHERE o.name = "Lumiose City" AND d.name = "Reflection Cave" 
-WITH x 
-MATCH y = (p:Pokemon)-[c:CAUGHT_IN]->(s) 
-WHERE (s IN NODES(x)) AND c.catch_type = "Super Rod" 
+MATCH x = shortestPath((o:City)-[:CONNECTS_TO*]-(d:Cave))
+WHERE o.name = "Lumiose City" AND d.name = "Reflection Cave"
+WITH x
+MATCH y = (p:Pokemon)-[c:CAUGHT_IN]->(s)
+WHERE (s IN NODES(x)) AND c.catch_type = "Super Rod"
 RETURN x, y
 ----
 //graph_result
@@ -1143,7 +1143,7 @@ Replace +ORIGIN_NAME+ with the name of the origin +City+ / +Route+ / +Cave+ / +F
 ----
 MATCH x = shortestPath((o)-[:CONNECTS_TO*]-(d))
 WHERE o.name = "ORIGIN_NAME" AND d.name = "DESTINATION_NAME"
-RETURN EXTRACT(n IN NODES(x) | n.name) AS Directions
+RETURN [n IN NODES(x) | n.name] AS Directions
 ----
 
 All +Pokémon+ names, +Attraction+ names, and +City+ / +Route+ / +Cave+ / +Forest+ / +Point of Interest+ names can be found by expanding the data initilization query under <<X3, Setup>>.

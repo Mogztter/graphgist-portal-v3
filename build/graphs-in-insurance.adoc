@@ -38,7 +38,7 @@ CREATE (agreement1)<-[:owns]-(agent1)
 
 [source,cypher]
 ----
-MATCH agent-[:owns]->agreement<-[:signed]-customer-[:owns]->asset
+MATCH create (agent)-[:owns]->agreement<-[:signed]-customer-[:owns]->(asset)
 WHERE HAS(agent.name) AND agent.name='Agent 1'
 RETURN agent.name as Agent, customer.name as Customer, asset.name as Asset
 ----

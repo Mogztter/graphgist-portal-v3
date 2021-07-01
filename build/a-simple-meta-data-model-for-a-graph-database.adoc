@@ -7,21 +7,21 @@ v1.0, 30-Sep-2013
 This GraphGist is a quick exploration of a simple meta-data administration which can
 be used to store the structure of the nodes and relationships in a graph database like neo4j.
 
-The data that is set up here could be used in an application layer to provide tailored 
+The data that is set up here could be used in an application layer to provide tailored
 UI and validation, or could be used simply with Cypher queries as a kind of meta-data
 dictionary.  One may argue that this is pushing too much structure into a graph database,
 but I think the concept is worth exploring.  How well can you query a graph database if
 you're not sure of the structure of the data?
 
-This is a fairly quick stab at this, and it could certainly be taken much further to 
-include more about properties, security aspects and much more.  Mostly it was a learning exercise for me, 
+This is a fairly quick stab at this, and it could certainly be taken much further to
+include more about properties, security aspects and much more.  Mostly it was a learning exercise for me,
 and hopefully will generate some thoughtful criticism.  Hopefully I haven't made too many egregious
 mistakes!
 
 The basic concept is that each node in the graph will have a *NodeType*, and that NodeType
 will be represented itself as an 'admin' node.  Likewise each relationship will have a *RelType* and
 that RelType will also be represented as an 'admin' Node.  Then we can further identify for
-each RelType what types of nodes it can be used with for both the Start and End.  Conceptually 
+each RelType what types of nodes it can be used with for both the Start and End.  Conceptually
 the 'admin' model looks like this:
 
 image::https://raw.github.com/perival/graph-images/master/admin_graph_conceptual.jpg[Conceptual diagram]
@@ -37,7 +37,7 @@ image::https://raw.github.com/perival/graph-images/master/admin_graph_instances.
 
 Once the admin infrastructure is in place, setup for any new desired NodeTypes and
 RelTypes can be done.  In this example, assume we will have Person and Date nodes,
-and will need to be able to create relationships to support capturing a Date hierarchy, 
+and will need to be able to create relationships to support capturing a Date hierarchy,
 marriage ties, and birthdates.
 
 The necessary setup will involve the creation of two new *AdminNodeTypes* (Person and
@@ -76,41 +76,41 @@ CREATE (owns    {name:'Owns', type:'AdminRelType', descr:'Owns'})
 CREATE (startNT {name:'StartNodeType', type:'AdminRelType'})
 CREATE (endNT   {name:'EndNodeType', type:'AdminRelType'})
 
-CREATE rtOwner-[:Owns]->owns
-CREATE rtOwner-[:Owns]->startNT
-CREATE rtOwner-[:Owns]->endNT
-CREATE ntOwner-[:Owns]->admin
-CREATE ntOwner-[:Owns]->adminNT
-CREATE ntOwner-[:Owns]->adminRT
-CREATE owns-[:StartNodeType]->admin
-CREATE owns-[:EndNodeType]->admin
-CREATE owns-[:EndNodeType]->adminNT
-CREATE owns-[:EndNodeType]->adminRT
-CREATE startNT-[:StartNodeType]->adminRT
-CREATE startNT-[:EndNodeType]->adminNT
-CREATE endNT-[:StartNodeType]->adminRT
-CREATE endNT-[:EndNodeType]->adminNT
+create (rtOwner)-[:Owns]->(owns)
+create (rtOwner)-[:Owns]->(startNT)
+create (rtOwner)-[:Owns]->(endNT)
+create (ntOwner)-[:Owns]->(admin)
+create (ntOwner)-[:Owns]->(adminNT)
+create (ntOwner)-[:Owns]->(adminRT)
+create (owns)-[:StartNodeType]->(admin)
+create (owns)-[:EndNodeType]->(admin)
+create (owns)-[:EndNodeType]->(adminNT)
+create (owns)-[:EndNodeType]->(adminRT)
+create (startNT)-[:StartNodeType]->(adminRT)
+create (startNT)-[:EndNodeType]->(adminNT)
+create (endNT)-[:StartNodeType]->(adminRT)
+create (endNT)-[:EndNodeType]->(adminNT)
 
 CREATE (person {name:'Person', type:'AdminNodeType' })
 CREATE (date   {name:'Date', type:'AdminNodeType' })
 
-CREATE ntOwner-[:Owns]->person
-CREATE ntOwner-[:Owns]->date
+create (ntOwner)-[:Owns]->(person)
+create (ntOwner)-[:Owns]->(date)
 
 CREATE (spouse    {name:'Spouse', type:'AdminRelType' })
 CREATE (dateIn    {name:'DateIn', type:'AdminRelType' })
 CREATE (birthdate {name:'Birthdate', type:'AdminRelType' })
 
-CREATE rtOwner-[:Owns]->spouse 
-CREATE rtOwner-[:Owns]->dateIn
-CREATE rtOwner-[:Owns]->birthdate
+create (rtOwner)-[:Owns]->(spouse)
+create (rtOwner)-[:Owns]->(dateIn)
+create (rtOwner)-[:Owns]->(birthdate)
 
-CREATE spouse-[:StartNodeType]->person
-CREATE spouse-[:EndNodeType]->person
-CREATE dateIn-[:StartNodeType]->date
-CREATE dateIn-[:EndNodeType]->date
-CREATE birthdate-[:StartNodeType]->person
-CREATE birthdate-[:EndNodeType]->date
+create (spouse)-[:StartNodeType]->(person)
+create (spouse)-[:EndNodeType]->(person)
+create (dateIn)-[:StartNodeType]->(date)
+create (dateIn)-[:EndNodeType]->(date)
+create (birthdate)-[:StartNodeType]->(person)
+create (birthdate)-[:EndNodeType]->(date)
 ----
 
 == Now some sample queries using this data
@@ -124,24 +124,24 @@ CREATE birthdate-[:EndNodeType]->date
 [source,cypher]
 ----
 START o=node(1)
-MATCH o-[:Owns]->n
+MATCH create (o)-[:Owns]->(n)
 RETURN n.name AS NodeType
 ORDER BY n.name
 ----
- 
+
 //table
 
 //Cypher to show valid RelTypes for each NodeType
- 
+
 === Get valid RelTypes for each NodeType
 [source,cypher]
 ----
 START o=node(2)
-MATCH o-[:Owns]->r-[:StartNodeType]->n
+MATCH create (o)-[:Owns]->r-[:StartNodeType]->(n)
 RETURN n.name AS NodeType, collect(r.name) AS RelTypes
 ORDER BY n.name
 ----
- 
+
 //table
 
 //Cypher to get the valid Start NodeTypes for each Rel Type
@@ -150,11 +150,11 @@ ORDER BY n.name
 [source,cypher]
 ----
 START o=node(2)
-MATCH o-[:Owns]->r-[:StartNodeType]->n
+MATCH create (o)-[:Owns]->r-[:StartNodeType]->(n)
 RETURN r.name AS RelType, collect(n.name) AS StartNodeTypes
 ORDER BY r.name
 ----
- 
+
 //table
 
 //Cypher to show the valid End NodeTypes for each RelType
@@ -163,11 +163,11 @@ ORDER BY r.name
 [source,cypher]
 ----
 START o=node(2)
-MATCH o-[:Owns]->r-[:EndNodeType]->n
+MATCH create (o)-[:Owns]->r-[:EndNodeType]->(n)
 RETURN r.name AS RelType, collect(n.name) AS EndNodeTypes
 ORDER BY r.name
 ----
- 
+
 //table
 
 //Final notes
@@ -176,5 +176,5 @@ I did not explicitly connect each node to its NodeType via a Relationship, rathe
 property on the node.  Not sure if there would be benefit to using a relationship...
 
 Variations of these queries can be used in the validation of Nodes and particularly Relationships to ensure
-that they are playing by the rules!  I've built a simple version of a generic UI (html/javascript) for nodes and relationships 
+that they are playing by the rules!  I've built a simple version of a generic UI (html/javascript) for nodes and relationships
 using PHP for all database access and validation.

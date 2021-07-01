@@ -73,107 +73,107 @@ CREATE (match2:Match { name:'Falcons versus Lakers' })
 CREATE (quartersMatch1:Match { name:'Falcons versus Broncos Quarters' })
 
 //Relationships
-CREATE league-[:TEAM_AWARD]->winner
-CREATE league-[:TEAM_AWARD]->runner
-CREATE league-[:INDIVIDUAL_AWARD]->spiker
+create (league)-[:TEAM_AWARD]->(winner)
+create (league)-[:TEAM_AWARD]->(runner)
+create (league)-[:INDIVIDUAL_AWARD]->(spiker)
 
-CREATE league-[:PLAYED_AT]->oceePark
-CREATE oceePark-[:COURT]->high
-CREATE oceePark-[:COURT]->low
+create (league)-[:PLAYED_AT]->(oceePark)
+create (oceePark)-[:COURT]->(high)
+create (oceePark)-[:COURT]->(low)
 
-CREATE league-[:LEVEL]->playoffs
-CREATE playoffs-[:NEXT]->quarters
-CREATE quarters-[:NEXT]->semis
-CREATE semis-[:NEXT]->final
+create (league)-[:LEVEL]->(playoffs)
+create (playoffs)-[:NEXT]->(quarters)
+create (quarters)-[:NEXT]->(semis)
+create (semis)-[:NEXT]->(final)
 
-CREATE playoffs-[:POOL]->poolA
-CREATE quarters-[:POOL]->poolAQuarterfinal
+create (playoffs)-[:POOL]->(poolA)
+create (quarters)-[:POOL]->(poolAQuarterfinal)
 
-CREATE poolA-[:TEAM]->falcons
-CREATE poolA-[:TEAM]->broncos
-CREATE poolA-[:TEAM]->lakers
-CREATE poolAQuarterfinal-[:TEAM]->falcons
-CREATE poolAQuarterfinal-[:TEAM]->broncos
+create (poolA)-[:TEAM]->(falcons)
+create (poolA)-[:TEAM]->(broncos)
+create (poolA)-[:TEAM]->(lakers)
+create (poolAQuarterfinal)-[:TEAM]->(falcons)
+create (poolAQuarterfinal)-[:TEAM]->(broncos)
 
-CREATE poolA-[:FIXTURE]->match1
-CREATE poolA-[:FIXTURE]->match2
-CREATE poolAQuarterfinal-[:FIXTURE]->quartersMatch1
+create (poolA)-[:FIXTURE]->(match)1
+create (poolA)-[:FIXTURE]->(match)2
+create (poolAQuarterfinal)-[:FIXTURE]->(quartersMatch)1
 
 //hyper edges
-CREATE bob-[:PLAYED_FOR_IN_LEAGUE]->bobFalconsSeptemberLeague-[:PLAYED_FOR]->falcons
-CREATE bobFalconsSeptemberLeague-[:IN_LEAGUE]->league
-CREATE alice-[:PLAYED_FOR_IN_LEAGUE]->aliceFalconsSeptemberLeague-[:PLAYED_FOR]->falcons
-CREATE aliceFalconsSeptemberLeague-[:IN_LEAGUE]->league
-CREATE ted-[:PLAYED_FOR_IN_LEAGUE]->tedBroncosSeptemberLeague-[:PLAYED_FOR]->broncos
-CREATE tedBroncosSeptemberLeague-[:IN_LEAGUE]->league
-CREATE carol-[:PLAYED_FOR_IN_LEAGUE]->carolBroncosSeptemberLeague-[:PLAYED_FOR]->broncos
-CREATE carolBroncosSeptemberLeague-[:IN_LEAGUE]->league
-CREATE paul-[:PLAYED_FOR_IN_LEAGUE]->paulLakersSeptemberLeague-[:PLAYED_FOR]->lakers
-CREATE paulLakersSeptemberLeague-[:IN_LEAGUE]->league
-CREATE aravind-[:PLAYED_FOR_IN_LEAGUE]->aravindLakersSeptemberLeague-[:PLAYED_FOR]->lakers
-CREATE aravindLakersSeptemberLeague-[:IN_LEAGUE]->league
-CREATE rishik-[:PLAYED_FOR_IN_LEAGUE]->rishikLakersSeptemberLeague-[:PLAYED_FOR]->lakers
-CREATE rishikLakersSeptemberLeague-[:IN_LEAGUE]->league
-CREATE esha-[:PLAYED_FOR_IN_LEAGUE]->eshaLakersSeptemberLeague-[:PLAYED_FOR]->lakers
-CREATE eshaLakersSeptemberLeague-[:IN_LEAGUE]->league
+create (bob)-[:PLAYED_FOR_IN_LEAGUE]->bobFalconsSeptemberLeague-[:PLAYED_FOR]->(falcons)
+create (bobFalconsSeptemberLeague)-[:IN_LEAGUE]->(league)
+create (alice)-[:PLAYED_FOR_IN_LEAGUE]->aliceFalconsSeptemberLeague-[:PLAYED_FOR]->(falcons)
+create (aliceFalconsSeptemberLeague)-[:IN_LEAGUE]->(league)
+create (ted)-[:PLAYED_FOR_IN_LEAGUE]->tedBroncosSeptemberLeague-[:PLAYED_FOR]->(broncos)
+create (tedBroncosSeptemberLeague)-[:IN_LEAGUE]->(league)
+create (carol)-[:PLAYED_FOR_IN_LEAGUE]->carolBroncosSeptemberLeague-[:PLAYED_FOR]->(broncos)
+create (carolBroncosSeptemberLeague)-[:IN_LEAGUE]->(league)
+create (paul)-[:PLAYED_FOR_IN_LEAGUE]->paulLakersSeptemberLeague-[:PLAYED_FOR]->(lakers)
+create (paulLakersSeptemberLeague)-[:IN_LEAGUE]->(league)
+create (aravind)-[:PLAYED_FOR_IN_LEAGUE]->aravindLakersSeptemberLeague-[:PLAYED_FOR]->(lakers)
+create (aravindLakersSeptemberLeague)-[:IN_LEAGUE]->(league)
+create (rishik)-[:PLAYED_FOR_IN_LEAGUE]->rishikLakersSeptemberLeague-[:PLAYED_FOR]->(lakers)
+create (rishikLakersSeptemberLeague)-[:IN_LEAGUE]->(league)
+create (esha)-[:PLAYED_FOR_IN_LEAGUE]->eshaLakersSeptemberLeague-[:PLAYED_FOR]->(lakers)
+create (eshaLakersSeptemberLeague)-[:IN_LEAGUE]->(league)
 
 //to simplify queries
-CREATE bob-[:PLAYED_WITH_TEAM]->falcons
-CREATE alice-[:PLAYED_WITH_TEAM]->falcons
-CREATE ted-[:PLAYED_WITH_TEAM]->broncos
-CREATE carol-[:PLAYED_WITH_TEAM]->broncos
-CREATE paul-[:PLAYED_WITH_TEAM]->lakers
-CREATE aravind-[:PLAYED_WITH_TEAM]->lakers
-CREATE rishik-[:PLAYED_WITH_TEAM]->lakers
-CREATE esha-[:PLAYED_WITH_TEAM]->lakers
+create (bob)-[:PLAYED_WITH_TEAM]->(falcons)
+create (alice)-[:PLAYED_WITH_TEAM]->(falcons)
+create (ted)-[:PLAYED_WITH_TEAM]->(broncos)
+create (carol)-[:PLAYED_WITH_TEAM]->(broncos)
+create (paul)-[:PLAYED_WITH_TEAM]->(lakers)
+create (aravind)-[:PLAYED_WITH_TEAM]->(lakers)
+create (rishik)-[:PLAYED_WITH_TEAM]->(lakers)
+create (esha)-[:PLAYED_WITH_TEAM]->(lakers)
 
-CREATE falcons-[:CONTESTED_IN]->league
-CREATE broncos-[:CONTESTED_IN]->league
-CREATE lakers-[:CONTESTED_IN]->league
+create (falcons)-[:CONTESTED_IN]->(league)
+create (broncos)-[:CONTESTED_IN]->(league)
+create (lakers)-[:CONTESTED_IN]->(league)
 
 //falcons versus broncos
-CREATE match1-[:TEAM_A]->falcons
-CREATE match1-[:TEAM_B]->broncos
-CREATE match1-[:WINNER]->falcons
-CREATE match1-[:LOSER]->broncos
-CREATE match1-[:MVP]->bob
-CREATE match1-[:TEAM_A_PLAYER]->bob
-CREATE match1-[:TEAM_A_PLAYER]->alice
-CREATE match1-[:TEAM_B_PLAYER]->ted
-CREATE match1-[:TEAM_B_PLAYER]->carol
-CREATE league-[:PART_OF_LEAGUE]->match1
-CREATE match1-[:PLAYED_ON]->high
+create (match1)-[:TEAM_A]->(falcons)
+create (match1)-[:TEAM_B]->(broncos)
+create (match1)-[:WINNER]->(falcons)
+create (match1)-[:LOSER]->(broncos)
+create (match1)-[:MVP]->(bob)
+create (match1)-[:TEAM_A_PLAYER]->(bob)
+create (match1)-[:TEAM_A_PLAYER]->(alice)
+create (match1)-[:TEAM_B_PLAYER]->(ted)
+create (match1)-[:TEAM_B_PLAYER]->(carol)
+create (league)-[:PART_OF_LEAGUE]->(match)1
+create (match1)-[:PLAYED_ON]->(high)
 
 //falcons versus lakers
-CREATE match2-[:TEAM_A]->falcons
-CREATE match2-[:TEAM_B]->lakers
-CREATE match2-[:WINNER]->falcons
-CREATE match2-[:LOSER]->lakers
-CREATE match2-[:MVP]->bob
-CREATE match2-[:TEAM_A_PLAYER]->bob
-CREATE match2-[:TEAM_A_PLAYER]->alice
-CREATE match2-[:TEAM_B_PLAYER]->paul
-CREATE match2-[:TEAM_B_PLAYER]->aravind
-CREATE match2-[:TEAM_B_PLAYER]->rishik
-CREATE league-[:PART_OF_LEAGUE]->match2
-CREATE match2-[:PLAYED_ON]->low
+create (match2)-[:TEAM_A]->(falcons)
+create (match2)-[:TEAM_B]->(lakers)
+create (match2)-[:WINNER]->(falcons)
+create (match2)-[:LOSER]->(lakers)
+create (match2)-[:MVP]->(bob)
+create (match2)-[:TEAM_A_PLAYER]->(bob)
+create (match2)-[:TEAM_A_PLAYER]->(alice)
+create (match2)-[:TEAM_B_PLAYER]->(paul)
+create (match2)-[:TEAM_B_PLAYER]->(aravind)
+create (match2)-[:TEAM_B_PLAYER]->(rishik)
+create (league)-[:PART_OF_LEAGUE]->(match)2
+create (match2)-[:PLAYED_ON]->(low)
 
 //falcons versus broncos quarters
-CREATE quartersMatch1-[:TEAM_A]->falcons
-CREATE quartersMatch1-[:TEAM_B]->broncos
-CREATE quartersMatch1-[:WINNER]->falcons
-CREATE quartersMatch1-[:LOSER]->broncos
-CREATE quartersMatch1-[:MVP]->alice
-CREATE quartersMatch1-[:TEAM_A_PLAYER]->bob
-CREATE quartersMatch1-[:TEAM_A_PLAYER]->alice
-CREATE quartersMatch1-[:TEAM_B_PLAYER]->ted
-CREATE quartersMatch1-[:TEAM_B_PLAYER]->carol
-CREATE league-[:PART_OF_LEAGUE]->quartersMatch1
-CREATE quartersMatch1-[:PLAYED_ON]->high
+create (quartersMatch1)-[:TEAM_A]->(falcons)
+create (quartersMatch1)-[:TEAM_B]->(broncos)
+create (quartersMatch1)-[:WINNER]->(falcons)
+create (quartersMatch1)-[:LOSER]->(broncos)
+create (quartersMatch1)-[:MVP]->(alice)
+create (quartersMatch1)-[:TEAM_A_PLAYER]->(bob)
+create (quartersMatch1)-[:TEAM_A_PLAYER]->(alice)
+create (quartersMatch1)-[:TEAM_B_PLAYER]->(ted)
+create (quartersMatch1)-[:TEAM_B_PLAYER]->(carol)
+create (league)-[:PART_OF_LEAGUE]->(quartersMatch)1
+create (quartersMatch1)-[:PLAYED_ON]->(high)
 
-CREATE winner-[:AWARDED_TO]->falcons
-CREATE runner-[:AWARDED_TO]->broncos
-CREATE spiker-[:AWARDED_TO]->alice
+create (winner)-[:AWARDED_TO]->(falcons)
+create (runner)-[:AWARDED_TO]->(broncos)
+create (spiker)-[:AWARDED_TO]->(alice)
 
 
 //Nodes for league 2
@@ -191,21 +191,21 @@ CREATE donPark-[:COURT]->(c2:Court { name:'Court 2' })
 
 CREATE (megaBytes:Team { name:'MegaBytes' })-[:PREVIOUSLY_KNOWN_AS]->falcons
 CREATE (john:Player { name:'John' })-[:PLAYED_WITH_TEAM]->megaBytes
-CREATE alice-[:PLAYED_WITH_TEAM]->megaBytes
+create (alice)-[:PLAYED_WITH_TEAM]->(megaBytes)
 
 //hyper edges
-CREATE john-[:PLAYED_FOR_IN_LEAGUE]->johnMegaBytesOctoberLeague-[:PLAYED_FOR]->megaBytes
-CREATE johnMegaBytesOctoberLeague-[:IN_LEAGUE]->octLeague
-CREATE alice-[:PLAYED_FOR_IN_LEAGUE]->aliceMegaBytesOctoberLeague-[:PLAYED_FOR]->megaBytes
-CREATE aliceMegaBytesOctoberLeague-[:IN_LEAGUE]->octLeague
+create (john)-[:PLAYED_FOR_IN_LEAGUE]->johnMegaBytesOctoberLeague-[:PLAYED_FOR]->(megaBytes)
+create (johnMegaBytesOctoberLeague)-[:IN_LEAGUE]->(octLeague)
+create (alice)-[:PLAYED_FOR_IN_LEAGUE]->aliceMegaBytesOctoberLeague-[:PLAYED_FOR]->(megaBytes)
+create (aliceMegaBytesOctoberLeague)-[:IN_LEAGUE]->(octLeague)
 
 //register full broncos team in october league
-CREATE ted-[:PLAYED_FOR_IN_LEAGUE]->tedBroncosOctoberLeague-[:PLAYED_FOR]->broncos
-CREATE tedBroncosOctoberLeague-[:IN_LEAGUE]->octLeague
-CREATE carol-[:PLAYED_FOR_IN_LEAGUE]->carolBroncosOctoberLeague-[:PLAYED_FOR]->broncos
-CREATE carolBroncosOctoberLeague-[:IN_LEAGUE]->octLeague
+create (ted)-[:PLAYED_FOR_IN_LEAGUE]->tedBroncosOctoberLeague-[:PLAYED_FOR]->(broncos)
+create (tedBroncosOctoberLeague)-[:IN_LEAGUE]->(octLeague)
+create (carol)-[:PLAYED_FOR_IN_LEAGUE]->carolBroncosOctoberLeague-[:PLAYED_FOR]->(broncos)
+create (carolBroncosOctoberLeague)-[:IN_LEAGUE]->(octLeague)
 
-CREATE winnerOct-[:AWARDED_TO]->broncos
+create (winnerOct)-[:AWARDED_TO]->(broncos)
 ----
 
 //graph
@@ -217,7 +217,7 @@ CREATE winnerOct-[:AWARDED_TO]->broncos
 ==== Get all leagues and venues.
 [source,cypher]
 ----
-MATCH (l:League)-[:PLAYED_AT]->(v:Venue)-[:COURT]->(c:Court) 
+MATCH (l:League)-[:PLAYED_AT]->(v:Venue)-[:COURT]->(c:Court)
 RETURN l.name AS League, v.name AS Venue, collect(c.name) AS Courts
 ----
 
@@ -226,7 +226,7 @@ RETURN l.name AS League, v.name AS Venue, collect(c.name) AS Courts
 ==== Get total teams contested by league.
 [source,cypher]
 ----
-MATCH (p:Player)-[:PLAYED_FOR_IN_LEAGUE]->(hyperEdge)-[:PLAYED_FOR]->(t:Team), (hyperEdge)-[:IN_LEAGUE]->(l:League) 
+MATCH (p:Player)-[:PLAYED_FOR_IN_LEAGUE]->(hyperEdge)-[:PLAYED_FOR]->(t:Team), (hyperEdge)-[:IN_LEAGUE]->(l:League)
 RETURN COUNT(DISTINCT t) AS TotalTeamsContested, l.name AS League
 ----
 
@@ -235,8 +235,8 @@ RETURN COUNT(DISTINCT t) AS TotalTeamsContested, l.name AS League
 ==== How many teams participated in a given league?
 [source,cypher]
 ----
-MATCH (t:Team)<-[:PLAYED_FOR]-(hyperEdge)-[:IN_LEAGUE]->(l:League) 
-WHERE l.name='September Volleyball League' 
+MATCH (t:Team)<-[:PLAYED_FOR]-(hyperEdge)-[:IN_LEAGUE]->(l:League)
+WHERE l.name='September Volleyball League'
 RETURN count(DISTINCT t) AS TotalTeamsContested
 ----
 
@@ -245,7 +245,7 @@ RETURN count(DISTINCT t) AS TotalTeamsContested
 ==== Get total players participated by league.
 [source,cypher]
 ----
-MATCH (p:Player)-[:PLAYED_FOR_IN_LEAGUE]->(hyperEdge)-[:PLAYED_FOR]->(t:Team), (hyperEdge)-[:IN_LEAGUE]->(l:League) 
+MATCH (p:Player)-[:PLAYED_FOR_IN_LEAGUE]->(hyperEdge)-[:PLAYED_FOR]->(t:Team), (hyperEdge)-[:IN_LEAGUE]->(l:League)
 RETURN count(p) AS TotalPlayersContested, l.name AS League
 ----
 
@@ -254,8 +254,8 @@ RETURN count(p) AS TotalPlayersContested, l.name AS League
 ==== How many players contested in a given league?
 [source,cypher]
 ----
-MATCH (p:Player)-[:PLAYED_FOR_IN_LEAGUE]->(hyperEdge)-[:PLAYED_FOR]->(t:Team), (hyperEdge)-[:IN_LEAGUE]->(l:League) 
-WHERE l.name='September Volleyball League' 
+MATCH (p:Player)-[:PLAYED_FOR_IN_LEAGUE]->(hyperEdge)-[:PLAYED_FOR]->(t:Team), (hyperEdge)-[:IN_LEAGUE]->(l:League)
+WHERE l.name='September Volleyball League'
 RETURN count(p) AS TotalPlayersContested
 ----
 
@@ -264,8 +264,8 @@ RETURN count(p) AS TotalPlayersContested
 ==== How many players contested in a given league, group by Team.
 [source,cypher]
 ----
-MATCH (p:Player)-[:PLAYED_FOR_IN_LEAGUE]->(hyperEdge)-[:PLAYED_FOR]->(t:Team), (hyperEdge)-[:IN_LEAGUE]->(l:League) 
-WHERE l.name='September Volleyball League' 
+MATCH (p:Player)-[:PLAYED_FOR_IN_LEAGUE]->(hyperEdge)-[:PLAYED_FOR]->(t:Team), (hyperEdge)-[:IN_LEAGUE]->(l:League)
+WHERE l.name='September Volleyball League'
 RETURN t.name AS Team, count(p) AS TotalPlayersContested, collect(p.name) AS Players
 ----
 
@@ -274,8 +274,8 @@ RETURN t.name AS Team, count(p) AS TotalPlayersContested, collect(p.name) AS Pla
 ==== Where was this league organized?
 [source,cypher]
 ----
-MATCH (l:League)-[:PLAYED_AT]->(v:Venue)-[:COURT]->(c:Court) 
-WHERE l.name='September Volleyball League' 
+MATCH (l:League)-[:PLAYED_AT]->(v:Venue)-[:COURT]->(c:Court)
+WHERE l.name='September Volleyball League'
 RETURN v.name AS Venue, collect(c.name) AS Courts
 ----
 
@@ -284,8 +284,8 @@ RETURN v.name AS Venue, collect(c.name) AS Courts
 ==== Get all the levels of a given league in the order they are played.
 [source,cypher]
 ----
-MATCH p=(league:League)-[r:LEVEL|NEXT*]->(l:Level) 
-WHERE league.name='September Volleyball League' 
+MATCH p=(league:League)-[r:LEVEL|NEXT*]->(l:Level)
+WHERE league.name='September Volleyball League'
 WITH last(nodes(p)) AS levels
 RETURN COLLECT(levels.name) AS LevelsInOrder
 ----
@@ -295,8 +295,8 @@ RETURN COLLECT(levels.name) AS LevelsInOrder
 ==== Get the levels of each league.
 [source,cypher]
 ----
-MATCH p=(league:League)-[r:LEVEL|NEXT*]->(l:Level) 
-WITH last(nodes(p)) AS levels, league 
+MATCH p=(league:League)-[r:LEVEL|NEXT*]->(l:Level)
+WITH last(nodes(p)) AS levels, league
 RETURN league.name AS League, COLLECT(levels.name) AS LevelsInOrder
 ----
 
@@ -307,7 +307,7 @@ RETURN league.name AS League, COLLECT(levels.name) AS LevelsInOrder
 ==== Get a list of all the players that had ever played for a given team. Simplified by using the played_with_team relationship.
 [source,cypher]
 ----
-MATCH (p:Player)-[:PLAYED_WITH_TEAM]->(t:Team) WHERE t.name='Falcons' 
+MATCH (p:Player)-[:PLAYED_WITH_TEAM]->(t:Team) WHERE t.name='Falcons'
 RETURN p AS Players
 ----
 
@@ -316,8 +316,8 @@ RETURN p AS Players
 ==== Get a list of players for a given team for a given league.
 [source,cypher]
 ----
-MATCH (p:Player)-[:PLAYED_FOR_IN_LEAGUE]->(hyperEdge)-[:PLAYED_FOR]->(t:Team), (hyperEdge)-[:IN_LEAGUE]->(l:League) 
-WHERE l.name='September Volleyball League' AND t.name='Lakers' 
+MATCH (p:Player)-[:PLAYED_FOR_IN_LEAGUE]->(hyperEdge)-[:PLAYED_FOR]->(t:Team), (hyperEdge)-[:IN_LEAGUE]->(l:League)
+WHERE l.name='September Volleyball League' AND t.name='Lakers'
 RETURN p AS Players
 ----
 
@@ -326,8 +326,8 @@ RETURN p AS Players
 ==== Get all the leagues this team had played in.
 [source,cypher]
 ----
-MATCH (t:Team)<-[:PLAYED_FOR]-(hyperEdge)-[:IN_LEAGUE]->(l:League) 
-WHERE t.name='Broncos' 
+MATCH (t:Team)<-[:PLAYED_FOR]-(hyperEdge)-[:IN_LEAGUE]->(l:League)
+WHERE t.name='Broncos'
 RETURN DISTINCT l.name AS Leagues
 ----
 
@@ -336,8 +336,8 @@ RETURN DISTINCT l.name AS Leagues
 ==== How many leagues this team has WON?
 [source,cypher]
 ----
-MATCH (l:League)-[:TEAM_AWARD]->(a:Award)-[:AWARDED_TO]->(t:Team) 
-WHERE t.name='Falcons' 
+MATCH (l:League)-[:TEAM_AWARD]->(a:Award)-[:AWARDED_TO]->(t:Team)
+WHERE t.name='Falcons'
 RETURN t.name AS Team, a.name AS Award, count(t) AS TimesWon, l.name AS League
 ----
 
@@ -346,8 +346,8 @@ RETURN t.name AS Team, a.name AS Award, count(t) AS TimesWon, l.name AS League
 ==== Which levels did this team win through in a given league?
 [source,cypher]
 ----
-MATCH (t:Team)<-[:TEAM]-(p:Pool)<-[:POOL]-(l:Level)<-[:LEVEL|NEXT*]-(league:League) 
-WHERE league.name='September Volleyball League' 
+MATCH (t:Team)<-[:TEAM]-(p:Pool)<-[:POOL]-(l:Level)<-[:LEVEL|NEXT*]-(league:League)
+WHERE league.name='September Volleyball League'
 RETURN t.name AS Team, collect(l.name) AS Levels
 ----
 
@@ -356,7 +356,7 @@ RETURN t.name AS Team, collect(l.name) AS Levels
 ==== Get previous names or aliases.
 [source,cypher]
 ----
-MATCH (t:Team)-[:PREVIOUSLY_KNOWN_AS]->(other) 
+MATCH (t:Team)-[:PREVIOUSLY_KNOWN_AS]->(other)
 RETURN t.name AS CurrentName, other.name AS PreviousName
 ----
 
@@ -367,10 +367,10 @@ RETURN t.name AS CurrentName, other.name AS PreviousName
 ==== How many times part of winning (winner, runner etc) Team.
 [source,cypher]
 ----
-MATCH (p:Player)-[:PLAYED_FOR_IN_LEAGUE]->(hyperEdge)-[:PLAYED_FOR]->(t:Team), 
-      (hyperEdge)-[:IN_LEAGUE]->(l:League), 
-      (l:League)-[:TEAM_AWARD]->(a:Award)-[:AWARDED_TO]->(t:Team) 
-WHERE p.name='Bob' AND a.name='Winner' 
+MATCH (p:Player)-[:PLAYED_FOR_IN_LEAGUE]->(hyperEdge)-[:PLAYED_FOR]->(t:Team),
+      (hyperEdge)-[:IN_LEAGUE]->(l:League),
+      (l:League)-[:TEAM_AWARD]->(a:Award)-[:AWARDED_TO]->(t:Team)
+WHERE p.name='Bob' AND a.name='Winner'
 RETURN count(t) AS TimesPartOfWinningTeam
 ----
 
@@ -379,8 +379,8 @@ RETURN count(t) AS TimesPartOfWinningTeam
 ==== Get the co-players of a given player.
 [source,cypher]
 ----
-MATCH (p:Player)-[:PLAYED_WITH_TEAM]->(t:Team)<-[:PLAYED_WITH_TEAM]-(coPlayer:Player) 
-WHERE p.name='Alice' 
+MATCH (p:Player)-[:PLAYED_WITH_TEAM]->(t:Team)<-[:PLAYED_WITH_TEAM]-(coPlayer:Player)
+WHERE p.name='Alice'
 RETURN coPlayer.name AS Coplayer, t.name AS FromTeam
 ----
 
@@ -389,8 +389,8 @@ RETURN coPlayer.name AS Coplayer, t.name AS FromTeam
 ==== How many MVP awards are won by the given player?
 [source,cypher]
 ----
-MATCH (p:Player)-[:MVP]-(m:Match) 
-WHERE p.name='Bob' 
+MATCH (p:Player)-[:MVP]-(m:Match)
+WHERE p.name='Bob'
 RETURN count(p) AS TimesWonTheMVPAward
 ----
 
@@ -401,8 +401,8 @@ RETURN count(p) AS TimesWonTheMVPAward
 ==== All the awards of a given league.
 [source,cypher]
 ----
-MATCH (league:League)-[r:INDIVIDUAL_AWARD|TEAM_AWARD]->(award) 
-WHERE league.name='September Volleyball League' 
+MATCH (league:League)-[r:INDIVIDUAL_AWARD|TEAM_AWARD]->(award)
+WHERE league.name='September Volleyball League'
 RETURN award.name AS Award, TYPE(r) AS AwardType
 ----
 
@@ -411,8 +411,8 @@ RETURN award.name AS Award, TYPE(r) AS AwardType
 ==== Winners of the awards of a given league.
 [source,cypher]
 ----
-MATCH (league:League)-[:INDIVIDUAL_AWARD|:TEAM_AWARD]->(award:Award)-[:AWARDED_TO]->(awardee) 
-WHERE league.name='September Volleyball League' 
+MATCH (league:League)-[:INDIVIDUAL_AWARD|:TEAM_AWARD]->(award:Award)-[:AWARDED_TO]->(awardee)
+WHERE league.name='September Volleyball League'
 RETURN award.name AS Award, awardee.name AS WonBy
 ----
 

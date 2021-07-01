@@ -46,7 +46,7 @@ There are list predicates to satisfy conditions for `all`, `any`, `none` and `si
 ----
 MATCH path = (:Person)-->(:Movie)<--(:Person)
 WHERE any(n in nodes(path) WHERE n.name = 'Michael Douglas')
-RETURN extract(n IN nodes(path)| coalesce(n.name, n.title))
+RETURN [n IN nodes(path) | coalesce(n.name, n.title)]
 ----
 
 //table
@@ -62,8 +62,8 @@ A simple, non-graph example would be:
 [source,cypher]
 ----
 WITH range(1,10) as numbers
-WITH extract(n in numbers | n*n) as squares
-WITH filter(n in squares WHERE n > 25) as large_squares
+WITH [n in numbers | n*n] as squares
+WITH [n in squares WHERE n > 25] as large_squares
 RETURN reduce( a = 0, n in large_squares | a + n ) as sum_large_squares
 ----
 
@@ -76,7 +76,7 @@ In a graph-query you can filter or aggregate collected values instead or work on
 ----
 MATCH (m:Movie)<-[r:ACTED_IN]-(a:Person)
 WITH m.title as movie, collect({name: a.name, roles: r.roles}) as cast
-RETURN movie, filter(actor IN cast WHERE actor.name STARTS WITH "M")
+RETURN movie, [actor IN cast WHERE actor.name STARTS WITH "M"]
 ----
 
 //table

@@ -87,7 +87,7 @@ Asturias is a northern province of Spain, known for its harsh geography and its 
 === Queries
 
 ==== Basic queries
- 
+
 *National road section with highest vehicle transit*
 
 [source,cypher]
@@ -133,7 +133,7 @@ We want to get three routes connecting Navia, a pretty western town, to Colunga,
 [source,cypher]
 ----
 MATCH ruta=(navia {name:"Navia"})-[*6..8]-(colunga {name:"Colunga"})
-RETURN extract(city IN nodes(ruta)| city.name) as route
+RETURN [city IN nodes(ruta)| city.name] as route
 LIMIT 3
 ----
 //table
@@ -148,7 +148,7 @@ We seek the minimum path from Mieres to Infiesto. The minimum path is the one th
 ----
 MATCH p= shortestPath((a)-[*]-(b))
 WHERE a.name='Mieres' and b.name='Infiesto'
-RETURN extract(city IN nodes(p)| city.name) as path
+RETURN [city IN nodes(p)| city.name] as path
 ----
 // table
 
@@ -159,7 +159,7 @@ We want to retrieve the minimum distance from Oviedo to Luarca and get the assoc
 [source,cypher]
 ----
 match recorrido=(oviedo {name:"Oviedo"})-[*1..3]-(luarca {name:"Luarca"})
-return extract(x IN nodes(recorrido)| x.name) as path, reduce(long = 0, via in relationships(recorrido) | long + via.length) as distance
+return [x IN nodes(recorrido)| x.name] as path, reduce(long = 0, via in relationships(recorrido) | long + via.length) as distance
 order by reduce(long = 0, via in relationships(recorrido) | long + via.length)
 limit 1
 ----

@@ -1,6 +1,6 @@
 = Phone store =
 
-== Model 
+== Model
 image::http://s29.postimg.org/7q5lb5o1x/Phone_store.jpg[]
 
 The domain model is fairly simple and straight forward.
@@ -22,7 +22,7 @@ The current factor for the relations are as below
 
 The system will try to guess what users are more interested in when doing recommendation.
 In the current implementation, we assumed that the :Category and :OS have the highest concern.
-The algorithm can be improved by tweaking the weight of the relations. 
+The algorithm can be improved by tweaking the weight of the relations.
 
 
 //hide
@@ -70,94 +70,94 @@ CREATE (samsung:Manufacturer {name:'Samsung'})
 CREATE (apple:Manufacturer {name:'Apple'})
 CREATE (htc:Manufacturer {name:'HTC'})
 
-CREATE apple-[:MADE {weight:1.0}]->iPhone5s
-CREATE apple-[:MADE {weight:1.0}]->iPhone5c
-CREATE apple-[:MADE {weight:1.0}]->iPhone5
-CREATE apple-[:MADE {weight:1.0}]->iPhone4s
-CREATE apple-[:MADE {weight:1.0}]->iPhone4
+create (apple)-[:MADE {weight:1.0}]->(iPhone)5s
+create (apple)-[:MADE {weight:1.0}]->(iPhone)5c
+create (apple)-[:MADE {weight:1.0}]->(iPhone)5
+create (apple)-[:MADE {weight:1.0}]->(iPhone)4s
+create (apple)-[:MADE {weight:1.0}]->(iPhone)4
 
-CREATE nokia-[:MADE {weight:1.0}]->lumia1520
-CREATE nokia-[:MADE {weight:1.0}]->lumia900
-CREATE nokia-[:MADE {weight:1.0}]->nokia111
+create (nokia)-[:MADE {weight:1.0}]->(lumia)1520
+create (nokia)-[:MADE {weight:1.0}]->(lumia)900
+create (nokia)-[:MADE {weight:1.0}]->(nokia)111
 
-CREATE samsung-[:MADE {weight:1.0}]->galaxy4
-CREATE samsung-[:MADE {weight:1.0}]->note3
-CREATE samsung-[:MADE {weight:1.0}]->ativSNeo
-CREATE samsung-[:MADE {weight:1.0}]->c3590
+create (samsung)-[:MADE {weight:1.0}]->(galaxy)4
+create (samsung)-[:MADE {weight:1.0}]->(note)3
+create (samsung)-[:MADE {weight:1.0}]->(ativSNeo)
+create (samsung)-[:MADE {weight:1.0}]->(c)3590
 
-CREATE htc-[:MADE {weight:1.0}]->htcOne
-CREATE htc-[:MADE {weight:1.0}]->htcMozart
-CREATE htc-[:MADE {weight:1.0}]->htcChaCha
-CREATE htc-[:MADE {weight:1.0}]->htcDesire
-CREATE htc-[:MADE {weight:1.0}]->htcDesireZ
+create (htc)-[:MADE {weight:1.0}]->(htcOne)
+create (htc)-[:MADE {weight:1.0}]->(htcMozart)
+create (htc)-[:MADE {weight:1.0}]->(htcChaCha)
+create (htc)-[:MADE {weight:1.0}]->(htcDesire)
+create (htc)-[:MADE {weight:1.0}]->(htcDesireZ)
 
-CREATE iPhone5s-[:IS {weight:2.0}]->smartphone
-CREATE iPhone5c-[:IS {weight:2.0}]->smartphone
-CREATE iPhone5-[:IS {weight:2.0}]->smartphone
-CREATE iPhone4s-[:IS {weight:2.0}]->smartphone
-CREATE iPhone4-[:IS {weight:2.0}]->smartphone
+create (iPhone5s)-[:IS {weight:2.0}]->(smartphone)
+create (iPhone5c)-[:IS {weight:2.0}]->(smartphone)
+create (iPhone5)-[:IS {weight:2.0}]->(smartphone)
+create (iPhone4s)-[:IS {weight:2.0}]->(smartphone)
+create (iPhone4)-[:IS {weight:2.0}]->(smartphone)
 
-CREATE lumia1520-[:IS {weight:2.0}]->smartphone
-CREATE lumia900-[:IS {weight:2.0}]->smartphone
-CREATE nokia111-[:IS {weight:2.0}]->featurePhone
+create (lumia1520)-[:IS {weight:2.0}]->(smartphone)
+create (lumia900)-[:IS {weight:2.0}]->(smartphone)
+create (nokia111)-[:IS {weight:2.0}]->(featurePhone)
 
-CREATE galaxy4-[:IS {weight:2.0}]->smartphone
-CREATE note3-[:IS {weight:2.0}]->smartphone
-CREATE ativSNeo-[:IS {weight:2.0}]->smartphone
-CREATE c3590-[:IS {weight:2.0}]->featurePhone
+create (galaxy4)-[:IS {weight:2.0}]->(smartphone)
+create (note3)-[:IS {weight:2.0}]->(smartphone)
+create (ativSNeo)-[:IS {weight:2.0}]->(smartphone)
+create (c3590)-[:IS {weight:2.0}]->(featurePhone)
 
-CREATE htcOne-[:IS {weight:2.0}]->smartphone
-CREATE htcMozart-[:IS {weight:2.0}]->smartphone
-CREATE htcChaCha-[:IS {weight:2.0}]->smartphone
-CREATE htcDesire-[:IS {weight:2.0}]->smartphone
-CREATE htcDesireZ-[:IS {weight:2.0}]->smartphone
-
-
-CREATE iPhone5s-[:TYPE {weight:1.2}]->touchscreen
-CREATE iPhone5c-[:TYPE {weight:1.2}]->touchscreen
-CREATE iPhone5-[:TYPE {weight:1.2}]->touchscreen
-CREATE iPhone4s-[:TYPE {weight:1.2}]->touchscreen
-CREATE iPhone4-[:TYPE {weight:1.2}]->touchscreen
-
-CREATE lumia1520-[:TYPE {weight:1.2}]->touchscreen
-CREATE lumia900-[:TYPE {weight:1.2}]->touchscreen
-CREATE nokia111-[:TYPE {weight:1.2}]->numpad
-
-CREATE galaxy4-[:TYPE {weight:1.2}]->touchscreen
-CREATE note3-[:TYPE {weight:1.2}]->touchscreen
-CREATE ativSNeo-[:TYPE {weight:1.2}]->touchscreen
-CREATE c3590-[:TYPE {weight:1.2}]->numpad
-
-CREATE htcOne-[:TYPE {weight:1.2}]->touchscreen
-CREATE htcMozart-[:TYPE {weight:1.2}]->touchscreen
-CREATE htcChaCha-[:TYPE {weight:1.2}]->touchscreen
-CREATE htcChaCha-[:TYPE {weight:1.2}]->qwerty
-CREATE htcDesire-[:TYPE {weight:1.2}]->touchscreen
-CREATE htcDesireZ-[:TYPE {weight:1.2}]->touchscreen
-CREATE htcDesireZ-[:TYPE {weight:1.2}]->qwerty
+create (htcOne)-[:IS {weight:2.0}]->(smartphone)
+create (htcMozart)-[:IS {weight:2.0}]->(smartphone)
+create (htcChaCha)-[:IS {weight:2.0}]->(smartphone)
+create (htcDesire)-[:IS {weight:2.0}]->(smartphone)
+create (htcDesireZ)-[:IS {weight:2.0}]->(smartphone)
 
 
-CREATE iPhone5s-[:RUNNING_ON {weight:1.8}]->iOS
-CREATE iPhone5c-[:RUNNING_ON {weight:1.8}]->iOS
-CREATE iPhone5-[:RUNNING_ON {weight:1.8}]->iOS
-CREATE iPhone4s-[:RUNNING_ON {weight:1.8}]->iOS
-CREATE iPhone4-[:RUNNING_ON {weight:1.8}]->iOS
+create (iPhone5s)-[:TYPE {weight:1.2}]->(touchscreen)
+create (iPhone5c)-[:TYPE {weight:1.2}]->(touchscreen)
+create (iPhone5)-[:TYPE {weight:1.2}]->(touchscreen)
+create (iPhone4s)-[:TYPE {weight:1.2}]->(touchscreen)
+create (iPhone4)-[:TYPE {weight:1.2}]->(touchscreen)
+
+create (lumia1520)-[:TYPE {weight:1.2}]->(touchscreen)
+create (lumia900)-[:TYPE {weight:1.2}]->(touchscreen)
+create (nokia111)-[:TYPE {weight:1.2}]->(numpad)
+
+create (galaxy4)-[:TYPE {weight:1.2}]->(touchscreen)
+create (note3)-[:TYPE {weight:1.2}]->(touchscreen)
+create (ativSNeo)-[:TYPE {weight:1.2}]->(touchscreen)
+create (c3590)-[:TYPE {weight:1.2}]->(numpad)
+
+create (htcOne)-[:TYPE {weight:1.2}]->(touchscreen)
+create (htcMozart)-[:TYPE {weight:1.2}]->(touchscreen)
+create (htcChaCha)-[:TYPE {weight:1.2}]->(touchscreen)
+create (htcChaCha)-[:TYPE {weight:1.2}]->(qwerty)
+create (htcDesire)-[:TYPE {weight:1.2}]->(touchscreen)
+create (htcDesireZ)-[:TYPE {weight:1.2}]->(touchscreen)
+create (htcDesireZ)-[:TYPE {weight:1.2}]->(qwerty)
 
 
-CREATE lumia1520-[:RUNNING_ON {weight:1.8}]->windowsPhone
-CREATE lumia900-[:RUNNING_ON {weight:1.8}]->windowsPhone
-CREATE nokia111-[:RUNNING_ON {weight:1.8}]->others
+create (iPhone5s)-[:RUNNING_ON {weight:1.8}]->(iOS)
+create (iPhone5c)-[:RUNNING_ON {weight:1.8}]->(iOS)
+create (iPhone5)-[:RUNNING_ON {weight:1.8}]->(iOS)
+create (iPhone4s)-[:RUNNING_ON {weight:1.8}]->(iOS)
+create (iPhone4)-[:RUNNING_ON {weight:1.8}]->(iOS)
 
-CREATE galaxy4-[:RUNNING_ON {weight:1.8}]->android
-CREATE note3-[:RUNNING_ON {weight:1.8}]->android
-CREATE ativSNeo-[:RUNNING_ON {weight:1.8}]->windowsPhone
-CREATE c3590-[:RUNNING_ON {weight:1.8}]->others
 
-CREATE htcOne-[:RUNNING_ON {weight:1.8}]->android
-CREATE htcMozart-[:RUNNING_ON {weight:1.8}]->windowsPhone
-CREATE htcChaCha-[:RUNNING_ON {weight:1.8}]->android
-CREATE htcDesire-[:RUNNING_ON {weight:1.8}]->android
-CREATE htcDesireZ-[:RUNNING_ON {weight:1.8}]->android
+create (lumia1520)-[:RUNNING_ON {weight:1.8}]->(windowsPhone)
+create (lumia900)-[:RUNNING_ON {weight:1.8}]->(windowsPhone)
+create (nokia111)-[:RUNNING_ON {weight:1.8}]->(others)
+
+create (galaxy4)-[:RUNNING_ON {weight:1.8}]->(android)
+create (note3)-[:RUNNING_ON {weight:1.8}]->(android)
+create (ativSNeo)-[:RUNNING_ON {weight:1.8}]->(windowsPhone)
+create (c3590)-[:RUNNING_ON {weight:1.8}]->(others)
+
+create (htcOne)-[:RUNNING_ON {weight:1.8}]->(android)
+create (htcMozart)-[:RUNNING_ON {weight:1.8}]->(windowsPhone)
+create (htcChaCha)-[:RUNNING_ON {weight:1.8}]->(android)
+create (htcDesire)-[:RUNNING_ON {weight:1.8}]->(android)
+create (htcDesireZ)-[:RUNNING_ON {weight:1.8}]->(android)
 
 RETURN *
 ----
@@ -196,7 +196,7 @@ RETURN m.name as Manufacturer, p.name as Phone
 == Find qwerty & touchscreen capable phones (in stock)
 [source,cypher]
 ----
-MATCH (t:Type { name: "Touch Screen" })<-[:TYPE]-(p:Phone)-[:TYPE]->(q:Type { name: "Qwerty" }) 
+MATCH (t:Type { name: "Touch Screen" })<-[:TYPE]-(p:Phone)-[:TYPE]->(q:Type { name: "Qwerty" })
 WHERE p.quantity > 0
 RETURN p.name as Phone
 ----
@@ -221,13 +221,13 @@ Please feel free to play around with the blow cypher query by changing the WHERE
 
 [source,cypher]
 ----
-MATCH (p:Phone),(others:Phone)<-[:MADE]-(m:Manufacturer) 
-WHERE p.name = 'Lumia 1520' AND others.quantity > 0  
-OPTIONAL MATCH (m:Manufacturer)-[r1:MADE]->(p:Phone)  
-OPTIONAL MATCH (p:Phone)-[:IS]->(t:Category)<-[r2:IS]-(others:Phone)  
-OPTIONAL MATCH (p:Phone)-[:RUNNING_ON]->(:OS)<-[r3:RUNNING_ON]-(others:Phone) 
-RETURN m.name AS Manufacturer, others.name AS Phone, 
-coalesce(r1.weight,0.8)+ coalesce(r2.weight,0.9)+ coalesce(r3.weight,0.7) AS Rank 
+MATCH (p:Phone),(others:Phone)<-[:MADE]-(m:Manufacturer)
+WHERE p.name = 'Lumia 1520' AND others.quantity > 0
+OPTIONAL MATCH (m:Manufacturer)-[r1:MADE]->(p:Phone)
+OPTIONAL MATCH (p:Phone)-[:IS]->(t:Category)<-[r2:IS]-(others:Phone)
+OPTIONAL MATCH (p:Phone)-[:RUNNING_ON]->(:OS)<-[r3:RUNNING_ON]-(others:Phone)
+RETURN m.name AS Manufacturer, others.name AS Phone,
+coalesce(r1.weight,0.8)+ coalesce(r2.weight,0.9)+ coalesce(r3.weight,0.7) AS Rank
 ORDER BY Rank DESC
 ----
 

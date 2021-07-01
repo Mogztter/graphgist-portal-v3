@@ -75,8 +75,8 @@ Here is example for Tokyo and Chicago:
 ----
 // Find all unique, simple paths from one city to another
 MATCH p=(:City { name: "Tokyo" })-[:BACKBONE_TO*]-(:City { name: "Chicago" })
-WHERE all(c IN nodes(p) WHERE 1=length(filter(m IN nodes(p) WHERE m=c)))
-RETURN DISTINCT extract(n IN nodes(p) | n.name) AS Path, length(p) AS Length
+WHERE all(c IN nodes(p) WHERE 1=size([m IN nodes(p) WHERE m=c]))
+RETURN DISTINCT [n IN nodes(p) | n.name] AS Path, length(p) AS Length
 ----
 //table
 
@@ -86,10 +86,10 @@ Next, we would like to find the shortest path, in terms of distance:
 ----
 // Find the shortest distance path from one city to another
 MATCH p=(:City { name: "Tokyo" })-[:BACKBONE_TO*]-(:City { name: "Chicago" })
-WHERE all(c IN nodes(p) WHERE 1=length(filter(m IN nodes(p) WHERE m=c)))
+WHERE all(c IN nodes(p) WHERE 1=size([m IN nodes(p) WHERE m=c]))
 WITH reduce(s = 0, hop IN rels(p) | s + hop.dist) AS distance, p
 ORDER BY distance LIMIT 1
-RETURN DISTINCT extract(n IN nodes(p) | n.name) AS Path, length(p) AS Length, distance AS Distance
+RETURN DISTINCT [n IN nodes(p) | n.name] AS Path, length(p) AS Length, distance AS Distance
 ----
 //table
 
@@ -109,10 +109,10 @@ Note that we simply divide the distance by 300 to get milliseconds, since light 
 ----
 // Compute minimum milliseconds for information travel from one city to another
 MATCH p=(:City { name: "Tokyo" })-[:BACKBONE_TO*]-(:City { name: "Chicago" })
-WHERE all(c IN nodes(p) WHERE 1=length(filter(m IN nodes(p) WHERE m=c)))
+WHERE all(c IN nodes(p) WHERE 1=size([m IN nodes(p) WHERE m=c]))
 WITH reduce(s = 0, hop IN rels(p) | s + hop.dist) AS distance, p
 ORDER BY distance LIMIT 1
-RETURN DISTINCT extract(n IN nodes(p) | n.name) AS Path, length(p) AS Length, distance / 300 AS ms
+RETURN DISTINCT [n IN nodes(p) | n.name] AS Path, length(p) AS Length, distance / 300 AS ms
 ----
 //table
 
@@ -122,7 +122,7 @@ We can then generalize this query to compute the time it would take information 
 ----
 // Compute the minimum travel time between all pairs of cities
 MATCH p=(c1:City)-[:BACKBONE_TO*]-(c2:City)
-WHERE c1.name <> c2.name and all(c IN nodes(p) WHERE 1=length(filter(m IN nodes(p) WHERE m=c)))
+WHERE c1.name <> c2.name and all(c IN nodes(p) WHERE 1=size([m IN nodes(p) WHERE m=c]))
 WITH reduce(s = 0, hop IN rels(p) | s + hop.dist) AS distance, p, c1, c2
 ORDER BY distance
 RETURN c1.name AS `Start City`, c2.name AS `End City`, collect(distance / 300)[0] AS ms

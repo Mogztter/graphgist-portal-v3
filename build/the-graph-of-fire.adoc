@@ -6,7 +6,7 @@
 
 == a little story to understand the domain
 
-In case of a fire or technical rescue incident it is highly critical to send an appropriate number of firemen and tools on site. This graph gist explains how this happens in my local region, about 15km to the east of Munich, Germany. 
+In case of a fire or technical rescue incident it is highly critical to send an appropriate number of firemen and tools on site. This graph gist explains how this happens in my local region, about 15km to the east of Munich, Germany.
 
 WARNING: Since I'm not 100% familiar with the English translation of the vocabulary regarding firefighting, I'll put the German translation in brackets. If you find some incorrect translation please drop me a note.
 
@@ -23,15 +23,15 @@ For "fire 4" (B 4) the chain is:
 . 16 compressed air apparatus [Pressluftatmer]
 . much more we don't care in this example: ladder truck [Drehleiter], heavy technical resuce truck [Rüstwagen], 4 portable pumps (TS 8/8), 2 water monitors [Wasserwerfer], command car [KdoW/ELW], 2 hose components (500m fire hose each), detector for gas explosives [Ex-Ox-Messgerät], IR camera [Wäremebildkamera], 2 overpressure ventilators [Überdrucklüfter], heavy set of hydraulic rescue tools (cutter, spreader, rams) [Rettungssatz schwer], standard set of hydraulic resuce tools (cutter, spreader) [Rettungssatz standard], cable winch [Seilwinde]
 
-It's important to mantain the defined order in the chain, so we can model the chain of operating resources as shown: 
+It's important to mantain the defined order in the chain, so we can model the chain of operating resources as shown:
 
 image::http://i.imgur.com/1THMGkh.png[]
- 
+
 Except cities with +100k inhabitants, firefighting here in Bavaria is completely volunteer driven. Therefore a lot of fire houses exist - even the smallest village has one. Their equipment ranges from a simple trailer pump to departments of up to 20 trucks. Each of the  trucks has a set of operating resources. In our example we have a truck called 'Florian P-Town 49/1' which is equipped with 4 compressed air apparatus and 2000 l of water - of course this is just a very small subset of the full equipment.
 
 image::http://i.imgur.com/fMd0yzX.png[]
 
-The central control center [Leitstelle] has to the send the closest available forces fulfulling the chain defined by the keyword. The definition of 'closest available' is done by a splitting up the whole landscape into areas and define a ordered list of nearby fire houses [Bereichsfolgen] depending on their travel time per area. 
+The central control center [Leitstelle] has to the send the closest available forces fulfulling the chain defined by the keyword. The definition of 'closest available' is done by a splitting up the whole landscape into areas and define a ordered list of nearby fire houses [Bereichsfolgen] depending on their travel time per area.
 
 In our model each of these ordered lists is represented by a seperate relationship type - so each area has its own relationship type.
 
@@ -90,8 +90,8 @@ Since cypher does not have a longest path function, we need to identify all path
 
 [source,cypher]
 ----
-MATCH p=(:Area {name: 'P-Town'})-[:AREA_CHAIN_P_TOWN*]->(fd:Department) 
-RETURN extract(n in nodes(p) | n.name) as names
+MATCH p=(:Area {name: 'P-Town'})-[:AREA_CHAIN_P_TOWN*]->(fd:Department)
+RETURN [n in nodes(p) | n.name] as names
 ORDER BY length(p) DESC
 LIMIT 1
 ----
@@ -112,7 +112,7 @@ RETURN q.quantity,r.name order by length(p)
 
 This is getting more complex. We need the previous result to build up a list of required resources.
 
-Then we start at our area node, traverse to the first fire house, iterate to the trucks and see what they can provide. We'll reduce the list from step 1 by the items we've found there. We'll proceed to the next fire house and so until the list is empty. 
+Then we start at our area node, traverse to the first fire house, iterate to the trucks and see what they can provide. We'll reduce the list from step 1 by the items we've found there. We'll proceed to the next fire house and so until the list is empty.
 
 This algorithm applies too much logic for a declarative graph traversal language like Cypher. Therefore we'll get handy dirty and code some traversal on API level, for simplicity I'll show the code in groovy language:
 

@@ -69,7 +69,7 @@ create _43-[:`USED_FOR`]->_22
 
 == Graph
 
-//graph 
+//graph
 
 
 
@@ -80,7 +80,7 @@ create _43-[:`USED_FOR`]->_22
 match (n:Energy) return distinct n.name as renewableEnergy;
 ----
 
-It is a well-known fact that great majority of people only knows five kinds of renewable-energies or even less. Before continue reading this Gist, can you say more than five? Exactly, you can't. Nobody! 
+It is a well-known fact that great majority of people only knows five kinds of renewable-energies or even less. Before continue reading this Gist, can you say more than five? Exactly, you can't. Nobody!
 
 //table
 

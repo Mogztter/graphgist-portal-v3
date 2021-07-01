@@ -21,7 +21,7 @@ The following labels exist in v0:
 * Pet link:http://harrypotter.wikia.com/wiki/Category:Pets[Pets] with property name,type
 * Being link:http://harrypotter.wikia.com/wiki/Being[Being] with property name,type
 
-link:http://harrypotter.wikia.com/wiki/Main_Page[harrypotter.wikia.com] was used to look up facts that escape memory. 
+link:http://harrypotter.wikia.com/wiki/Main_Page[harrypotter.wikia.com] was used to look up facts that escape memory.
 
 == Setup
 
@@ -236,7 +236,7 @@ match n return n
 === Who are Harrys friends?
 [source,cypher]
 ----
-match (h:Wizard)-[:FRIEND_OF]-f 
+match (h:Wizard)-[:FRIEND_OF]-f
 where h.name="Harry Potter"
 return f.name as friend
 ----
@@ -246,7 +246,7 @@ return f.name as friend
 === Who are Harrys enemies?
 [source,cypher]
 ----
-match (h:Wizard)-[:ENEMY_OF]-e 
+match (h:Wizard)-[:ENEMY_OF]-e
 where h.name="Harry Potter"
 return e.name as enemy
 ----
@@ -256,9 +256,9 @@ return e.name as enemy
 === Who are the Muggle borns?
 [source,cypher]
 ----
-match w<-[:PARENT_OF]-(p) 
+match (w)<-[:PARENT_OF]-(p)
 with w, collect(p) as parents
-where all(parent in parents where parent:Muggle) and not(w:Muggle) 
+where all(parent in parents where parent:Muggle) and not(w:Muggle)
 return distinct w.name as muggleBorn
 ----
 //table
@@ -268,7 +268,7 @@ We'll consider the qualification to be at least one Muggle in the known ancestry
 
 [source,cypher]
 ----
-match w<-[:PARENT_OF*]-(p) 
+match (w)<-[:PARENT_OF*]-(p)
 with w,collect(p) as parents
 where any(parent in parents where parent:Muggle)
 and (not (all(parent in parents where parent:Muggle))) and not(w:Muggle)
@@ -281,7 +281,7 @@ We'll consider the qualification to be no Muggles in the known ancestry
 
 [source,cypher]
 ----
-match w<-[:PARENT_OF*]-(p) 
+match (w)<-[:PARENT_OF*]-(p)
 with w,collect(p) as parents
 where none(parent in parents WHERE parent:Muggle) and not(w:Muggle)
 return distinct w.name as pureBlood
@@ -300,7 +300,7 @@ return b.name as beingName, b.type as beingType
 === Which half bloods were killed by enemies of Harry?
 [source,cypher]
 ----
-match line=h<-[:PARENT_OF*]-(p) 
+match line=(h)<-[:PARENT_OF*]-(p)
 with h,collect(p) as parents
 where any(parent in parents where parent:Muggle)
 and (not (all(parent in parents where parent:Muggle)))  and not(h:Muggle)

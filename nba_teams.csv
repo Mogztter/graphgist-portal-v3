@@ -1,0 +1,31 @@
+Abbreviation,City          ,FullName              ,DivisionName
+ATL         ,Atlanta       ,Atlanta Hawks         ,Southeast
+BOS         ,Boston        ,Boston Celtics        ,Atlantic
+BKN         ,Brooklyn      ,Brooklyn Nets         ,Atlantic
+CHA         ,Charlotte     ,Charlotte Bobcats     ,Southeast
+CHI         ,Chicago       ,Chicago Bulls         ,Central
+CLE         ,Cleveland     ,Cleveland Cavaliers   ,Central
+DAL         ,Dallas        ,Dallas Mavericks      ,Southwest
+DEN         ,Denver        ,Denver Nuggets        ,Northwest
+DET         ,Auburn Hills  ,Detroit Pistons       ,Central
+GS          ,Oakland       ,Golden State Warriors ,Pacific
+HOU         ,Houston       ,Houston Rockets       ,Southwest
+IND         ,Indianapolis  ,Indiana Pacers        ,Central
+LAC         ,Los Angeles   ,Los Angeles Clippers  ,Pacific
+LAL         ,Los Angeles   ,Los Angeles Lakers    ,Pacific
+MEM         ,Memphis       ,Memphis Grizzlies     ,Southwest
+MIA         ,Miami         ,Miami Heat            ,Southeast
+MIL         ,Milwaukee     ,Milwaukee Bucks       ,Central
+MIN         ,Minneapolis   ,Minnesota Timberwolves,Northwest
+NO          ,New Orleans   ,New Orleans Pelicans  ,Southwest
+NY          ,New York      ,New York Knicks       ,Atlantic
+SA          ,San Antonio   ,San Antonio Spurs     ,Southwest
+POR         ,Portland      ,Portland Trail Blazers,Northwest
+PHO         ,Phoenix       ,Phoenix Suns          ,Pacific
+PHI         ,Philadelphia  ,Philadelphia 76ers    ,Atlantic
+ORL         ,Orlando       ,Orlando Magic         ,Southeast
+OKC         ,Oklahoma City ,Oklahoma City Thunder ,Northwest
+SAC         ,Sacramento    ,Sacramento Kings      ,Pacific
+TOR         ,Toronto       ,Toronto Raptors       ,Atlantic
+UTA         ,Salt Lake City,Utah Jazz             ,Northwest
+WAS         ,Washington    ,Washington Wizards    ,Southeast

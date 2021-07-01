@@ -86,18 +86,18 @@ CREATE (keralaBackWaters:Attraction{name : 'Kerala Back Waters'})
 CREATE (marariBeach:Attraction{name : 'Marari Beach'})
 CREATE (kathakaly:Attraction{name : 'Kathakaly'})
 
-CREATE vembanadLake-[:ATTRACTION_IN]->kumarakom
-CREATE kumarakomBirdSanctuary-[:ATTRACTION_IN]->kumarakom
-CREATE aruvikkuzhi-[:ATTRACTION_IN]->kumarakom
-CREATE tigerReserve-[:ATTRACTION_IN]->thekkady
-CREATE periyarLake-[:ATTRACTION_IN]->thekkady
-CREATE gaviForest-[:ATTRACTION_IN]->thekkady
-CREATE teaGardens-[:ATTRACTION_IN]->munnar
-CREATE roseGarden-[:ATTRACTION_IN]->munnar
-CREATE mattupetty-[:ATTRACTION_IN]->munnar
-CREATE keralaBackWaters-[:ATTRACTION_IN]->alleppey
-CREATE marariBeach-[:ATTRACTION_IN]->alleppey
-CREATE kathakaly-[:ATTRACTION_IN]->alleppey
+create (vembanadLake)-[:ATTRACTION_IN]->(kumarakom)
+create (kumarakomBirdSanctuary)-[:ATTRACTION_IN]->(kumarakom)
+create (aruvikkuzhi)-[:ATTRACTION_IN]->(kumarakom)
+create (tigerReserve)-[:ATTRACTION_IN]->(thekkady)
+create (periyarLake)-[:ATTRACTION_IN]->(thekkady)
+create (gaviForest)-[:ATTRACTION_IN]->(thekkady)
+create (teaGardens)-[:ATTRACTION_IN]->(munnar)
+create (roseGarden)-[:ATTRACTION_IN]->(munnar)
+create (mattupetty)-[:ATTRACTION_IN]->(munnar)
+create (keralaBackWaters)-[:ATTRACTION_IN]->(alleppey)
+create (marariBeach)-[:ATTRACTION_IN]->(alleppey)
+create (kathakaly)-[:ATTRACTION_IN]->(alleppey)
 
 CREATE zuri-[:CATEGORY]-> family
 CREATE zuri-[:CATEGORY]-> holiday
@@ -125,111 +125,111 @@ CREATE spiceVillage-[:CATEGORY]-> holiday
 CREATE windHaven-[:CATEGORY]-> holiday
 CREATE windHaven-[:CATEGORY]-> beach
 
-CREATE kumarakom-[:BEST_SEASON]->january
-CREATE kumarakom-[:BEST_SEASON]->febraury
-CREATE kumarakom-[:BEST_SEASON]->march
-CREATE kumarakom-[:BEST_SEASON]->september
-CREATE kumarakom-[:BEST_SEASON]->october
-CREATE kumarakom-[:BEST_SEASON]->november
-CREATE kumarakom-[:BEST_SEASON]->december
-CREATE alleppey-[:BEST_SEASON]->january
-CREATE alleppey-[:BEST_SEASON]->febraury
-CREATE alleppey-[:BEST_SEASON]->march
-CREATE alleppey-[:BEST_SEASON]->september
-CREATE alleppey-[:BEST_SEASON]->october
-CREATE alleppey-[:BEST_SEASON]->november
-CREATE alleppey-[:BEST_SEASON]->december
-CREATE thekkady-[:BEST_SEASON]->january
-CREATE thekkady-[:BEST_SEASON]->febraury
-CREATE thekkady-[:BEST_SEASON]->march
-CREATE thekkady-[:BEST_SEASON]->september
-CREATE thekkady-[:BEST_SEASON]->october
-CREATE thekkady-[:BEST_SEASON]->november
-CREATE thekkady-[:BEST_SEASON]->december
-CREATE munnar-[:BEST_SEASON]->january
-CREATE munnar-[:BEST_SEASON]->febraury
-CREATE munnar-[:BEST_SEASON]->march
-CREATE munnar-[:BEST_SEASON]->april
-CREATE munnar-[:BEST_SEASON]->may
-CREATE munnar-[:BEST_SEASON]->august
-CREATE munnar-[:BEST_SEASON]->september
-CREATE munnar-[:BEST_SEASON]->october
-CREATE munnar-[:BEST_SEASON]->november
-CREATE munnar-[:BEST_SEASON]->december
+create (kumarakom)-[:BEST_SEASON]->(january)
+create (kumarakom)-[:BEST_SEASON]->(febraury)
+create (kumarakom)-[:BEST_SEASON]->(march)
+create (kumarakom)-[:BEST_SEASON]->(september)
+create (kumarakom)-[:BEST_SEASON]->(october)
+create (kumarakom)-[:BEST_SEASON]->(november)
+create (kumarakom)-[:BEST_SEASON]->(december)
+create (alleppey)-[:BEST_SEASON]->(january)
+create (alleppey)-[:BEST_SEASON]->(febraury)
+create (alleppey)-[:BEST_SEASON]->(march)
+create (alleppey)-[:BEST_SEASON]->(september)
+create (alleppey)-[:BEST_SEASON]->(october)
+create (alleppey)-[:BEST_SEASON]->(november)
+create (alleppey)-[:BEST_SEASON]->(december)
+create (thekkady)-[:BEST_SEASON]->(january)
+create (thekkady)-[:BEST_SEASON]->(febraury)
+create (thekkady)-[:BEST_SEASON]->(march)
+create (thekkady)-[:BEST_SEASON]->(september)
+create (thekkady)-[:BEST_SEASON]->(october)
+create (thekkady)-[:BEST_SEASON]->(november)
+create (thekkady)-[:BEST_SEASON]->(december)
+create (munnar)-[:BEST_SEASON]->(january)
+create (munnar)-[:BEST_SEASON]->(febraury)
+create (munnar)-[:BEST_SEASON]->(march)
+create (munnar)-[:BEST_SEASON]->(april)
+create (munnar)-[:BEST_SEASON]->(may)
+create (munnar)-[:BEST_SEASON]->(august)
+create (munnar)-[:BEST_SEASON]->(september)
+create (munnar)-[:BEST_SEASON]->(october)
+create (munnar)-[:BEST_SEASON]->(november)
+create (munnar)-[:BEST_SEASON]->(december)
 
-CREATE kumarakom-[:STATE]->kerala
-CREATE alleppey-[:STATE]->kerala
-CREATE thekkady-[:STATE]->kerala
-CREATE munnar-[:STATE]->kerala
+create (kumarakom)-[:STATE]->(kerala)
+create (alleppey)-[:STATE]->(kerala)
+create (thekkady)-[:STATE]->(kerala)
+create (munnar)-[:STATE]->(kerala)
 
-CREATE zuri-[:PLACE]->kumarakom
-CREATE vivanta-[:PLACE]->kumarakom
-CREATE paradise-[:PLACE]->kumarakom
-CREATE leCelestium-[:PLACE]->munnar
-CREATE glenmore-[:PLACE]->munnar
-CREATE worldBackWaters-[:PLACE]->alleppey
-CREATE rainbowCruises-[:PLACE]->alleppey
-CREATE wildCorridor-[:PLACE]->thekkady
-CREATE spiceVillage-[:PLACE]->thekkady
-CREATE windHaven-[:PLACE]->thekkady
+create (zuri)-[:PLACE]->(kumarakom)
+create (vivanta)-[:PLACE]->(kumarakom)
+create (paradise)-[:PLACE]->(kumarakom)
+create (leCelestium)-[:PLACE]->(munnar)
+create (glenmore)-[:PLACE]->(munnar)
+create (worldBackWaters)-[:PLACE]->(alleppey)
+create (rainbowCruises)-[:PLACE]->(alleppey)
+create (wildCorridor)-[:PLACE]->(thekkady)
+create (spiceVillage)-[:PLACE]->(thekkady)
+create (windHaven)-[:PLACE]->(thekkady)
 
-CREATE zuri-[:RATING]->rating4_5
-CREATE vivanta-[:RATING]->rating5_0
-CREATE paradise-[:RATING]->rating3_5
-CREATE leCelestium-[:RATING]->rating4_5
-CREATE glenmore-[:RATING]->rating4_0
-CREATE worldBackWaters-[:RATING]->rating4_5
-CREATE rainbowCruises-[:RATING]->rating3_0
-CREATE wildCorridor-[:RATING]->rating2_5
-CREATE spiceVillage-[:RATING]->rating4_5
-CREATE windHaven-[:RATING]->rating4_0
+create (zuri)-[:RATING]->(rating)4_5
+create (vivanta)-[:RATING]->(rating)5_0
+create (paradise)-[:RATING]->(rating)3_5
+create (leCelestium)-[:RATING]->(rating)4_5
+create (glenmore)-[:RATING]->(rating)4_0
+create (worldBackWaters)-[:RATING]->(rating)4_5
+create (rainbowCruises)-[:RATING]->(rating)3_0
+create (wildCorridor)-[:RATING]->(rating)2_5
+create (spiceVillage)-[:RATING]->(rating)4_5
+create (windHaven)-[:RATING]->(rating)4_0
 
-CREATE zuri-[:FACILITY]->swimmingPool
-CREATE zuri-[:FACILITY]->carParking
-CREATE zuri-[:FACILITY]->freeWifi
-CREATE zuri-[:FACILITY]->childCare
-CREATE zuri-[:FACILITY]->freeBreakfast
-CREATE zuri-[:FACILITY]->garden
-CREATE vivanta-[:FACILITY]->swimmingPool
-CREATE vivanta-[:FACILITY]->carParking
-CREATE vivanta-[:FACILITY]->frontDesk
-CREATE vivanta-[:FACILITY]->garden
-CREATE vivanta-[:FACILITY]->freeWifi
-CREATE paradise-[:FACILITY]->swimmingPool
-CREATE paradise-[:FACILITY]->frontDesk
-CREATE paradise-[:FACILITY]->garden
-CREATE leCelestium-[:FACILITY]->spa
-CREATE leCelestium-[:FACILITY]->medicalAssistance
-CREATE leCelestium-[:FACILITY]->carParking
-CREATE glenmore-[:FACILITY]->medicalAssistance
-CREATE glenmore-[:FACILITY]->barbecue
-CREATE glenmore-[:FACILITY]->carParking
-CREATE glenmore-[:FACILITY]->spa
-CREATE worldBackWaters-[:FACILITY]->spa
-CREATE worldBackWaters-[:FACILITY]->fitness
-CREATE worldBackWaters-[:FACILITY]->garden
-CREATE worldBackWaters-[:FACILITY]->freeWifi
-CREATE rainbowCruises-[:FACILITY]->library
-CREATE wildCorridor-[:FACILITY]->frontDesk
-CREATE wildCorridor-[:FACILITY]->garden
-CREATE wildCorridor-[:FACILITY]->childCare
-CREATE wildCorridor-[:FACILITY]->freeWifi
-CREATE spiceVillage-[:FACILITY]->carParking
-CREATE spiceVillage-[:FACILITY]->billiards
-CREATE spiceVillage-[:FACILITY]->cafe
-CREATE spiceVillage-[:FACILITY]->freeBreakfast
-CREATE windHaven-[:FACILITY]->spa
-CREATE windHaven-[:FACILITY]->freeWifi
+create (zuri)-[:FACILITY]->(swimmingPool)
+create (zuri)-[:FACILITY]->(carParking)
+create (zuri)-[:FACILITY]->(freeWifi)
+create (zuri)-[:FACILITY]->(childCare)
+create (zuri)-[:FACILITY]->(freeBreakfast)
+create (zuri)-[:FACILITY]->(garden)
+create (vivanta)-[:FACILITY]->(swimmingPool)
+create (vivanta)-[:FACILITY]->(carParking)
+create (vivanta)-[:FACILITY]->(frontDesk)
+create (vivanta)-[:FACILITY]->(garden)
+create (vivanta)-[:FACILITY]->(freeWifi)
+create (paradise)-[:FACILITY]->(swimmingPool)
+create (paradise)-[:FACILITY]->(frontDesk)
+create (paradise)-[:FACILITY]->(garden)
+create (leCelestium)-[:FACILITY]->(spa)
+create (leCelestium)-[:FACILITY]->(medicalAssistance)
+create (leCelestium)-[:FACILITY]->(carParking)
+create (glenmore)-[:FACILITY]->(medicalAssistance)
+create (glenmore)-[:FACILITY]->(barbecue)
+create (glenmore)-[:FACILITY]->(carParking)
+create (glenmore)-[:FACILITY]->(spa)
+create (worldBackWaters)-[:FACILITY]->(spa)
+create (worldBackWaters)-[:FACILITY]->(fitness)
+create (worldBackWaters)-[:FACILITY]->(garden)
+create (worldBackWaters)-[:FACILITY]->(freeWifi)
+create (rainbowCruises)-[:FACILITY]->(library)
+create (wildCorridor)-[:FACILITY]->(frontDesk)
+create (wildCorridor)-[:FACILITY]->(garden)
+create (wildCorridor)-[:FACILITY]->(childCare)
+create (wildCorridor)-[:FACILITY]->(freeWifi)
+create (spiceVillage)-[:FACILITY]->(carParking)
+create (spiceVillage)-[:FACILITY]->(billiards)
+create (spiceVillage)-[:FACILITY]->(cafe)
+create (spiceVillage)-[:FACILITY]->(freeBreakfast)
+create (windHaven)-[:FACILITY]->(spa)
+create (windHaven)-[:FACILITY]->(freeWifi)
 
-CREATE raju-[:VISITED{month: 'October'}]->zuri
-CREATE raju-[:VISITED{month: 'September'}]->paradise
-CREATE raju-[:VISITED{month: 'January'}]->glenmore
-CREATE diya-[:VISITED{month: 'October'}]->zuri
-CREATE diya-[:VISITED{month: 'September'}]->paradise
-CREATE diya-[:VISITED{month: 'December'}]->spiceVillage
-CREATE diya-[:VISITED{month: 'November'}]->windHaven
-CREATE geeta-[:VISITED{month: 'October'}]->zuri
-CREATE geeta-[:VISITED{month: 'October'}]->rainbowCruises
+create (raju)-[:VISITED{month: 'October'}]->(zuri)
+create (raju)-[:VISITED{month: 'September'}]->(paradise)
+create (raju)-[:VISITED{month: 'January'}]->(glenmore)
+create (diya)-[:VISITED{month: 'October'}]->(zuri)
+create (diya)-[:VISITED{month: 'September'}]->(paradise)
+create (diya)-[:VISITED{month: 'December'}]->(spiceVillage)
+create (diya)-[:VISITED{month: 'November'}]->(windHaven)
+create (geeta)-[:VISITED{month: 'October'}]->(zuri)
+create (geeta)-[:VISITED{month: 'October'}]->(rainbowCruises)
 
 RETURN kerala;
 
@@ -248,7 +248,7 @@ Find all holiday destinations in Kerala. This dataset consists of only 4 destina
 [source, cypher]
 ----
 
-MATCH p:Place-[:STATE]->kerala
+MATCH p:create (Place)-[:STATE]->(kerala)
 RETURN p.name as Destinations
 
 ----
@@ -262,7 +262,7 @@ Find all tourist attractions near Hotel Zuri, which is located in Kumarakom.
 [source, cypher]
 ----
 
-MATCH r:Resort-[:PLACE]->p:Place<-[:ATTRACTION_IN]-a:Attraction
+MATCH r:create (Resort)-[:PLACE]->(p):Place<-[:ATTRACTION_IN]-a:Attraction
 WHERE r.name = 'The Zuri Kumarakom'
 RETURN a.name as Attractions_Near_Zuri
 
@@ -277,10 +277,10 @@ Find all Resorts that are in a HillStation, that I can visit in the month of Dec
 [source, cypher]
 ----
 
-MATCH r1:Resort-[:CATEGORY]->c:Category,
-      r1:Resort-[:PLACE]->p:Place,
-      p:Place-[:BEST_SEASON]->s:Season,
-      r1:Resort-[:RATING]->r2:Rating
+MATCH r1:create (Resort)-[:CATEGORY]->(c):Category,
+      r1:create (Resort)-[:PLACE]->(p):Place,
+      p:create (Place)-[:BEST_SEASON]->(s):Season,
+      r1:create (Resort)-[:RATING]->(r2):Rating
 WHERE c.name = 'Hill Station' AND s.name='December'
 RETURN r1.name as Resort, r2.rating as Rating, r1.address as Address
 ORDER BY r2.rating desc
@@ -296,9 +296,9 @@ Find all Romantic Resorts that fit into my budget of 9000 INR Per Day. They need
 [source, cypher]
 ----
 
-MATCH r1:Resort-[:CATEGORY]->c:Category,
-      r1:Resort-[:RATING]->r2:Rating,
-      r1:Resort-[:FACILITY]->f:Facility
+MATCH r1:create (Resort)-[:CATEGORY]->(c):Category,
+      r1:create (Resort)-[:RATING]->(r2):Rating,
+      r1:create (Resort)-[:FACILITY]->(f):Facility
 WHERE c.name = 'Romantic' AND r1.avg_rate <= 9000 AND f.name = 'Spa' AND r2.rating >= 3
 RETURN r1.name as Resort, r2.rating as Rating, r1.avg_rate as Rate_Per_Day
 ORDER BY r2.rating desc
@@ -319,17 +319,17 @@ MATCH a:Person-[v1:VISITED]->r1:Resort,
       a:Person-[v3:VISITED]->r2:Resort,
       b:Person-[v4:VISITED]->r2:Resort,
       b:Person-[v5:VISITED]->r3:Resort,
-      r3:Resort-[:PLACE]->p:Place,
-      r4:Resort-[:PLACE]->p:Place,
-      r4:Resort-[:RATING]->r5:Rating,
-      p:Place-[:BEST_SEASON]->s:Season
+      r3:create (Resort)-[:PLACE]->(p):Place,
+      r4:create (Resort)-[:PLACE]->(p):Place,
+      r4:create (Resort)-[:RATING]->(r5):Rating,
+      p:create (Place)-[:BEST_SEASON]->(s):Season
 WHERE a.name = 'Raju' AND a.name <> b.name
       AND r1.name <> r2.name AND r1.name <> r3.name
       AND v1.month = v2.month AND v3.month = v4.month
       AND s.name = 'January' AND r5.rating >= 4
 RETURN DISTINCT r4.name as Resort, p.name as Place, r5.rating as Rating
 ORDER BY r5.rating DESC
-      
+
 ----
 
 //table

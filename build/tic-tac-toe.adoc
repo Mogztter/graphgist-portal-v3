@@ -4,11 +4,11 @@
 :twitter: @SylvainRoussy
 :neo4j-version: 2.0.0-RC1
 
-To play Tic Tac Toe ! with Cypher queries. 
+To play Tic Tac Toe ! with Cypher queries.
 
 image::http://www.wired.com/images_blogs/underwire/images/2008/05/27/wargames.jpg[]
 
- 
+
 1. Main goal
 ~~~~~~~~~~~~
 
@@ -20,7 +20,7 @@ First, we need to create the board, the game and two players Sylvain and Neo. Th
 [source,cypher]
 ----
 
-// Creating the board : a 3x3 square, complete graph 
+// Creating the board : a 3x3 square, complete graph
 // Creating players and game next
 
 CREATE
@@ -44,7 +44,7 @@ CREATE
 (c31)-[:Linked_To]->(c32),
 (c31)<-[:Linked_To]-(c32),
 (c32)-[:Linked_To]->(c33),
-(c32)<-[:Linked_To]-(c33), 
+(c32)<-[:Linked_To]-(c33),
 (c11)-[:Linked_To]->(c21),
 (c11)<-[:Linked_To]-(c21),
 (c21)-[:Linked_To]->(c31),
@@ -73,7 +73,7 @@ CREATE
 ----
 //graph
 
-Now, Sylvain and Neo can play, one after another, by querying the graph using the following query (it is quite big but explanations are given below). You just need to modify the player’s name (Neo or Sylvain), and the tile’s coordinates on which his mark has been placed: 
+Now, Sylvain and Neo can play, one after another, by querying the graph using the following query (it is quite big but explanations are given below). You just need to modify the player’s name (Neo or Sylvain), and the tile’s coordinates on which his mark has been placed:
 
 [source,cypher]
 ----
@@ -84,7 +84,7 @@ Now, Sylvain and Neo can play, one after another, by querying the graph using th
 MATCH (player:PLAYER { name:"Sylvain" })-[:PLAYS]->(game)
 WITH player, game
 MATCH (tile:TILE { x:3,y:3 }) OPTIONAL MATCH  ((tile)<-[occupied:PUTS_HERE]-())
-WITH 
+WITH
    occupied,
    player,
    game,
@@ -112,7 +112,7 @@ MATCH  (n:PLAYER)-[r:PUTS_HERE]->(tile)-[r2:Linked_To]->(tile2)<-[r3:Linked_To]-
 WHERE ((tile.x + tile2.x +tile3.x) % victorySize = 0) OR ((tile.y + tile2.y +tile3.y) % victorySize = 0)
 SET game.winner=n.name
 RETURN  [tile,tile2,tile3] AS Tiles,n.name AS Player, "And the winner is : "+n.name AS FeedBack
----- 
+----
 //table
 
 If Sylvain plays again:
@@ -127,7 +127,7 @@ If Sylvain plays again:
 MATCH (player:PLAYER { name:"Sylvain" })-[:PLAYS]->(game)
 WITH player, game
 MATCH (tile:TILE { x:3,y:3 }) OPTIONAL MATCH  ((tile)<-[occupied:PUTS_HERE]-())
-WITH 
+WITH
    occupied,
    player,
    game,
@@ -155,7 +155,7 @@ MATCH  (n:PLAYER)-[r:PUTS_HERE]->(tile)-[r2:Linked_To]->(tile2)<-[r3:Linked_To]-
 WHERE ((tile.x + tile2.x +tile3.x) % victorySize = 0) OR ((tile.y + tile2.y +tile3.y) % victorySize = 0)
 SET game.winner=n.name
 RETURN  [tile,tile2,tile3] AS Tiles,n.name AS Player, "And the winner is : "+n.name AS FeedBack
----- 
+----
 //table
 
 
@@ -163,7 +163,7 @@ RETURN  [tile,tile2,tile3] AS Tiles,n.name AS Player, "And the winner is : "+n.n
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 First, we have to retrieve the current player and the shot he would play (here the marked tile is on the bottom right corner, with x=3 and y=3):
-   
+
     MATCH (player:PLAYER { name:"Sylvain" })-[:PLAYS]->game
     WITH player, game
     MATCH (tile:TILE { x:3,y:3 }) OPTIONAL MATCH  ((tile)<-[occupied:PUTS_HERE]-())
@@ -177,7 +177,7 @@ The optional match is used to verify if the targeted tile has already been marke
 
 We can then surround the creation of the relationship (that represents the shot) in a FOREACH clause:
 
-    FOREACH (value IN controlledTile | CREATE (player-[:PUTS_HERE]->value))
+    FOREACH (value IN controlledTile | CREATE (create (player)-[:PUTS_HERE]->(value)))
 
 If the collection is empty (that is, an occupied relationship exists) then nothing happens. A CREATE UNIQUE clause could have been used ; however, we need to intercept this condition to display an adequate message for the player, and if a different player tries to shot an occupied tile, CREATE UNIQUE is not suitable.
 

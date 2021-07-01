@@ -28,7 +28,7 @@ one made by their savings.
 Luckily they had in addition to Force also a Neo4j
 database to take care of this distributed finance.
 
-So there were Rey the brave Jedi girl, Finn the 
+So there were Rey the brave Jedi girl, Finn the
 repentant, Han the history and Chewbacca the furry alien.
 
 They had a mission: get from the Neo4j planet
@@ -143,10 +143,10 @@ and credit, and the same is for Chewbacca:
 
 [source,cypher]
 ----
-MATCH (credit:Credit)<-[:CREDIT]-(creditor:Friend {name:'Han'})<-[:DEBIT]-(debit :Credit) 
+MATCH (credit:Credit)<-[:CREDIT]-(creditor:Friend {name:'Han'})<-[:DEBIT]-(debit :Credit)
 MERGE (credit)<-[chain:CHAIN]-(debit);
 
-MATCH (credit:Credit)<-[:CREDIT]-(creditor:Friend {name:'Chewbacca'})<-[:DEBIT]-(debit :Credit) 
+MATCH (credit:Credit)<-[:CREDIT]-(creditor:Friend {name:'Chewbacca'})<-[:DEBIT]-(debit :Credit)
 MERGE (credit)<-[chain:CHAIN]-(debit);
 ----
 
@@ -155,7 +155,7 @@ https://www.dropbox.com/s/87r9nczj9qas207/Model.png?dl=0[model] unfortunately
 I've not been able to link to Dropbox image :( )
 
 Here starts the magic because they discover they can ask Neo4j
-to find if there is a compensation between credits and 
+to find if there is a compensation between credits and
 settle them up:
 
 [source, cypher]
@@ -165,8 +165,8 @@ p = (credit)-[:CHAIN*1..]->(credit)
 WITH TAIL(NODES(p)) AS ns, credit
 
 WITH ns,
-	SIZE(ns) AS Chain_length,
-    extract(x IN ns | x.Creditor) AS People_involved, 
+    SIZE(ns) AS Chain_length,
+    [x IN ns | x.Creditor] AS People_involved,
     REDUCE(comp = credit.Amount, n in ns | CASE WHEN comp < n.Amount THEN comp ELSE n.Amount END) AS Compensation
 WHERE Compensation > 0
 FOREACH (credit in ns| SET credit.Amount = credit.Amount - Compensation)
@@ -201,7 +201,7 @@ MATCH (c)<-[:EXPENSE]-(exp)
 WITH c, creditor, SUM(exp.Amount) AS total
 SET c.Amount = total
 WITH c
-MATCH (c1)<-[:CREDIT]-(:Friend)<-[:DEBIT]-(c)<-[:CREDIT]-(creditor)<-[:DEBIT]-(debit :Credit) 
+MATCH (c1)<-[:CREDIT]-(:Friend)<-[:DEBIT]-(c)<-[:CREDIT]-(creditor)<-[:DEBIT]-(debit :Credit)
 MERGE (c)<-[:CHAIN]-(debit)
 MERGE (c1)<-[:CHAIN]-(c)
 ----
@@ -217,12 +217,12 @@ p = (credit)-[:CHAIN*1..]->(credit)
 WITH TAIL(NODES(p)) AS ns, credit
 
 WITH ns,
-	SIZE(ns) AS Chain_length,
-    extract(x IN ns | x.Creditor) AS People_involved, 
+    SIZE(ns) AS Chain_length,
+    [x IN ns | x.Creditor] AS People_involved,
     REDUCE(comp = credit.Amount, n in ns | CASE WHEN comp < n.Amount THEN comp ELSE n.Amount END) AS Compensation
 WHERE Compensation > 0 AND
-ALL(n in People_involved where 
-          1=length(filter(m in People_involved where m=n))) 
+ALL(n in People_involved where
+          1=length([m in People_involved where m=n]))
 RETURN Chain_length, People_involved, Compensation
 ORDER BY Compensation DESC, Chain_length DESC
 ----
@@ -247,12 +247,12 @@ p = (credit)-[:CHAIN*1..]->(credit)
 WITH TAIL(NODES(p)) AS ns, credit
 
 WITH ns,
-	SIZE(ns) AS Chain_length,
-    extract(x IN ns | x.Creditor) AS People_involved, 
+    SIZE(ns) AS Chain_length,
+    [x IN ns | x.Creditor] AS People_involved,
     REDUCE(comp = credit.Amount, n in ns | CASE WHEN comp < n.Amount THEN comp ELSE n.Amount END) AS Compensation
 WHERE Compensation > 0 AND
-ALL(n in People_involved where 
-          1=length(filter(m in People_involved where m=n))) 
+ALL(n in People_involved where
+          1=length([m in People_involved where m=n]))
 
 WITH Chain_length, People_involved, Compensation, ns
 ORDER BY Compensation DESC, Chain_length DESC
@@ -282,7 +282,7 @@ MATCH (c)<-[:EXPENSE]-(exp)
 WITH c, creditor, SUM(exp.Amount) AS total
 SET c.Amount = total
 WITH c
-MATCH (c1)<-[:CREDIT]-(:Friend)<-[:DEBIT]-(c)<-[:CREDIT]-(creditor)<-[:DEBIT]-(debit :Credit) 
+MATCH (c1)<-[:CREDIT]-(:Friend)<-[:DEBIT]-(c)<-[:CREDIT]-(creditor)<-[:DEBIT]-(debit :Credit)
 MERGE (c)<-[:CHAIN]-(debit)
 MERGE (c1)<-[:CHAIN]-(c);
 
@@ -295,7 +295,7 @@ MATCH (c)<-[:EXPENSE]-(exp)
 WITH c, creditor, SUM(exp.Amount) AS total
 SET c.Amount = total
 WITH c
-MATCH (c1)<-[:CREDIT]-(:Friend)<-[:DEBIT]-(c)<-[:CREDIT]-(creditor)<-[:DEBIT]-(debit :Credit) 
+MATCH (c1)<-[:CREDIT]-(:Friend)<-[:DEBIT]-(c)<-[:CREDIT]-(creditor)<-[:DEBIT]-(debit :Credit)
 MERGE (c)<-[:CHAIN]-(debit)
 MERGE (c1)<-[:CHAIN]-(c)
 ----
@@ -311,12 +311,12 @@ p = (credit)-[:CHAIN*1..]->(credit)
 WITH TAIL(NODES(p)) AS ns, credit
 
 WITH ns,
-	SIZE(ns) AS Chain_length,
-    extract(x IN ns | x.Creditor) AS People_involved, 
+    SIZE(ns) AS Chain_length,
+    [x IN ns | x.Creditor] AS People_involved,
     REDUCE(comp = credit.Amount, n in ns | CASE WHEN comp < n.Amount THEN comp ELSE n.Amount END) AS Compensation
 WHERE Compensation > 0 AND
-ALL(n in People_involved where 
-          1=length(filter(m in People_involved where m=n))) 
+ALL(n in People_involved where
+          1=length([m in People_involved where m=n]))
 
 WITH Chain_length, People_involved, Compensation, ns
 ORDER BY Compensation DESC, Chain_length DESC
@@ -337,12 +337,12 @@ p = (credit)-[:CHAIN*1..]->(credit)
 WITH TAIL(NODES(p)) AS ns, credit
 
 WITH ns,
-	SIZE(ns) AS Chain_length,
-    extract(x IN ns | x.Creditor) AS People_involved, 
+    SIZE(ns) AS Chain_length,
+    [x IN ns | x.Creditor] AS People_involved,
     REDUCE(comp = credit.Amount, n in ns | CASE WHEN comp < n.Amount THEN comp ELSE n.Amount END) AS Compensation
 WHERE Compensation > 0 AND
-ALL(n in People_involved where 
-          1=length(filter(m in People_involved where m=n))) 
+ALL(n in People_involved where
+          1=length([m in People_involved where m=n]))
 
 WITH Chain_length, People_involved, Compensation, ns
 ORDER BY Compensation DESC, Chain_length DESC
@@ -360,12 +360,12 @@ p = (credit)-[:CHAIN*1..]->(credit)
 WITH TAIL(NODES(p)) AS ns, credit
 
 WITH ns,
-	SIZE(ns) AS Chain_length,
-    extract(x IN ns | x.Creditor) AS People_involved, 
+    SIZE(ns) AS Chain_length,
+    [x IN ns | x.Creditor] AS People_involved,
     REDUCE(comp = credit.Amount, n in ns | CASE WHEN comp < n.Amount THEN comp ELSE n.Amount END) AS Compensation
 WHERE Compensation > 0 AND
-ALL(n in People_involved where 
-          1=length(filter(m in People_involved where m=n))) 
+ALL(n in People_involved where
+          1=length([m in People_involved where m=n]))
 
 WITH Chain_length, People_involved, Compensation, ns
 ORDER BY Compensation DESC, Chain_length DESC
@@ -403,7 +403,7 @@ databases really can do their best, it is possible
 to describe such an intrinsecally interconnected network
 and perform very descriptive queries on the data.
 My job is just an approach to the problem of finding
-subnetworks sharing credits and could be an idea to 
+subnetworks sharing credits and could be an idea to
 develop a distributed economical system.
 I really have to thank Neo4j because its approach
 to the description of connected data opens the way of thinking

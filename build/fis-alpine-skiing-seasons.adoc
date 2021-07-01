@@ -6,7 +6,7 @@
 
 == Introduction
 
-I was interested on playing with Neo4j with some real data and so I grabbed some from the http://www.fis-ski.com/alpine-skiing[FIS site] and tried to play with it. The outcome is a graph that stores the results of alpine skiing races. 
+I was interested on playing with Neo4j with some real data and so I grabbed some from the http://www.fis-ski.com/alpine-skiing[FIS site] and tried to play with it. The outcome is a graph that stores the results of alpine skiing races.
 
 The idea is to have a graph that is easy to navigate: you can start from the +Alpine skiing+ node, then go to +Ladies+, then to the +current season+ and then to the +first race+, then to the +next race+, and so on. Every race has its type (Downhill, Slalom , Giant Slalom , Super G, Super Combined) and location. Athletes are connected to the races through their results. Seasons, races and results are linked lists.
 
@@ -215,7 +215,7 @@ CREATE (rp1:Rankpoints { label:"1", points:100 }),
  (rp28:Rankpoints { label:"8", points:3 }),
  (rp29:Rankpoints { label:"8", points:2 }),
  (rp30:Rankpoints { label:"8", points:1 }),
- 
+
  (rp2)-[:ARRIVED_AFTER]->(rp1),
  (rp3)-[:ARRIVED_AFTER]->(rp2),
  (rp4)-[:ARRIVED_AFTER]->(rp3),
@@ -362,7 +362,7 @@ How close to first place was a second place
 ----
 MATCH (n:Athlete),(r:Race)
 MATCH p = allShortestPaths((n)-[:FINISHED_AT|FINISHED*..3]->(r))
-with filter(x IN relationships(p) WHERE (x.diff < 200 and x.diff <> 0)) as filtered
+with [x IN relationships(p) WHERE (x.diff < 200 and x.diff <> 0)] as filtered
 with filtered[0] as m
 match (racer)-[:FINISHED_AT]->()-[m]->()-[:FINISHED]->(r), r-[:IN]->(l), r-[:IS_A]->(t)
 return racer.firstname+' '+racer.lastname as racer, r.date as date,l.name as location, t.name as type,"+"+m.diff as diff

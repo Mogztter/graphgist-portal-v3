@@ -252,7 +252,7 @@ CREATE
 [source,cypher]
 ----
 MATCH (p:Person)-[:IS_FROM]->(c:Country)
-WHERE c.name = 'United States' 
+WHERE c.name = 'United States'
 RETURN p.name;
 ----
 
@@ -264,7 +264,7 @@ RETURN p.name;
 [source,cypher]
 ----
 MATCH p =(:Person { name: "Paolo Livrea" })-[:IS_FROM*0..5]-(:Person { name: "Alberto Minetti" })
-RETURN extract(n IN nodes(p)| coalesce(n.name)) AS `names`, length(p)
+RETURN [n IN nodes(p)| coalesce(n.name)] AS `names`, length(p)
 ORDER BY length(p)
 LIMIT 10;
 ----

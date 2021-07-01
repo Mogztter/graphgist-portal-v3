@@ -1,14 +1,14 @@
 // = BFS: An Outbreak
 
 :neo4j-version: 3.5
- 
+
 == Setup
 
-BFS, a genetically engineered, highly-infective disease has arrived to the asteroid mining station THX 1138. The station computer is watching as the infection passes from crew member to crew member, and waits for the decimation the crew. Immediately before the outbreak, a team of transportation engineers, each from different space stations, arrived to the THX 1138 to survey the mining operation, and it is presumed the disease was carried by one of these transportation engineers. 
+BFS, a genetically engineered, highly-infective disease has arrived to the asteroid mining station THX 1138. The station computer is watching as the infection passes from crew member to crew member, and waits for the decimation the crew. Immediately before the outbreak, a team of transportation engineers, each from different space stations, arrived to the THX 1138 to survey the mining operation, and it is presumed the disease was carried by one of these transportation engineers.
 
 Highly infectious, BFS has completely wiped out entire trees, stopping only when there are no more members to infect or it has found and killed its target in an infected network. Unlike its cousin, DFS, which is used more often in targeted strikes against individuals in communities (assuming proper planning, intelligence, and a general knowledge of which branch to target the disease), depending on the situation, BFS usually used at highly effective at spreading disease across many members of different branches of a community. Naturally, both BFS and DFS can be effective at spreading disease, but which is more effective depends on many factors includiing how ideally-connected the index case is and the general anatomy of the network.
 
-After initial infection with BFS, a community member infects everyone he/she knows. After a pre-programmed time unit has passed, these first-degree connections infect everyone they know, and so on until the target of the disease is found or everyone reachable is infected. This breadth-first method ensures the disease is spread into as many corners of a social network as possible, heightening confusion, spreading out resources, and encouraging general chaos. 
+After initial infection with BFS, a community member infects everyone he/she knows. After a pre-programmed time unit has passed, these first-degree connections infect everyone they know, and so on until the target of the disease is found or everyone reachable is infected. This breadth-first method ensures the disease is spread into as many corners of a social network as possible, heightening confusion, spreading out resources, and encouraging general chaos.
 
 
 //hide
@@ -40,7 +40,7 @@ CREATE (`7`)-[:WORKS_IN]->(`dept1`), (`17`)-[:WORKS_IN]->(`dept1`), (`23`)-[:WOR
 ----
 
 
-== First, some background about the network: 
+== First, some background about the network:
 
 Operating in mostly non-overlapping day/night shifts (reflected in their crew_ids as odd/even), the crew of THX 1138 are members of one of 5 departments, including a visiting Transportation department:
 
@@ -51,11 +51,11 @@ RETURN DISTINCT a.name AS `Department`, count(b) AS `Count` ORDER BY COUNT(b)
 ----
 //table
 
-The following graph describes the number of crew members from each dormitory that work in each department. 
+The following graph describes the number of crew members from each dormitory that work in each department.
 
 image::http://i.imgur.com/xoUkM8x.png[department/dorm map]
 
-Although it is more likely that a crew members sharing the same department or dormitory know each other, it is not always the case. Similarly, although it is much more likely that crew members don't know each other if they share neither a dormitory or department, there is a chance that they do have a relationship. 
+Although it is more likely that a crew members sharing the same department or dormitory know each other, it is not always the case. Similarly, although it is much more likely that crew members don't know each other if they share neither a dormitory or department, there is a chance that they do have a relationship.
 
 Sleeping in mostly non-overlapping shifts, the crew of THX 1138 are members of one of 5 dormitories, including the visiting Transportation department, which is residing in dormitory Mir:
 
@@ -69,7 +69,7 @@ RETURN DISTINCT c.name AS `Dormitory`, count(b) AS `Count` ORDER BY COUNT(b)
 
 === The Transportation Department
 
-Lets take a closer look at the Transportation Department. They seem to be mostly unrelated (different last names) and they are all staying in the dormitory Mir. 
+Lets take a closer look at the Transportation Department. They seem to be mostly unrelated (different last names) and they are all staying in the dormitory Mir.
 //hide
 [source,cypher]
 ----
@@ -106,7 +106,7 @@ RETURN DISTINCT a.name AS `Transportation`, b.name AS `Contact`, w2.name as `Dep
 
 == Infection
 
-Crew member #36 arrived, in stasis, presumably to meet with his contact in the Engineering department. Knowingly or unknowingly, he was the carrier of the BFS disease. Whoever comes into contact with him will become infected. 
+Crew member #36 arrived, in stasis, presumably to meet with his contact in the Engineering department. Knowingly or unknowingly, he was the carrier of the BFS disease. Whoever comes into contact with him will become infected.
 
 Lets infect #36.
 [source,cypher]
@@ -117,12 +117,12 @@ MATCH (n:crew {crew_id:36}) SET n:infected RETURN n
 The disease starts to spread from #36's first connections to second connections.
 [source,cypher]
 ----
-MATCH (n:infected)-[:KNOWS*1..2]-(m:crew) 
+MATCH (n:infected)-[:KNOWS*1..2]-(m:crew)
 WHERE NOT (m:infected)
 SET m:infected RETURN DISTINCT m.name AS `Infected`
 ----
 
-Now the disease has made it's way into Engineering, Transportation, and Mining. 
+Now the disease has made it's way into Engineering, Transportation, and Mining.
 
 [source,cypher]
 ----
@@ -149,9 +149,9 @@ RETURN  b.name AS `Department`, count(distinct m) AS `Infected`,COUNT(distinct n
 
 = A Closer Look
 
-Although infinitely useful, breadth-first search leaves little to the imagination when the "infected" network is relatively trivial tree. Social networks, with their nooks and crannies, have some interesting emergent properties. Lets take a closer look at the Engineering department and see how the infection spread from the night-shift workers to the day-shift workers. 
+Although infinitely useful, breadth-first search leaves little to the imagination when the "infected" network is relatively trivial tree. Social networks, with their nooks and crannies, have some interesting emergent properties. Lets take a closer look at the Engineering department and see how the infection spread from the night-shift workers to the day-shift workers.
 
-Crew member #36, our index case, is connected to only one other crew member. This crew member happens to be on the odd numbered side of the Engineering department: 
+Crew member #36, our index case, is connected to only one other crew member. This crew member happens to be on the odd numbered side of the Engineering department:
 
 [source,cypher]
 ----
@@ -165,7 +165,7 @@ MATCH engineering = (d:department {dept_id:3})--(a:crew)-[:KNOWS]-(b:crew)--(d)
 RETURN DISTINCT a.crew_id%2 AS Evens, b.crew_id%2 AS Odds
 ----
 
-Since the two halves of the Engineering department never interact, the disease must have found a path outside the department in order to jump sides. Let's see if we can find the path the disease took as it jumped from #36 and Engineering Odds to Engineering Evens. 
+Since the two halves of the Engineering department never interact, the disease must have found a path outside the department in order to jump sides. Let's see if we can find the path the disease took as it jumped from #36 and Engineering Odds to Engineering Evens.
 
 [source,cypher]
 ----
@@ -173,30 +173,30 @@ MATCH eng_index = (d:department {dept_id:3})--(a:crew)-[:KNOWS]-(:crew {crew_id:
 (e:crew)--(d),
 path = (a)-[r:KNOWS]-(e)
 WHERE e.crew_id%2 = 0
-RETURN DISTINCT EXTRACT(x IN nodes( path) | x.crew_id) AS `Path to Evens`
+RETURN DISTINCT [x IN nodes( path) | x.crew_id] AS `Path to Evens`
 ----
 
-Alright, so there's no clean one-node path between evens and odds, but there are several paths, the shortest being 4 hops long. The query illustrating these paths just kills the graph gist so it is ommitted here. The distance between the two subgraphs explains the rather slow spread of the disease across the Engineering subgraph. 
+Alright, so there's no clean one-node path between evens and odds, but there are several paths, the shortest being 4 hops long. The query illustrating these paths just kills the graph gist so it is ommitted here. The distance between the two subgraphs explains the rather slow spread of the disease across the Engineering subgraph.
 
 == Adding a Path & Starting Over
 
-A bridge refers to an edge (or in Neo4j, a relationship), that when deleted, increases the number of connected components. In the example below, both edge a or b could be bridges, as their deletion would result in two connected components, only one of which would include Bob. 
+A bridge refers to an edge (or in Neo4j, a relationship), that when deleted, increases the number of connected components. In the example below, both edge a or b could be bridges, as their deletion would result in two connected components, only one of which would include Bob.
 
 image::http://i.imgur.com/DvwWxMI.png[example]
 
-Let's add a one-node path between the the odds and the evens of the Engineering department and take a look at the effects on the spread of the disease anew. Although the odds and evens are not strictly independent of each other, they are far away enough that we might consider them independent, and the connection from the even (or odd) node to Bob a bridge.  
+Let's add a one-node path between the the odds and the evens of the Engineering department and take a look at the effects on the spread of the disease anew. Although the odds and evens are not strictly independent of each other, they are far away enough that we might consider them independent, and the connection from the even (or odd) node to Bob a bridge.
 
 [source,cypher]
 ----
-MATCH (a:crew {crew_id: 2 }),(b:crew {crew_id: 89}) 
+MATCH (a:crew {crew_id: 2 }),(b:crew {crew_id: 89})
 MERGE (a)-[:KNOWS]->(new:crew {crew_id:102, name:'Bob Ralph'})-[:KNOWS]->(b)
 RETURN new.name
 ----
 
-It will now take 2 hops to get from the infected node to Bob, so the fun will start at or after 3 hops. 
+It will now take 2 hops to get from the infected node to Bob, so the fun will start at or after 3 hops.
 [source,cypher]
 ----
-MATCH (a:crew {crew_id: 36 })-[r:KNOWS*1..2]-(b:crew {crew_id: 102}) 
+MATCH (a:crew {crew_id: 36 })-[r:KNOWS*1..2]-(b:crew {crew_id: 102})
 RETURN LENGTH(r)
 ----
 
@@ -204,7 +204,7 @@ Removing the infection fom everyone but crew member #36:
 
 [source,cypher]
 ----
-MATCH (a:infected) 
+MATCH (a:infected)
 WHERE NOT a.crew_id = 36
 REMOVE a:infected
 ----
@@ -213,12 +213,12 @@ Again, the disease starts to spread from #36's first connections to second conne
 
 [source,cypher]
 ----
-MATCH (n:infected)-[:KNOWS*1..2]-(m:crew) 
+MATCH (n:infected)-[:KNOWS*1..2]-(m:crew)
 WHERE NOT (m:infected)
 SET m:infected RETURN DISTINCT m.name AS `Infected`
 ----
 
-Again, the disease has made it's way into Engineering, Transportation, and Mining, but this time, the (node attatched to the) bridge is infected. Since the node, Bob, does not belong to any department, he does not appear in the chart below. 
+Again, the disease has made it's way into Engineering, Transportation, and Mining, but this time, the (node attatched to the) bridge is infected. Since the node, Bob, does not belong to any department, he does not appear in the chart below.
 
 
 [source,cypher]
@@ -232,7 +232,7 @@ Lets see what happens with two more hops:
 
 [source,cypher]
 ----
-MATCH (n:infected)-[:KNOWS*1..2]-(m:crew) 
+MATCH (n:infected)-[:KNOWS*1..2]-(m:crew)
 WHERE NOT (m:infected)
 SET m:infected RETURN DISTINCT m.name AS `Infected`
 ----
@@ -255,11 +255,11 @@ RETURN  b.name AS `Department`, COUNT(DISTINCT m) AS `Infected`,COUNT(DISTINCT n
 |Mining|41
 |==========================
 
-Although there are slightly more infected members of Management, Medical, Transportation, and Mining, the proportion of infected Engineers after 4 hops doubled after the addition of the bridge. 
+Although there are slightly more infected members of Management, Medical, Transportation, and Mining, the proportion of infected Engineers after 4 hops doubled after the addition of the bridge.
 
 
 = Conclusion
 
-Classically taught to undergraduates on rather uncomplicated trees, breadth-first search is an excellent method to traverse or search a graph. However, throw in a social network, with loops, dead ends, and isolated subgraphs, and things get more interesting. 
+Classically taught to undergraduates on rather uncomplicated trees, breadth-first search is an excellent method to traverse or search a graph. However, throw in a social network, with loops, dead ends, and isolated subgraphs, and things get more interesting.
 
-Although a toy example, there are parallels between the spread of disease in this space station and the spread of disease in other, presumably well-connected social networks. For example, in the city of Baltimore, tuberculosis and syphillis infect a large number of people walking the same streets and taking the same busses as other Baltimore residents that may be blissfully unaware of the high proportion of infectious disease in their cities, much like the even and odd members of our Engineering department. 
+Although a toy example, there are parallels between the spread of disease in this space station and the spread of disease in other, presumably well-connected social networks. For example, in the city of Baltimore, tuberculosis and syphillis infect a large number of people walking the same streets and taking the same busses as other Baltimore residents that may be blissfully unaware of the high proportion of infectious disease in their cities, much like the even and odd members of our Engineering department.

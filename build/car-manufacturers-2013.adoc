@@ -2,7 +2,7 @@
 
 This is a graph of all the major car manufacturers and their earnings in 2013, alongside all of their main suppliers.
 
-It also shows the relationships between the various manufactures: cooperations, jointventuress and stock ownership. and the type of those 
+It also shows the relationships between the various manufactures: cooperations, jointventuress and stock ownership. and the type of those
 relationships.(For example a cooperation can be of the type: research/development)
 
 
@@ -176,11 +176,11 @@ ORDER BY CooperatingCompanies DESC, Name ASC
 
 == Non japanese companies in a joint venture with a japanese one.
 [source,cypher]
----- 
+----
 MATCH (manufacturer:Manufacturer)-[:JOINTVENTURES]-(m:Manufacturer)
 WITH manufacturer,filter (i in collect(distinct(m)) WHERE i.headquarters="Japan") AS japaneseManufacturers
 WHERE length(japaneseManufacturers)>0 and manufacturer.headquarters<>"Japan"
-RETURN manufacturer.name as Manufacturer, extract(x in japaneseManufacturers|x.name) as JapaneseManufacturers
+RETURN manufacturer.name as Manufacturer, [x in japaneseManufacturers|x.name] as JapaneseManufacturers
 ----
 //table
 

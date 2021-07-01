@@ -470,7 +470,7 @@ In this example, labels included in the Process Node Domain through metadata are
 // Find node examples in the "Process" 'Node Domain'
 MATCH (nt:NodeType)--(:NodeDomain { name: "Process" })
 WITH COLLECT(nt.name) AS processNodeTypes
-MATCH (m) WHERE LENGTH(FILTER(lbl IN labels(m) WHERE lbl IN processNodeTypes)) > 0
+MATCH (m) WHERE size([lbl IN labels(m) WHERE lbl IN processNodeTypes]) > 0
 RETURN m LIMIT 50;
 ----
 

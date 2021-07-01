@@ -9,7 +9,7 @@ I used the 2016 Free Agent Tracker of http://www.fangraphs.com[FanGraphs] to get
 
 // Data modell
 
-My data modell is illustrated by David Price, who signed a record seven-year, $217 million contract with the Boston Red Sox. 
+My data modell is illustrated by David Price, who signed a record seven-year, $217 million contract with the Boston Red Sox.
 
 image::http://i.imgur.com/wYcFHZB.png[]
 

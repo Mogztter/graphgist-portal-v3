@@ -65,8 +65,8 @@
 == Basic information about the graph
 [source,cypher]
 ----
-	MATCH n-[r]-() 
-	WITH count(DISTINCT n) AS numNodes, count(DISTINCT r) AS numRelationships 
+	MATCH n-[r]-()
+	WITH count(DISTINCT n) AS numNodes, count(DISTINCT r) AS numRelationships
 	RETURN numNodes, numRelationships
 ----
 
@@ -75,7 +75,7 @@
 == Show nodes Penn State will play in the 2014 season.
 [source,cypher]
 ----
-	MATCH (n { name: "Penn State University" })-[r:plays]->(c) 
+	MATCH (n { name: "Penn State University" })-[r:plays]->(c)
 	RETURN r
 ----
 
@@ -85,7 +85,7 @@
 == Show number of teams Penn State will play in the 2014 season and their names.
 [source,cypher]
 ----
-	MATCH (team:school) 
+	MATCH (team:school)
 	WHERE team.name<> "Penn State University"
 	RETURN  count(*) AS count, collect(team.name) AS teams
 ----
@@ -95,8 +95,8 @@
 == Show number of teams Penn State will play in the 2014 per conference.
 [source,cypher]
 ----
-	MATCH (team:school)--(conf:conference) 
-	WHERE team.name <> "Penn State University" 
+	MATCH (team:school)--(conf:conference)
+	WHERE team.name <> "Penn State University"
 	RETURN count(*) AS count, conf.name AS Conference
 ----
 
@@ -105,8 +105,8 @@
 == Show all teams Penn State will play in the 2014 season that belong to the ACC (American Athletic Conference).
 [source,cypher]
 ----
-	MATCH (school { name:"Penn State University" })--(team)--(conference) 
-	WHERE conference.name = "American Athletic Conference" 
+	MATCH (school { name:"Penn State University" })--(team)--(conference)
+	WHERE conference.name = "American Athletic Conference"
 	RETURN team.name
 ----
 
@@ -115,9 +115,9 @@
 == Show all nodes of teams Penn State will play in the 2014 season that are division rivals in the Big Ten Eastern division.
 [source,cypher]
 ----
-	MATCH (psu { name:'Penn State University' })--(team)--(conferance)--(division) 
-	WHERE conferance.name = "Big Ten" AND division.name = "Eastern" AND filter(x IN division.teams 
-																			   WHERE x = team.name) 
+	MATCH (psu { name:'Penn State University' })--(team)--(conferance)--(division)
+	WHERE conferance.name = "Big Ten" AND division.name = "Eastern" AND x IN division.teams
+																			   WHERE x = team.name)
 	RETURN team
 ----
 
@@ -126,8 +126,8 @@
 == Show the average age of the schools Penn State will play in the 2014 season (most of the teams were established before Penn State).
 [source,cypher]
 ----
-	MATCH (s:school) 
-	WHERE s.name <> "Penn State University" 
+	MATCH (s:school)
+	WHERE s.name <> "Penn State University"
 	RETURN avg(2014 - s.established) as AverageYearsOld
 ----
 

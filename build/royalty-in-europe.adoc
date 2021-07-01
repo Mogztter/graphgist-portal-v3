@@ -38,26 +38,26 @@ create (georgeIII {name:"George III"})
 create (frederickWales {name:"Frederick"})
 create (carolineMatilda {name:"Caroline Matilda"})
 
-create georgeII-[:HAD_SON]->frederickWales
-create frederickWales-[:HAD_SON]->georgeIII
-create frederickWales-[:HAD_DAUGHTER]->carolineMatilda
+create (georgeII)-[:HAD_SON]->(frederickWales)
+create (frederickWales)-[:HAD_SON]->(georgeIII)
+create (frederickWales)-[:HAD_DAUGHTER]->(carolineMatilda)
 
-create anne-[:MEMBER_OF]->houseOfSstuart
-create anne-[:REIGNED]->britain
+create (anne)-[:MEMBER_OF]->(houseOfSstuart)
+create (anne)-[:REIGNED]->(britain)
 
-create georgeI-[:MEMBER_OF]->houseOfHanover
-create georgeI-[:SUCCEEDED]->anne
-create georgeI-[:REIGNED]->britain
+create (georgeI)-[:MEMBER_OF]->(houseOfHanover)
+create (georgeI)-[:SUCCEEDED]->(anne)
+create (georgeI)-[:REIGNED]->(britain)
 
-create georgeII-[:MEMBER_OF]->houseOfHanover
-create georgeII-[:SUCCEEDED]->georgeI
-create georgeII-[:REIGNED]->britain
-create georgeII-[:REIGNED]->hanover
+create (georgeII)-[:MEMBER_OF]->(houseOfHanover)
+create (georgeII)-[:SUCCEEDED]->(georgeI)
+create (georgeII)-[:REIGNED]->(britain)
+create (georgeII)-[:REIGNED]->(hanover)
 
-create georgeIII-[:MEMBER_OF]->houseOfHanover
-create georgeIII-[:SUCCEEDED]->georgeII
-create georgeIII-[:REIGNED]->britain
-create georgeIII-[:REIGNED]->hanover
+create (georgeIII)-[:MEMBER_OF]->(houseOfHanover)
+create (georgeIII)-[:SUCCEEDED]->(georgeII)
+create (georgeIII)-[:REIGNED]->(britain)
+create (georgeIII)-[:REIGNED]->(hanover)
 
 
 create (frederickIV {name:"Frederick IV"})
@@ -65,32 +65,32 @@ create (christianVI {name:"Christian VI"})
 create (frederickV {name:"Frederick V"})
 create (christianVII {name:"Christian VII"})
 
-create frederickIV-[:MEMBER_OF]->houseOfOldenburg
-create frederickIV-[:REIGNED]->denmark
+create (frederickIV)-[:MEMBER_OF]->(houseOfOldenburg)
+create (frederickIV)-[:REIGNED]->(denmark)
 
-create christianVI-[:MEMBER_OF]->houseOfOldenburg
-create christianVI-[:REIGNED]->denmark
-create christianVI-[:SUCCEEDED]->frederickIV
+create (christianVI)-[:MEMBER_OF]->(houseOfOldenburg)
+create (christianVI)-[:REIGNED]->(denmark)
+create (christianVI)-[:SUCCEEDED]->(frederickIV)
 
-create frederickV-[:MEMBER_OF]->houseOfOldenburg
-create frederickV-[:REIGNED]->denmark
-create frederickV-[:SUCCEEDED]->christianVI
+create (frederickV)-[:MEMBER_OF]->(houseOfOldenburg)
+create (frederickV)-[:REIGNED]->(denmark)
+create (frederickV)-[:SUCCEEDED]->(christianVI)
 
 
-create christianVII-[:MEMBER_OF]->houseOfOldenburg
-create christianVII-[:REIGNED]->denmark
-create christianVII-[:SUCCEEDED]->frederickV
+create (christianVII)-[:MEMBER_OF]->(houseOfOldenburg)
+create (christianVII)-[:REIGNED]->(denmark)
+create (christianVII)-[:SUCCEEDED]->(frederickV)
 
-create christianVII-[:MARRIED]->carolineMatilda
+create (christianVII)-[:MARRIED]->(carolineMatilda)
 
 
 create (louise {name:"Louise of Great Britain"})
-create georgeII-[:HAD_DAUGHTER]->louise
-create frederickV-[:MARRIED]->louise
+create (georgeII)-[:HAD_DAUGHTER]->(louise)
+create (frederickV)-[:MARRIED]->(louise)
 
 create (sophia {name: "Sophia Magdalena"})
-create louise-[:HAD_DAUGHTER]->sophia
-create frederickV-[:HAD_DAUGHTER]->sophia
+create (louise)-[:HAD_DAUGHTER]->(sophia)
+create (frederickV)-[:HAD_DAUGHTER]->(sophia)
 
 create (charlesII {name:"Charles XII"})
 create (ulrika {name:"Ulrika Eleonora"})
@@ -105,14 +105,14 @@ create frederick<-[:SUCEEDED]-adolfF
 create adolfF<-[:SUCEEDED]-gustavIII
 create gustavIII<-[:SUCEEDED]-gustavIV
 
-create charlesII-[:REIGNED]->sweden
-create ulrika-[:REIGNED]->sweden
-create frederick-[:REIGNED]->sweden
-create adolfF-[:REIGNED]->sweden
-create gustavIII-[:REIGNED]->sweden
-create gustavIV-[:REIGNED]->sweden
+create (charlesII)-[:REIGNED]->(sweden)
+create (ulrika)-[:REIGNED]->(sweden)
+create (frederick)-[:REIGNED]->(sweden)
+create (adolfF)-[:REIGNED]->(sweden)
+create (gustavIII)-[:REIGNED]->(sweden)
+create (gustavIV)-[:REIGNED]->(sweden)
 
-create gustavIII-[:MARRIED]->sophia
+create (gustavIII)-[:MARRIED]->(sophia)
 
 
 ----
@@ -122,9 +122,9 @@ create gustavIII-[:MARRIED]->sophia
 How were the countries related through royal families?
 [source,cypher]
 ----
-START c1=node(*),c2=node(*) 
-MATCH path =(c1<-[:REIGNED]-r1-[:HAD_DAUGHTER|MARRIED*0..]-r2-[:REIGNED]->c2) 
-WHERE c1.name="Great Britain" AND c2.name = 'Denmark and Norway' 
+START c1=node(*),c2=node(*)
+MATCH path =(c1<-[:REIGNED]-create (r1)-[:HAD_DAUGHTER|MARRIED*0..]-r2-[:REIGNED]->(c2))
+WHERE c1.name="Great Britain" AND c2.name = 'Denmark and Norway'
 RETURN path
 ----
 
@@ -152,7 +152,7 @@ This retrieves just one predecessor.
 [source,cypher]
 ----
 start g=node(*)
-match g-[:SUCCEEDED]->pre
+match create (g)-[:SUCCEEDED]->(pre)
 where g.name="George II"
 return pre
 ----

@@ -7,10 +7,10 @@ This shows a setup to find what symptons are triggered by certain sicknesses, se
 //setup
 [source,cypher]
 ----
-CREATE 
-  (Fever { name:"Fever" })-[:causes]->(Malaria { name:"Malaria" }), 
+CREATE
+  (Fever { name:"Fever" })-[:causes]->(Malaria { name:"Malaria" }),
   Fever-[:causes]->(dehydration { name:"Dehydration" }),
-  (Flu { name:"Flu" })-[:causes]-> Malaria , 
+  (Flu { name:"Flu" })-[:causes]-> Malaria ,
   Flu-[:causes]->(SwineFlu { name:"SwineFlu" })
 ----
 
@@ -19,11 +19,11 @@ CREATE
 
 [source,cypher]
 ----
-START aa=node(*) 
-MATCH aa-[:causes]->symptom 
-WITH collect(aa.name) AS aa, symptom 
-WHERE ALL (x IN ['Fever' , 'Flu'] 
-           WHERE x IN aa) 
+START aa=node(*)
+MATCH create (aa)-[:causes]->(symptom)
+WITH collect(aa.name) AS aa, symptom
+WHERE ALL (x IN ['Fever' , 'Flu']
+           WHERE x IN aa)
 RETURN symptom
 ----
 

@@ -7,16 +7,16 @@
 
 === Description
 
-We love to go running and challenge each other. Therefore a little competition has been set up. A number of running organizations are selected. For each organization one race is assigned as the main race, while the other races are side races. 
+We love to go running and challenge each other. Therefore a little competition has been set up. A number of running organizations are selected. For each organization one race is assigned as the main race, while the other races are side races.
 
 For the participants in our little competition, the first finisher in the main race gets 50 points, the second finisher 45, the third finisher 40, then 39, 38, ... for subsequent finishers. +
 All participants in the side races get the same number of points. The amount of points is as if they were next after the last finisher in the main competition.
 
 So for example 5 participants in the main competition will get 50, 45, 40, 39 and 38 points. Every participant in the side competition then will get 37 points. If there are no participants in the main race, then everyone on side races will get 50 points.
 
-Sometimes people come and join to run the race, without being part of the competition. This is the case for people interested in joining the club next year, or people who are a bit late with membership fee. We want to remember their race result to display in the weekly Club Gazette or to change their status to participant and recalculate points as soon as they are a club member. 
+Sometimes people come and join to run the race, without being part of the competition. This is the case for people interested in joining the club next year, or people who are a bit late with membership fee. We want to remember their race result to display in the weekly Club Gazette or to change their status to participant and recalculate points as soon as they are a club member.
 
-In reverse, sometimes club members choose to run the race but not to participate in the competition and thus leave the high points (50 - 45) to the others. This is done by not wearing your club shirt during the race. 
+In reverse, sometimes club members choose to run the race but not to participate in the competition and thus leave the high points (50 - 45) to the others. This is done by not wearing your club shirt during the race.
 
 It would be nice to have a website displaying the race results (related to our competition) and the overall ranking as soon as possible after the race. The plan is to use Graphgist to build and validate a model, then use Neo4J  and Flask to build the website. The *Building Web Apps Using Flask and Neo4j* training has been a convincing introduction for this.
 
@@ -28,7 +28,7 @@ The model has a Competition Node ('Summer Races 2015', 'Summer Races 2014', ...)
 
 People are represented by a person node. In most cases, a person node will be connected to a 'Name' node. For newcomers, whose name we may not know exact, the name attribute of the Person node will be used. The 'Name' node needs to be correct, while the name attribute of the Person node is the best known representation at that time.
 
-For each participant finishing a race in our competition and for each sympathizer finishing, a finisher node will be created. Preferably a finisher node has the position in the race and the end-time, but the only bit of information really required is the relative position with respect to the other participants. This is sufficient information to calculate the points earned at the race. This approach allows to enter the data immediately after the race and discuss the new ranking while enjoying a beer and waiting for the official result.  
+For each participant finishing a race in our competition and for each sympathizer finishing, a finisher node will be created. Preferably a finisher node has the position in the race and the end-time, but the only bit of information really required is the relative position with respect to the other participants. This is sufficient information to calculate the points earned at the race. This approach allows to enter the data immediately after the race and discuss the new ranking while enjoying a beer and waiting for the official result.
 
 This graphgist will focus configuring some organizations with races, adding races to categories (main - side race), defining some people and add them as finisher to the race.
 
@@ -39,7 +39,7 @@ image::http://www.vermeylen.net/Schema.svg[Schema]
 == Add some data
 
 === Participants
-First we will define some organizations, races and participants. Once we have some data in the database, it is a lot easier to see what is going on. 
+First we will define some organizations, races and participants. Once we have some data in the database, it is a lot easier to see what is going on.
 
 Note that for each finisher the place in the race will be shown. However this is information that is not necessarily available, so it will not be used for processing.
 
@@ -141,7 +141,7 @@ main_race = (race)-[:race_category]->(g:RaceType {label: 'Main'}),
 finishers = (finisher)<-[:after*]-()
 WHERE (race)<-[:runs_in]-(finisher)
 WITH COLLECT(finishers) AS results, MAX(length(finishers)) AS maxLength
-WITH FILTER(result IN results WHERE length(result) = maxLength) AS result_coll
+WITH [result IN results WHERE length(result) = maxLength] AS result_coll
 UNWIND result_coll AS result
 RETURN nodes(result)
 ----
@@ -159,18 +159,18 @@ main_race = (race)-[:race_category]->(g:RaceType {label: 'Main'}),
 participants = (race)<-[:runs_in]-(finisher),
 finishers = (finisher)<-[:after*]-()
 WITH COLLECT(finishers) AS results, MAX(length(finishers)) AS maxLength
-WITH FILTER(result IN results WHERE length(result) = maxLength) AS result_coll
+WITH [result IN results WHERE length(result) = maxLength] AS result_coll
 UNWIND result_coll AS result
 RETURN nodes(result)
 ----
 
 === Add data for the next race
 
-Now participants will be added for the Main race (10k) of the next organization. Merge is used to create or match each participant. 
+Now participants will be added for the Main race (10k) of the next organization. Merge is used to create or match each participant.
 
 [source,cypher]
 ----
-MERGE (johan:Person {name: 'Johan'}) 
+MERGE (johan:Person {name: 'Johan'})
 MERGE (luc:Person {name: 'Luc'})
 MERGE (gert:Person {name: 'Gert'})
 MERGE (stefan:Person {name: 'Stefan'})
@@ -196,7 +196,7 @@ main_race = (race)-[:race_category]->(g:RaceType {label: 'Main'}),
 participants = (race)<-[:runs_in]-(finisher),
 finishers = (finisher)<-[:after*]-()
 WITH COLLECT(finishers) AS results, MAX(length(finishers)) AS maxLength
-WITH FILTER(result IN results WHERE length(result) = maxLength) AS result_coll
+WITH [result IN results WHERE length(result) = maxLength] AS result_coll
 UNWIND result_coll AS result
 RETURN nodes(result)
 ----
@@ -231,7 +231,7 @@ main_race = (race)-[:race_category]->(g:RaceType {label: 'Main'}),
 participants = (race)<-[:runs_in]-(finisher),
 finishers = (finisher)<-[:after*]-()
 WITH COLLECT(finishers) AS results, MAX(length(finishers)) AS maxLength
-WITH FILTER(result IN results WHERE length(result) = maxLength) AS result_coll
+WITH [result IN results WHERE length(result) = maxLength] AS result_coll
 UNWIND result_coll AS result
 RETURN nodes(result)
 ----
@@ -245,7 +245,7 @@ main_race = (race)-[:race_category]->(g:RaceType {label: 'Main'}),
 participants = (race)<-[:runs_in]-(finisher),
 finishers = (finisher)<-[:after*0..]-()
 WITH COLLECT(finishers) AS results, MAX(length(finishers)) AS maxLength
-WITH FILTER(result IN results WHERE length(result) = maxLength) AS result_coll
+WITH [result IN results WHERE length(result) = maxLength] AS result_coll
 UNWIND result_coll AS result
 RETURN nodes(result)
 ----
@@ -283,7 +283,7 @@ main_race = (race)-[:race_category]->(g:RaceType {label: 'Main'}),
 participants = (race)<-[:runs_in]-(finisher),
 finishers = (finisher)<-[:after*0..]-()
 WITH COLLECT(finishers) AS results, MAX(length(finishers)) AS maxLength
-WITH FILTER(result IN results WHERE length(result) = maxLength) AS result_coll
+WITH [result IN results WHERE length(result) = maxLength] AS result_coll
 UNWIND result_coll AS result
 RETURN nodes(result)
 ----
@@ -303,14 +303,14 @@ The sequence of arrival is determined using the 'after' relation. Immediately af
 
 There are a number of extensions scheduled for the web application:
 
-* Add Female / Male categories. 
+* Add Female / Male categories.
 * Further expand categories for Cross Country running:
 ** Under-16
 ** Under-23
 ** Senior
 ** Master
 ** Master +50
-* Add other athletics disciplines... 
+* Add other athletics disciplines...
 
 This graphgist document should also be extended to:
 

@@ -8,7 +8,7 @@ image:http://www.boeschoten.eu/wp-content/uploads/2013/12/netwerk.png[]
 
 ...
 
-I will not try to help you understand the depths of Thomas' research, I would just like to take this dataset - which he kindly shared - for a spin using neo4j. 
+I will not try to help you understand the depths of Thomas' research, I would just like to take this dataset - which he kindly shared - for a spin using neo4j.
 
 === Importing the dataset
 
@@ -323,7 +323,7 @@ limit 5;
 The result is exactly what you would expect: a HUGE amount of overlap - at least between these two (see above: largest) shows. Hence the "limit 5" in the query - so that my poor neo4j browser would survive:
 
 //table
- 
+
 === Wrap-up
 
 That's about all I have at this point. You can https://www.dropbox.com/s/vmffvitqmr6belk/TALKSHOW%20graph.db.zip[download the database] from over here. And the queries that I used above are all on https://gist.github.com/rvanbruggen/9728315[github].

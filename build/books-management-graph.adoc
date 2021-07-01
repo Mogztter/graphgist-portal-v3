@@ -160,80 +160,80 @@ CREATE (bloomsbury:PublishingHouse{name:'Bloomsbury Publishing'}),
 	   (apc:PublishingHouse{name:'American Publishing Company'})
 
 //IS_PART_OF
-CREATE	 harry1-[:IS_PART_OF]->harryPotter
+CREATE	 create (harry1)-[:IS_PART_OF]->(harryPotter)
 
 //DESCRIBED_BY
-CREATE	 harry1-[:DESCRIBED_BY]->magic,
-		 harry1-[:DESCRIBED_BY]->students,
-		 bookThief-[:DESCRIBED_BY]->students,
-		 bookThief-[:DESCRIBED_BY]->death,
-		 bookThief-[:DESCRIBED_BY]->judaism,
-		 tom-[:DESCRIBED_BY]->boy,
-		 tom-[:DESCRIBED_BY]->psychology,
-		 tom-[:DESCRIBED_BY]->change
+CREATE	 create (harry1)-[:DESCRIBED_BY]->(magic),
+		 create (harry1)-[:DESCRIBED_BY]->(students),
+		 create (bookThief)-[:DESCRIBED_BY]->(students),
+		 create (bookThief)-[:DESCRIBED_BY]->(death),
+		 create (bookThief)-[:DESCRIBED_BY]->(judaism),
+		 create (tom)-[:DESCRIBED_BY]->(boy),
+		 create (tom)-[:DESCRIBED_BY]->(psychology),
+		 create (tom)-[:DESCRIBED_BY]->(change)
 
 //OF_TYPE
-CREATE	 harry1-[:OF_TYPE]->fantasy,
-		 harry1-[:OF_TYPE]->mystery,
-		 harry1-[:OF_TYPE]->fiction,
-		 bookThief-[:OF_TYPE]->novel,
-		 bookThief-[:OF_TYPE]->historical,
-		 bookThief-[:OF_TYPE]->fiction,
-		 tom-[:OF_TYPE]->novel,
-		 tom-[:OF_TYPE]->Bildungsroman,
-		 tom-[:OF_TYPE]->childrensNovel
+CREATE	 create (harry1)-[:OF_TYPE]->(fantasy),
+		 create (harry1)-[:OF_TYPE]->(mystery),
+		 create (harry1)-[:OF_TYPE]->(fiction),
+		 create (bookThief)-[:OF_TYPE]->(novel),
+		 create (bookThief)-[:OF_TYPE]->(historical),
+		 create (bookThief)-[:OF_TYPE]->(fiction),
+		 create (tom)-[:OF_TYPE]->(novel),
+		 create (tom)-[:OF_TYPE]->(Bildungsroman),
+		 create (tom)-[:OF_TYPE]->(childrensNovel)
 
 //WRITTEN_BY
-CREATE	 harry1-[:WRITTEN_BY]->rowling,
-		 bookThief-[:WRITTEN_BY]->zusak,
-		 tom-[:WRITTEN_BY]->twain
+CREATE	 create (harry1)-[:WRITTEN_BY]->(rowling),
+		 create (bookThief)-[:WRITTEN_BY]->(zusak),
+		 create (tom)-[:WRITTEN_BY]->(twain)
 
 //TRANSLATED_TO
-CREATE	 harry1-[:TRANSLATED_TO]->harry1French,
-		 harry1-[:TRANSLATED_TO]->harry1Polish,
-		 harry1-[:TRANSLATED_TO]->harry1Spanish
+CREATE	 create (harry1)-[:TRANSLATED_TO]->(harry1French),
+		 create (harry1)-[:TRANSLATED_TO]->(harry1Polish),
+		 create (harry1)-[:TRANSLATED_TO]->(harry1Spanish)
 
 //HAS_ORIGINAL_LANGUAGE
-CREATE	 harry1-[:HAS_ORIGINAL_LANGUAGE]->english,
-		 bookThief-[:HAS_ORIGINAL_LANGUAGE]->english,
-		 tom-[:HAS_ORIGINAL_LANGUAGE]->english
+CREATE	 create (harry1)-[:HAS_ORIGINAL_LANGUAGE]->(english),
+		 create (bookThief)-[:HAS_ORIGINAL_LANGUAGE]->(english),
+		 create (tom)-[:HAS_ORIGINAL_LANGUAGE]->(english)
 
 //OF_LANGUAGE
-CREATE	 harry1French-[:OF_LANGUAGE]->french,
-		 harry1Polish-[:OF_LANGUAGE]->polish,
-		 harry1Spanish-[:OF_LANGUAGE]->spanish
+CREATE	 create (harry1French)-[:OF_LANGUAGE]->(french),
+		 create (harry1Polish)-[:OF_LANGUAGE]->(polish),
+		 create (harry1Spanish)-[:OF_LANGUAGE]->(spanish)
 
 //MADE_BY
-CREATE	 harry1French-[:MADE_BY]->menard
+CREATE	 create (harry1French)-[:MADE_BY]->(menard)
 
 //MADE_INTO
-CREATE	 harry1-[:MADE_INTO]->harry1Movie,
-		 bookThief-[:MADE_INTO]->bookThiefMovie
+CREATE	 create (harry1)-[:MADE_INTO]->(harry1Movie),
+		 create (bookThief)-[:MADE_INTO]->(bookThiefMovie)
 
 //WHEN_ACTION
-CREATE	 harry1-[:WHEN_ACTION]->centuryXX,
-		 bookThief-[:WHEN_ACTION]->centuryXX,
-		 tom-[:WHEN_ACTION]->centuryXIX
+CREATE	 create (harry1)-[:WHEN_ACTION]->(centuryXX),
+		 create (bookThief)-[:WHEN_ACTION]->(centuryXX),
+		 create (tom)-[:WHEN_ACTION]->(centuryXIX)
 
 //WHEN_PUBLISHED
-CREATE	 harry1-[:WHEN_PUBLISHED]->year1997,
-		 bookThief-[:WHEN_PUBLISHED]->year2005,
-		 tom-[:WHEN_PUBLISHED]->year1876
+CREATE	 create (harry1)-[:WHEN_PUBLISHED]->(year1997),
+		 create (bookThief)-[:WHEN_PUBLISHED]->(year2005),
+		 create (tom)-[:WHEN_PUBLISHED]->(year1876)
 
 //WHERE_ACTION
-CREATE	 harry1-[:WHERE_ACTION]->London,
-	     bookThief-[:WHERE_ACTION]->Germany,
-	     tom-[:WHERE_ACTION]->US
+CREATE	 create (harry1)-[:WHERE_ACTION]->(London),
+	     create (bookThief)-[:WHERE_ACTION]->(Germany),
+	     create (tom)-[:WHERE_ACTION]->(US)
 
 //WHERE_PUBLISHED
-CREATE	 harry1-[:WHERE_PUBLISHED]->UK,
-		 bookThief-[:WHERE_PUBLISHED]->Australia,
-		 tom-[:WHERE_PUBLISHED]->US
+CREATE	 create (harry1)-[:WHERE_PUBLISHED]->(UK),
+		 create (bookThief)-[:WHERE_PUBLISHED]->(Australia),
+		 create (tom)-[:WHERE_PUBLISHED]->(US)
 
 //PUBLISHED_BY
-CREATE	 harry1-[:PUBLISHED_BY]->bloomsbury,
-		 bookThief-[:PUBLISHED_BY]->picador,
-		 tom-[:PUBLISHED_BY]->apc
+CREATE	 create (harry1)-[:PUBLISHED_BY]->(bloomsbury),
+		 create (bookThief)-[:PUBLISHED_BY]->(picador),
+		 create (tom)-[:PUBLISHED_BY]->(apc)
 ----
 //graph
 

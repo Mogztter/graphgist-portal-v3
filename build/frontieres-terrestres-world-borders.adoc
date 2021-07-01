@@ -510,7 +510,7 @@ RETURN n.name,m.name,b.size
 ----
 MATCH p = allShortestPaths(
 (n {name:"Canada"})-[:BORDER_WITH]-(m {name:"Mongolie"}))
-RETURN EXTRACT(n in nodes(p) | n.name),length(p)
+RETURN [n in nodes(p) | n.name], length(p)
 ----
 //table
 

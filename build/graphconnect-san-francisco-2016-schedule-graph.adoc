@@ -123,10 +123,10 @@ MATCH (n) where rand() <= 0.1
 MATCH (n)-[r]->(m)
 WITH n, type(r) as via, m
 RETURN labels(n) as from,
-   reduce(keys = [], keys_n in collect(keys(n)) | keys + filter(k in keys_n WHERE NOT k IN keys)) as props_from,
+   reduce(keys = [], keys_n in collect(keys(n)) | keys + [k in keys_n WHERE NOT k IN keys]) as props_from,
    via,
    labels(m) as to,
-   reduce(keys = [], keys_m in collect(keys(m)) | keys + filter(k in keys_m WHERE NOT k IN keys)) as props_to,
+   reduce(keys = [], keys_m in collect(keys(m)) | keys + [k in keys_m WHERE NOT k IN keys]) as props_to,
    count(*) as freq
 ----
 

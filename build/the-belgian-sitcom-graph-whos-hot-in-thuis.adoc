@@ -1,6 +1,6 @@
 = The Belgian Sitcom Graph: Who's Hot in "Thuis" =
 
-This gist is going to show you how you can query the elaborate landscape of relationships in http://www.een.be/programmas/thuis/[Thuis]. It is based on this picture by https://twitter.com/pieter_vh[@pieter_vh]. Very well done actually. 
+This gist is going to show you how you can query the elaborate landscape of relationships in http://www.een.be/programmas/thuis/[Thuis]. It is based on this picture by https://twitter.com/pieter_vh[@pieter_vh]. Very well done actually.
 
 image::http://qsdf.be/thuisopeen/infografiekthuis.png[scaledwidth="50%"]
 
@@ -187,7 +187,7 @@ It looks like this:
 Let's take a look at the nodes that we have:
 [source,cypher]
 ----
-match (n) 
+match (n)
 return labels(n) as TypeOfNode, count(n) as NrOfNodes;
 ----
 //table

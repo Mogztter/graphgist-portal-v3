@@ -232,7 +232,7 @@ List all historical wins and losses of each team in the past 3 years.
 [source,cypher]
 ----
 MATCH (t:Team)-[w:WIN]->(:Playoff)<-[l:WIN]-()
-RETURN t.Name as TEAM, SUM(w.Win) AS TOTAL_WIN, SUM(l.Win) as TOTAL_LOSS, 
+RETURN t.Name as TEAM, SUM(w.Win) AS TOTAL_WIN, SUM(l.Win) as TOTAL_LOSS,
 (toFloat(SUM(w.Win)) / (toFloat(SUM(w.Win))+ toFloat(SUM(l.Win)))) as WIN_PERCENTAGE
 ORDER BY SUM(w.Win) DESC
 ----
@@ -259,7 +259,7 @@ ORDER BY p.Year DESC
 ----
 //table
 
-In the above case, San Antonio and Miami had played 12 games in the past 3 years during playoffs, and San Antonio won 7 & lost 5. 
+In the above case, San Antonio and Miami had played 12 games in the past 3 years during playoffs, and San Antonio won 7 & lost 5.
 So San Antonio may have a slighly higher chance to win if they meet again in 2016 NBA final.
 
 == If 2 teams have never met before: Simple Example
@@ -276,7 +276,7 @@ RETURN p
 [source,cypher]
 ----
 MATCH p= AllShortestPaths((t1:Team {Name: "Miami"})-[:WIN*0..14]-(t2:Team {Name:"Portland"}))
-WITH extract(r IN relationships(p)| r.Win) AS RArray
+WITH [r IN relationships(p)| r.Win] AS RArray
 RETURN RArray
 ----
 //table
@@ -298,17 +298,17 @@ RETURN p
 ----
 MATCH (t1:Team {Name: "Golden State"}),(t2:Team {Name:"Toronto"}),
 	p = AllshortestPaths((t1)-[r:WIN*..14]-(t2))
-WITH r,p,extract(r IN relationships(p)| r.Win ) AS paths
+WITH r, p, [r IN relationships(p)| r.Win] AS paths
 RETURN paths
 ----
 //table
 
 The above case is more complicated than the simple example: there are 6 shortest paths with 8 relations in each respectively. So I introduced a concept called _average net win_, which is the average net win of each path, where [net win] = [total number of wins] - [total number of losses] in one shortest path. When the average net win from team A to team B is positive, team A has a winning advantage over team B.
- 
+
 [source,cypher]
 ----
 MATCH p= AllShortestPaths((t1:Team {Name: "Golden State"})-[:WIN*0..14]-(t2:Team {Name:"Toronto"}))
-WITH extract(r IN relationships(p)| r.Win) AS RArray, LENGTH(p)-1  as s
+WITH [r IN relationships(p)| r.Win] AS RArray, LENGTH(p)-1  as s
 RETURN AVG(REDUCE(x = 0, a IN [i IN range(0,s) WHERE i % 2 = 0 | RArray[i] ] | x + a)) //total win
 - AVG(REDUCE(x = 0, a IN [i IN range(0,s) WHERE i % 2 <> 0 | RArray[i] ] | x + a)) //total loss
 AS NET_WIN

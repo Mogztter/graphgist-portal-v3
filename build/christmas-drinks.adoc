@@ -16,7 +16,7 @@ Drink with attribute name and url.
 Ingredient with attribute name
 
 === Relationships
-A drink contains one or more ingredients. The quantity of the ingredient to add and the form is modeled as a property on the relation from the drink to the ingredient. An ingredient can be a spice- a Spice label indicates this. 
+A drink contains one or more ingredients. The quantity of the ingredient to add and the form is modeled as a property on the relation from the drink to the ingredient. An ingredient can be a spice- a Spice label indicates this.
 
 == Setup
 
@@ -209,7 +209,7 @@ RETURN ingred.name as ingredient, r.quantity as quantity, coalesce(r.form,"-") a
 MATCH (d:Hot)-[r:COMPOSED_OF]->(ingred)
 WITH d,collect(ingred) as ingredients
 WHERE ANY (i in ingredients where i:Spice)
-WITH  d.name as drink, d.url as link, FILTER(x in ingredients WHERE x:Spice) as spices
+WITH  d.name as drink, d.url as link, [x in ingredients WHERE x:Spice] as spices
 RETURN drink,link, EXTRACT (s in spices | s.name)
 ----
 //table

@@ -154,7 +154,7 @@ The Santa's shortest weighted path algorithm is the following:
 MATCH (kid:Kid)
 WITH count(kid) as numberOfKids
 MATCH path = ((startingRoadJunction)-[:CONNECTED_TO*1..20]-(lastKid:Kid))
-WHERE startingRoadJunction.id = 0 and  size(filter(x in nodes(path) WHERE (x:Kid))) >= numberOfKids
+WHERE startingRoadJunction.id = 0 and  size([x in nodes(path) WHERE (x:Kid)]) >= numberOfKids
 WITH  path, [x IN nodes(path) WHERE (x:Kid) | x] as kidsList, numberOfKids
 UNWIND kidsList as kidInPath
 WITH path, collect(distinct kidInPath) as kidsInPath, numberOfKids
@@ -198,7 +198,7 @@ Every path that matches this pattern is stored into the variable _path_.
 *4)* In the _WHERE_ condition the constraint that the first node of the path must have the id equal to 0 is set.
 Furthermore
 ----
-size(filter(x in nodes(path) WHERE (x:Kid))) >= numberOfKids
+size([x in nodes(path) WHERE (x:Kid)]) >= numberOfKids
 ----
 means that the number of the kids in the path must be equal or greater than the value of the variable numberOfKids, previously obtained.
 This condition will help the search of the optimal solution, removing already from the further query steps and calculations
@@ -325,7 +325,7 @@ segments. This assumption it is very likely to happen in real maps as well.
 ----
 WITH range(0, 1000000) as streetNodeIds
 unwind streetNodeIds as streetNodeId
-with streetNodeId, extract(x in range(0, toInt(round(rand()*3))) | round(rand()*10000)) as coll
+with streetNodeId, [x in range(0, toInt(round(rand()*3))) | round(rand()*10000)] as coll
 unwind coll as nearStreetNodeId
 match (streetNode:StreetNode {id:streetNodeId}), (nearStreetNode:StreetNode {id: nearStreetNodeId})
 where streetNodeId <> nearStreetNodeId
