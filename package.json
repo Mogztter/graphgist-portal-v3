@@ -3,7 +3,7 @@
   "version": "3.0.0",
   "description": "GraphGist portal site: https://portal.graphgist.org/.",
   "scripts": {
-    "fetchAsciiDoc": "node task/fetch-asciidoc.js",
+    "fetchAsciiDoc": "node tasks/fetch-asciidoc.js",
     "checkQueries": "asciidoc-cypher-query-runner build/*.adoc"
   },
   "repository": {
