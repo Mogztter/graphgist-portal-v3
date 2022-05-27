@@ -1,9 +1,28 @@
-<style type="text/css" media="screen">
-    /*
-    .nodes-image {
-      margin:-100;
+<%/*
+private fun flattenDocument(document: Document) {
+    val hasPreamble = document.findBy(mapOf("context" to ":preamble")).isNotEmpty()
+    val offset = if (hasPreamble) {
+        2
+    } else {
+        1
     }
-    */
+    document.findBy(mapOf("context" to ":section")).filter {
+        it.level > 1
+    }.reversed().forEach { section ->
+        var parentSection = (section.parent as Section)
+        parentSection.blocks.remove(section)
+        while (parentSection.parent != null && parentSection.parent.context == "section") {
+            parentSection = parentSection.parent as Section
+        }
+        val rubyBlock = section as RubyObjectWrapper
+        val ruby = rubyBlock.rubyObject.runtime
+        rubyBlock.setRubyProperty("@level", ruby.newFixnum(1))
+        document.blocks.add(parentSection.index + offset, section)
+    }
+}
+}
+*/%>
+<style type="text/css" media="screen">
     @import url("//maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css");
 
     .imageblock .content img {
@@ -68,58 +87,21 @@
         line-height: 45px;
     }
 </style>
-<article class="guide" ng-controller="AdLibDataController">
+<article class="guide">
     <carousel class="deck container-fluid">
-        <%#= node %>
-
-        <% node.blocks.forEach(function (block, index){ %>
-            <%#= block %>
+        <% node.blocks.forEach(function (block, index) { %>
             <slide class="row-fluid">
                 <div class="col-sm-12">
-                    <% if(index === 0 && block.context === 'preamble') { %>
+                    <% if (index === 0 && block.context === 'preamble') { %>
                         <h3><%- node.getDoctitle() %></h3>
                     <% } %>
-                    <% if(block.title) { %>
+                    <% if (block.title) { %>
                         <h3><%- block.title %></h3>
                         <br/>
                     <% } %>
-                    <% if(block.context === 'paragraph' ) { %>
-                        <h3><%- block.getContent() %></h3>
-                        <br/>
-                    <% }else if(block.context === 'listing' && block.style === 'source'){ %>
-                        <pre mode="cypher"
-                             class="highlight pre-scrollable code runnable standalone-example ng-binding" lang>
-                                <code class="language"><%- block.getContent() %></code>
-                              </pre>
-                    <% }else if(block.blocks.length === 0 || (block.blocks.length > 0 && block.blocks[0].level !== 2) ){ %>
-                        <div><%- block.getContent() %></div>
-                        <br/>
-                    <% } %>
+                    <%- block.getContent() %>
                 </div>
             </slide>
-            <% if(block.blocks.length > 0 && block.blocks[0].level === 2) { %>
-                <% block.blocks.forEach(function (inner){ %>
-                    <%#= inner %>
-                    <slide class="row-fluid">
-                        <div class="col-sm-12">
-                            <% if(inner.title) { %>
-                                <h3><%- inner.title %></h3>
-                                <br/>
-                            <% } %>
-                            <% if(inner.context === 'paragraph' ) { %>
-                                <div><%- inner.getContent() %></div>
-                                <br/>
-                            <% }else if(inner.context === 'listing' && inner.style === 'source'){ %>
-                                <pre mode="cypher"
-                                     class="highlight pre-scrollable code runnable standalone-example ng-binding" lang>
-                                <code class="language"><%- inner.getContent() %></code>
-                              </pre>
-                                <br/>
-                            <% } %>
-                        </div>
-                    </slide>
-                <% }); %>
-            <% } %>
         <% }); %>
     </carousel>
 </article>

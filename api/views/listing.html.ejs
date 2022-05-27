@@ -15,7 +15,7 @@ var {style, language, sourceHighter, title} = node.getAttributes();
     <% if (style == 'source') { %>
       <%
         var code_class = language ? [language, `language-${language}`] : [];
-        var pre_class = ['highlight'];
+        var pre_class = ['highlight', 'pre-scrollable', 'code', 'runnable', 'standalone-example'];
         var pre_lang = null;
 
         switch (sourceHighter) {

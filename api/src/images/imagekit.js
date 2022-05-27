@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
+
 const ImageKit = require("imagekit");
-var fs = require('fs');
 dotenv.config();
 
 const imagekit = new ImageKit({
